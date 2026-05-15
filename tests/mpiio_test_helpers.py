@@ -1,3 +1,6 @@
+# Copyright 2025 - 2026, Miro Palmu, Joonas Nättilä and the runko contributors
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 """Shared helpers for MPI-IO field snapshot tests."""
 
 import os

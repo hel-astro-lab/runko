@@ -43,7 +43,7 @@ if read_the_docs_build:
 # -- Project information -----------------------------------------------------
 
 project = 'Runko'
-copyright = '2023, Joonas Nättilä'
+copyright = '2026, Joonas Nättilä'
 author = 'Joonas Nättilä'
 
 
@@ -53,7 +53,11 @@ author = 'Joonas Nättilä'
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 #extensions = ["breathe"]
-extensions = []
+extensions = [
+    "sphinx_tabs.tabs",
+    "sphinx_copybutton"
+]
+sphinx_tabs_disable_tab_closing = True
 
 # Breathe Configuration
 #breathe_default_project = "Runko"

@@ -1,4 +1,7 @@
-find_package(Sphinx)
+# Copyright 2016 - 2026, Miro Palmu, Joonas Nättilä and the runko contributors
+# SPDX-License-Identifier: GPL-3.0-or-later
+
+find_package(Sphinx OPTIONAL)
 
 if (Sphinx_FOUND)
 

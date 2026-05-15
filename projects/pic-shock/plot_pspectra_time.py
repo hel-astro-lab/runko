@@ -1,3 +1,6 @@
+# Copyright 2026 - 2026, Miro Palmu, Joonas Nättilä and the runko contributors
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 """Plot particle spectra (e- and e+) as a function of time."""
 
 import numpy as np

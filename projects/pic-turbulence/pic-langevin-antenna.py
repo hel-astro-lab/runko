@@ -1,3 +1,6 @@
+# Copyright 2026 - 2026, Miro Palmu, Joonas Nättilä and the runko contributors
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 """
 Particle-in-cell simulation of driven kinetic turbulence using runko.
 Driving is achived with oscillating Langevin antenna.

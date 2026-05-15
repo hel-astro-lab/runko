@@ -1,13 +1,15 @@
-cmake_minimum_required (VERSION 3.23)
+# Copyright 2016 - 2026, Miro Palmu, Joonas Nättilä and the runko contributors
+# SPDX-License-Identifier: GPL-3.0-or-later
 
-set (CMAKE_CXX_STANDARD 26)
-set (CMAKE_CXX_STANDARD_REQUIRED ON)
-set (CMAKE_CXX_EXTENSIONS OFF)
+cmake_minimum_required(VERSION 3.23)
 
-set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
-set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+if(NOT DEFINED CMAKE_CXX_STANDARD)
+    set(CMAKE_CXX_STANDARD 23)
+    set(CMAKE_CXX_STANDARD_REQUIRED ON)
+endif()
 
-project (
+set(CMAKE_CXX_EXTENSIONS OFF)
+project(
     runko
     VERSION 5.0.0
     DESCRIPTION "Modern C++/python CPU/GPU plasma toolbox."
@@ -15,83 +17,71 @@ project (
     LANGUAGES CXX
 )
 
-# Add the cmake folder to get FindPkg files
-set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake" ${CMAKE_MODULE_PATH})
-
-##################################################
-# Dependencies
-
-find_package(Python COMPONENTS Interpreter Development REQUIRED)
 find_package(OpenMP REQUIRED)
 find_package(MPI REQUIRED)
 
-# HDF5: try standard detection first, fall back to manual search via HDF5_ROOT.
-# hipcc's --offload-arch flag breaks FindHDF5's try_link tests on Cray.
-find_package(HDF5 QUIET)
-if(NOT HDF5_FOUND OR NOT HDF5_LIBRARIES)
-    find_path(HDF5_INCLUDE_DIR hdf5.h HINTS ENV HDF5_ROOT PATH_SUFFIXES include REQUIRED)
-    find_library(HDF5_LIBRARY hdf5 HINTS ENV HDF5_ROOT PATH_SUFFIXES lib REQUIRED)
-    find_library(HDF5_HL_LIBRARY hdf5_hl HINTS ENV HDF5_ROOT PATH_SUFFIXES lib)
-    set(HDF5_INCLUDE_DIRS ${HDF5_INCLUDE_DIR})
-    set(HDF5_LIBRARIES ${HDF5_LIBRARY} ${HDF5_HL_LIBRARY})
-    set(HDF5_FOUND TRUE)
-endif()
-if(NOT TARGET hdf5::hdf5)
-    add_library(hdf5::hdf5 INTERFACE IMPORTED)
-    target_include_directories(hdf5::hdf5 INTERFACE ${HDF5_INCLUDE_DIRS})
-    target_link_libraries(hdf5::hdf5 INTERFACE ${HDF5_LIBRARIES})
+find_package(Python COMPONENTS Interpreter Development REQUIRED)
+
+if(NOT DEFINED ENV{pybind11_DIR})
+    # Make pybind11 python install automatically findable.
+    execute_process(
+        COMMAND "${Python_EXECUTABLE}" -m pybind11 --cmakedir
+        OUTPUT_VARIABLE pybind11_DIR
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+    )
 endif()
 
-##################################################
+find_package(pybind11 CONFIG REQUIRED)
 
-add_subdirectory(external/corgi)
-add_subdirectory(external/tyvi)
-
-##################################################
-# Targets
-
-# Use phony target for warnings and include directories.
 add_library(runko_includes INTERFACE)
-target_include_directories (runko_includes INTERFACE ${PROJECT_SOURCE_DIR})
+target_include_directories(runko_includes INTERFACE ${PROJECT_SOURCE_DIR}/src)
 
 add_library(runko_warnings INTERFACE)
 target_compile_options(runko_warnings
     INTERFACE
-    $<$<CXX_COMPILER_ID:GNU>:-Wall -Wextra -Wpedantic>
-    $<$<CXX_COMPILER_ID:Clang>:-Wall -Wextra -Wpedantic -Wno-missing-braces>
+    -Wconversion
+    -Wall
+    -Wextra
+    -Wpedantic
+    -Werror
+)
+
+add_subdirectory(external/corgi)
+add_subdirectory(external/tyvi)
+
+# Required for shared libraries.
+set_target_properties(tyvi PROPERTIES POSITION_INDEPENDENT_CODE TRUE)
+
+# Wrap dependencies so that they can be marked SYSTEM libraries (suppresses warnings from them).
+add_library(runko_dependencies INTERFACE)
+target_link_libraries(runko_dependencies
+    INTERFACE
+    corgi
+    tyvi
+)
+target_include_directories(runko_dependencies
+    SYSTEM INTERFACE
+    $<TARGET_PROPERTY:corgi,INTERFACE_INCLUDE_DIRECTORIES>
+    $<TARGET_PROPERTY:tyvi,INTERFACE_INCLUDE_DIRECTORIES>
 )
 
 
-# Code Coverage Configuration
-add_library(runko_coverage_config INTERFACE)
-
-option(RUNKO_CODE_COVERAGE "Enable coverage reporting" OFF)
-
-if(RUNKO_CODE_COVERAGE AND NOT (CMAKE_BUILD_TYPE MATCHES "Debug"))
-    message(WARNING "Code coverage enabled in non-debug build!")
-endif()
-
-if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
-    target_compile_options(runko_coverage_config INTERFACE --coverage)
-    target_link_options(runko_coverage_config INTERFACE --coverage -fprofile-arcs)
-endif()
-
-add_subdirectory(bindings)
+add_subdirectory(src)
 add_subdirectory(docs)
 
-#--------------------------------------------------
-# unit tests
+# If building with scikit-build-core not it editable mode disable tests.
+if(DEFINED SKBUILD_PROJECT_NAME AND NOT ${SKBUILD_STATE} MATCHES "editable")
+    set(RUNKO_ENABLE_TESTS OFF)
+else()
+    set(RUNKO_ENABLE_TESTS ON)
+endif()
 
-message(STATUS "Runko tests ran with python: ${Python_EXECUTABLE}")
+if(PROJECT_IS_TOP_LEVEL AND ${RUNKO_ENABLE_TESTS})
+    message(STATUS "Enabling runko tests...")
+    message(STATUS "Runko tests are run with python: ${PYTHON_EXECUTABLE}")
 
-include(CTest)
-add_subdirectory(tests/multirank_tests)
-
-add_custom_target(check-runko ALL
-                  ${Python_EXECUTABLE} -m unittest discover -s ../tests/ -v
-                  DEPENDS pycorgi runko_cpp_bindings
-                  VERBATIM
-                  WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/tests
-)
-
-
+    include(CTest)
+    add_subdirectory(tests)
+else()
+    message(STATUS "Skipping runko tests.")
+endif()

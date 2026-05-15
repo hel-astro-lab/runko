@@ -20,12 +20,12 @@ The plasma oscillation frequency, also known as the Langmuir frequency, :math:`\
 .. math::
     \omega_{p,s} = \sqrt{\frac{4\pi n_s q_s^2}{m_s}}
     \quad\mathrm{and}\quad
-    \hat{\omega_p} = \frac{\hat{c}}{\hat{R}} \frac{1}{\Delta t} 
+    \hat{\omega}_p = \frac{\hat{c}}{\hat{R}} \frac{1}{\Delta t} 
 
 For relativistic bulk flows with Lorentz factor :math:`\Gamma` or relativistically hot plasmas with mean Lorentz factor :math:`\langle \gamma \rangle \gtrsim 1` the plasma frequency becomes :math:`\omega_p \rightarrow \omega_p/\sqrt{\gamma}`.
 
 
-Simulation laps are typically in units of total plasma frequency so that one time step :math:`\Delta t = \hat{\omega_p}^{-1}` in physical units.
+Simulation laps are typically in units of total plasma frequency so that one time step :math:`\Delta t = \hat{\omega}_p^{-1}` in physical units.
 
 
 Plasma skin depth
@@ -36,7 +36,7 @@ Plasma perturbations that move with the speed of light :math:`c` and oscillates 
 .. math::
     d_s = \frac{c}{\omega_{p,s}}
     \quad\mathrm{and}\quad
-    \hat{d}_e = \hat{R} \Delta x
+    \
 
 One skin depth in the code is :math:`\hat{R}` grid cells.
 

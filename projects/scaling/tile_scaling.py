@@ -1,3 +1,6 @@
+# Copyright 2025 - 2026, Miro Palmu, Joonas Nättilä and the runko contributors
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.patches import Patch

@@ -1,0 +1,20 @@
+# Copyright 2025 - 2026, Miro Palmu, Joonas Nättilä and the runko contributors
+# SPDX-License-Identifier: GPL-3.0-or-later
+
+function(add_python_mpi_test name no_mpi_proc)
+    add_test(NAME py-multirank-${name} COMMAND
+        ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} ${no_mpi_proc}
+        ${Python_EXECUTABLE} "${CMAKE_CURRENT_SOURCE_DIR}/test_${name}.py"
+    )
+    set_property(TEST py-multirank-${name}
+        PROPERTY ENVIRONMENT PYTHONPATH=${CMAKE_BINARY_DIR}/src:${PROJECT_SOURCE_DIR}
+    )
+endfunction(add_python_mpi_test)
+
+add_python_mpi_test(testing_setup 2)
+add_python_mpi_test(emf_simulation 4)
+add_python_mpi_test(runko_simulation 2)
+add_python_mpi_test(pic_simulation 4)
+add_python_mpi_test(mpiio_fields 4)
+# add_python_mpi_test(mpiio_particles 4)
+# add_python_mpi_test(mpiio_spectra 4)

@@ -1,0 +1,39 @@
+# Copyright 2026 - 2026, Miro Palmu, Joonas Nättilä and the runko contributors
+# SPDX-License-Identifier: GPL-3.0-or-later
+
+[build-system]
+requires = ["pybind11", "scikit-build-core>=0.12"]
+build-backend = "scikit_build_core.build"
+
+[project]
+name = "runko"
+version = "5.0.0"
+authors = []
+description = "Modern C++/Python GPU/CPU-portable plasma toolbox"
+readme = "README.md"
+license = "GPL-3.0-or-later"
+license-files = ["COPYING"]
+requires-python = ">=3.6"
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "Intended Audience :: Science/Research",
+  "Intended Audience :: Developers",
+  "Operating System :: OS Independent",
+  "Programming Language :: C++",
+  "Programming Language :: Python",
+  "Topic :: Scientific/Engineering",
+]
+dependencies = [
+  "mpi4py",
+  "corgi",
+  "numpy",
+  "scipy",
+]
+
+[project.urls]
+Homepage = "https://runko.readthedocs.io/en/latest/"
+"Bug Tracker" = "https://github.com/hel-astro-lab/runko/issues"
+
+[tool.scikit-build]
+minimum-version = "build-system.requires"
+build-dir = "build/{state}-{build_type}-{wheel_tag}"

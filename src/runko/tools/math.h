@@ -1,0 +1,185 @@
+// Copyright 2025 - 2026, Miro Palmu, Joonas Nättilä and the runko contributors
+// SPDX-License-Identifier: GPL-3.0-or-later
+
+#pragma once
+
+#include <atomic>
+#include <cmath>
+#include <type_traits>
+
+#include "tyvi/backend.h"
+
+#ifdef TYVI_BACKEND_HIP
+#include "hip/hip_runtime.h"
+#include "thrust/memory.h"
+#endif
+
+namespace sstd {
+
+// =====================================================================
+// raw_ref — identity on CPU, thrust::raw_reference_cast on HIP
+// =====================================================================
+
+template<typename T>
+constexpr auto&
+raw_ref(T& x) {
+#ifdef TYVI_BACKEND_CPU
+    return x;
+#elif defined(TYVI_BACKEND_HIP)
+    return thrust::raw_reference_cast(x);
+#endif
+}
+
+// =====================================================================
+// atomic_add — direct += on CPU, unsafeAtomicAdd on HIP
+// =====================================================================
+
+template<typename T>
+constexpr void
+atomic_add(T* addr, T val) {
+#ifdef TYVI_BACKEND_CPU
+    std::atomic_ref<T>(*addr).fetch_add(val, std::memory_order_relaxed);
+#elif defined(TYVI_BACKEND_HIP)
+    ::unsafeAtomicAdd(addr, val);
+#endif
+}
+
+// =====================================================================
+// sin / cos — constexpr type-dispatched wrappers
+// =====================================================================
+
+template<typename T>
+constexpr auto
+sin(const T x) {
+    if constexpr (std::is_same_v<T, float>) {
+        return ::sinf(x);
+    } else {
+        return ::sin(x);
+    }
+}
+
+template<typename T>
+constexpr auto
+cos(const T x) {
+    if constexpr (std::is_same_v<T, float>) {
+        return ::cosf(x);
+    } else {
+        return ::cos(x);
+    }
+}
+
+// =====================================================================
+// sqrt — constexpr type-dispatched wrapper
+// =====================================================================
+
+template<typename T>
+constexpr auto
+sqrt(const T x) {
+    if constexpr (std::is_same_v<T, float>) {
+        return ::sqrtf(x);
+    } else {
+        return ::sqrt(x);
+    }
+}
+
+// =====================================================================
+// min / max — SIMD-friendly value-based min/max
+// =====================================================================
+// Using ternary instead of std::min/std::max to avoid reference
+// semantics that can inhibit auto-vectorization.
+
+template<typename T>
+constexpr auto
+min(const T a, const T b) {
+    return a < b ? a : b;
+}
+
+template<typename T>
+constexpr auto
+max(const T a, const T b) {
+    return a > b ? a : b;
+}
+
+// =====================================================================
+// clamp — branchless clamp to [lo, hi]
+// =====================================================================
+
+template<typename T>
+constexpr auto
+clamp(const T x, const T lo, const T hi) {
+    return min(max(x, lo), hi);
+}
+
+// =====================================================================
+// abs — SIMD-friendly absolute value
+// =====================================================================
+
+template<typename T>
+constexpr auto
+abs(const T x) {
+    return x < T{ 0 } ? -x : x;
+}
+
+// =====================================================================
+// fmod — constexpr type-dispatched wrapper
+// =====================================================================
+
+template<typename T>
+constexpr auto
+fmod(const T a, const T b) {
+    if constexpr (std::is_same_v<T, float>) {
+        return ::fmodf(a, b);
+    } else {
+        return ::fmod(a, b);
+    }
+}
+
+// =====================================================================
+// floor — SIMD-friendly floor (FRINTM on ARM NEON)
+// =====================================================================
+
+template<typename T>
+constexpr auto
+floor(const T x) {
+    if constexpr (std::is_same_v<T, float>) {
+        return ::floorf(x);
+    } else {
+        return ::floor(x);
+    }
+}
+
+// =====================================================================
+// ceil — SIMD-friendly ceil (FRINTP on ARM NEON)
+// =====================================================================
+
+template<typename T>
+constexpr auto
+ceil(const T x) {
+    if constexpr (std::is_same_v<T, float>) {
+        return ::ceilf(x);
+    } else {
+        return ::ceil(x);
+    }
+}
+
+// =====================================================================
+// log10 — constexpr type-dispatched wrapper
+// =====================================================================
+
+template<typename T>
+constexpr auto
+log10(const T x) {
+    if constexpr (std::is_same_v<T, float>) {
+        return ::log10f(x);
+    } else {
+        return ::log10(x);
+    }
+}
+
+
+/// Signum of value
+template <typename T> int sign(const T& val) {
+    return (T(0) < val) - (val < T(0));
+}
+
+} // namespace sstd

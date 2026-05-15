@@ -1,3 +1,6 @@
+# Copyright 2025 - 2026, Miro Palmu, Joonas Nättilä and the runko contributors
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 """Reader for runko v5 MPI-IO binary field snapshot files.
 
 Parses the fixed header and returns writable numpy arrays

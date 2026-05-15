@@ -9,9 +9,8 @@ Instead, values are normalized with a fiducial values:
 
 .. math::
 
-   t &= \hat t \Delta t
-
-   x &= \hat x \Delta x
+   t = \hat t \Delta t
+   \quad x = \hat x \Delta x
 
 
 Here physical time and position are on the left hand side
@@ -37,19 +36,19 @@ Rest of the physical values are written as:
 
 .. math::
 
-   B &= \hat B B_0
-
-   E &= \hat E B_0
-
-   q &= \hat q q_0
-
-   m &= \hat m m_0
-
-   J &= \hat J J_0
-
+   \begin{split}
+   B &= \hat B B_0 \\
+   E &= \hat E B_0 \\
+   J &= \hat J J_0 \\
    A &= \hat A A_0
-
+   \end{split}
+   \quad
+   \begin{split}
+   q &= \hat q q_0 \\
+   m &= \hat m m_0 \\
    n &= \frac{\hat n}{(\Delta x)^3}
+   \end{split}
+
 
 
 Note the same fiducial value for magnetic and electric fields.
@@ -61,11 +60,11 @@ Derivatives transform as:
 
 .. math::
 
-   \frac{\partial}{\partial t} & = \frac{1}{\Delta t} \frac{\partial}{\partial \hat t}
-
-   \frac{\partial}{\partial x} & = \frac{1}{\Delta x} \frac{\partial}{\partial \hat x}
-
-   \nabla &= \frac{1}{\Delta \hat x}\hat \nabla
+   \frac{\partial}{\partial t} = \frac{1}{\Delta t} \frac{\partial}{\partial \hat t}
+   \quad
+   \frac{\partial}{\partial x} = \frac{1}{\Delta x} \frac{\partial}{\partial \hat x}
+   \quad
+   \nabla = \frac{1}{\Delta \hat x}\hat \nabla
 
 
 Now we can write the dynamical Maxwell's equations as:

@@ -1,0 +1,62 @@
+# Copyright 2025 - 2026, Miro Palmu, Joonas Nättilä and the runko contributors
+# SPDX-License-Identifier: GPL-3.0-or-later
+
+import unittest
+import runko
+
+class tile_grid(unittest.TestCase):
+    def setUp(self):
+        conf = runko.Configuration(None)
+        conf.tile_partitioning = "hilbert_curve"
+        conf.Nx = 2
+        conf.Ny = 2
+        conf.Nz = 2
+        conf.NxMesh = 10
+        conf.NyMesh = 11
+        conf.NzMesh = 13
+        conf.xmin = 0
+        conf.ymin = 0
+        conf.zmin = 0
+
+        self.test_grid = runko.TileGrid(conf)
+
+    def test_mandatory_configuration_variables(self):
+        empty_conf = runko.Configuration(None)
+
+        with self.assertRaises(RuntimeError):
+            runko.TileGrid(empty_conf)
+
+    def test_nonsense_tile_partitioning(self):
+        conf = runko.Configuration(None)
+        conf.tile_partitioning = "nonsense"
+        conf.Nx = 2
+        conf.Ny = 2
+        conf.Nz = 2
+        conf.NxMesh = 10
+        conf.NyMesh = 11
+        conf.NzMesh = 13
+        conf.xmin = 0
+        conf.ymin = 0
+        conf.zmin = 0
+
+        with self.assertRaisesRegex(RuntimeError, r"tile_partitioning"):
+            runko.TileGrid(conf)
+
+    def test_catepillar_track_requires_length(self):
+        conf = runko.Configuration(None)
+        conf.tile_partitioning = "catepillar_track"
+        conf.Nx = 2
+        conf.Ny = 2
+        conf.Nz = 2
+        conf.NxMesh = 10
+        conf.NyMesh = 11
+        conf.NzMesh = 13
+        conf.xmin = 0
+        conf.ymin = 0
+        conf.zmin = 0
+
+        with self.assertRaisesRegex(RuntimeError, r"catepillar_track_length"):
+            runko.TileGrid(conf)
+
+if __name__ == "__main__":
+    unittest.main()

@@ -33,7 +33,6 @@ module load LUMI
 module load partition/G
 module load PrgEnv-cray
 module load rocm
-module load cray-hdf5
 module load craype-accel-amd-gfx90a
 module load cray-mpich craype-network-ofi
 module load buildtools
@@ -55,7 +54,7 @@ P2="$RUNKO_PATH/external/corgi/lib"
 export PYTHONPATH="$PYTHONPATH:$P1:$P2"
 
 # 7. Install necessary Python dependencies
-pip3 install h5py scipy matplotlib numpy
+pip3 install scipy matplotlib numpy
 
 # 8. Build mpi4py against Cray MPICH (PrgEnv-cray).
 # --force-reinstall ensures the venv gets its own copy instead of using the
@@ -79,7 +78,6 @@ module load LUMI
 module load partition/G
 module load PrgEnv-cray
 module load rocm
-module load cray-hdf5
 module load craype-accel-amd-gfx90a
 module load cray-mpich craype-network-ofi
 module load buildtools
