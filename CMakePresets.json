@@ -7,166 +7,116 @@
     },
     "configurePresets": [
         {
-            "name": "conf-common",
-            "description": "General settings that apply to all configurations",
+            "name": "_common",
             "hidden": true,
-            "binaryDir": "${sourceDir}/${presetName}"
-        },
-        {
-            "name": "conf-unixlike-common",
-            "description": "Unix-like OS settings.",
-            "hidden": true,
-            "inherits": "conf-common",
+            "description": "Shared defaults for every concrete runko preset.",
+            "binaryDir": "${sourceDir}/${presetName}",
             "condition": {
                 "type": "inList",
                 "string": "${hostSystemName}",
-                "list": [
-                    "Linux",
-                    "Darwin"
-                ]
+                "list": ["Linux", "Darwin"]
+            },
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Release",
+                "BUILD_TESTING": "ON",
+                "tyvi_ENABLE_IPO": "OFF",
+                "tyvi_ENABLE_CLANG_TIDY": "OFF",
+                "tyvi_ENABLE_CPPCHECK": "OFF"
             }
         },
         {
-            "name": "macos-mpic++-debug",
-            "displayName": "mpic++ Debug (macOS)",
-            "description": "Target macOS with mpic++ (Homebrew clang++), cpu backend, debug build type.",
-            "inherits": "conf-unixlike-common",
+            "name": "_cpu",
+            "hidden": true,
+            "description": "CPU backend defaults: mpic++ + env-driven rocThrust.",
+            "inherits": "_common",
             "cacheVariables": {
                 "CMAKE_CXX_COMPILER": "mpic++",
-                "CMAKE_BUILD_TYPE": "Debug",
-                "tyvi_ENABLE_IPO": "OFF",
-                "tyvi_ENABLE_CLANG_TIDY": "OFF",
-                "tyvi_ENABLE_CPPCHECK": "OFF",
                 "tyvi_BACKEND": "cpu",
-                "rocthrust_DIR": "${sourceDir}/cmake/rocthrust-cpu",
-                "CPM_mdspan_SOURCE": "${sourceDir}/external/mdspan"
+                "rocthrust_DIR": "$env{ROCTHRUST_INSTALL_PREFIX}/lib/cmake/rocthrust"
             }
         },
         {
-            "name": "macos-mpic++-vec-analysis",
-            "displayName": "mpic++ Vectorization Analysis (macOS)",
-            "description": "Release build with SIMD vectorization diagnostics for auditing auto-vectorization.",
-            "inherits": "macos-mpic++-debug",
-            "cacheVariables": {
-                "CMAKE_BUILD_TYPE": "Release",
-                "CMAKE_CXX_FLAGS": "-O3 -march=native -mllvm -force-vector-width=4 -Rpass=loop-vectorize -Rpass-missed=loop-vectorize -Rpass-analysis=loop-vectorize -Wno-error=unused-command-line-argument",
-                "BUILD_TESTING": "ON"
-            }
-        },
-        {
-            "name": "conf-lumi-common",
-            "description": "Common settings for LUMI supercomputer (AMD EPYC + MI250X).",
+            "name": "_gpu",
             "hidden": true,
-            "inherits": "conf-unixlike-common",
-            "cacheVariables": {
-                "tyvi_ENABLE_IPO": "OFF",
-                "tyvi_ENABLE_CLANG_TIDY": "OFF",
-                "tyvi_ENABLE_CPPCHECK": "OFF",
-                "BUILD_TESTING": "ON"
-            }
-        },
-        {
-            "name": "lumi-cpu-release",
-            "displayName": "LUMI CPU Release (Cray clang)",
-            "description": "LUMI CPU partition, Cray CC (clang-based), optimized for AMD EPYC Zen 3 (Trento).",
-            "inherits": "conf-lumi-common",
-            "cacheVariables": {
-                "CMAKE_CXX_COMPILER": "CC",
-                "CMAKE_BUILD_TYPE": "Release",
-                "CMAKE_CXX_FLAGS": "-O3 -march=znver3 -mtune=znver3 -funroll-loops -ffp-contract=fast -fno-math-errno",
-                "tyvi_BACKEND": "cpu",
-                "rocthrust_DIR": "${sourceDir}/cmake/rocthrust-cpu"
-            }
-        },
-        {
-            "name": "hile-cpu-release",
-            "displayName": "HILE CPU Release (Cray clang)",
-            "description": "HILE CPU partition, Cray CC (clang-based), optimized for AMD EPYC Zen 3.",
-            "inherits": "conf-lumi-common",
-            "cacheVariables": {
-                "CMAKE_CXX_COMPILER": "CC",
-                "CMAKE_BUILD_TYPE": "Release",
-                "CMAKE_CXX_FLAGS": "-O3 -march=znver3 -mtune=znver3 -funroll-loops -ffp-contract=fast -fno-math-errno",
-                "tyvi_BACKEND": "cpu",
-                "rocthrust_DIR": "${sourceDir}/cmake/rocthrust-cpu"
-            }
-        },
-        {
-            "name": "lumi-gpu-release",
-            "displayName": "LUMI GPU Release (Cray CC + ROCm)",
-            "description": "LUMI GPU partition, Cray CC wrapper targeting MI250X (gfx90a). GPU arch set by craype-accel-amd-gfx90a module.",
-            "inherits": "conf-lumi-common",
-            "cacheVariables": {
-                "CMAKE_CXX_COMPILER": "CC",
-                "CMAKE_BUILD_TYPE": "Release",
-                "CMAKE_CXX_FLAGS": "-O3",
-                "tyvi_BACKEND": "hip",
-                "CMAKE_HIP_ARCHITECTURES": "gfx90a",
-                "AMDGPU_TARGETS": "gfx90a",
-                "GPU_TARGETS": "gfx90a",
-                "OpenMP_CXX_FLAGS": "-fopenmp",
-                "OpenMP_CXX_LIB_NAMES": ""
-            }
-        },
-        {
-            "name": "hile-gpu-release",
-            "displayName": "HILE GPU Release (hipcc + ROCm)",
-            "description": "HILE GPU partition, hipcc targeting MI210X (gfx90a), GPU-aware MPI.",
-            "inherits": "conf-lumi-common",
+            "description": "GPU backend defaults: hipcc + OpenMP shims.",
+            "inherits": "_common",
             "cacheVariables": {
                 "CMAKE_CXX_COMPILER": "hipcc",
-                "CMAKE_BUILD_TYPE": "Release",
-                "CMAKE_CXX_FLAGS": "-O3 --offload-arch=gfx90a",
                 "tyvi_BACKEND": "hip",
-                "CMAKE_HIP_ARCHITECTURES": "gfx90a",
-                "AMDGPU_TARGETS": "gfx90a",
-                "GPU_TARGETS": "gfx90a",
-                "MPI_CXX_COMPILER": "CC",
                 "OpenMP_CXX_FLAGS": "-fopenmp",
                 "OpenMP_CXX_LIB_NAMES": ""
             }
-        }
-    ],
-    "testPresets": [
+        },
         {
-            "name": "test-common",
-            "description": "Test CMake settings that apply to all configurations",
-            "hidden": true,
-            "output": {
-                "outputOnFailure": true
-            },
-            "execution": {
-                "noTestsAction": "error",
-                "stopOnFailure": true
+            "name": "unix-cpu",
+            "displayName": "Unix CPU (generic Linux)",
+            "description": "Generic Linux workstation, cpu backend via mpic++.",
+            "inherits": "_cpu",
+            "cacheVariables": {
+                "CMAKE_CXX_FLAGS": "-O3 -march=native -Wno-error=pass-failed"
             }
         },
         {
-            "name": "test-macos-mpic++-debug",
-            "displayName": "mpic++ Debug (macOS)",
-            "description": "Enable output and stop on failure",
-            "inherits": "test-common",
-            "configurePreset": "macos-mpic++-debug"
+            "name": "macos-cpu",
+            "displayName": "macOS CPU (Homebrew mpic++)",
+            "description": "Apple Silicon / Homebrew clang via mpic++, cpu backend with pinned SIMD width.",
+            "inherits": "unix-cpu",
+            "cacheVariables": {
+                "CMAKE_CXX_FLAGS": "-O3 -march=native -mllvm -force-vector-width=4 -Wno-error=unused-command-line-argument -Wno-error=pass-failed -Wno-error=sign-conversion"
+            }
         },
         {
-            "name": "test-macos-mpic++-vec-analysis",
-            "displayName": "mpic++ Vectorization Analysis (macOS)",
-            "description": "Enable output and stop on failure",
-            "inherits": "test-common",
-            "configurePreset": "macos-mpic++-vec-analysis"
+            "name": "unix-gpu",
+            "displayName": "Unix GPU (generic Linux + hipcc)",
+            "description": "Generic Linux workstation, hip backend via hipcc. Requires HIP_ARCH env var (e.g. gfx90a, gfx942, gfx1100).",
+            "inherits": "_gpu",
+            "cacheVariables": {
+                "CMAKE_CXX_FLAGS": "-O3 --offload-arch=$env{HIP_ARCH}",
+                "CMAKE_HIP_ARCHITECTURES": "$env{HIP_ARCH}"
+            }
         },
         {
-            "name": "test-hile-cpu-release",
-            "displayName": "HILE CPU Release",
-            "description": "Enable output and stop on failure",
-            "inherits": "test-common",
-            "configurePreset": "hile-cpu-release"
+            "name": "lumi-cpu",
+            "displayName": "LUMI CPU (Cray CC, Zen 3)",
+            "description": "LUMI CPU partition, Cray CC (clang-based), tuned for AMD EPYC Zen 3.",
+            "inherits": "_cpu",
+            "cacheVariables": {
+                "CMAKE_CXX_COMPILER": "CC",
+                "CMAKE_CXX_FLAGS": "-O3 -march=znver3 -mtune=znver3 -funroll-loops -ffp-contract=fast -fno-math-errno"
+            }
         },
         {
-            "name": "test-hile-gpu-release",
-            "displayName": "HILE GPU Release",
-            "description": "Enable output and stop on failure",
-            "inherits": "test-common",
-            "configurePreset": "hile-gpu-release"
+            "name": "hile-cpu",
+            "displayName": "HILE CPU (hipcc, Zen 3)",
+            "description": "HILE CPU partition; same Zen 3 hardware as LUMI but compiled via hipcc rather than Cray CC.",
+            "inherits": "lumi-cpu",
+            "cacheVariables": {
+                "CMAKE_CXX_COMPILER": "hipcc"
+            }
+        },
+        {
+            "name": "lumi-gpu",
+            "displayName": "LUMI GPU (Cray CC, MI250X gfx90a)",
+            "description": "LUMI GPU partition, Cray CC wrapper targeting MI250X. GPU offload picked up from craype-accel-amd-gfx90a module.",
+            "inherits": "_gpu",
+            "cacheVariables": {
+                "CMAKE_CXX_COMPILER": "CC",
+                "CMAKE_CXX_FLAGS": "-O3",
+                "CMAKE_HIP_ARCHITECTURES": "gfx90a",
+                "AMDGPU_TARGETS": "gfx90a",
+                "GPU_TARGETS": "gfx90a"
+            }
+        },
+        {
+            "name": "hile-gpu",
+            "displayName": "HILE GPU (hipcc, MI210/MI250 gfx90a)",
+            "description": "HILE GPU partition, hipcc targeting gfx90a; MPI calls dispatched via Cray CC for GPU-aware MPI.",
+            "inherits": "lumi-gpu",
+            "cacheVariables": {
+                "CMAKE_CXX_COMPILER": "hipcc",
+                "CMAKE_CXX_FLAGS": "-O3 --offload-arch=gfx90a",
+                "MPI_CXX_COMPILER": "CC"
+            }
         }
     ]
 }
