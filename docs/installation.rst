@@ -115,31 +115,68 @@ Newer ones should also work.):
 Building
 ========
 
+Runko ships a set of CMake configure presets in ``CMakePresets.json`` —
+one per (machine, backend) combination — so the build is driven by a
+single ``--config-settings=cmake.args=--preset=<NAME>`` argument. Available 
+presets:
+``unix-cpu``, ``macos-cpu``, ``unix-gpu``, ``lumi-cpu``, ``lumi-gpu``, ``hile-cpu``, ``hile-gpu``.
+
+Preset cache variables can be overridden per invocation by appending
+``--config-settings=cmake.define.<VAR>=<VALUE>`` or
+``--config-settings=cmake.build-type=Debug``. The override always wins.
+
 .. tabs::
    .. group-tab:: hip backend
 
-      Assuming dependencies are found automatically
-      and ``<hip-compiler>`` is a compiler with HIP support,
-      then git branch ``<branch>`` of runko can be build and installed with:
+      With a HIP-capable C++ compiler (e.g. ``hipcc``) on PATH and
+      the GPU architecture exported as ``HIP_ARCH`` (e.g.
+      ``export HIP_ARCH=gfx90a``), build and install git branch
+      ``<branch>`` of runko with:
 
       .. code:: shell
 
          pip install git+https://github.com/hel-astro-lab/runko@<branch> \
-         --config-settings=cmake.define.tyvi_BACKEND=hip \
-         --config-settings=cmake.define.CMAKE_CXX_COMPILER=<hip-compiler>
+           --config-settings=cmake.args=--preset=unix-gpu
+
+      Override example — Debug build with a specific compiler:
+
+      .. code:: shell
+
+         pip install git+https://github.com/hel-astro-lab/runko@<branch> \
+           --config-settings=cmake.args=--preset=unix-gpu \
+           --config-settings=cmake.build-type=Debug \
+           --config-settings=cmake.define.CMAKE_CXX_COMPILER=hipcc
 
    .. group-tab:: cpu backend
 
-      Assuming dependencies are found automatically
-      and ``$ROCTHRUST_INSTALL_PREFIX`` is the cpu rocthrust install location
-      (see Requirements from above),
-      then git branch ``<branch>`` of runko can be build and installed with:
+      With ``$ROCTHRUST_INSTALL_PREFIX`` set to the cpu rocThrust install
+      location (see Requirements above), build and install git branch
+      ``<branch>`` of runko with:
 
       .. code:: shell
 
          pip install git+https://github.com/hel-astro-lab/runko@<branch> \
-         --config-settings=cmake.define.tyvi_BACKEND=cpu \
-         --config-settings=cmake.define.rocthrust_DIR=$ROCTHRUST_INSTALL_PREFIX/lib/cmake/rocthrust/
+           --config-settings=cmake.args=--preset=unix-cpu
+
+      Override example — Debug build with ``g++-15``:
+
+      .. code:: shell
+
+         pip install git+https://github.com/hel-astro-lab/runko@<branch> \
+           --config-settings=cmake.args=--preset=unix-cpu \
+           --config-settings=cmake.build-type=Debug \
+           --config-settings=cmake.define.CMAKE_CXX_COMPILER=g++-15
+
+   .. group-tab:: cpu backend on macos
+
+      With ``$ROCTHRUST_INSTALL_PREFIX`` set per Requirements above and
+      Homebrew's ``mpic++`` on PATH, build and install git branch
+      ``<branch>`` of runko with:
+
+      .. code:: shell
+
+         pip install git+https://github.com/hel-astro-lab/runko@<branch> \
+           --config-settings=cmake.args=--preset=macos-cpu
 
    .. group-tab:: hip backend on LUMI
 
@@ -159,8 +196,7 @@ Building
       .. code:: shell
 
          pip install git+https://github.com/hel-astro-lab/runko@<branch> \
-         --config-settings=cmake.define.tyvi_BACKEND=hip \
-         --config-settings=cmake.define.CMAKE_CXX_COMPILER=CC
+           --config-settings=cmake.args=--preset=lumi-gpu
 
 
 Running
