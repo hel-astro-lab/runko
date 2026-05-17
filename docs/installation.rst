@@ -44,48 +44,47 @@ Newer ones should also work.):
 
    .. group-tab:: cpu backend on macos
 
-      On MacOS these are easily installed with `homebrew <https://brew.sh/>`_ by running:
+      Install the toolchain and Xcode command-line tools:
 
       .. code-block:: bash
 
-         brew install gcc python3 cmake wget
-
-
-      Make also sure that Xcode developer tools are installed by running
-
-      .. code-block:: bash
-
+         brew install llvm cmake wget python3
          xcode-select --install
 
-
-      MPI needs to be compiled separately because,
-      by default, it uses the `AppleClang` compiler (instead of the `g++` that you just installed).
-
-      You can compile OpenMPI via homebrew by first modifying your ``~/.zshrc`` to link the new compilers:
+      Homebrew's ``open-mpi`` formula build against AppleClang and fails.
+      You need to build OpenMPI manually from the latest stable source with 
+      Homebrew's LLVM clang instead:
 
       .. code-block:: bash
 
-         export HOMEBREW_CC=gcc-15
-         export HOMEBREW_CXX=g++-15
-         export OMPI_CC=gcc-15
-         export OMPI_CXX=g++-15
-         export CC=gcc-15  # NOTE: you need to change these after the installation
-         export CXX=g++-15 # NOTE: you need to change these after the installation
+         LLVM_PREFIX="$(brew --prefix llvm)"
+         OMPI_PREFIX="$HOME/local/openmpi"
+         OMPI_VERSION=5.0.10
 
-      Then restart the terminal to reload the newly added environment variables.
-      After restarting, install `OpenMPI` from source with
+         curl -fsSL -O "https://download.open-mpi.org/release/open-mpi/v5.0/openmpi-$OMPI_VERSION.tar.bz2"
+         tar -xjf "openmpi-$OMPI_VERSION.tar.bz2"
+         cd "openmpi-$OMPI_VERSION"
+         ./configure CC="$LLVM_PREFIX/bin/clang" CXX="$LLVM_PREFIX/bin/clang++" \
+                     --prefix="$OMPI_PREFIX" \
+                     --with-libevent=internal \
+                     --with-hwloc=internal
+         make -j "$(sysctl -n hw.ncpu)"
+         make install
+
+      Add the install ``bin/`` to ``PATH`` (e.g. append to your ``~/.zshrc``):
 
       .. code-block:: bash
 
-          brew reinstall openmpi --build-from-source
+         export PATH="$HOME/local/openmpi/bin:$PATH"
 
-      and then remove all the (possible) previous installations of mpi4py and re-install it using pip3
+      Open a fresh shell and verify:
 
       .. code-block:: bash
 
-          brew uninstall mpi4py
-          pip3 uninstall mpi4py --break-system-packages
-          pip3 install mpi4py --break-system-packages
+         which mpic++         # -> $HOME/local/openmpi/bin/mpic++
+         mpic++ --version     # -> Homebrew clang version <N>
+
+      .. include:: installation-mpi4py.rst
 
       .. include:: installation-cpu-rocthrust.rst
 
