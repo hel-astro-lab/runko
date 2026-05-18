@@ -79,6 +79,14 @@ class Timer:
         return {name: t.end - t.begin for name, t in self.__times.items()}
 
 
+    @property
+    def time_measurements(self):
+        """
+        Dictionary that maps strings to runko.TimeMeasurement.
+        """
+        return self.__times
+
+
 @dataclass
 class TimerStatistic:
     total: float
