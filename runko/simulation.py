@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from .method_wrapper import MethodWrapper
-from .runko_logging import runko_logger
+from .runko_logging import runko_logger, on_main_rank
 from .runko_timer import Timer, timer_statistics
 
 from runko_cpp_bindings.tools import _virtual_tile_sync_handshake_mode, comm_mode
@@ -11,6 +11,7 @@ from runko_cpp_bindings.emf.threeD import MpiioParticlesWriter as ParticlesWrite
 from runko_cpp_bindings.emf.threeD import MpiioSpectraWriter as SpectraWriter
 from runko_cpp_bindings.pic.threeD import _write_average_kinetic_energy
 
+import json
 import logging
 import time
 import numpy as np
@@ -51,18 +52,19 @@ class Simulation:
 
         self._lap_timers = []
         self._lap_wall_times = []
+        self._lap_finish_times = []
 
         self.verbose_laps = kwargs.get('verbose', True)
 
         self._logger = runko_logger("Simulation")
 
-        rank = MPI.COMM_WORLD.Get_rank()
-        self._ram_file = pathlib.Path(f"{self._io_config['outdir']}/ram-usage/{rank}.csv")
+        self._rank = MPI.COMM_WORLD.Get_rank()
+        self._ram_file = pathlib.Path(f"{self._io_config['outdir']}/ram-usage/{self._rank}.csv")
         self._ram_file.parent.mkdir(exist_ok=True, parents=True)
         self._ram_file.write_text("lap,ram usage [kB]\n")
 
         if get_gpu_mem_kB() is not None:
-            self._gpu_ram_file = pathlib.Path(f"{self._io_config['outdir']}/ram-usage/{rank}_gpu.csv")
+            self._gpu_ram_file = pathlib.Path(f"{self._io_config['outdir']}/ram-usage/{self._rank}_gpu.csv")
             self._gpu_ram_file.write_text("lap,gpu mem usage [kB]\n")
         else:
             self._gpu_ram_file = None
@@ -74,6 +76,9 @@ class Simulation:
         # Reset txt output files.
         for name in ('kinetic_energy_path', 'average_B_energy_density_path', 'average_E_energy_density_path'):
             pathlib.Path(self._io_config[name]).unlink(missing_ok=True)
+
+
+        self._trace_file = pathlib.Path(f"{self._io_config['outdir']}/traces/{self._rank}.json")
 
         ctor_msg = "Simulation constructed with:\n"
         ctor_msg += f"\tNt = {kwargs['Nt']}\n"
@@ -295,6 +300,7 @@ class Simulation:
         if not disable_timing:
             self._lap_timers.append(lap_timer)
             self._lap_wall_times.append(lap_wall_time_end - lap_wall_time_begin)
+            self._lap_finish_times.append(lap_wall_time_end)
 
 
     def prelude(self, lap_function):
@@ -375,3 +381,74 @@ class Simulation:
         lap_per_max_lap = self._lap/self._last_lap # simulation progress in fraction 
         msg += f"Current lap: {self._lap} / {self._last_lap} ({lap_per_max_lap:.1%})"
         self._logger.log(level, msg)
+
+
+    def write_trace_json(self, combine: bool = True) -> dict:
+        """
+        Writes trace data of each process into `<outdir>/traces/<mpi-rank>.json`
+        in Trace Event Format [0] which can be viewed with e.g. Pefetto UI.
+
+        If `combine` is `True`, this has to be called on every rank
+        and the trace jsons are combined into `<outdir>/traces/combined.json`.
+
+        [0]: https://docs.google.com/document/d/1CvAClvFfyA5R-PhYUmn5OOQtYMH4h6I0nSsKchNAySU
+        """
+
+        obj = dict(traceEvents=[{
+            "name": "process_name",
+            "ph": "M",
+            "pid": 0, # unused
+            "tid": self._rank, # Use tid as proxy for mpi rank.
+            "args": { "name": f"MPI ranks" }
+        },{
+            "name": "thread_name",
+            "ph": "M",
+            "pid": 0, # unused
+            "tid": self._rank, # Use tid as proxy for mpi rank.
+            "args": { "name": f"MPI rank {self._rank}" }
+        }])
+
+        for timer in self._lap_timers:
+            for name, measurement in timer.time_measurements.items():
+                cat, _ = name.split("_", 1)
+
+                obj["traceEvents"].append({
+                    "name": name,
+                    "cat": cat,
+                    "ph": "X",
+                    "pid": 0, # unused
+                    "tid": self._rank, # Use tid as proxy for mpi rank.
+                    "ts": 1e6 * measurement.begin,
+                    "dur": 1e6 * (measurement.end - measurement.begin),
+                })
+
+        for t in self._lap_finish_times:
+            obj["traceEvents"].append({
+                "name": f"lap_finish",
+                "cat": "meta",
+                "ph": "i",
+                "pid": 0, # unused
+                "tid": self._rank, # Use tid as proxy for mpi rank.
+                "ts": 1e6 * t,
+            })
+
+        self._trace_file.parent.mkdir(exist_ok=True, parents=True)
+        with open(self._trace_file, "w") as f:
+            json.dump(obj, f)
+
+        if not combine:
+            return
+
+        MPI.COMM_WORLD.barrier()
+        if on_main_rank():
+            combined = {"traceEvents": []}
+
+            for i in range(MPI.COMM_WORLD.Get_size()):
+                p = pathlib.Path(f"{self._io_config['outdir']}/traces/{i}.json")
+                with open(p, "r") as f:
+                    data = json.load(f)
+                    combined["traceEvents"] += data["traceEvents"]
+
+            with open(f"{self._io_config['outdir']}/traces/combined.json", "w") as f:
+                json.dump(combined, f)
+
