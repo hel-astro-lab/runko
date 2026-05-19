@@ -7,114 +7,111 @@
     },
     "configurePresets": [
         {
-            "name": "_common",
-            "hidden": true,
-            "description": "Shared defaults for every concrete runko preset.",
+            "name": "unix-cpu",
             "binaryDir": "${sourceDir}/${presetName}",
-            "condition": {
-                "type": "inList",
-                "string": "${hostSystemName}",
-                "list": ["Linux", "Darwin"]
-            },
             "cacheVariables": {
                 "CMAKE_BUILD_TYPE": "Release",
                 "BUILD_TESTING": "ON",
                 "tyvi_ENABLE_IPO": "OFF",
                 "tyvi_ENABLE_CLANG_TIDY": "OFF",
-                "tyvi_ENABLE_CPPCHECK": "OFF"
-            }
-        },
-        {
-            "name": "_cpu",
-            "hidden": true,
-            "description": "CPU backend defaults: mpic++ + env-driven rocThrust.",
-            "inherits": "_common",
-            "cacheVariables": {
+                "tyvi_ENABLE_CPPCHECK": "OFF",
                 "CMAKE_CXX_COMPILER": "mpic++",
                 "tyvi_BACKEND": "cpu",
-                "rocthrust_DIR": "$env{ROCTHRUST_INSTALL_PREFIX}/lib/cmake/rocthrust"
-            }
-        },
-        {
-            "name": "_gpu",
-            "hidden": true,
-            "description": "GPU backend defaults: hipcc + OpenMP shims.",
-            "inherits": "_common",
-            "cacheVariables": {
-                "CMAKE_CXX_COMPILER": "hipcc",
-                "tyvi_BACKEND": "hip",
-                "OpenMP_CXX_FLAGS": "-fopenmp",
-                "OpenMP_CXX_LIB_NAMES": ""
-            }
-        },
-        {
-            "name": "unix-cpu",
-            "displayName": "Unix CPU (generic Linux)",
-            "description": "Generic Linux workstation, cpu backend via mpic++.",
-            "inherits": "_cpu",
-            "cacheVariables": {
+                "rocthrust_DIR": "$env{ROCTHRUST_INSTALL_PREFIX}/lib/cmake/rocthrust",
                 "CMAKE_CXX_FLAGS": "-O3 -march=native -Wno-error=pass-failed"
             }
         },
         {
             "name": "macos-cpu",
-            "displayName": "macOS CPU (Homebrew mpic++)",
-            "description": "Apple Silicon / Homebrew clang via mpic++, cpu backend with pinned SIMD width.",
-            "inherits": "unix-cpu",
+            "binaryDir": "${sourceDir}/${presetName}",
             "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Release",
+                "BUILD_TESTING": "ON",
+                "tyvi_ENABLE_IPO": "OFF",
+                "tyvi_ENABLE_CLANG_TIDY": "OFF",
+                "tyvi_ENABLE_CPPCHECK": "OFF",
+                "CMAKE_CXX_COMPILER": "mpic++",
+                "tyvi_BACKEND": "cpu",
+                "rocthrust_DIR": "$env{ROCTHRUST_INSTALL_PREFIX}/lib/cmake/rocthrust",
                 "CMAKE_CXX_FLAGS": "-O3 -march=native -mllvm -force-vector-width=4 -Wno-error=unused-command-line-argument -Wno-error=pass-failed -Wno-error=sign-conversion"
             }
         },
         {
             "name": "unix-gpu",
-            "displayName": "Unix GPU (generic Linux + hipcc)",
-            "description": "Generic Linux workstation, hip backend via hipcc. Requires HIP_ARCH env var (e.g. gfx90a, gfx942, gfx1100).",
-            "inherits": "_gpu",
+            "binaryDir": "${sourceDir}/${presetName}",
             "cacheVariables": {
-                "CMAKE_CXX_FLAGS": "-O3 --offload-arch=$env{HIP_ARCH}",
-                "CMAKE_HIP_ARCHITECTURES": "$env{HIP_ARCH}"
+                "CMAKE_BUILD_TYPE": "Release",
+                "BUILD_TESTING": "ON",
+                "tyvi_ENABLE_IPO": "OFF",
+                "tyvi_ENABLE_CLANG_TIDY": "OFF",
+                "tyvi_ENABLE_CPPCHECK": "OFF",
+                "CMAKE_CXX_COMPILER": "hipcc",
+                "tyvi_BACKEND": "hip",
+                "OpenMP_CXX_FLAGS": "-fopenmp",
+                "OpenMP_CXX_LIB_NAMES": "",
+                "CMAKE_CXX_FLAGS": "-O3"
             }
         },
         {
             "name": "lumi-cpu",
-            "displayName": "LUMI CPU (Cray CC, Zen 3)",
-            "description": "LUMI CPU partition, Cray CC (clang-based), tuned for AMD EPYC Zen 3.",
-            "inherits": "_cpu",
+            "binaryDir": "${sourceDir}/${presetName}",
             "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Release",
+                "BUILD_TESTING": "ON",
+                "tyvi_ENABLE_IPO": "OFF",
+                "tyvi_ENABLE_CLANG_TIDY": "OFF",
+                "tyvi_ENABLE_CPPCHECK": "OFF",
                 "CMAKE_CXX_COMPILER": "CC",
-                "CMAKE_CXX_FLAGS": "-O3 -march=znver3 -mtune=znver3 -funroll-loops -ffp-contract=fast -fno-math-errno"
+                "tyvi_BACKEND": "cpu",
+                "rocthrust_DIR": "$env{ROCTHRUST_INSTALL_PREFIX}/lib/cmake/rocthrust",
+                "CMAKE_CXX_FLAGS": "-O3"
             }
         },
         {
             "name": "hile-cpu",
-            "displayName": "HILE CPU (hipcc, Zen 3)",
-            "description": "HILE CPU partition; same Zen 3 hardware as LUMI but compiled via hipcc rather than Cray CC.",
-            "inherits": "lumi-cpu",
+            "binaryDir": "${sourceDir}/${presetName}",
             "cacheVariables": {
-                "CMAKE_CXX_COMPILER": "hipcc"
+                "CMAKE_BUILD_TYPE": "Release",
+                "BUILD_TESTING": "ON",
+                "tyvi_ENABLE_IPO": "OFF",
+                "tyvi_ENABLE_CLANG_TIDY": "OFF",
+                "tyvi_ENABLE_CPPCHECK": "OFF",
+                "CMAKE_CXX_COMPILER": "hipcc",
+                "tyvi_BACKEND": "cpu",
+                "rocthrust_DIR": "$env{ROCTHRUST_INSTALL_PREFIX}/lib/cmake/rocthrust",
+                "CMAKE_CXX_FLAGS": "-O3 -march=znver3 -mtune=znver3 -funroll-loops -ffp-contract=fast -fno-math-errno"
             }
         },
         {
             "name": "lumi-gpu",
-            "displayName": "LUMI GPU (Cray CC, MI250X gfx90a)",
-            "description": "LUMI GPU partition, Cray CC wrapper targeting MI250X. GPU offload picked up from craype-accel-amd-gfx90a module.",
-            "inherits": "_gpu",
+            "binaryDir": "${sourceDir}/${presetName}",
             "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Release",
+                "BUILD_TESTING": "ON",
+                "tyvi_ENABLE_IPO": "OFF",
+                "tyvi_ENABLE_CLANG_TIDY": "OFF",
+                "tyvi_ENABLE_CPPCHECK": "OFF",
                 "CMAKE_CXX_COMPILER": "CC",
-                "CMAKE_CXX_FLAGS": "-O3",
-                "CMAKE_HIP_ARCHITECTURES": "gfx90a",
-                "AMDGPU_TARGETS": "gfx90a",
-                "GPU_TARGETS": "gfx90a"
+                "tyvi_BACKEND": "hip",
+                "OpenMP_CXX_FLAGS": "-fopenmp",
+                "OpenMP_CXX_LIB_NAMES": "",
+                "CMAKE_CXX_FLAGS": "-O3"
             }
         },
         {
             "name": "hile-gpu",
-            "displayName": "HILE GPU (hipcc, MI210/MI250 gfx90a)",
-            "description": "HILE GPU partition, hipcc targeting gfx90a; MPI calls dispatched via Cray CC for GPU-aware MPI.",
-            "inherits": "lumi-gpu",
+            "binaryDir": "${sourceDir}/${presetName}",
             "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Release",
+                "BUILD_TESTING": "ON",
+                "tyvi_ENABLE_IPO": "OFF",
+                "tyvi_ENABLE_CLANG_TIDY": "OFF",
+                "tyvi_ENABLE_CPPCHECK": "OFF",
+                "tyvi_BACKEND": "hip",
+                "OpenMP_CXX_FLAGS": "-fopenmp",
+                "OpenMP_CXX_LIB_NAMES": "",
+                "CMAKE_CXX_FLAGS": "-O3",
                 "CMAKE_CXX_COMPILER": "hipcc",
-                "CMAKE_CXX_FLAGS": "-O3 --offload-arch=gfx90a",
                 "MPI_CXX_COMPILER": "CC"
             }
         }
