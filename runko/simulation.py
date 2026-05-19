@@ -59,15 +59,9 @@ class Simulation:
         self._logger = runko_logger("Simulation")
 
         self._rank = MPI.COMM_WORLD.Get_rank()
-        self._ram_file = pathlib.Path(f"{self._io_config['outdir']}/ram-usage/{self._rank}_host.csv")
-        self._ram_file.parent.mkdir(exist_ok=True, parents=True)
-        self._ram_file.write_text("lap,ram usage [kB]\n")
 
-        if get_gpu_mem_kB() is not None:
-            self._gpu_ram_file = pathlib.Path(f"{self._io_config['outdir']}/ram-usage/{self._rank}_gpu.csv")
-            self._gpu_ram_file.write_text("lap,gpu mem usage [kB]\n")
-        else:
-            self._gpu_ram_file = None
+        self._ram_file = pathlib.Path(f"{self._io_config['outdir']}/ram-usage/{self._rank}_host.csv")
+        self._gpu_ram_file = pathlib.Path(f"{self._io_config['outdir']}/ram-usage/{self._rank}_gpu.csv")
 
         self._io_config['kinetic_energy_path'] = self._io_config["outdir"] + "/average_kinetic_energy.txt"
         self._io_config['average_B_energy_density_path'] = self._io_config["outdir"] + "/average_B_energy_density.txt"
@@ -180,9 +174,21 @@ class Simulation:
 
     def _write_ram_usage(self):
         """Append current RAM usage (RSS in kB) for this lap to the per-rank CSV."""
+
+        if not self._ram_file.exists():
+            self._ram_file.parent.mkdir(exist_ok=True, parents=True)
+            self._ram_file.write_text("lap,ram usage [kB]\n")
+
         with open(self._ram_file, "a") as f:
             f.write(f"{self.lap},{get_rss_kB()}\n")
-        if self._gpu_ram_file is not None:
+
+        gpu_mem = get_gpu_mem_kB()
+
+        if gpu_mem:
+            if not self._gpu_ram_file.exists():
+                self._gpu_ram_file.parent.mkdir(exist_ok=True, parents=True)
+                self._gpu_ram_file.write_text("lap,gpu mem usage [kB]\n")
+
             with open(self._gpu_ram_file, "a") as f:
                 f.write(f"{self.lap},{get_gpu_mem_kB()}\n")
 
