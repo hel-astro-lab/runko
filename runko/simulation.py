@@ -59,7 +59,7 @@ class Simulation:
         self._logger = runko_logger("Simulation")
 
         self._rank = MPI.COMM_WORLD.Get_rank()
-        self._ram_file = pathlib.Path(f"{self._io_config['outdir']}/ram-usage/{self._rank}.csv")
+        self._ram_file = pathlib.Path(f"{self._io_config['outdir']}/ram-usage/{self._rank}_host.csv")
         self._ram_file.parent.mkdir(exist_ok=True, parents=True)
         self._ram_file.write_text("lap,ram usage [kB]\n")
 
