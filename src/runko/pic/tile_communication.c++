@@ -88,7 +88,7 @@ void
       z_div);
 
 
-    for(const auto [dir, span]: spans) {
+    for(const auto& [dir, span]: spans) {
       this->subregion_particle_ends_.at(27 * ptype + dir.neighbor_index()) =
         std::get<1>(span);
     }
