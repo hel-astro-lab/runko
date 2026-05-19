@@ -42,6 +42,7 @@ if __name__ == "__main__":
     config.current_depositer = "zigzag_1st_atomic"
     config.current_filter = "binomial2"
     config.tile_partitioning = "hilbert_curve"
+    config.laps_in_timer_statistics = 20
 
 
     # Problem specific configuration
@@ -234,8 +235,7 @@ if __name__ == "__main__":
         if simulation.lap % 20 == 0:
             x.io_emf_snapshot()
 
-        if simulation.lap % 20 == 0:
-            simulation.log_timer_statistics()
+        simulation.log_timer_statistics()
 
     simulation.for_each_lap(pic_simulation_step)
     simulation.log_timer_statistics()
