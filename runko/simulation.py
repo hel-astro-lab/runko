@@ -60,8 +60,8 @@ class Simulation:
 
         self._rank = MPI.COMM_WORLD.Get_rank()
 
-        self._ram_file = pathlib.Path(f"{self._io_config['outdir']}/ram-usage/{self._rank}_host.csv")
-        self._gpu_ram_file = pathlib.Path(f"{self._io_config['outdir']}/ram-usage/{self._rank}_gpu.csv")
+        self._ram_file = pathlib.Path(f"{self._io_config['outdir']}/mem-usage/cpu/{self._rank}.csv")
+        self._gpu_ram_file = pathlib.Path(f"{self._io_config['outdir']}/mem-usage/gpu/{self._rank}.csv")
 
         self._io_config['kinetic_energy_path'] = self._io_config["outdir"] + "/average_kinetic_energy.txt"
         self._io_config['average_B_energy_density_path'] = self._io_config["outdir"] + "/average_B_energy_density.txt"
