@@ -134,14 +134,18 @@ void mpiio::FieldsWriter<3>::free_cached_filetypes_()
 
 // Clang gives bogus warnings.
 // https://stackoverflow.com/questions/68751682/is-a-class-templates-name-in-scope-for-a-qualified-out-of-line-destructors-def
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wdtor-name"
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdtor-name"
+#endif
 template<>
 mpiio::FieldsWriter<3>::~FieldsWriter()
 {
   free_cached_filetypes_();
 }
-#pragma GCC diagnostic pop
+#ifdef __clang__
+#pragma clang diagnostic pop
+#endif
 
 
 template<>
