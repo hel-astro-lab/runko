@@ -12,6 +12,8 @@ function(add_python_mpi_test name no_mpi_proc)
 endfunction(add_python_mpi_test)
 
 add_python_mpi_test(testing_setup 2)
+add_python_mpi_test(auto_tile_grid 8)
+add_python_mpi_test(auto_tile_grid_fails 7)
 add_python_mpi_test(emf_simulation 4)
 add_python_mpi_test(runko_simulation 2)
 add_python_mpi_test(pic_simulation 4)

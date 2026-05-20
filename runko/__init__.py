@@ -23,3 +23,5 @@ from .oscillating_langevin_antenna import sample_oscillating_langevin_antenna
 # pic module scripts
 from .sample_thermal_distributions import sample_boosted_juttner_synge
 from .moving_injector import MovingInjector
+
+from .auto_tile_grid import one_tile_per_rank_cube_size
