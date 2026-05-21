@@ -139,13 +139,27 @@ presets:
    .. group-tab:: cpu backend
 
       With ``$ROCTHRUST_INSTALL_PREFIX`` set to the cpu rocThrust install
-      location (see Requirements above), build and install git branch
+      location (see Requirements above) and exported, build and install git branch
       ``<branch>`` of runko with:
 
       .. code:: shell
 
          pip install git+https://github.com/hel-astro-lab/runko@<branch> \
            --config-settings=cmake.args=--preset=unix-cpu
+
+      .. hint::
+
+         ``ROCTHRUST_INSTALL_PREFIX`` has to exported,
+         meaning that it is defined as:
+
+         .. code:: shell
+
+            export ROCTHRUST_INSTALL_PREFIX=<...>
+
+            # or
+
+            ROCTHRUST_INSTALL_PREFIX=<...>
+            export ROCTHRUST_INSTALL_PREFIX
 
 
    .. group-tab:: cpu backend on macos

@@ -9,6 +9,6 @@ Thus we have to install it manually
    git sparse-checkout set projects/rocthrust
    git checkout develop
    cd projects/rocthrust
-   ROCTHRUST_INSTALL_PREFIX="$PWD/rocthrust-install"
+   export ROCTHRUST_INSTALL_PREFIX="$PWD/rocthrust-install"
    cmake -Bbuild -DTHRUST_DEVICE_SYSTEM=CPP -DLINK_HIP_DEVICE_LIBS=OFF -DCMAKE_INSTALL_PREFIX="$ROCTHRUST_INSTALL_PREFIX" .
    make -C build install
