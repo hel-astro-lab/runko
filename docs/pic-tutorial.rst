@@ -1,9 +1,9 @@
 PIC tutorial
 ############
 
-This tutorial is a walkthrough of different aspects constituting a runko PIC simulation
-by going through pieces from the eturbulence example project at ``projects/pic-turbulence/pic.py``.
-This tutorial focuses techical aspects and not on physics.
+This tutorial walks through the different pieces that make up a runko PIC simulation,
+using the PIC turbulence example project at ``projects/pic-turbulence/pic.py`` as the running example.
+It focuses on technical aspects rather than on the underlying physics.
 
 .. role:: python(code)
    :language: python
@@ -30,9 +30,9 @@ Configuration
    # ...
 
 
-After importing :python:`runko` we create a config object with :python:`None` parameter.
-This indicates that we want a empty config. :python:`None` could be replaced by a path
-to ``.ini`` file, but in order to keep the example self-contained,
+After importing :python:`runko` we create a config object with a :python:`None` parameter.
+This indicates that we want an empty config. :python:`None` could be replaced by a path
+to an ``.ini`` file, but to keep the example self-contained,
 we set the configuration parameters inline.
 
 .. note::
@@ -54,13 +54,13 @@ Logging
 
 
 Here we create a runko logger object and use its :python:`info` method.
-Notice that this will be executed on each MPI rank.
-However, :python:`runko.runko_logger` is by default configured to write these to stdout
+Note that this call runs on every MPI rank;
+however, :python:`runko.runko_logger` is configured by default to write to stdout
 only from the main rank.
 
-Many runko facilities use logging to inform what they are doing.
-In addition to :python:`info` method there is also :python:`debug` logging method.
-Output from it is by default disabled but can be enbaled by:
+Many runko facilities use logging to report what they are doing.
+In addition to the :python:`info` method, there is also a :python:`debug` logging method.
+Its output is disabled by default but can be enabled with:
 
 .. code:: python
 
@@ -78,15 +78,15 @@ Output from it is by default disabled but can be enbaled by:
 Simulation initialization
 =========================
 
-Runko simulation is made up from 3D grid of tiles.
-Each rank MPI rank owns some set of the tiles which are called local tiles.
-How the tiles are distributed is configurable using :python:`tile_partitioning` configuration parameter.
+A runko simulation is made up of a 3D grid of tiles.
+Each MPI rank owns some subset of the tiles, which are called local tiles.
+How the tiles are distributed is configurable via the :python:`tile_partitioning` configuration parameter.
 
-Communication between MPI ranks is done through so called virtual tiles.
-They are the set of non-local tiles which are in moore neighborhood (i.e. includes diagonal neighbors)
-of any local tile. Local tiles next to a virtual tiles are called boundary tiles.
+Communication between MPI ranks goes through so-called virtual tiles.
+These are the non-local tiles that lie in the Moore neighborhood (i.e. including diagonal neighbors)
+of any local tile. Local tiles adjacent to virtual tiles are called boundary tiles.
 
-Tiles are initialized through :python:`runo.TileGrid` object:
+Tiles are initialized through a :python:`runko.TileGrid` object:
 
 .. code:: python
 
@@ -111,30 +111,30 @@ Tiles are initialized through :python:`runo.TileGrid` object:
    Restart files are not yet implemented.
 
 
-We loop over indices corresponding to local tiles of this rank.
-Then we construct a PIC tile and give it the grid index and configuration object.
-For PIC tile we need to initialize electric field E, magnetic field B, current J and particles.
-There are couple different ways to initialize them, but the most performant way is through
-:python:`tile.batch_set_EBJ` and :python:`tile.batch_inject_to_cells`. These are explained below.
-Lastly the initialized tile is added to the tile grid with :python:`tile_grid.add_tile`
-at specified tile index.
+We loop over the indices corresponding to local tiles of this rank.
+For each one we construct a PIC tile, passing the grid index and the configuration object.
+A PIC tile needs initial values for the electric field E, magnetic field B, current J, and particles.
+There are a couple of different ways to initialize them, but the most performant route is via
+:python:`tile.batch_set_EBJ` and :python:`tile.batch_inject_to_cells`. Both are explained below.
+Finally, the initialized tile is added to the tile grid with :python:`tile_grid.add_tile`
+at the specified tile index.
 
 .. note::
 
-   Runko currently only supports a special case where each tile is the same,
+   Runko currently only supports the special case where every tile has the same type,
    either :python:`runko.pic.tile` or :python:`runko.emf.tile`.
-   Later there should be a way to have special kinds of tiles which can be used to implement
-   e.g. boundary conditions other than periodic boundary condition.
+   In the future there should be a way to mix specialized tile types — for example,
+   to implement boundary conditions other than periodic.
 
 
 Initializing fields
 -------------------
 
 :python:`tile.batch_set_EBJ` takes nine parameters as input, one for each field component:
-Ex, Ey, Ez, Bx, By, Bz, Jx, Jy and Jz.
-The parameters are expected to be functions taking three parameters.
-They are each invoked with three Numpy 3D :python:`ndarray` s corresponding to grid coordinates x, y and z.
-The functions should return a :python:`ndarray` which is used to set the field values.
+Ex, Ey, Ez, Bx, By, Bz, Jx, Jy, and Jz.
+Each parameter is expected to be a function taking three parameters.
+They are each invoked with three NumPy 3D :python:`ndarray` s corresponding to the grid coordinates x, y, and z.
+The functions should return an :python:`ndarray` whose values are used to set the field.
 
 .. code:: python
 
@@ -147,9 +147,9 @@ The functions should return a :python:`ndarray` which is used to set the field v
        return np.sqrt(x**2 + y**2 + z**2) # set each value to distance from (0, 0, 0)
 
 
-There is also simpler :python:`tile.set_EBJ` which takes three functions, one for each field.
-These functions are called with three floats and they should return the vector value
-of the field at corresponding location as a tuple.
+There is also a simpler :python:`tile.set_EBJ`, which takes three functions, one for each field.
+These functions are called with three floats and should return the vector value
+of the field at the corresponding location as a tuple.
 
 
 .. code:: python
@@ -158,31 +158,31 @@ of the field at corresponding location as a tuple.
    tile.set_EBJ(zero_field, zero_field, zero_field)
 
 
-Reason why :python:`tile.batch_set_EBJ` takes nine parameters
+The reason :python:`tile.batch_set_EBJ` takes nine parameters
 instead of three like :python:`tile.set_EBJ`
-is that the fields are defined on a Yee lattice, which means that different components
-of a specific field are defined on slightly different locations,
-so coordinates passed to Bx, By and Bz functions are not exactly the same.
-:python:`tile.set_EBJ` goes around this by discarding the compontents
-which are evaluated at wrong locations.
-With :python:`tile.batch_set_EBJ` we don't want this overhead.
+is that the fields are defined on a Yee lattice: different components
+of a given field live at slightly different locations,
+so the coordinates passed to the Bx, By, and Bz functions are not exactly the same.
+:python:`tile.set_EBJ` works around this by discarding the components
+that are evaluated at the wrong locations.
+With :python:`tile.batch_set_EBJ` we avoid that overhead.
 
 
 Initializing particles
 ----------------------
 
-:python:`tile.batch_inject_to_cells` takes integer and a function as parameters.
-The integer specifies which type of particle we are injecting.
-Their mass and charge are defined by configuration parameters :python:`mN` and :python:`qN`,
-where :python:`N` is the particle type integer.
+:python:`tile.batch_inject_to_cells` takes an integer and a function as parameters.
+The integer specifies which species of particle is being injected.
+A species' mass and charge are defined by the configuration parameters :python:`mN` and :python:`qN`,
+where :python:`N` is the species integer.
 
-The given function is invoked with three 1D Numpy :python:`ndarray` s
-corresponding to all cell locations on a tile (cell's corner with smallest coordinates)
-and it should return :python:`runko.ParticleStateBatch`.
+The given function is invoked with three 1D NumPy :python:`ndarray` s
+corresponding to every cell location on the tile (the corner of each cell with the smallest coordinates)
+and it should return a :python:`runko.ParticleStateBatch`.
 
 .. code:: python
 
-   rng = np.random_default_rng(seed=42)
+   rng = np.random.default_rng(seed=42)
 
    # ...
 
@@ -193,8 +193,8 @@ and it should return :python:`runko.ParticleStateBatch`.
        dy = rng.random(N)
        dz = rng.random(N)
 
-       # Particles 1 are going on top of particles 0,
-       # so these positions has to be saved such that pgen1 can get them.
+       # Particles of species 1 will be placed on top of species 0,
+       # so these positions have to be saved so that pgen1 can reuse them.
        pgen0.pos = x + dx, y + dy, z + dz
 
        vel = runko.sample_boosted_juttner_synge(N, delgam0, beta=0, gen=rng)
@@ -210,29 +210,28 @@ and it should return :python:`runko.ParticleStateBatch`.
     tile.batch_inject_to_cells(1, pgen1)
 
 
-Runko uses units s.t. grid cells are 1 unit wide in each direction.
-This allows to generate uniformly distributed positions inside cells with
+Runko uses units such that grid cells are 1 unit wide in each direction.
+This makes it possible to generate uniformly distributed positions inside cells with
 :python:`x + dx, y + dy, z + dz`.
 
-Velocities are generated according to boosted Jüttner-Synge distribution.
+Velocities are drawn from a boosted Jüttner–Synge distribution.
 :python:`runko.sample_boosted_juttner_synge(N, ..., gen=rng)` generates :python:`N`
-3D velocities and uses the given Numpy random number generator.
-It returns tuple of three 1D :python:`ndarray` s.
+3D velocities using the given NumPy random number generator.
+It returns a tuple of three 1D :python:`ndarray` s.
 
-Now :python:`runko.ParticleStateBatch` can be constructed from position and velocity
-tuples as shown in the code. For turbulence setup we want to generate type 1 particles
-on top of type 0 particles.
-In :python:`pgen0` we store the positions to a variable :python:`pgen0.pos`
-which can be accessed outside of the function and specifically from :python:`pgen1`.
+A :python:`runko.ParticleStateBatch` can then be constructed from the position and velocity
+tuples as shown in the code. For the turbulence setup we want to place species-1 particles
+on top of species-0 particles;
+to do this, :python:`pgen0` stores the positions in a function attribute :python:`pgen0.pos`
+that can be accessed from the outside, and specifically from :python:`pgen1`.
 
-There exists simpler but slower ways to inject particles.
-There is :python:`tile.inject_to_each_cell` which differs from :python:`tile.batch_inject_to_each_cell`
-by calling the given function with three floats.
-It also has to return :python:`runko.ParticleState` which is like :python:`runko.ParticleStateBatch`
-but instead of position and velocity being tuples of :python:`ndarray` s,
-they are just tuples of three floats.
-There is also :python:`tile.inject` which takes integer particle type
-and a list of :python:`runko.ParticleState` s.
+There are simpler but slower ways to inject particles.
+:python:`tile.inject_to_each_cell` differs from :python:`tile.batch_inject_to_cells`
+in that it calls the given function with three floats instead of three arrays.
+It has to return a :python:`runko.ParticleState`, which is like :python:`runko.ParticleStateBatch`
+except that position and velocity are tuples of three floats rather than tuples of :python:`ndarray` s.
+There is also :python:`tile.inject`, which takes an integer particle type
+and a list of :python:`runko.ParticleState` objects.
 
 
 Simulation
@@ -252,12 +251,12 @@ After constructing the local tiles we can initialize the simulation with:
    simulation.prelude(sync_EB)
 
 
-:python:`tile_grid.configure_simulation` gives a handle to the simulation.
-It is :python:`runko.Simulation` object, but users should never try to construct it by hand.
+:python:`tile_grid.configure_simulation` returns a handle to the simulation.
+It is a :python:`runko.Simulation` object, but users should never try to construct it by hand.
 
-Before the actual main simulation loop we do a single prelude step,
-in order to not have a special case in the main loop for the first step.
-Prelude step is defined using function which takes one parameter.
+Before the actual main simulation loop we run a single prelude step,
+so that the main loop does not need a special case for the first iteration.
+The prelude step is defined using a function that takes a single parameter.
 
 .. code:: python
 
@@ -310,32 +309,32 @@ Prelude step is defined using function which takes one parameter.
 
 
 The main simulation loop is executed with :python:`simulation.for_each_lap`.
-It will execute the given lap function while :python:`simulation.lap` is less than
-config parameter :python:`Nt`
-(there is also :python:`simulation.for_one_lap` for running just a one lap).
+It runs the given lap function while :python:`simulation.lap` is less than
+the config parameter :python:`Nt`
+(there is also :python:`simulation.for_one_lap` for running just a single lap).
 
-Simulation automatically measures execution time of each step/method of the loop.
+The simulation automatically measures the execution time of each step/method in the loop.
 This information can be logged using :python:`simulation.log_timer_statistics`.
-For timer purposes each step is named based on the method name.
-If there is multiple calls to the same method,
-a running numbering is appended at the end.
-For any method there is a possibility of explicitly naming them with :python:`name` kwarg
+For timer purposes, each step is named after the method it calls.
+If there are multiple calls to the same method,
+a running index is appended to disambiguate them.
+Any method can also be explicitly named with the :python:`name` kwarg
 (e.g. :python:`tile.comm_external(runko.comm_mode.emf_B, name="foobar")`).
 
 
 Communication
 -------------
 
-As an example let's look at only the beginning of the main loop
-and see step by step what different communications do and why they are needed.
+As an example, let us look at just the beginning of the main loop
+and step through what the different communications do and why they are needed.
 But first we have to understand what kind of halo regions runko uses.
 
-Pic tile is refinment of emf tile which contains the underlying Yee lattice.
-This lattice has to extend little bit further than actually belong to the tile,
-in order to calculate derivatives at the boundaries
-and to handle particles which are just on the borders of tiles.
-This extended region is called the halo region and
-runko makes practical choice of having three cells wide halo region to each direction.
+A PIC tile is a refinement of an emf tile, which contains the underlying Yee lattice.
+This lattice has to extend slightly beyond the tile's own cells,
+both to compute derivatives at the boundaries
+and to handle particles that sit right on the edge of a tile.
+This extended region is called the halo region;
+runko makes the practical choice of a three-cell-wide halo in each direction.
 
 .. code:: python
 
@@ -351,30 +350,30 @@ runko makes practical choice of having three cells wide halo region to each dire
        x.comm_local(runko.tools.comm_mode.pic_particle)
 
 
-For example, :python:`x.push_half_b` updates values only in the non-halo region.
-Therefor, after it each tile has an outdated :python:`B` in the halo region,
-which prevents us executing :python:`x.prtcl_push` immediatly.
+For example, :python:`x.push_half_b` only updates values in the non-halo region.
+As a result, each tile is left with an outdated :python:`B` in its halo region,
+which prevents us from executing :python:`x.prtcl_push` immediately.
 
-In order to update it with the data from neighboring tile,
-we can use :python:`x.comm_local(runko.comm_mode.emf_B)`.
-There is need for different kinds of local communications
-but overall the shape of the communication stays the same:
+To refresh the halo with data from neighboring tiles,
+we use :python:`x.comm_local(runko.comm_mode.emf_B)`.
+Several different kinds of local communication exist,
+but the overall pattern stays the same:
 
-- :python:`runko.comm_mode.emf_{E,B,J}` modes just update halo regions with data from neighboring tile
-  corresponding to the halo regions.
-- :python:`runko.comm_mode.pic_particle` transfers particles inside the halo to the corresponding
-  tiles.
-- :python:`runko.comm_mode.emf_J_exchange` adds deposited current from halo region of neighboring tile
+- :python:`runko.comm_mode.emf_{E,B,J}` modes simply update halo regions with the corresponding
+  data from neighboring tiles.
+- :python:`runko.comm_mode.pic_particle` transfers particles inside the halo to the
+  corresponding tiles.
+- :python:`runko.comm_mode.emf_J_exchange` adds deposited current from the halo region of a neighboring tile
   to the corresponding non-halo region of the "operated tile".
-  This is needed as :python:`tile.deposit_current` might generate current to halo region
-  which has to be transfered to corresponding non-halo region.
+  This is needed because :python:`tile.deposit_current` may generate current in the halo region,
+  which then has to be transferred to the corresponding non-halo region.
 
-Before we can actually do the local communication, we have to sync the virtual tiles.
-If we don't, then boundary tiles will do the local communication with a virtual tile
-which is out of date with the corresponding tile on some other rank.
-:python:`x.comm_external` will update virtual tiles based on their corresponding "real" tiles.
-External communication with :python:`runko.comm_mode.emf_{E,B,J}` will sync corresponding field data
-and with :python:`runko.comm_mode.particle` the particle data.
+Before we can do the local communication, we have to sync the virtual tiles.
+Otherwise, boundary tiles will perform their local communication against a virtual tile
+that is out of date with respect to the corresponding tile on another rank.
+:python:`x.comm_external` updates virtual tiles based on their corresponding "real" tiles.
+External communication with :python:`runko.comm_mode.emf_{E,B,J}` syncs the corresponding field data,
+and with :python:`runko.comm_mode.particle` it syncs the particle data.
 Before particle communication, outgoing particles have to be packed with :python:`prtcl_pack_outgoing`.
 
 

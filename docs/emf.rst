@@ -32,8 +32,8 @@ Yee lattice is used for `\mathbf{E}` and `\mathbf{B}` fields such that they are 
     \right)^{n-\frac{1}{2}},
 
 
-where `\hat{\mathbf{E}}` is located in the middle of the cell sides and `\hat{\mathbf{B}}` in the center of the cell faces. 
-This makes it easy to calculate the curl of the fields in the following equations.
+where `\hat{\mathbf{E}}` is located in the middle of the cell sides and `\hat{\mathbf{B}}` in the center of the cell faces.
+This makes it easy to compute the curl of the fields in the equations below.
 
 The time staggering, in turn, increases the temporal order of the scheme since all the updates are leapfrog-like, `x^{n+1} = x^n + v^{n+\frac{1}{2}} \Delta t`.
 
@@ -54,8 +54,8 @@ and
 
 where `\Delta[Q]_{t,\mathbf{x}}` is the time differentiation or curl of a variable `Q` without the `\Delta x` or `\Delta t` denominator.
 
-Only normalization factor entering these equations is the Courant velocity, `\hat{c}`, since everything else is absorbed in `B_0` and `J_0`.
-There is no need to solve divergence equations if charge-conserving scheme is used together with the Yee staggering of the fields.
+The only normalization factor entering these equations is the Courant velocity, `\hat{c}`, since everything else is absorbed into `B_0` and `J_0`.
+There is no need to solve the divergence equations if a charge-conserving scheme is used together with the Yee staggering of the fields.
 
 
 Finite-difference solvers

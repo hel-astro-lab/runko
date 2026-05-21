@@ -1,34 +1,34 @@
 Documentation
 =============
 
-Documentation is generated with Sphinx and hosted at readthedocs.
+Documentation is generated with Sphinx and hosted on Read the Docs.
 
-In order to modify the documentation,
+When modifying the documentation,
 it is helpful to test the pages first on your own machine.
-If CMake finds Sphinx at configuration stage
-then there will be a build target ``docs`` which will build the documentation.
+If CMake finds Sphinx at the configuration stage,
+a build target ``docs`` will be available for building the documentation.
 
-Spinx and required extensions can be installed with:
+Sphinx and the required extensions can be installed with:
 
 .. code:: shell
 
    pip install -r </path/to/runko>/docs/requirements.txt
 
-Assuming CMake build directory ``<build>`` has been configured with Sphinx,
-documentation can be build with:
+Assuming the CMake build directory ``<build>`` has been configured with Sphinx,
+the documentation can be built with:
 
 .. code:: shell
 
    cmake --build <build> -t docs
 
-The documentations should be available at: ``<build>/docs/docs/sphinx/index.html``
+The documentation should then be available at ``<build>/docs/docs/sphinx/index.html``.
 
 
 Contributing to the Documentation
 ---------------------------------
 
-After you have the web page compilation setup up and running, creating new pages is easy:
-just add new .rst files into the ``docs/`` folder and follow the sphinx markdown syntax.
+Once the local documentation build is set up and working, adding new pages is easy:
+drop new ``.rst`` files into the ``docs/`` folder and follow Sphinx's reStructuredText syntax.
 
 
 

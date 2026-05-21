@@ -1,16 +1,16 @@
 Installation
 ############
 
-This section contains installation instruction for users of runko.
-See developer notes for development friendly installation.
+This section contains installation instructions for users of runko.
+See the developer notes for a development-friendly installation.
 
 Requirements
 ============
 
-Listed software are not obtained automatically and should be made available.
-Runko is build with CMake. It is also used to locate dependencies.
-Depending on the system configuration CMake may or may not find correct libraries automatically.
-See CMake documentation for instructions on how to make CMake find the dependencies.
+The software listed below is not obtained automatically and must be made available.
+Runko is built with CMake, which is also used to locate dependencies.
+Depending on the system configuration, CMake may or may not find the correct libraries automatically.
+See the CMake documentation for instructions on how to make CMake find the dependencies.
 
 .. note::
 
@@ -24,10 +24,7 @@ See CMake documentation for instructions on how to make CMake find the dependenc
 
    Virtual environment can be deactivated with ``deactivate`` command.
 
-
-Common requirements
-(Version numbers are the ones tested to work.
-Newer ones should also work.):
+Common requirements (version numbers are the ones tested to work; newer versions should also work):
 
 - Python >=3.11.7
 - CMake >=3.23
@@ -36,11 +33,11 @@ Newer ones should also work.):
 .. tabs::
    .. group-tab:: hip backend
 
-      Consult your Linux distributions package manager for these packages.
+      Consult your Linux distribution's package manager for these packages.
 
-      - LLVM 19 based C++ compiler with HIP support (tested with GCC 14 libstdc++)
-      - Rocm 6.3.4
-      - MPI implementation that supports GPU aware MPI
+      - LLVM 19-based C++ compiler with HIP support (tested with GCC 14 libstdc++)
+      - ROCm 6.3.4
+      - MPI implementation that supports GPU-aware MPI
 
       .. include:: installation-mpi4py.rst
 
@@ -61,8 +58,8 @@ Newer ones should also work.):
          brew install llvm cmake wget python3
          xcode-select --install
 
-      Homebrew's ``open-mpi`` formula build against AppleClang and fails.
-      You need to build OpenMPI manually from the latest stable source with 
+      Homebrew's ``open-mpi`` formula builds against AppleClang and fails.
+      You need to build OpenMPI manually from the latest stable source with
       Homebrew's LLVM clang instead:
 
       .. code-block:: bash
@@ -71,6 +68,8 @@ Newer ones should also work.):
          OMPI_PREFIX="$HOME/local/openmpi"
          OMPI_VERSION=5.0.10
 
+         mkdir -p $OMPI_PREFIX
+         cd $OMPI_PREFIX
          curl -fsSL -O "https://download.open-mpi.org/release/open-mpi/v5.0/openmpi-$OMPI_VERSION.tar.bz2"
          tar -xjf "openmpi-$OMPI_VERSION.tar.bz2"
          cd "openmpi-$OMPI_VERSION"
@@ -78,7 +77,7 @@ Newer ones should also work.):
                      --prefix="$OMPI_PREFIX" \
                      --with-libevent=internal \
                      --with-hwloc=internal
-         make -j "$(sysctl -n hw.ncpu)"
+         make -j 8
          make install
 
       Add the install ``bin/`` to ``PATH`` (e.g. append to your ``~/.zshrc``):
@@ -100,20 +99,20 @@ Newer ones should also work.):
 
    .. group-tab:: hip backend on LUMI
 
-      Obtain required dependencies by loading modules as show:
+      Obtain the required dependencies by loading modules as shown:
 
       .. code-block:: shell
 
-         module load LUMI/25.09 \
-             partition/G \
-             PrgEnv-cray \
-             rocm/6.4.4 \
-             craype-accel-amd-gfx90a \
-             cray-mpich/9.0.1 \
-             craype-network-ofi \
-             buildtools \
-             cray-python \
-             lumi-CrayPath
+         module load LUMI/25.09 
+         module load partition/G 
+         module load PrgEnv-cray 
+         module load rocm/6.4.4 
+         module load craype-accel-amd-gfx90a 
+         module load cray-mpich/9.0.1 
+         module load craype-network-ofi 
+         module load buildtools 
+         module load cray-python 
+         module load lumi-CrayPath
 
       .. include:: installation-mpi4py.rst
 
@@ -126,20 +125,19 @@ Building
 
 Runko ships a set of CMake configure presets in ``CMakePresets.json`` ---
 one per (machine, backend) combination --- so the build is driven by a
-single ``--config-settings=cmake.args=--preset=<NAME>`` argument. Available
-presets:
+single ``--config-settings=cmake.args=--preset=<NAME>`` argument. The
+available presets are:
 ``unix-cpu``, ``macos-cpu``, ``unix-hip``, ``lumi-cpu``, ``lumi-gpu``, ``hile-cpu``, ``hile-gpu``.
 
 
 .. tabs::
    .. group-tab:: hip backend
 
-      Build and install git branch ``<branch>`` of runko with:
+      Build and install runko with:
 
       .. code:: shell
 
-         pip install git+https://github.com/hel-astro-lab/runko@<branch> \
-           --config-settings=cmake.args=--preset=unix-hip
+         pip install git+https://github.com/hel-astro-lab/runko --config-settings=cmake.args=--preset=unix-hip
 
       .. note::
 
@@ -148,19 +146,17 @@ presets:
 
    .. group-tab:: cpu backend
 
-      With ``$ROCTHRUST_INSTALL_PREFIX`` set to the cpu rocThrust install
-      location (see Requirements above) and exported, build and install git branch
-      ``<branch>`` of runko with:
+      With ``$ROCTHRUST_INSTALL_PREFIX`` set to the cpu rocThrust install 
+      location (see Requirements above) and exported, build and install runko with:
+
 
       .. code:: shell
 
-         pip install git+https://github.com/hel-astro-lab/runko@<branch> \
-           --config-settings=cmake.args=--preset=unix-cpu
+         pip install git+https://github.com/hel-astro-lab/runko --config-settings=cmake.args=--preset=unix-cpu
 
       .. hint::
 
-         ``ROCTHRUST_INSTALL_PREFIX`` has to exported,
-         meaning that it is defined as:
+         ``ROCTHRUST_INSTALL_PREFIX`` has to be exported, meaning that it is defined as:
 
          .. code:: shell
 
@@ -175,23 +171,18 @@ presets:
    .. group-tab:: cpu backend on macos
 
       With ``$ROCTHRUST_INSTALL_PREFIX`` set per Requirements above and
-      Homebrew's ``mpic++`` on PATH, build and install git branch
-      ``<branch>`` of runko with:
+      Homebrew's ``mpic++`` on PATH, build and install runko with:
 
       .. code:: shell
 
-         pip install git+https://github.com/hel-astro-lab/runko@<branch> \
-           --config-settings=cmake.args=--preset=macos-cpu
+         pip install git+https://github.com/hel-astro-lab/runko --config-settings=cmake.args=--preset=macos-cpu
 
    .. group-tab:: hip backend on LUMI
 
-      After loading the modules given above,
-      then git branch ``<branch>`` of runko can be build and installed with:
+      After loading the modules given above, runko can be built and installed with:
 
       .. hint::
-         Remember to compile runko on a compute node
-         and not to compile runko on a login node.
-         For example with a interactive job:
+         Remember to compile runko on a compute node, not on a login node. For example, with an interactive job:
 
          .. code:: shell
 
@@ -200,8 +191,7 @@ presets:
 
       .. code:: shell
 
-         pip install git+https://github.com/hel-astro-lab/runko@<branch> \
-           --config-settings=cmake.args=--preset=lumi-gpu
+         pip install git+https://github.com/hel-astro-lab/runko --config-settings=cmake.args=--preset=lumi-gpu
 
 
 .. hint::
@@ -213,9 +203,14 @@ presets:
 
 .. hint::
 
-   Explicitly choosing the compailer:
+   Explicitly choosing the compiler:
 
    Provide ``--config-settings=cmake.define.CMAKE_CXX_COMPILER=<compiler>`` to CMake.
+
+.. hint::
+
+   Compiling a specific git <branch> can be done with ``pip install git+https://github.com/hel-astro-lab/runko@<branch>``
+
 
 Running
 =======
@@ -223,7 +218,7 @@ Running
 .. tabs::
    .. group-tab:: hip backend
 
-      Hip backend uses GPU-aware MPI which has to be enabled:
+      The HIP backend uses GPU-aware MPI, which has to be enabled:
 
       .. code:: shell
 
@@ -236,7 +231,7 @@ Running
 
    .. group-tab:: hip backend on LUMI
 
-      Hip backend uses GPU-aware MPI which has to be enabled:
+      The HIP backend uses GPU-aware MPI, which has to be enabled:
 
       .. code:: shell
 

@@ -1,5 +1,5 @@
-The cpu backend uses rocThrust's cpu backend which most likely will not be available as a package.
-Thus we have to install it manually
+The cpu backend uses rocThrust's cpu backend, which most likely will not be available as a package.
+Thus we install it manually:
 
 .. code:: shell
 

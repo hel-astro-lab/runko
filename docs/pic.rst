@@ -5,19 +5,19 @@
 Particle-in-cell 
 ================
 
-Particle-in-cell (PIC) method can be used to solve the coupled Vlasov-Maxwell equations by sampling the phase space density `f_s(\mathbf{x}, \mathbf{u}; t)` with computational particles,
+The particle-in-cell (PIC) method can be used to solve the coupled Vlasov–Maxwell equations by sampling the phase-space density `f_s(\mathbf{x}, \mathbf{u}; t)` with computational particles,
 
 .. math::
 
     f_s(\mathbf{x}, \mathbf{u}; t) = \sum_p w_p ~S[\mathbf{x} - \mathbf{x}_p(t)] ~\delta[\mathbf{u} - \mathbf{u}_p(t)]
 
-where `w_p` is the weight of the `p`:th particle,
-`S[x]` is the particle's shape function (defining literally its spatial shape and extent),
-and `\delta[x]` is the Dirac's delta function.
-The computational particle is therefore assumed to be a monolithic collection of "real" charged particles that move in unison.
+where `w_p` is the weight of the `p`-th particle,
+`S[x]` is the particle's shape function (which literally defines its spatial shape and extent),
+and `\delta[x]` is the Dirac delta function.
+A computational particle is therefore treated as a monolithic collection of "real" charged particles that move in unison.
 
-The computational particles interact with electromagnetic fields, that are defined on a grid, via the Lorentz force.
-The electromagnetic fields are advanced self-consistently by the electric currents, `J = \sum_p w_p q_e \beta_p`, induced by the moving particles via the Ampere's and Faraday's laws. 
+The computational particles interact with the electromagnetic fields — defined on a grid — via the Lorentz force.
+The electromagnetic fields are advanced self-consistently by the electric currents, `J = \sum_p w_p q_e \beta_p`, induced by the moving particles via Ampere's and Faraday's laws.
 
 
 
@@ -136,7 +136,7 @@ Phase density `f` of `N_p` elementary particles (with location `\mathbf{x}` and 
 Here `S` is the spatial shape function of the computational macro particle (representing `N_p` elementary particles).
 The macro particle has a total charge `N_p q_s` and a total mass `N_p m_s`.
 
-The shape function can have an extended spatial footpoint;
+The shape function can have an extended spatial footprint;
 the computational particle can be thought of as a "cloud" covering many grid cells.
 The fraction of a macro particle in a cell, `x, x+\Delta x`, is described by a weight function `W`
 
@@ -152,7 +152,7 @@ Instead, we use higher-order B-splines as particle shapes.
 
 .. note::
     
-    Staggering of electromagnetic fields needs to be taken into account when interpolating and projecting. This somewhat complicates the above expressions because each field component and directions needs to be dealt independently.
+    Staggering of the electromagnetic fields needs to be taken into account when interpolating and projecting. This somewhat complicates the expressions above, because each field component and direction needs to be handled independently.
 
 Field interpolation
 ^^^^^^^^^^^^^^^^^^^

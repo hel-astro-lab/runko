@@ -10,18 +10,18 @@ The name originates from the Finnish word *runko* meaning literally "a frame".
 
 .. Warning::
 
-   This documentation is about Runko v5 which contains major breaking changes compared to v4.
-   Runko v5 comes with HIP based GPU backend which required significant refactors and API changes.
-   Some features present in v4 are not (yet) ported for v5.
+   This documentation describes Runko v5, which contains major breaking changes compared to v4.
+   Runko v5 comes with a HIP-based GPU backend that required significant refactoring and API changes.
+   Some features present in v4 have not (yet) been ported to v5.
 
 
 Physical modules
 ----------------
 
 The framework consists of various physics modules that can be run independently
-or combined together to create multi-physics simulations. Different modules include:
+or combined to create multi-physics simulations. The modules currently include:
 
-* Finite difference time domain electromagnetic module
+* Finite-difference time-domain electromagnetic module
 * Particle-in-cell (PIC) module
 
 

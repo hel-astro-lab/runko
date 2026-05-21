@@ -1,13 +1,13 @@
 Plasma parameters
 =================
 
-Here we list a few typical plasma parameters that are often encountered when dealing with the simulations.
-We list both the physical parameters and the numerical "code counterparts" for each quantity. 
+Here we list a few typical plasma parameters that come up often when running simulations.
+For each quantity we give both the physical form and its numerical "code counterpart".
 Code variables are marked with a hat, :math:`\hat{x}`.
 
 
-We keep the grid spacing and time step, :math:`\Delta x` and, :math:`\Delta t`, explicitly written in the equations even though they are set equal to :math:`1` in the actual numerical calculations;
-this allows converting the code quantities to physical quantities, when needed, by plugging in the spatial and temporal scales.
+We keep the grid spacing and time step, :math:`\Delta x` and :math:`\Delta t`, explicitly written in the equations even though they are set equal to :math:`1` in the actual numerical calculations;
+this allows converting code quantities to physical quantities when needed, by plugging in the spatial and temporal scales.
 
 
 
@@ -15,7 +15,7 @@ this allows converting the code quantities to physical quantities, when needed, 
 Plasma frequency
 ----------------
 
-The plasma oscillation frequency, also known as the Langmuir frequency, :math:`\omega_{p,s}` for a particle species :math:`s` with number density :math:`n_s` and charge :math:`q_s` is
+The plasma oscillation frequency, also known as the Langmuir frequency :math:`\omega_{p,s}`, for a particle species :math:`s` with number density :math:`n_s` and charge :math:`q_s` is
 
 .. math::
     \omega_{p,s} = \sqrt{\frac{4\pi n_s q_s^2}{m_s}}
@@ -31,7 +31,7 @@ Simulation laps are typically in units of total plasma frequency so that one tim
 Plasma skin depth
 -----------------
 
-Plasma perturbations that move with the speed of light :math:`c` and oscillates with the Langmuir frequency define a length scale known as the plasma skin depth,
+Plasma perturbations that move at the speed of light :math:`c` and oscillate at the Langmuir frequency define a length scale known as the plasma skin depth,
 
 .. math::
     d_s = \frac{c}{\omega_{p,s}}
@@ -44,8 +44,8 @@ One skin depth in the code is :math:`\hat{R}` grid cells.
 Plasma magnetization
 --------------------
 
-A finite magnetic field sets another set of degrees of freedom to the plasma. 
-The ratio of the magnetic field line tension, :math:`(B \cdot \nabla) B/4\pi \propto B^2/4\pi` to the plasma rest mass (relativistic enthalphy density), :math:`\langle \gamma \rangle n m c^2` is known as the plasma magnetization,
+A finite magnetic field introduces another set of degrees of freedom to the plasma.
+The ratio of the magnetic field line tension, :math:`(B \cdot \nabla) B/4\pi \propto B^2/4\pi`, to the plasma rest mass (relativistic enthalpy density), :math:`\langle \gamma \rangle n m c^2`, is known as the plasma magnetization,
 
 .. math::
     \sigma_s = \frac{B^2}{4\pi n_s \langle \gamma \rangle  m_s c^2}
@@ -66,7 +66,7 @@ The magnetization can be used to express the code magnetic field as
 Gyrofrequency
 -------------
 
-Angular frequency of a charged particle gyrating around a magnetic field :math:`B` is known as the gyrofrequency,
+The angular frequency of a charged particle gyrating around a magnetic field :math:`B` is known as the gyrofrequency,
 
 .. math::
     \omega_B = \frac{|q_s| B}{\gamma m_s c}
@@ -77,7 +77,7 @@ Angular frequency of a charged particle gyrating around a magnetic field :math:`
 Larmor radius
 -------------
 
-The charged particle gyrating in the magnetic field forms a "ring" around the magnetic field line with a radius known as the gyroradius or a Larmor radius,
+A charged particle gyrating in a magnetic field forms a "ring" around the magnetic field line with a radius known as the gyroradius, or Larmor radius,
 
 .. math::
     r_L = \frac{c}{\omega_B} = \frac{\gamma \beta m_s c^2}{|q_s| B}
@@ -89,7 +89,7 @@ The charged particle gyrating in the magnetic field forms a "ring" around the ma
 Additional ratios of scales
 ---------------------------
 
-These definitions also allows a slightly different way of expressing the magnetization as a ratio of the gyrofrequency to the plasma frequency, or a ratio of the Larmor radius to the skin depth,
+These definitions also allow a slightly different way of expressing the magnetization, as a ratio of the gyrofrequency to the plasma frequency, or as a ratio of the Larmor radius to the skin depth,
 
 .. math::
     \sigma = \left( \frac{\omega_B}{\omega_p} \right)^2 = \left( \frac{d_e}{r_L} \right)^2
