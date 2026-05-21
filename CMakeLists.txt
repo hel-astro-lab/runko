@@ -78,7 +78,7 @@ endif()
 
 if(PROJECT_IS_TOP_LEVEL AND ${RUNKO_ENABLE_TESTS})
     message(STATUS "Enabling runko tests...")
-    message(STATUS "Runko tests are run with python: ${PYTHON_EXECUTABLE}")
+    message(STATUS "Runko tests are run with python: ${Python_EXECUTABLE}")
 
     include(CTest)
     add_subdirectory(tests)
