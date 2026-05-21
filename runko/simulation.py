@@ -13,6 +13,7 @@ from runko_cpp_bindings.pic.threeD import _write_average_kinetic_energy
 
 import json
 import logging
+import pickle
 import time
 import numpy as np
 import pathlib
@@ -62,6 +63,8 @@ class Simulation:
 
         self._ram_file = pathlib.Path(f"{self._io_config['outdir']}/mem-usage/cpu/{self._rank}.csv")
         self._gpu_ram_file = pathlib.Path(f"{self._io_config['outdir']}/mem-usage/gpu/{self._rank}.csv")
+
+        self._timer_stats_file = pathlib.Path(f"{self._io_config['outdir']}/timer-statistics/{self._rank}.pkl")
 
         self._io_config['kinetic_energy_path'] = self._io_config["outdir"] + "/average_kinetic_energy.txt"
         self._io_config['average_B_energy_density_path'] = self._io_config["outdir"] + "/average_B_energy_density.txt"
@@ -458,3 +461,13 @@ class Simulation:
             with open(f"{self._io_config['outdir']}/traces/combined.json", "w") as f:
                 json.dump(combined, f)
 
+
+    def pickle_timer_statistics(self):
+        """
+        Writes pickled dictionary of timer statistics to `<outdir>/timer-statistics/<rank>.pkl`
+        which maps component name (str) to runko.TimerStatistic.
+        """
+
+        self._timer_stats_file.parent.mkdir(exist_ok=True, parents=True)
+        with open(self._timer_stats_file, "wb") as f:
+            pickle.dump(self.get_time_statistics(self._io_config["laps_in_timer_statistics"]), f)
