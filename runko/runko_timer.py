@@ -95,6 +95,7 @@ class TimerStatistic:
     maximum: float
     std_dev: float
     count: int
+    measured_laps: int
 
 
 def timer_statistics(timers: list[Timer]):
@@ -118,6 +119,7 @@ def timer_statistics(timers: list[Timer]):
                                      minimum=np.min(et),
                                      maximum=np.max(et),
                                      std_dev=np.std(et),
-                                     count=len(elapsed_times))
+                                     count=len(elapsed_times),
+                                     measured_laps=len(timers))
 
     return stats
