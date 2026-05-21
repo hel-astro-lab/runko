@@ -217,7 +217,7 @@ class TileGrid:
         pathlib.Path(io_config["outdir"]).mkdir(parents=True, exist_ok=True)
 
         if on_main_rank():
-            pickled_conf_path = pathlib.Path(f"{io_config["outdir"]}/config.pkl")
+            pickled_conf_path = pathlib.Path(f"{io_config['outdir']}/config.pkl")
             config.ranks = MPI.COMM_WORLD.size
             with open(pickled_conf_path, "wb") as f:
                 pickle.dump(config, f)
