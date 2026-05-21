@@ -7,8 +7,8 @@ Thus we have to install it manually
    cd rocm-libraries
    git sparse-checkout init --cone
    git sparse-checkout set projects/rocthrust
-   git checkout develop # Or whatever branch you want to use.
+   git checkout develop
    cd projects/rocthrust
-   ROCTHRUST_INSTALL_PREFIX="$PWD/rocthrust-install" # or wherever you want to install rocThrust.
+   ROCTHRUST_INSTALL_PREFIX="$PWD/rocthrust-install"
    cmake -Bbuild -DTHRUST_DEVICE_SYSTEM=CPP -DLINK_HIP_DEVICE_LIBS=OFF -DCMAKE_INSTALL_PREFIX="$ROCTHRUST_INSTALL_PREFIX" .
    make -C build install
