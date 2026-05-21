@@ -114,8 +114,8 @@ Newer ones should also work.):
 Building
 ========
 
-Runko ships a set of CMake configure presets in ``CMakePresets.json`` —
-one per (machine, backend) combination — so the build is driven by a
+Runko ships a set of CMake configure presets in ``CMakePresets.json`` ---
+one per (machine, backend) combination --- so the build is driven by a
 single ``--config-settings=cmake.args=--preset=<NAME>`` argument. Available
 presets:
 ``unix-cpu``, ``macos-cpu``, ``unix-gpu``, ``lumi-cpu``, ``lumi-gpu``, ``hile-cpu``, ``hile-gpu``.
