@@ -118,8 +118,12 @@ def setup_pic_grid_with_particles(config, E_func, B_func, J_func, ppc=1,
 def find_output_file(outdir):
     """Return the path to the first output file in outdir."""
 
-    files = [f for f in os.listdir(outdir)
-             if os.path.isfile(os.path.join(outdir, f))]
+    def is_output_file(f):
+        is_file = os.path.isfile(os.path.join(outdir, f))
+        is_binary = f[-4:] == ".bin"
+        return is_file and is_binary
+
+    files = [f for f in os.listdir(outdir) if is_output_file(f)]
     assert len(files) > 0, "No output file was created"
     return os.path.join(outdir, files[0])
 
