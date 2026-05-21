@@ -15,10 +15,9 @@
                 "tyvi_ENABLE_IPO": "OFF",
                 "tyvi_ENABLE_CLANG_TIDY": "OFF",
                 "tyvi_ENABLE_CPPCHECK": "OFF",
-                "CMAKE_CXX_COMPILER": "mpic++",
                 "tyvi_BACKEND": "cpu",
                 "rocthrust_DIR": "$env{ROCTHRUST_INSTALL_PREFIX}/lib/cmake/rocthrust",
-                "CMAKE_CXX_FLAGS": "-O3 -march=native -Wno-error=pass-failed"
+                "CMAKE_CXX_FLAGS": "-O3 -march=native"
             }
         },
         {
