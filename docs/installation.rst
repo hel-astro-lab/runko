@@ -116,35 +116,25 @@ Building
 
 Runko ships a set of CMake configure presets in ``CMakePresets.json`` —
 one per (machine, backend) combination — so the build is driven by a
-single ``--config-settings=cmake.args=--preset=<NAME>`` argument. Available 
+single ``--config-settings=cmake.args=--preset=<NAME>`` argument. Available
 presets:
 ``unix-cpu``, ``macos-cpu``, ``unix-gpu``, ``lumi-cpu``, ``lumi-gpu``, ``hile-cpu``, ``hile-gpu``.
 
-Preset cache variables can be overridden per invocation by appending
-``--config-settings=cmake.define.<VAR>=<VALUE>`` or
-``--config-settings=cmake.build-type=Debug``. The override always wins.
 
 .. tabs::
    .. group-tab:: hip backend
 
-      With a HIP-capable C++ compiler (e.g. ``hipcc``) on PATH and
-      the GPU architecture exported as ``HIP_ARCH`` (e.g.
-      ``export HIP_ARCH=gfx90a``), build and install git branch
-      ``<branch>`` of runko with:
+      Build and install git branch ``<branch>`` of runko with:
 
       .. code:: shell
 
          pip install git+https://github.com/hel-astro-lab/runko@<branch> \
            --config-settings=cmake.args=--preset=unix-gpu
 
-      Override example — Debug build with a specific compiler:
+      .. note::
 
-      .. code:: shell
+         ``unix-gpu`` will use ``hipcc`` as the compiler by default.
 
-         pip install git+https://github.com/hel-astro-lab/runko@<branch> \
-           --config-settings=cmake.args=--preset=unix-gpu \
-           --config-settings=cmake.build-type=Debug \
-           --config-settings=cmake.define.CMAKE_CXX_COMPILER=hipcc
 
    .. group-tab:: cpu backend
 
@@ -157,14 +147,6 @@ Preset cache variables can be overridden per invocation by appending
          pip install git+https://github.com/hel-astro-lab/runko@<branch> \
            --config-settings=cmake.args=--preset=unix-cpu
 
-      Override example — Debug build with ``g++-15``:
-
-      .. code:: shell
-
-         pip install git+https://github.com/hel-astro-lab/runko@<branch> \
-           --config-settings=cmake.args=--preset=unix-cpu \
-           --config-settings=cmake.build-type=Debug \
-           --config-settings=cmake.define.CMAKE_CXX_COMPILER=g++-15
 
    .. group-tab:: cpu backend on macos
 
@@ -197,6 +179,19 @@ Preset cache variables can be overridden per invocation by appending
          pip install git+https://github.com/hel-astro-lab/runko@<branch> \
            --config-settings=cmake.args=--preset=lumi-gpu
 
+
+.. hint::
+
+   Overriding preset variables:
+
+   Provide ``--config-settings=cmake.define.<VAR>=<VALUE>`` to CMake.
+
+
+.. hint::
+
+   Explicitly choosing the compailer:
+
+   Provide ``--config-settings=cmake.define.CMAKE_CXX_COMPILER=<compiler>`` to CMake.
 
 Running
 =======
