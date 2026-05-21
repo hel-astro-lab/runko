@@ -12,8 +12,18 @@ Runko is build with CMake. It is also used to locate dependencies.
 Depending on the system configuration CMake may or may not find correct libraries automatically.
 See CMake documentation for instructions on how to make CMake find the dependencies.
 
-.. hint::
-   Install runko inside a python virtual environment.
+.. note::
+
+   Runko offically supports installations only to a python virtual environment.
+   Create and activate it before proceeding with the installation:
+
+   .. code:: shell
+
+      python -m venv venv
+      source venv/bin/activate
+
+   Virtual environment can be deactivated with ``deactivate`` command.
+
 
 Common requirements
 (Version numbers are the ones tested to work.
