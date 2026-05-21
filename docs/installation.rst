@@ -118,7 +118,7 @@ Runko ships a set of CMake configure presets in ``CMakePresets.json`` ---
 one per (machine, backend) combination --- so the build is driven by a
 single ``--config-settings=cmake.args=--preset=<NAME>`` argument. Available
 presets:
-``unix-cpu``, ``macos-cpu``, ``unix-gpu``, ``lumi-cpu``, ``lumi-gpu``, ``hile-cpu``, ``hile-gpu``.
+``unix-cpu``, ``macos-cpu``, ``unix-hip``, ``lumi-cpu``, ``lumi-gpu``, ``hile-cpu``, ``hile-gpu``.
 
 
 .. tabs::
@@ -129,11 +129,11 @@ presets:
       .. code:: shell
 
          pip install git+https://github.com/hel-astro-lab/runko@<branch> \
-           --config-settings=cmake.args=--preset=unix-gpu
+           --config-settings=cmake.args=--preset=unix-hip
 
       .. note::
 
-         ``unix-gpu`` will use ``hipcc`` as the compiler by default.
+         ``unix-hip`` will use ``hipcc`` as the compiler by default.
 
 
    .. group-tab:: cpu backend
