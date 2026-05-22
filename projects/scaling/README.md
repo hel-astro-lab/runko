@@ -16,7 +16,3 @@ Here you can find various scripts for testing the performance and parallel scali
 ### Weak scaling
 
 - `weak_scaling.py` can be used to visualize weak scaling results (component-wise)
-
-![weak scaling](https://cdn.jsdelivr.net/gh/natj/pb-utilities@master/imgs/weak_scaling.png)
-
-
