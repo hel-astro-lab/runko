@@ -5,7 +5,7 @@ Numerical values
 ----------------
 
 Runko does not actually use cgs-Gaussian units in the simulation.
-Instead, values are normalized with a fiducial values:
+Instead, values are normalized with fiducial values:
 
 .. math::
 
@@ -13,8 +13,8 @@ Instead, values are normalized with a fiducial values:
    \quad x = \hat x \Delta x
 
 
-Here physical time and position are on the left hand side
-and hat denotes a numerical (or code) value used in Runko.
+Here physical time and position are on the left-hand side,
+and the hat denotes a numerical (or code) value used inside Runko.
 
 For coordinate velocity:
 
@@ -23,7 +23,7 @@ For coordinate velocity:
    v = \frac{dx}{dt} = \frac{d\hat x}{d\hat t} \frac{\Delta x}{\Delta t} = \hat v \frac{\Delta x}{\Delta t}
 
 
-Applying this to speed of light we get numerical speed of light or CFL (Courant–Friedrichs–Lewy number):
+Applying this to the speed of light gives the numerical speed of light, or the CFL (Courant–Friedrichs–Lewy) number:
 
 .. math::
 
@@ -32,7 +32,7 @@ Applying this to speed of light we get numerical speed of light or CFL (Courant�
 
 and we can write :math:`v = \hat v \frac{c}{\hat c}`.
 
-Rest of the physical values are written as:
+The rest of the physical values are written as:
 
 .. math::
 
@@ -51,7 +51,7 @@ Rest of the physical values are written as:
 
 
 
-Note the same fiducial value for magnetic and electric fields.
+Note that the magnetic and electric fields share the same fiducial value.
 
 Choosing the fiducial values
 ----------------------------

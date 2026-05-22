@@ -1,8 +1,8 @@
 mpi4py might have to be installed manually.
-The default installation obtained automatically or
-with ``python -m pip install mpi4py``
-can link to different mpi implementation compared what runko is using.
-This can lead to problems, so mpi4py can be installed manually:
+The default installation, obtained automatically or
+with ``python -m pip install mpi4py``,
+can link against a different MPI implementation than the one runko uses.
+This can lead to problems, so mpi4py can instead be installed manually:
 
 .. code:: shell
 
