@@ -28,6 +28,7 @@ dependencies = [
   "corgi",
   "numpy",
   "scipy",
+  "matplotlib",
 ]
 
 [project.urls]
