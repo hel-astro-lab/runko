@@ -2,12 +2,13 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import itertools
+import pickle
 import logging
 import pathlib
 from mpi4py import MPI
 import pycorgi.threeD as pycorgi
 from .simulation import Simulation
-from .runko_logging import runko_logger
+from .runko_logging import runko_logger, on_main_rank
 from .balance_grid import balance_mpi, load_catepillar_track_mpi
 from .auto_outdir import resolve_outdir
 
@@ -215,9 +216,15 @@ class TileGrid:
 
         pathlib.Path(io_config["outdir"]).mkdir(parents=True, exist_ok=True)
 
-        if config._config_path:
-            import shutil
-            shutil.copy2(config._config_path, io_config["outdir"])
+        if on_main_rank():
+            pickled_conf_path = pathlib.Path(f"{io_config['outdir']}/config.pkl")
+            config.ranks = MPI.COMM_WORLD.size
+            with open(pickled_conf_path, "wb") as f:
+                pickle.dump(config, f)
+
+            if config._config_path:
+                import shutil
+                shutil.copy2(config._config_path, io_config["outdir"])
 
         return Simulation(self,
                           Simulation._im_not_user,
