@@ -37,3 +37,6 @@ Homepage = "https://runko.readthedocs.io/en/latest/"
 [tool.scikit-build]
 minimum-version = "build-system.requires"
 build-dir = "build/{state}-{build_type}-{wheel_tag}"
+
+[project.scripts]
+runko = "runko.cli:main"
