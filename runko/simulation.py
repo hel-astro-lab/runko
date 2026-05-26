@@ -396,6 +396,8 @@ class Simulation:
         """
         Writes trace data of each process into `<outdir>/traces/<mpi-rank>.json`
         in Trace Event Format [0] which can be viewed with e.g. Pefetto UI.
+        Configuration parameter `laps_in_timer_statistics` defines number of latest laps
+        from which the data is written. If it is not given, data from all laps is written.
 
         If `combine` is `True`, this has to be called on every rank
         and the trace jsons are combined into `<outdir>/traces/combined.json`.
@@ -417,7 +419,15 @@ class Simulation:
             "args": { "name": f"MPI rank {self._rank}" }
         }])
 
-        for timer in self._lap_timers:
+        n_latests = self._io_config["laps_in_timer_statistics"]
+        if n_latests:
+            timers = self._lap_timers[-n_latests:]
+            lap_finish_times = self._lap_finish_times[-n_latests:]
+        else:
+            timers = self._lap_timers
+            lap_finish_times = self._lap_finish_times
+
+        for timer in timers:
             for name, measurement in timer.time_measurements.items():
                 cat, _ = name.split("_", 1)
 
@@ -431,7 +441,7 @@ class Simulation:
                     "dur": 1e6 * (measurement.end - measurement.begin),
                 })
 
-        for t in self._lap_finish_times:
+        for t in lap_finish_times:
             obj["traceEvents"].append({
                 "name": f"lap_finish",
                 "cat": "meta",
