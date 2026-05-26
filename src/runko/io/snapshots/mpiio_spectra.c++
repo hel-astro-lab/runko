@@ -12,6 +12,7 @@
 #include "tyvi/mdgrid.h"
 
 #include <algorithm>
+#include <array>
 #include <cmath>
 #include <cstring>
 #include <format>
@@ -33,19 +34,22 @@ int mpiio::write_spectra_header(
   float umin,
   float umax)
 {
-  char buf[512];
-  std::memset(buf, 0, sizeof(buf));
+  auto buf = std::array<char, 512>{};
+
+  auto buf_ptr_at = [&](const auto n) {
+    return std::ranges::next(buf.data(), n);
+  };
 
   auto put32 = [&](int offset, uint32_t val) {
-    std::memcpy(buf + offset, &val, 4);
+    std::memcpy(buf_ptr_at(offset), &val, 4);
   };
 
   auto puti32 = [&](int offset, int32_t val) {
-    std::memcpy(buf + offset, &val, 4);
+    std::memcpy(buf_ptr_at(offset), &val, 4);
   };
 
   auto putf32 = [&](int offset, float val) {
-    std::memcpy(buf + offset, &val, 4);
+    std::memcpy(buf_ptr_at(offset), &val, 4);
   };
 
   put32(0, magic);
@@ -72,7 +76,8 @@ int mpiio::write_spectra_header(
     for (int q = 0; q < num_spectra_per_species; q++) {
       auto name = std::format("s{}_{}", s, spectra_suffixes[q]);
       int f = s * num_spectra_per_species + q;
-      std::strncpy(buf + 64 + f * 16, name.c_str(), 15);
+      const auto n = std::ranges::min(name.size(), 15uz);
+      std::memcpy(buf_ptr_at(64 + f * 16), name.data(), n);
     }
   }
 
@@ -82,7 +87,7 @@ int mpiio::write_spectra_header(
   putf32(264, umax);
 
   MPI_Status status;
-  return MPI_File_write_at(fh, 0, buf, 512, MPI_BYTE, &status);
+  return MPI_File_write_at(fh, 0, buf.data(), 512, MPI_BYTE, &status);
 }
 
 
