@@ -11,9 +11,12 @@
 #include "tyvi/mdgrid.h"
 
 #include <algorithm>
+#include <array>
 #include <cstring>
 #include <format>
+#include <iterator>
 #include <string>
+#include <string_view>
 #include <vector>
 
 
@@ -29,15 +32,18 @@ int mpiio::write_header(
   int32_t lap,
   int32_t num_fields)
 {
-  char buf[512];
-  std::memset(buf, 0, sizeof(buf));
+  auto buf = std::array<char, 512>{};
+
+  auto buf_ptr_at = [&](const auto n) {
+    return std::ranges::next(buf.data(), n);
+  };
 
   auto put32 = [&](int offset, uint32_t val) {
-    std::memcpy(buf + offset, &val, 4);
+    std::memcpy(buf_ptr_at(offset), &val, 4);
   };
 
   auto puti32 = [&](int offset, int32_t val) {
-    std::memcpy(buf + offset, &val, 4);
+    std::memcpy(buf_ptr_at(offset), &val, 4);
   };
 
   put32(0, magic);
@@ -60,15 +66,18 @@ int mpiio::write_header(
 
   // Field names: num_fields entries of 16 chars each, starting at offset 64
   for (int f = 0; f < num_emf_fields; f++) {
-    std::strncpy(buf + 64 + f * 16, emf_field_names[f], 15);
+    const auto name = std::string_view{emf_field_names[f]};
+    const auto n = std::ranges::min(name.size(), 15uz);
+    std::memcpy(buf_ptr_at(64 + f * 16), name.data(), n);
   }
   for (int s = 0; s < num_fields - num_emf_fields; s++) {
-    auto name = std::format("n{}", s);
-    std::strncpy(buf + 64 + (num_emf_fields + s) * 16, name.c_str(), 15);
+    const auto name = std::format("n{}", s);
+    const auto n = std::ranges::min(name.size(), 15uz);
+    std::memcpy(buf_ptr_at(64 + (num_emf_fields + s) * 16), name.data(), n);
   }
 
   MPI_Status status;
-  return MPI_File_write_at(fh, 0, buf, 512, MPI_BYTE, &status);
+  return MPI_File_write_at(fh, 0, buf.data(), 512, MPI_BYTE, &status);
 }
 
 
