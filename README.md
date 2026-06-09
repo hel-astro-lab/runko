@@ -9,23 +9,13 @@ R̯̥͎̺͚̙͈̖̝̩̘ͅu̖̩̹̤n̪̰͚̭̬̮̼͎̥͓ͅk̲̟͎͓̭̝o͔͙̗͓�
 </br>
 </br>
 
-Runko is a fully open-source simulation framework written in modern C++/Python to simulate astrophysical plasmas. Technologically, the framework is composed of separate physics modules that can be used independently or combined together to create multi-physics simulations. Low-level computing "kernels" are implemented in modern C++, allowing to write modular and high-performance code. High-level usage of the code is controlled with Python scripts exposing the C++ code to Python objects. The hybrid design ensures efficient code, rapid prototyping, and ease of use.
+Runko is an open-source simulation framework written in modern C++/Python to simulate astrophysical plasmas. Technologically, the framework is composed of separate physics modules that can be used independently or combined together to create multi-physics simulations. Low-level computing "kernels" are implemented in modern C++, allowing to write modular and high-performance code. High-level usage of the code is controlled with Python scripts exposing the C++ code to Python objects. The hybrid design ensures efficient code, rapid prototyping, and ease of use.
 
-Under the hood, the framework uses the massively parallel grid infrastructure library [corgi](https://github.com/natj/corgi) that decomposes the grid into smaller subregions called tiles. [Corgi](https://github.com/natj/corgi) also automatically parallelizes the simulations and provides dynamic load-balancing capability. Therefore, small simulation setups can be tested locally on laptops and then extended into massively-parallel supercomputer platforms (currently tested up to ~20k cores).
+Under the hood, the framework uses the massively parallel grid infrastructure library [corgi](https://github.com/hel-astro-lab/corgi) to decompose the grid into subregions, called tiles. The framework is made hardware-agnostic by [tyvi](https://github.com/hel-astro-lab/tyvi) portability library that allows compiling same C++ code to SIMD-vectorized-CPU code or native-HIP-based GPU code.
 
-Documentation is available from [runko.readthedocs.io](https://runko.readthedocs.io/en/latest/?badge=latest). 
+Documentation is available at [runko.readthedocs.io](https://runko.readthedocs.io/en/latest/?badge=latest). 
 
 The design and usage of the code are described in detail in the accompanying [paper](https://arxiv.org/abs/1906.06306).
-
-
-## Available modules
-Current main physics simulation modules include:
-- **3D3V Particle-In-Cell module** (`pic/`)
-- **3D FDTD electromagnetics module** based on staggered Yee lattice (`emf/`)
-- **3D Force-free electrodynamics** module (`ffe/`)
-- **1D3V Relativistic Vlasov module** (`vlv/`)
-- Non-linear Monte Carlo **radiation module** (`qed/`)
-
 
 ## Quick getting started guide
 1) Follow the [installation instructions](https://runko.readthedocs.io/en/latest/installation.html) to get Runko running on your laptop.
@@ -83,3 +73,5 @@ archivePrefix = {arXiv},
 }
 ```
 
+Development of Runko is supported by an ERC grant (ILLUMINATOR, 101114623).
+<img align="center" src="https://cdn.jsdelivr.net/gh/natj/natj.github.io@master/images/erc_logo.png">
