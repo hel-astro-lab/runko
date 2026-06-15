@@ -70,11 +70,11 @@ public:
 
 private:
   /// Positions are in code units (i.e. x~ in x = x~ * Delta x).
-  runko::VecList<value_type> pos_;
+  runko::device_vec_segments<value_type> pos_;
   /// Three-velocities are stored in physical/natural units.
-  runko::VecList<value_type> vel_;
+  runko::device_vec_segments<value_type> vel_;
   /// Id for each particle.
-  runko::ScalarList<runko::prtc_id_type> ids_;
+  runko::device_scalar_segments<runko::prtc_id_type> ids_;
 
   double charge_;
   double mass_;
@@ -87,6 +87,17 @@ private:
 
 public:
   explicit ParticleContainer(ParticleContainerArgs);
+
+  // Because tyvi::mdsegments is not copyable, we have to implement
+  // copy ctor and copy assignment manually.
+
+  ~ParticleContainer()                                       = default;
+  explicit ParticleContainer(ParticleContainer&&) noexcept   = default;
+  ParticleContainer& operator=(ParticleContainer&&) noexcept = default;
+
+  explicit ParticleContainer(const ParticleContainer& other);
+  ParticleContainer& operator=(const ParticleContainer& other);
+
 
   /// Construct the container by aggregating the given spans.
   template<std::ranges::forward_range R>
@@ -130,24 +141,6 @@ public:
   std::array<std::vector<value_type>, 3> get_positions();
   std::array<std::vector<value_type>, 3> get_velocities();
   std::vector<runko::prtc_id_type> get_ids();
-
-  [[nodiscard]]
-  auto span_pos() &;
-
-  [[nodiscard]]
-  auto span_pos() const&;
-
-  [[nodiscard]]
-  auto span_vel() &;
-
-  [[nodiscard]]
-  auto span_vel() const&;
-
-  [[nodiscard]]
-  auto span_id() &;
-
-  [[nodiscard]]
-  auto span_id() const&;
 
   [[nodiscard]]
   auto pos_mds() const
@@ -260,41 +253,35 @@ template<std::ranges::forward_range R>
   inline void
   ParticleContainer::add_particles(const R& new_particles)
 {
-  const auto N = static_cast<std::size_t>(std::ranges::distance(new_particles));
+  using value_state_type = runko::ParticleState<ParticleContainer::value_type>;
+  auto casted_new_particles =
+    new_particles | std::views::transform([](const auto& state) {
+      return value_state_type { .pos { static_cast<value_type>(state.pos[0]),
+                                       static_cast<value_type>(state.pos[1]),
+                                       static_cast<value_type>(state.pos[2]) },
+                                .vel { static_cast<value_type>(state.vel[0]),
+                                       static_cast<value_type>(state.vel[1]),
+                                       static_cast<value_type>(state.vel[2]) },
+                                .id = state.id };
+    });
 
-  auto args  = this->args();
-  args.N     = N;
-  auto added = ParticleContainer(args);
+  const auto new_states_h = thrust::host_vector<value_state_type>(
+    casted_new_particles.begin(),
+    casted_new_particles.end());
+  auto new_states = thrust::device_vector<value_state_type>(new_particles.size());
+  thrust::copy(
+    tyvi::mdgrid_work().on_this(),
+    new_states_h.begin(),
+    new_states_h.end(),
+    new_states.begin());
 
-  const auto added_pos_smds = added.pos_.staging_mds();
-  const auto added_vel_smds = added.vel_.staging_mds();
-  const auto added_ids_smds = added.ids_.staging_mds();
 
-  {
-    std::size_t i = 0;
-    for(const auto& p: new_particles) {
-      for(const auto j: std::views::iota(0uz, 3uz)) {
-        added_pos_smds[i][j] = static_cast<ParticleContainer::value_type>(p.pos[j]);
-        added_vel_smds[i][j] = static_cast<ParticleContainer::value_type>(p.vel[j]);
-      }
-
-      added_ids_smds[i][] = p.id;
-      ++i;
-    }
-  }
-
-  auto w1 = tyvi::mdgrid_work {};
-  auto w2 = tyvi::mdgrid_work {};
-  auto w3 = tyvi::mdgrid_work {};
-  w1.sync_from_staging(added.pos_);
-  w2.sync_from_staging(added.vel_);
-  w3.sync_from_staging(added.ids_);
-
-  tyvi::when_all(w1, w2, w3);
-  w1.wait();
-
-  this->add_particles(added);
+  this->append(
+    std::array { std::span<const value_state_type>(
+      thrust::raw_pointer_cast(new_states.data()),
+      new_states.size()) });
 }
+
 template<std::ranges::forward_range R>
   requires std::
     convertible_to<std::ranges::range_reference_t<R>, ParticleContainer::specific_span>
@@ -376,9 +363,9 @@ template<std::ranges::forward_range R>
 
   const auto Ntotal = ends.back();
 
-  this->pos_.invalidating_resize(Ntotal);
-  this->vel_.invalidating_resize(Ntotal);
-  this->ids_.invalidating_resize(Ntotal);
+  this->pos_.resize(Ntotal);
+  this->vel_.resize(Ntotal);
+  this->ids_.resize(Ntotal);
 
   const auto pos_mds = this->pos_.mds();
   const auto vel_mds = this->vel_.mds();
@@ -468,9 +455,9 @@ inline void
   if(rn::empty(spans)) { return; }
 
   // 1. find last alive particle P
-  // 2. check if the appended particles fit to dead particles after P
-  // 3. if no, resize such that they fit
-  // 4. copy appended particles to dead particles after P
+  // 2. resizes containers to fit appended particles (with tyvi::mdsegments this should
+  // be cheap)
+  // 3. copy appended particles to dead particles after P
 
   // 1.
 
@@ -510,35 +497,11 @@ inline void
   const auto Ntotal = begins.back() + spans.back().size();
 
   // 2.
-  if(Ntotal > static_cast<std::size_t>(dead_particles_at_end)) {
-    // 3.
+  this->pos_.resize(Pnum + Ntotal);
+  this->vel_.resize(Pnum + Ntotal);
+  this->ids_.resize(Pnum + Ntotal);
 
-    // This could be more efficient, as now we copy all the staging buffers as well.
-    const auto tmp = *this;
-
-    const auto tmp_pos_mds = tmp.pos_.mds();
-    const auto tmp_vel_mds = tmp.vel_.mds();
-    const auto tmp_ids_mds = tmp.ids_.mds();
-
-    this->pos_.invalidating_resize(Pnum + Ntotal);
-    this->vel_.invalidating_resize(Pnum + Ntotal);
-    this->ids_.invalidating_resize(Pnum + Ntotal);
-
-    const auto pos_mds = this->pos_.mds();
-    const auto vel_mds = this->vel_.mds();
-    const auto ids_mds = this->ids_.mds();
-
-    w.for_each_index(tmp_pos_mds, [=](const auto idx, const auto tidx) {
-      pos_mds[idx][tidx] = tmp_pos_mds[idx][tidx];
-      vel_mds[idx][tidx] = tmp_vel_mds[idx][tidx];
-    });
-    w.for_each_index(tmp_ids_mds, [=](const auto idx) {
-      ids_mds[idx][] = tmp_ids_mds[idx][];
-    });
-    w.wait();
-  }
-  // 4.
-
+  // 3.
   const auto pos_mds = this->pos_.mds();
   const auto vel_mds = this->vel_.mds();
   const auto ids_mds = this->ids_.mds();
@@ -577,20 +540,20 @@ inline void
      https://gcc.gnu.org/bugzilla/show_bug.cgi?id=12526
 
      Without it we could write:
-     const auto pos0 = this->pos_.device_component_span<0>(); */
+     const auto pos0 = this->pos_.component_span<0>(); */
 
-  using I                    = decltype(this->pos_)::element_extents_type::index_type;
+  using I                    = runko::index_t;
   static constexpr auto zero = std::array { I { 0 } };
   static constexpr auto one  = std::array { I { 1 } };
   static constexpr auto two  = std::array { I { 2 } };
 
-  const auto pos0 = this->pos_.device_component_span<zero>();
-  const auto pos1 = this->pos_.device_component_span<one>();
-  const auto pos2 = this->pos_.device_component_span<two>();
-  const auto vel0 = this->vel_.device_component_span<zero>();
-  const auto vel1 = this->vel_.device_component_span<one>();
-  const auto vel2 = this->vel_.device_component_span<two>();
-  const auto ids  = this->ids_.device_component_span<>();
+  const auto pos0 = this->pos_.component_view<zero>();
+  const auto pos1 = this->pos_.component_view<one>();
+  const auto pos2 = this->pos_.component_view<two>();
+  const auto vel0 = this->vel_.component_view<zero>();
+  const auto vel1 = this->vel_.component_view<one>();
+  const auto vel2 = this->vel_.component_view<two>();
+  const auto ids  = this->ids_.component_view<>();
 
   namespace rn                       = std::ranges;
   const auto particle_ordinals_begin = thrust::counting_iterator<runko::index_t>(0uz);
@@ -700,43 +663,6 @@ inline void
     ids.begin());
   w.wait();
 }
-
-inline auto
-  ParticleContainer::span_pos() &
-{
-  return this->pos_.span();
-}
-
-inline auto
-  ParticleContainer::span_pos() const&
-{
-  return this->pos_.span();
-}
-
-inline auto
-  ParticleContainer::span_vel() &
-{
-  return this->vel_.span();
-}
-
-inline auto
-  ParticleContainer::span_vel() const&
-{
-  return this->vel_.span();
-}
-
-inline auto
-  ParticleContainer::span_id() &
-{
-  return this->ids_.span();
-}
-
-inline auto
-  ParticleContainer::span_id() const&
-{
-  return this->ids_.span();
-}
-
 }  // namespace pic
 
 #include "runko/pic/particle_boris.h"
