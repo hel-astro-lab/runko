@@ -30,6 +30,7 @@
 #include <limits>
 #include <map>
 #include <numeric>
+#include <optional>
 #include <ranges>
 #include <source_location>
 #include <span>
@@ -119,7 +120,10 @@ public:
     requires std::convertible_to<
       std::ranges::range_reference_t<R>,
       std::span<const runko::ParticleState<value_type>>>
-  inline void append(const R& spans);
+  inline void append(
+    const R& spans,
+    std::optional<std::array<value_type, 3>> wrap_mins = {},
+    std::optional<std::array<value_type, 3>> wrap_maxs = {});
 
   /// Pre-allocate N dead-particle slots on an empty container.
   ///
@@ -447,7 +451,10 @@ template<std::ranges::forward_range R>
     std::ranges::range_reference_t<R>,
     std::span<const runko::ParticleState<ParticleContainer::value_type>>>
 inline void
-  ParticleContainer::append(const R& spans)
+  ParticleContainer::append(
+    const R& spans,
+    const std::optional<std::array<value_type, 3>> wrap_mins,
+    const std::optional<std::array<value_type, 3>> wrap_maxs)
 {
   namespace rn = std::ranges;
   namespace rv = std::views;
@@ -513,22 +520,53 @@ inline void
     const auto n_end    = rn::next(n_begin, n_size);
     const auto n_offset = Pnum + begins[n];
 
-    thrust::for_each(w.on_this(), n_begin, n_end, [=](const auto i) {
-      // This does not work on lumi, so we use workaround.
-      // const auto state = n_span[i];
-      const auto state = n_span.data()[i];
+    if(wrap_mins and wrap_maxs) {
+      const auto ax = wrap_mins.value()[0];
+      const auto ay = wrap_mins.value()[1];
+      const auto az = wrap_mins.value()[2];
+      const auto bx = wrap_maxs.value()[0];
+      const auto by = wrap_maxs.value()[1];
+      const auto bz = wrap_maxs.value()[2];
+      const auto Lx = bx - ax;
+      const auto Ly = by - ay;
+      const auto Lz = bz - az;
 
-      const auto j  = i + n_offset;
-      pos_mds[j][0] = state.pos[0];
-      pos_mds[j][1] = state.pos[1];
-      pos_mds[j][2] = state.pos[2];
+      thrust::for_each(w.on_this(), n_begin, n_end, [=](const auto i) {
+        // This does not work on lumi, so we use workaround.
+        // const auto state = n_span[i];
+        const auto state = n_span.data()[i];
 
-      vel_mds[j][0] = state.vel[0];
-      vel_mds[j][1] = state.vel[1];
-      vel_mds[j][2] = state.vel[2];
+        const auto j  = i + n_offset;
+        pos_mds[j][0] = (state.pos[0] < 0 ? bx : ax) + std::fmod(state.pos[0], Lx);
+        pos_mds[j][1] = (state.pos[1] < 0 ? by : ay) + std::fmod(state.pos[1], Ly);
+        pos_mds[j][2] = (state.pos[2] < 0 ? bz : az) + std::fmod(state.pos[2], Lz);
 
-      ids_mds[j][] = state.id;
-    });
+        vel_mds[j][0] = state.vel[0];
+        vel_mds[j][1] = state.vel[1];
+        vel_mds[j][2] = state.vel[2];
+
+        ids_mds[j][] = state.id;
+      });
+
+    } else {
+      thrust::for_each(w.on_this(), n_begin, n_end, [=](const auto i) {
+        // This does not work on lumi, so we use workaround.
+        // const auto state = n_span[i];
+        const auto state = n_span.data()[i];
+
+        const auto j  = i + n_offset;
+        pos_mds[j][0] = state.pos[0];
+        pos_mds[j][1] = state.pos[1];
+        pos_mds[j][2] = state.pos[2];
+
+        vel_mds[j][0] = state.vel[0];
+        vel_mds[j][1] = state.vel[1];
+        vel_mds[j][2] = state.vel[2];
+
+        ids_mds[j][] = state.id;
+      });
+    }
+
     w.wait();
   }
 }

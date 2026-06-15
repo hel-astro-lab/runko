@@ -103,12 +103,9 @@ void
   if(static_cast<comm_mode>(mode) != comm_mode::pic_particle) { return; }
 
   for(const auto& [ptype, spans]: this->incoming_subregion_particles_) {
-    particle_buffs_.at(ptype).append(spans);
-  }
-
-  for(auto& [_, pbuff]: this->particle_buffs_) {
     using T = pic::ParticleContainer::value_type;
-    pbuff.wrap_positions(
+    particle_buffs_.at(ptype).append(
+      spans,
       this->template get_global_coordinate_mins<T>(),
       this->template get_global_coordinate_maxs<T>());
   }
