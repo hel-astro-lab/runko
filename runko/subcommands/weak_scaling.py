@@ -81,6 +81,8 @@ def sorted_by_key(key: list, *vals: list) -> None:
 
 
 def main(argv: list[str]):
+    plt.style.use("runko.standard-plot")
+
     parser = argparse.ArgumentParser(description="""
         Plot runko weak scaling based on the timing data from given output directories.
         The output directories must be populated with timing data
