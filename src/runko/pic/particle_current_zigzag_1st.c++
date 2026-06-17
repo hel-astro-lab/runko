@@ -3,14 +3,14 @@
 
 #include "runko/emf/yee_lattice.h"
 #include "runko/pic/particle.h"
+#include "runko/tools/math.h"
+#include "runko/tools/vector.h"
 #include "thrust/device_vector.h"
 #include "thrust/execution_policy.h"
 #include "thrust/iterator/transform_output_iterator.h"
 #include "thrust/memory.h"
 #include "thrust/reduce.h"
 #include "thrust/sort.h"
-#include "runko/tools/math.h"
-#include "runko/tools/vector.h"
 #include "tyvi/mdgrid.h"
 
 #include <array>
@@ -113,7 +113,8 @@ emf::YeeLattice::CurrentContributions
     const auto [Wx1, Wy1, Wz1] = W1.data;
     const auto [Wx2, Wy2, Wz2] = W2.data;
 
-    auto offset = idx[0] * max_num_of_nodes_effected;
+    auto offset = static_cast<decltype(deposit_locations)::difference_type>(
+      idx[0] * max_num_of_nodes_effected);
 
     const auto store_current = [=, &offset](const Vec3i index, const Vec3v current) {
       deposit_loc_ptr[offset] = deposit_loc { index };

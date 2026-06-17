@@ -3,7 +3,9 @@
 
 #pragma once
 
+#include "tyvi/device_allocator.h"
 #include "tyvi/mdgrid.h"
+#include "tyvi/mdsegments.h"
 #include "tyvi/mdspan.h"
 
 #include <cstddef>
@@ -64,5 +66,31 @@ using PrtclFieldList = tyvi::mdgrid<detail::prtcl_io_element<T>, detail::list_ex
 
 template<typename T>
 using SpectraGrid = tyvi::mdgrid<detail::spectra_element<T>, detail::grid2d_extents>;
+
+static constexpr auto segment_size = 1uz << 20uz;
+
+template<typename T>
+using device_scalar_segments = tyvi::mdsegments<
+  T,
+  segment_size,
+  std::extents<index_t>,
+  std::layout_right,
+  tyvi::device_allocator<T>>;
+
+template<typename T>
+using host_scalar_segments = tyvi::mdsegments<T, segment_size, std::extents<index_t>>;
+
+template<typename T>
+using device_vec_segments = tyvi::mdsegments<
+  T,
+  segment_size,
+  std::extents<index_t, 3uz>,
+  std::layout_right,
+  tyvi::device_allocator<T>>;
+
+template<typename T>
+using host_vec_segments =
+  tyvi::mdsegments<T, segment_size, std::extents<index_t, 3uz>, std::layout_right>;
+
 
 }  // namespace runko
