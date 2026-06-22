@@ -11,10 +11,13 @@ class configuration(unittest.TestCase):
         self.conf_A = runko.Configuration(str(source_dir) + "/configuration_A.ini")
 
     def test_all_sections_are_read(self):
+        # Does not work before Python 3.13.
+        # self.assertEqual(self.conf_A.var_without_section, 42)
         self.assertEqual(self.conf_A.int_var, 42)
         self.assertEqual(self.conf_A.string_var, "foo bar")
         self.assertEqual(self.conf_A.float_var, 4.2)
         self.assertEqual(self.conf_A.string_array_var, ["foo", "bar"])
+        self.assertEqual(self.conf_A.integer_array_var, [1, 2, 3])
         self.assertTrue(self.conf_A.true_var)
         self.assertFalse(self.conf_A.false_var)
 
