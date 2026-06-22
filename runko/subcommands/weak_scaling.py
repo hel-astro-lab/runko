@@ -81,7 +81,9 @@ def sorted_by_key(key: list, *vals: list) -> None:
 
 
 def main(argv: list[str]):
-    parser = argparse.ArgumentParser(description="""
+    parser = argparse.ArgumentParser(
+        prog="runko weak-scaling",
+        description="""
         Plot runko weak scaling based on the timing data from given output directories.
         The output directories must be populated with timing data
         by calling `pickle_timer_statistics` method of `runko.Simulation` class.
