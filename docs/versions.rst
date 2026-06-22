@@ -15,7 +15,7 @@ Version history
 Current:
 ^^^^^^^^
 
-* v5.0: `CPU/GPU-backend refactor <https://github.com/hel-astro-lab/runko`_
+* v5.0: `CPU/GPU-backend refactor <https://github.com/hel-astro-lab/runko>`_
     * Major code revision introducing the tyvi portability library backend.
 * v4.1: `Ripe Kiwi <https://github.com/hel-astro-lab/runko/tree/v4-qed>`_
     * Collection of bug fixes on top of Kiwi. Fully functional QED module.
