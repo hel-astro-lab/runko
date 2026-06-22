@@ -9,6 +9,7 @@ help_str = """usage: runko <subcommand> [ARGS...]
 Invokes <subcommand> with ARGS.
 
 Available subcommands: help
+                       inspect
                        weak-scaling"""
 
 
@@ -26,6 +27,9 @@ def main():
     elif subcommand == "weak-scaling":
         import runko.subcommands.weak_scaling
         runko.subcommands.weak_scaling.main(sys.argv[1:])
+    elif subcommand == "inspect":
+        import runko.subcommands.inspect
+        runko.subcommands.inspect.main(sys.argv[1:])
     else:
         print(f"error: unregonized subcommand: '{subcommand}'")
         print(help_str)
