@@ -4,8 +4,8 @@
 #include "runko/emf/virtual_tile.h"
 
 #include "runko/communication_common.h"
-#include "thrust/host_vector.h"
 #include "runko/tools/system.h"
+#include "thrust/host_vector.h"
 
 namespace emf {
 
@@ -13,38 +13,28 @@ template<std::size_t D>
 VirtualTile<D>::VirtualTile(
   const std::array<std::size_t, 3> tile_indices,
   const toolbox::ConfigParser& p) :
-  corgi::Tile<D>(),
-  extents_wout_halo_ { p.get_or_throw<std::size_t>("NxMesh"),
-                       p.get_or_throw<std::size_t>("NyMesh"),
-                       p.get_or_throw<std::size_t>("NzMesh") }
+  corgi::Tile<D>()
 {
+
+  const auto cells = p.get_or_throw<std::vector<std::ptrdiff_t>>("n_cells_per_tile");
+  this->extents_wout_halo_ = { static_cast<std::size_t>(cells[0]),
+                               static_cast<std::size_t>(cells[1]),
+                               static_cast<std::size_t>(cells[2]) };
 
   E_ = hollow_grid_EB(extents_wout_halo());
   B_ = hollow_grid_EB(extents_wout_halo());
   J_ = hollow_grid_J(extents_with_halo());
 
-  auto one_or_throw = [](const double d) {
-    if(d != 1.0) {
-      throw std::logic_error {
-        "emf tile does not support d{x,y,z} values other than 1."
-      };
-    }
-    return std::optional { d };
-  };
-
-  std::ignore = p.get<double>("dx").and_then(one_or_throw);
-  std::ignore = p.get<double>("dy").and_then(one_or_throw);
-  std::ignore = p.get<double>("dz").and_then(one_or_throw);
-
-  const auto xmin = p.get_or_throw<double>("xmin");
-  const auto ymin = p.get_or_throw<double>("ymin");
-  const auto zmin = p.get_or_throw<double>("zmin");
+  const auto xmin = 0.0;
+  const auto ymin = 0.0;
+  const auto zmin = 0.0;
 
   const auto [i, j, k] = tile_indices;
 
-  const auto Nx = p.get_or_throw<std::size_t>("Nx");
-  const auto Ny = p.get_or_throw<std::size_t>("Ny");
-  const auto Nz = p.get_or_throw<std::size_t>("Nz");
+  const auto tiles = p.get_or_throw<std::vector<std::ptrdiff_t>>("n_tiles");
+  const auto Nx    = static_cast<std::size_t>(tiles[0]);
+  const auto Ny    = static_cast<std::size_t>(tiles[1]);
+  const auto Nz    = static_cast<std::size_t>(tiles[2]);
 
   if(Nx <= i or Ny <= j or Nz <= k) {
     throw std::runtime_error { "Trying to create tile outside of configured grid." };
@@ -93,16 +83,14 @@ std::vector<mpi4cpp::mpi::request>
 
 #ifndef TYVI_BACKEND_CPU
   if(not toolbox::system_supports_gpu_aware_mpi()) {
-    throw std::runtime_error {
-      "GPU backend requires GPU-aware MPI."
-    };
+    throw std::runtime_error { "GPU backend requires GPU-aware MPI." };
   }
 #endif
 
   using runko::comm_mode;
 
   auto make_irecv = [&](const auto s) {
-      return comm.irecv(orig, tag, s.data(), runko::checked_cast<int>(s.size()));
+    return comm.irecv(orig, tag, s.data(), runko::checked_cast<int>(s.size()));
   };
 
   switch(static_cast<comm_mode>(mode)) {

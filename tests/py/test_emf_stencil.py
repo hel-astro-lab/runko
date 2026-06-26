@@ -11,18 +11,11 @@ class emf_stencil(unittest.TestCase):
 
     def setUp(self):
         self.config = runko.Configuration(None)
-        self.config.Nx = 4
-        self.config.Ny = 4
-        self.config.Nz = 4
-        self.config.NxMesh = 10
-        self.config.NyMesh = 11
-        self.config.NzMesh = 13
-        self.config.xmin = 0
-        self.config.ymin = 0
-        self.config.zmin = 0
+        self.config.n_tiles = [2, 3, 4]
+        self.config.n_cells_per_tile = [10, 12, 14]
         self.config.cfl = 1
         self.config.field_propagator = "stencil"
-        # All zeros -> alpha=1 -> reduces to FDTD2
+        # All zeros -> alpha=1 -> reduces to fdtd2
 
         def f():
             tile_grid_idx = (0, 0, 0)
@@ -30,19 +23,19 @@ class emf_stencil(unittest.TestCase):
 
         self.make_test_tile = f
 
-        # Stencil reaches further into halo than FDTD2,
+        # Stencil reaches further into halo than fdtd2,
         # so test interior must be 3 cells in from each edge.
         def index_space():
-            return itertools.product(range(3, -3 + self.config.NxMesh),
-                                     range(3, -3 + self.config.NyMesh),
-                                     range(3, -3 + self.config.NzMesh))
+            return itertools.product(range(3, -3 + self.config.n_cells_per_tile[0]),
+                                     range(3, -3 + self.config.n_cells_per_tile[1]),
+                                     range(3, -3 + self.config.n_cells_per_tile[2]))
 
         self.get_interior_index_space = index_space
 
     def test_zero_coeffs_push_half_b_x(self):
         """
         With all stencil coefficients = 0 (alpha=1), push_half_b should
-        match FDTD2 exactly.
+        match fdtd2 exactly.
 
         E = (0, z, -y) => curl(E) = (-2, 0, 0) => push_half_b => Bx > 0
         """
@@ -55,12 +48,10 @@ class emf_stencil(unittest.TestCase):
         tile_stencil.set_EBJ(E, B, J)
         tile_stencil.push_half_b()
 
-        # FDTD2 tile for comparison
-        config2 = runko.Configuration(None)
-        for attr in ['Nx', 'Ny', 'Nz', 'NxMesh', 'NyMesh', 'NzMesh',
-                      'xmin', 'ymin', 'zmin', 'cfl']:
-            setattr(config2, attr, getattr(self.config, attr))
-        config2.field_propagator = "FDTD2"
+        # fdtd2 tile for comparison
+        import copy
+        config2 = copy.deepcopy(self.config)
+        config2.field_propagator = "fdtd2"
         tile_fdtd2 = runko.emf.threeD.Tile((0, 0, 0), config2)
         tile_fdtd2.set_EBJ(E, B, J)
         tile_fdtd2.push_half_b()
@@ -137,8 +128,8 @@ class emf_stencil(unittest.TestCase):
 
     def test_push_e_uses_fdtd2(self):
         """
-        With stencil propagator, push_e should use standard FDTD2 and give
-        the same result as a pure FDTD2 tile.
+        With stencil propagator, push_e should use standard fdtd2 and give
+        the same result as a pure fdtd2 tile.
         """
         tile_stencil = self.make_test_tile()
         E = lambda x, y, z: (0, 0, 0)
@@ -147,11 +138,9 @@ class emf_stencil(unittest.TestCase):
         tile_stencil.set_EBJ(E, B, J)
         tile_stencil.push_e()
 
-        config2 = runko.Configuration(None)
-        for attr in ['Nx', 'Ny', 'Nz', 'NxMesh', 'NyMesh', 'NzMesh',
-                      'xmin', 'ymin', 'zmin', 'cfl']:
-            setattr(config2, attr, getattr(self.config, attr))
-        config2.field_propagator = "FDTD2"
+        import copy
+        config2 = copy.deepcopy(self.config)
+        config2.field_propagator = "fdtd2"
         tile_fdtd2 = runko.emf.threeD.Tile((0, 0, 0), config2)
         tile_fdtd2.set_EBJ(E, B, J)
         tile_fdtd2.push_e()
@@ -167,7 +156,7 @@ class emf_stencil(unittest.TestCase):
         """
         With nonzero delta, a linear E field still has constant curl.
         The extended stencil of a linear field reduces to the same
-        result as FDTD2 (since the higher-order finite differences
+        result as fdtd2 (since the higher-order finite differences
         of a linear function are zero).
         """
         self.config.stencil_delta = -0.065

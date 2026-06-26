@@ -12,7 +12,7 @@ set (EMF_FILES
      ./runko/emf/tile.c++
      ./runko/emf/virtual_tile.c++
      ./runko/emf/yee_lattice.c++
-     ./runko/emf/yee_lattice_FDTD2.c++
+     ./runko/emf/yee_lattice_fdtd2.c++
      ./runko/emf/yee_lattice_stencil.c++
      ./runko/emf/yee_lattice_current_filter_binomial2.c++
      )

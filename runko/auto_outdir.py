@@ -50,7 +50,7 @@ def resolve_outdir(config):
     - "auto"                       → auto-generated name from config params
     """
 
-    outdir = config.outdir
+    outdir = config.io_outdir
 
     if not outdir:
         return "runko_output"
@@ -62,19 +62,22 @@ def resolve_outdir(config):
     parts = []
 
     # grid dimensions (mandatory for auto)
-    gx = config.Nx * config.NxMesh
-    gy = config.Ny * config.NyMesh
-    gz = config.Nz * config.NzMesh
+    Nx, Ny, Nz = config.n_tiles
+    NxMesh, NyMesh, NzMesh = config.n_cells_per_tile
+
+    gx = Nx * NxMesh
+    gy = Ny * NyMesh
+    gz = Nz * NzMesh
     parts.append(f"{gx}x{gy}x{gz}")
 
     # optional tagged params in fixed order
     _tag_params = [
         ("ppc",  "ppc"),
-        ("c",    "c_omp"),
+        ("c",    "n_cells_per_skindepth"),
         ("s",    "sigma"),
         ("np",   "n_filter_passes"),
         ("cfl",  "cfl"),
-        ("t",    "theta"),
+        ("t",    "theta0"),
         ("gam",  "upstream_gamma"),
     ]
 
@@ -84,19 +87,17 @@ def resolve_outdir(config):
             parts.append(f"{tag}{_compact(val)}")
 
     # B-field projections (all three or nothing)
-    bx = config.bx_proj
-    by = config.by_proj
-    bz = config.bz_proj
-    if bx is not None and by is not None and bz is not None:
+    if config.b_proj:
+        bx, by, bz = config.b_proj
         parts.append(f"bx{_compact(bx)}by{_compact(by)}bz{_compact(bz)}")
 
     name = "_".join(parts)
 
     # prefix/postfix are user-controlled (user includes own underscores)
-    if config.prefix is not None:
-        name = config.prefix + name
-    if config.postfix is not None:
-        name = name + config.postfix
+    if config.io_outdir_prefix is not None:
+        name = config.io_outdir_prefix + name
+    if config.io_outdir_postfix is not None:
+        name = name + config.io_outdir_postfix
 
     # collapse any accidental double underscores
     while "__" in name:

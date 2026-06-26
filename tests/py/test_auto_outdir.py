@@ -46,7 +46,7 @@ class TestResolveOutdir(unittest.TestCase):
 
     def test_explicit_outdir(self):
         """Explicit outdir is returned unchanged."""
-        conf = self._make_config(outdir="my_results")
+        conf = self._make_config(io_outdir="my_results")
         self.assertEqual(resolve_outdir(conf), "my_results")
 
     def test_none_defaults(self):
@@ -56,17 +56,17 @@ class TestResolveOutdir(unittest.TestCase):
 
     def test_auto_all_params(self):
         conf = self._make_config(
-            outdir="auto",
-            Nx=8, Ny=2, Nz=2,
-            NxMesh=32, NyMesh=32, NzMesh=32,
+            io_outdir="auto",
+            n_tiles=[8, 2, 2,],
+            n_cells_per_tile=[32, 32, 32],
             ppc=2,
-            c_omp=3,
+            n_cells_per_skindepth=3,
             sigma=0.1,
             n_filter_passes=4,
             cfl=0.45,
-            theta=1e-5,
+            theta0=1e-5,
             upstream_gamma=3.0,
-            bx_proj=0.0, by_proj=0.0, bz_proj=1.0,
+            b_proj=[0.0, 0.0, 1.0],
         )
         result = resolve_outdir(conf)
         self.assertEqual(result,
@@ -75,9 +75,9 @@ class TestResolveOutdir(unittest.TestCase):
     def test_auto_missing_optional(self):
         """Missing optional params are simply skipped."""
         conf = self._make_config(
-            outdir="auto",
-            Nx=4, Ny=4, Nz=1,
-            NxMesh=16, NyMesh=16, NzMesh=16,
+            io_outdir="auto",
+            n_tiles=[4, 4, 1],
+            n_cells_per_tile=[16, 16, 16],
             ppc=4,
         )
         result = resolve_outdir(conf)
@@ -85,20 +85,20 @@ class TestResolveOutdir(unittest.TestCase):
 
     def test_auto_prefix_only(self):
         conf = self._make_config(
-            outdir="auto",
-            prefix="3d_",
-            Nx=8, Ny=2, Nz=2,
-            NxMesh=32, NyMesh=32, NzMesh=32,
+            io_outdir="auto",
+            io_outdir_prefix="3d_",
+            n_tiles=[8, 2, 2],
+            n_cells_per_tile=[32, 32, 32],
         )
         result = resolve_outdir(conf)
         self.assertEqual(result, "3d_256x64x64")
 
     def test_auto_postfix_only(self):
         conf = self._make_config(
-            outdir="auto",
-            postfix="_run7",
-            Nx=2, Ny=2, Nz=2,
-            NxMesh=10, NyMesh=10, NzMesh=10,
+            io_outdir="auto",
+            io_outdir_postfix="_run7",
+            n_tiles=[2, 2, 2],
+            n_cells_per_tile=[10, 10, 10],
         )
         result = resolve_outdir(conf)
         self.assertEqual(result, "20x20x20_run7")
@@ -106,43 +106,32 @@ class TestResolveOutdir(unittest.TestCase):
     def test_double_underscore_collapsed(self):
         """Double underscores from prefix/postfix are collapsed."""
         conf = self._make_config(
-            outdir="auto",
-            prefix="run__",
-            postfix="__end",
-            Nx=2, Ny=2, Nz=2,
-            NxMesh=10, NyMesh=10, NzMesh=10,
+            io_outdir="auto",
+            io_outdir_prefix="run__",
+            io_outdir_postfix="__end",
+            n_tiles=[2, 2, 2],
+            n_cells_per_tile=[10, 10, 10],
         )
         result = resolve_outdir(conf)
         self.assertNotIn("__", result)
         self.assertEqual(result, "run_20x20x20_end")
 
-    def test_bfield_partial_omitted(self):
-        """If only some B-field projections are given, skip the B-field tag."""
-        conf = self._make_config(
-            outdir="auto",
-            Nx=2, Ny=2, Nz=2,
-            NxMesh=10, NyMesh=10, NzMesh=10,
-            bx_proj=1.0,
-        )
-        result = resolve_outdir(conf)
-        self.assertEqual(result, "20x20x20")
-
     def test_integration_full_config(self):
         """Full config with prefix, postfix, and all optional params."""
         conf = self._make_config(
-            outdir="auto",
-            prefix="3d_",
-            postfix="_v1_test1",
-            Nx=8, Ny=2, Nz=2,
-            NxMesh=32, NyMesh=32, NzMesh=32,
+            io_outdir="auto",
+            io_outdir_prefix="3d_",
+            io_outdir_postfix="_v1_test1",
+            n_tiles=[8, 2, 2],
+            n_cells_per_tile=[32, 32, 32],
             ppc=2,
-            c_omp=3,
+            n_cells_per_skindepth=3,
             sigma=0.1,
             n_filter_passes=4,
             cfl=0.45,
-            theta=1e-5,
+            theta0=1e-5,
             upstream_gamma=3.0,
-            bx_proj=0.0, by_proj=0.0, bz_proj=1.0,
+            b_proj=[0.0, 0.0, 1.0],
         )
         result = resolve_outdir(conf)
         self.assertEqual(result,

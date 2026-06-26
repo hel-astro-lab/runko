@@ -26,23 +26,17 @@ class TileGrid:
 
     def __init__(self, conf):
 
-        required_vars = ["Nx",
-                         "Ny",
-                         "Nz",
-                         "NxMesh",
-                         "NyMesh",
-                         "NzMesh",
-                         "xmin",
-                         "ymin",
-                         "zmin",
+        required_vars = ["n_tiles",
+                         "n_cells_per_tile",
                          "tile_partitioning"]
 
         for var in required_vars:
             if getattr(conf, var) is None:
                 raise RuntimeError(f"Can not construct TileGrid without: {var}")
 
-        self._Nx, self._Ny, self._Nz = conf.Nx, conf.Ny, conf.Nz
-        self._NxMesh, self._NyMesh, self._NzMesh = conf.NxMesh, conf.NyMesh, conf.NzMesh
+        self._Nx, self._Ny, self._Nz = conf.n_tiles
+        self._NxMesh, self._NyMesh, self._NzMesh = conf.n_cells_per_tile
+        self._xmin, self._ymin, self._zmin = (0, 0, 0)
 
         valid_tile_partitions = ["hilbert_curve", "catepillar_track"]
 
@@ -55,17 +49,17 @@ class TileGrid:
                 raise RuntimeError(msg)
 
 
-        self._corgi_grid = pycorgi.Grid(conf.Nx, conf.Ny, conf.Nz)
+        self._corgi_grid = pycorgi.Grid(self._Nx, self._Ny, self._Nz)
 
-        xmax = conf.xmin + conf.Nx * conf.NxMesh
-        ymax = conf.ymin + conf.Ny * conf.NyMesh
-        zmax = conf.zmin + conf.Nz * conf.NzMesh
+        xmax = self._xmin + self._Nx * self._NxMesh
+        ymax = self._ymin + self._Ny * self._NyMesh
+        zmax = self._zmin + self._Nz * self._NzMesh
 
-        self._corgi_grid.set_grid_lims(conf.xmin,
+        self._corgi_grid.set_grid_lims(self._xmin,
                                        xmax,
-                                       conf.ymin,
+                                       self._ymin,
                                        ymax,
-                                       conf.zmin,
+                                       self._zmin,
                                        zmax)
 
         legacy_conf = type("", (), dict(oneD=False,
@@ -132,7 +126,7 @@ class TileGrid:
         Configures execution ready runko simulation based on the tile grid.
         """
 
-        required_vars = ["Nt"]
+        required_vars = ["n_laps"]
 
         for var in required_vars:
             if getattr(config, var) is None:
@@ -203,16 +197,16 @@ class TileGrid:
             else:
                 break
 
-        stride = 1 if not config.stride else config.stride
+        stride = 1 if not config.io_grid_stride else config.io_grid_stride
         io_config = dict(stride=stride,
                          outdir=resolve_outdir(config),
                          nspecies=nspecies,
-                         n_prtcls=config.n_prtcls if config.n_prtcls else 0,
-                         laps_in_timer_statistics=getattr(config, 'laps_in_timer_statistics', None),
-                         spectra_nbins=getattr(config, 'spectra_nbins', 200),
-                         spectra_umin=getattr(config, 'spectra_umin', 1e-4),
-                         spectra_umax=getattr(config, 'spectra_umax', 1e3),
-                         spectra_stride=getattr(config, 'spectra_stride', None) or stride)
+                         n_prtcls=config.n_sampled_prtcls if config.n_sampled_prtcls else 0,
+                         laps_in_timer_statistics=getattr(config, 'io_n_laps_in_timer_stats', None),
+                         spectra_nbins=getattr(config, 'io_n_spectra_bins', 200),
+                         spectra_umin=getattr(config, 'io_spectra_umin', 1e-4),
+                         spectra_umax=getattr(config, 'io_spectra_umax', 1e3),
+                         spectra_stride=getattr(config, 'io_spectra_stride', None) or stride)
 
         pathlib.Path(io_config["outdir"]).mkdir(parents=True, exist_ok=True)
 
@@ -228,6 +222,6 @@ class TileGrid:
 
         return Simulation(self,
                           Simulation._im_not_user,
-                          Nt=config.Nt,
+                          Nt=config.n_laps,
                           io_config=io_config,
                           verbose=config.verbose)

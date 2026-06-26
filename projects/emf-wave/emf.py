@@ -14,18 +14,11 @@ if __name__ == "__main__":
     config = runko.Configuration(None)
 
     config.tile_partitioning = "hilbert_curve"
-    config.Nt = 40
-    config.Nx = 2
-    config.Ny = 1
-    config.Nz = 1
-    config.NxMesh = 40
-    config.NyMesh = 40
-    config.NzMesh = 40
-    config.xmin = 0
-    config.ymin = 0
-    config.zmin = 0
+    config.n_laps = 100
+    config.n_tiles = [2, 1, 1]
+    config.n_cells_per_tile = [40, 40, 40]
     config.cfl = 1
-    config.field_propagator = "FDTD2"
+    config.field_propagator = "fdtd2"
 
     tile_grid = runko.TileGrid(config)
 

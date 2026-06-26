@@ -31,6 +31,21 @@ struct YeeLatticeCtorArgs {
   std::size_t Nx {}, Ny {}, Nz {};
 };
 
+template<std::integral T>
+constexpr YeeLatticeCtorArgs
+  make_yee_ctor_args_from_vector(const std::vector<T>& vec)
+{
+  if(vec.size() != 3uz) {
+    throw std::runtime_error { std::format(
+      "Trying to construct YeeLatticeCtorArgs from vector of size: {} (should be 3)",
+      vec.size()) };
+  }
+  return YeeLatticeCtorArgs { .Nx = static_cast<std::size_t>(vec[0]),
+                              .Ny = static_cast<std::size_t>(vec[1]),
+                              .Nz = static_cast<std::size_t>(vec[2]) };
+}
+
+
 struct YeeLatticeFieldsAtPoint {
   double Ex, Ey, Ez;
   double Bx, By, Bz;
@@ -142,17 +157,17 @@ public:
   /// Get copy of E, B and J including halo regions.
   YeeLatticeHostCopy get_EBJ_with_halo();
 
-  /// Advance B by half time step using FDTD2 scheme in non-halo region.
-  void push_b_FDTD2(value_type dt);
+  /// Advance B by half time step using fdtd2 scheme in non-halo region.
+  void push_b_fdtd2(value_type dt);
 
-  /// Advance E by full time step using FDTD2 scheme in non-halo region.
-  void push_e_FDTD2(value_type dt);
+  /// Advance E by full time step using fdtd2 scheme in non-halo region.
+  void push_e_fdtd2(value_type dt);
 
   /// E -= J in non-halo region.
   void add_current();
 
-  /// Advance B by half time step using FDTD2 scheme in non-halo region asynchronously.
-  void push_b_FDTD2(const tyvi::mdgrid_work&, value_type dt);
+  /// Advance B by half time step using fdtd2 scheme in non-halo region asynchronously.
+  void push_b_fdtd2(const tyvi::mdgrid_work&, value_type dt);
 
   /// Advance B using extended stencil (N=2, M=2) in non-halo region.
   void push_b_stencil(value_type dt, const StencilCoeffs& coeffs);
@@ -163,8 +178,8 @@ public:
     value_type dt,
     const StencilCoeffs& coeffs);
 
-  /// Advance E by full time step using FDTD2 scheme in non-halo region asynchronously.
-  void push_e_FDTD2(const tyvi::mdgrid_work&, value_type dt);
+  /// Advance E by full time step using fdtd2 scheme in non-halo region asynchronously.
+  void push_e_fdtd2(const tyvi::mdgrid_work&, value_type dt);
 
   /// E -= J in non-halo region asynchronously.
   void add_current(const tyvi::mdgrid_work&);

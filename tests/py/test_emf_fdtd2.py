@@ -7,21 +7,14 @@ import numpy as np
 
 import runko
 
-class emf_FDTD2(unittest.TestCase):
+class emf_fdtd2(unittest.TestCase):
 
     def setUp(self):
         self.config = runko.Configuration(None)
-        self.config.Nx = 4
-        self.config.Ny = 4
-        self.config.Nz = 4
-        self.config.NxMesh = 10
-        self.config.NyMesh = 11
-        self.config.NzMesh = 13
-        self.config.xmin = 0
-        self.config.ymin = 0
-        self.config.zmin = 0
+        self.config.n_tiles = [4, 4, 4]
+        self.config.n_cells_per_tile = [10, 11, 13]
         self.config.cfl = 1
-        self.config.field_propagator = "FDTD2"
+        self.config.field_propagator = "fdtd2"
 
         def f():
             tile_grid_idx = (0, 0, 0)
@@ -32,15 +25,15 @@ class emf_FDTD2(unittest.TestCase):
         # Halo regions can not easily be updated in this unittest,
         # se we only test inner region of the mesh.
         def index_space():
-            return itertools.product(range(1, -1 + self.config.NxMesh),
-                                     range(1, -1 + self.config.NyMesh),
-                                     range(1, -1 + self.config.NzMesh))
+            return itertools.product(range(1, -1 + self.config.n_cells_per_tile[0]),
+                                     range(1, -1 + self.config.n_cells_per_tile[1]),
+                                     range(1, -1 + self.config.n_cells_per_tile[2]))
 
         self.get_interior_index_space = index_space
 
-        n = self.config.NxMesh - 2
-        m = self.config.NyMesh - 2
-        l = self.config.NzMesh - 2
+        n = self.config.n_cells_per_tile[0] - 2
+        m = self.config.n_cells_per_tile[1] - 2
+        l = self.config.n_cells_per_tile[2] - 2
 
         c = 0
         for _ in self.get_interior_index_space():

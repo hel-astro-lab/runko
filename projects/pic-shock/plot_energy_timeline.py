@@ -21,7 +21,7 @@ from runko.mpiio_reader import read_header, read_field
 def compute_upstream(conf):
     """Compute upstream field values and binit (same formulas as pic.py)."""
     oppc = 2 * conf.ppc
-    omp  = conf.cfl / conf.c_omp
+    omp  = conf.cfl / conf.n_cells_per_skindepth
     qe   = -(omp**2 * conf.upstream_gamma) / (0.5 * oppc * (1.0 + conf.m0 / conf.m1))
     m0   = conf.m0 * abs(qe)
     m1   = conf.m1 * abs(qe)
@@ -31,11 +31,11 @@ def compute_upstream(conf):
         "binit": binit,
         "gamma": conf.upstream_gamma,
         "ex": 0.0,
-        "ey": -beta * binit * conf.bz_proj,
-        "ez": +beta * binit * conf.by_proj,
-        "bx": binit * conf.bx_proj,
-        "by": binit * conf.by_proj,
-        "bz": binit * conf.bz_proj,
+        "ey": -beta * binit * conf.b_proj[2],
+        "ez": +beta * binit * conf.b_proj[1],
+        "bx": binit * conf.b_proj[0],
+        "by": binit * conf.b_proj[1],
+        "bz": binit * conf.b_proj[2],
     }
 
 
@@ -52,7 +52,7 @@ if __name__ == "__main__":
     outdir = resolve_outdir(conf)
 
     cfl   = conf.cfl
-    c_omp = conf.c_omp
+    c_omp = conf.n_cells_per_skindepth
     up    = compute_upstream(conf)
     U0    = up["binit"]**2  # reference energy density
 

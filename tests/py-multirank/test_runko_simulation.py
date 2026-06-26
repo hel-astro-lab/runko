@@ -19,18 +19,11 @@ def single_tile_on_multiple_ranks():
     config = runko.Configuration(None)
     config.tile_partitioning = "catepillar_track"
     config.catepillar_track_length = 1
-    config.Nt = 7
-    config.Nx = 1
-    config.Ny = 1
-    config.Nz = 1
-    config.NxMesh = 5
-    config.NyMesh = 5
-    config.NzMesh = 5
-    config.xmin = 0
-    config.ymin = 0
-    config.zmin = 0
+    config.n_laps = 7
+    config.n_tiles = [1, 1, 1]
+    config.n_cells_per_tile = [5, 5, 5]
     config.cfl = 1
-    config.field_propagator = "FDTD2"
+    config.field_propagator = "fdtd2"
 
     tile_grid = runko.TileGrid(config)
 

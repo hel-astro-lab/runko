@@ -53,7 +53,7 @@ if __name__ == "__main__":
     gamma_b = 3
     delgam_b = 1e-5 # delgam = k_b T / mc^2
     delgam_p = 1e-5
-    config.Nt = 500
+    config.n_laps = 500
     config.cfl = 0.45
     field_output_interval = None # None means that the output is disabled.
     output_filename = "beam-instability" # .csv is automatically appended to the name
@@ -61,18 +61,11 @@ if __name__ == "__main__":
 
     alpha = 1 # no other values supported.
 
-    config.NxMesh = 320
-    config.NyMesh = 80
-    config.NzMesh = 6
-    config.Nx = 1
-    config.Ny = 1
-    config.Nz = 1
-    config.stride = 1
-    config.xmin = 0
-    config.ymin = 0
-    config.zmin = 0
+    config.n_tiles = [1, 1, 1]
+    config.n_cells_per_tile = [320, 80, 6]
+    config.io_grid_stride = 1
     config.field_propagator_cfl_coeff = 1.02
-    config.field_propagator = "FDTD2"
+    config.field_propagator = "fdtd2"
     config.particle_pusher = "boris"
     config.field_interpolator = "linear_1st"
     config.current_depositer = "zigzag_1st_atomic"

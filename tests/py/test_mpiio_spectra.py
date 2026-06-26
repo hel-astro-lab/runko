@@ -52,9 +52,9 @@ def spectra_write_and_read(tile_grid, outdir, config, nbins=50,
     """Write spectra and read back via Python reader."""
     writer = MpiioSpectraWriter(
         outdir,
-        config.Nx, config.NxMesh,
-        config.Ny, config.NyMesh,
-        config.Nz, config.NzMesh,
+        config.n_tiles[0], config.n_cells_per_tile[0],
+        config.n_tiles[1], config.n_cells_per_tile[1],
+        config.n_tiles[2], config.n_cells_per_tile[2],
         stride, nbins, umin, umax, nspecies)
     writer.write(tile_grid._corgi_grid, lap)
     path = find_spectra_file(outdir)

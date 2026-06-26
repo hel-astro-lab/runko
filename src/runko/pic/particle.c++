@@ -60,7 +60,7 @@ void
 }
 
 std::size_t
-  ParticleContainer::size() const
+ParticleContainer::size() const
 {
   return pos_.size();
 }

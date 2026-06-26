@@ -22,19 +22,13 @@ if __name__ == "__main__":
 
     config = runko.Configuration(None)
 
-    config.outdir = "turb-small"
-    config.Nx = 1
-    config.Ny = 1
-    config.Nz = 1
-    config.NxMesh = 64
-    config.NyMesh = 64
-    config.NzMesh = 64
+    config.io_outdir = "turb-small"
+    config.n_tiles = [1, 1, 1]
+    config.n_cells_per_tile = [64, 64, 64]
     config.cfl = 0.45
-    config.Nt = 5.0*config.Nx*config.NxMesh/config.cfl/3.0 # =5eddy turnover times
-    config.xmin = 0
-    config.ymin = 0
-    config.zmin = 0
-    config.field_propagator = "FDTD2"
+    # 5 eddy turnover times
+    config.n_laps = 5.0*config.n_tiles[0]*config.n_cells_per_tile[0]/config.cfl/3.0
+    config.field_propagator = "fdtd2"
     config.m0 = 1
     config.m1 = 1
     config.particle_pusher = "boris"
@@ -42,7 +36,7 @@ if __name__ == "__main__":
     config.current_depositer = "zigzag_1st_atomic"
     config.current_filter = "binomial2"
     config.tile_partitioning = "hilbert_curve"
-    config.laps_in_timer_statistics = 20
+    config.io_n_laps_in_timer_stats = 20
 
 
     # Problem specific configuration
@@ -102,9 +96,7 @@ if __name__ == "__main__":
     ph2 = 2.0 * np.pi * np.random.rand(n_perp, n_perp, n_par)
     ph3 = 2.0 * np.pi * np.random.rand(n_perp, n_perp, n_par)
 
-    Lx = config.Nx * config.NxMesh / c_omp
-    Ly = config.Ny * config.NyMesh / c_omp
-    Lz = config.Nz * config.NzMesh / c_omp
+    Lx, Ly, Lz = np.array(config.n_tiles) * np.array(config.n_cells_per_tile)
 
     kx = 2.0 * np.pi / (c_omp * Lx)
     ky = 2.0 * np.pi / (c_omp * Ly)
