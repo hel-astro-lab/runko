@@ -24,6 +24,8 @@ class [[nodiscard]] ConfigParser {
     std::string,
     std::ptrdiff_t,
     double,
+    std::vector<double>,
+    std::vector<std::ptrdiff_t>,
     std::vector<std::string>>;
   std::unordered_map<std::string, value_type> config_ {};
 

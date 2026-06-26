@@ -6,6 +6,7 @@
 #include "pybind11/stl.h"
 
 #include <format>
+#include <ranges>
 #include <utility>
 
 namespace toolbox {
@@ -37,9 +38,48 @@ ConfigParser::ConfigParser(const pybind11::handle& conf_obj)
       config_.emplace(std::make_pair(std::move(skey), value.cast<double>()));
     } else if(pybind11::isinstance<pybind11::list>(value)) {
 
-      // Assume list is list of strings.
-      config_.emplace(
-        std::make_pair(std::move(skey), value.cast<std::vector<std::string>>()));
+      auto contains_ints    = false;
+      auto contains_floats  = false;
+      auto contains_strings = false;
+
+
+      for(const auto& [n, x]:
+          std::views::enumerate(pybind11::reinterpret_borrow<pybind11::list>(value))) {
+        const auto is_int   = pybind11::isinstance<pybind11::int_>(x);
+        const auto is_float = pybind11::isinstance<pybind11::float_>(x);
+        const auto is_str   = pybind11::isinstance<pybind11::str>(x);
+
+        if(not(is_int or is_float or is_str)) {
+          const auto cls      = x.attr("__class__");
+          const auto cls_name = cls.attr("__name__").cast<std::string>();
+          const auto msg      = std::format(
+            "list element of `{}` at index {} has unsupported type: {}",
+            skey,
+            n,
+            cls_name);
+          throw std::runtime_error { msg };
+        }
+
+        contains_ints    = contains_ints or is_int;
+        contains_floats  = contains_floats or is_float;
+        contains_strings = contains_strings or is_str;
+      }
+
+      if(contains_ints and contains_floats and contains_strings) {
+        throw std::runtime_error { std::format(
+          "Can not deduce common type for list that contains ints, floats and strings "
+          "(config parameter: {})!",
+          skey) };
+      } else if(not contains_ints and not contains_floats and contains_strings) {
+        config_.emplace(
+          std::make_pair(std::move(skey), value.cast<std::vector<std::string>>()));
+      } else if(contains_ints and not contains_floats and not contains_strings) {
+        config_.emplace(
+          std::make_pair(std::move(skey), value.cast<std::vector<std::ptrdiff_t>>()));
+      } else {
+        config_.emplace(
+          std::make_pair(std::move(skey), value.cast<std::vector<double>>()));
+      }
     } else {
       const auto cls      = value.attr("__class__");
       const auto cls_name = cls.attr("__name__").cast<std::string>();

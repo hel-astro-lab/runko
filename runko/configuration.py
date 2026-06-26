@@ -11,8 +11,6 @@ class Configuration:
     Found items are usable as attributes of Configuration instance.
     """
 
-    _section_names = "io", "simulation", "grid", "problem", "particles", "algorithms"
-
     def __init__(self, config_path: str | None):
         """
         If config_path is None, creates Configuration instance without any values.
@@ -26,16 +24,20 @@ class Configuration:
 
         from configparser import ConfigParser
         import ast
+        import sys
 
-        parser = ConfigParser(inline_comment_prefixes=("#",))
+        if sys.version_info >= (3, 13):
+            parser = ConfigParser(inline_comment_prefixes=("#", ";"),
+                                  allow_unnamed_section=True)
+        else:
+            parser = ConfigParser(inline_comment_prefixes=("#", ";"))
+
         parser.optionxform = str  # make option names case sensitive
 
         if not parser.read(config_path):
             raise ValueError(f"No config found: {config_path}")
 
-        for section in self._section_names:
-            if not parser.has_section(section):
-                continue
+        for section in parser.sections():
             attributes = {key: ast.literal_eval(value) for key, value in parser.items(section)}
             self.__dict__.update(attributes)
 

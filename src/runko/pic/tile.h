@@ -84,15 +84,11 @@ private:
 public:
   /// Construct Tile based on the given config.
   ///
-  /// FIXME: document how the initialization is done?
-  ///
   /// In addition to emf::Tile ctor requirements,
   /// the given config has to contain values for:
   ///
   /// `qx`:    charge of x:th particle species (x is natural number)
   /// `mx`:    mass of x:th particle species (x is natural number)
-  /// `c_omp`: simulation skin depth resolution
-  /// `ppc`:   particles per cell per species
   ///
   /// `particle_pusher`:     scheme to update particles velocities and positions
   /// `fields_interpolator`: scheme to interpolate E and B fields to particles

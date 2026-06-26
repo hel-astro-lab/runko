@@ -8,17 +8,10 @@ import runko
 
 def make_tile(tile_idx=(0, 0, 0), Nx=4, Ny=4, Nz=4, NxMesh=10, NyMesh=11, NzMesh=13):
     config = runko.Configuration(None)
-    config.Nx = Nx
-    config.Ny = Ny
-    config.Nz = Nz
-    config.NxMesh = NxMesh
-    config.NyMesh = NyMesh
-    config.NzMesh = NzMesh
-    config.xmin = 0
-    config.ymin = 0
-    config.zmin = 0
+    config.n_tiles = [Nx, Ny, Nz]
+    config.n_cells_per_tile = [10, 11, 13]
     config.cfl = 1
-    config.field_propagator = "FDTD2"
+    config.field_propagator = "fdtd2"
     return config, runko.emf.threeD.Tile(tile_idx, config)
 
 

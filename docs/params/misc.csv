@@ -1,0 +1,9 @@
+ppc, int,, Macro-particles per cell per species.
+sigma, float,, Magnetization sigma = B^2/(4*pi*gamma*n*m*c^2).
+n_cells_per_skindepth, int,, Skin-depth resolution c/omega_p in cells.
+n_filter_passes, int,, Current smoothing passes per step.
+thetaN, float,, Temperature of Nth particle species kT/(mc^2).
+thetaN_to_thetaM, float,, Nth-to-Mth particle species temperature ratio.
+upstream_gamma, float,, Bulk Lorentz factor of the upstream flow.
+b_proj, list[float],, B-field direction cosines.
+n_particles, int, weak-scaling plots, Total number of particles in the simulation. Used to calculate push time.

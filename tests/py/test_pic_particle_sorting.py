@@ -6,17 +6,10 @@ import runko
 
 def make_test_tile():
     config = runko.Configuration(None)
-    config.Nx = 4
-    config.Ny = 4
-    config.Nz = 4
-    config.NxMesh = 6
-    config.NyMesh = 7
-    config.NzMesh = 6
-    config.xmin = 0
-    config.ymin = 0
-    config.zmin = 0
+    config.n_tiles = [4, 4, 4]
+    config.n_cells_per_tile = [6, 7, 6]
     config.cfl = 1
-    config.field_propagator = "FDTD2"
+    config.field_propagator = "fdtd2"
     config.q0 = -1
     config.m0 = 1
     config.q1 = 1

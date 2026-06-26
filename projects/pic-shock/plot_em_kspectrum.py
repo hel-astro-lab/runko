@@ -55,11 +55,11 @@ def compute_entry(path, conf, up, dx, win_min, win_max, threshold):
 
     hdr = read_header(path)
     lap = int(hdr["lap"])
-    time_omp = lap * conf.cfl / conf.c_omp
+    time_omp = lap * conf.cfl / conf.n_cells_per_skindepth
 
     n0 = read_field(path, "n0")
     n1 = read_field(path, "n1")
-    norm_rho = 2.0 * conf.ppc * conf.stride ** 3
+    norm_rho = 2.0 * conf.ppc * conf.io_grid_stride**3
     rho_1d = ((n0 + n1) / norm_rho).mean(axis=(0, 1))
     nx = rho_1d.shape[0]
     del n0, n1
@@ -131,7 +131,7 @@ def main():
     conf = runko.Configuration(args.conf)
     outdir = resolve_outdir(conf)
     up = compute_upstream(conf)
-    dx = conf.stride / conf.c_omp
+    dx = conf.io_grid_stride / conf.n_cells_per_skindepth  # output cell width in skin depths
 
     print(f"outdir = {outdir}")
     print(f"binit (= B_0) = {up['binit']:.6g}")

@@ -68,7 +68,7 @@ def add_shock_derived(conf):
     Same formulas as pic.py:43-56 so get_normalization() works.
     """
     oppc = 2 * conf.ppc
-    omp  = conf.cfl / conf.c_omp
+    omp  = conf.cfl / conf.n_cells_per_skindepth
     conf.qe = -(omp**2 * conf.upstream_gamma) / (0.5 * oppc * (1.0 + conf.m0 / conf.m1))
     conf.me = conf.m0 * abs(conf.qe)
     conf.binit = math.sqrt(
@@ -86,9 +86,9 @@ def get_normalization(var, conf):
     qe = np.abs(conf.qe)
     me = np.abs(conf.me)
     me_per_qe = np.abs(conf.me) / qe #for electrons = 1
-    deltax = 1.0/conf.c_omp #\Delta x in units of skin depth
+    deltax = 1.0/conf.n_cells_per_skindepth #\Delta x in units of skin depth
 
-    lenscale = conf.Nx*conf.NxMesh*deltax #/conf.max_mode #(large-eddy size in units of skin depth)
+    lenscale = conf.n_tiles[0]*conf.n_cells_per_tile[0]*deltax #/conf.max_mode #(large-eddy size in units of skin depth)
 
     if var == 'rho': # or var == 'dens':
         norm = 2.0*conf.ppc #*conf.gamma #*me
@@ -164,7 +164,7 @@ if __name__ == "__main__":
     by /= get_normalization('by', conf)
     bz /= get_normalization('bz', conf)
 
-    dx = conf.stride/conf.c_omp # skindepth resolution
+    dx = conf.io_grid_stride/conf.n_cells_per_skindepth # skindepth resolution
     origin = 0,0,0
 
     nz, ny, nx = np.shape(rho)
@@ -664,7 +664,7 @@ if __name__ == "__main__":
 
     #--------------------------------------------------
     slap = str(lap).rjust(5, '0')
-    p.screenshot(conf.outdir + "/" + "3d_" + var + "_" + slap + ".png", scale=2)
+    p.screenshot(conf.io_outdir + "/" + "3d_" + var + "_" + slap + ".png", scale=2)
 
     print('camera pos:', cpos)
 
@@ -674,7 +674,7 @@ if __name__ == "__main__":
     print('up', p.camera.up)
 
     if False:
-        p.open_movie(conf.outdir + "/" + "3d_jz_b.mp4", quality=8)
+        p.open_movie(conf.io_outdir + "/" + "3d_jz_b.mp4", quality=8)
 
         for az in np.linspace(0, 360, 360):
             p.camera.azimuth = az

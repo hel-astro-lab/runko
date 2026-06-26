@@ -32,7 +32,7 @@ if __name__ == "__main__":
 
     conf = runko.Configuration(args.conf)
 
-    conf.Nt = int(10 * conf.NxMesh * conf.Nx / conf.cfl)
+    conf.n_laps = int(10 * conf.NxMesh * conf.Nx / conf.cfl)
 
     # --------------------------------------------------
     # Problem specific configuration
@@ -41,18 +41,17 @@ if __name__ == "__main__":
     cold_sigma = conf.sigma
 
     n_e_num = conf.ppc
-    skin_depth_in_delta_x = conf.c_omp
     modes_par, modes_perp = conf.modes_par, conf.modes_perp
     modes = [(modes_perp, 0, modes_par),
              (modes_perp, 0, -modes_par),
              (0, modes_perp, modes_par),
              (0, modes_perp, -modes_par)]
-    delgam = conf.theta # temperature
-    temp_ratio = conf.theta_ratio # T_i / T_e
+    delgam = conf.theta0 # temperature
+    temp_ratio = conf.theta1_to_theta0 # T_i / T_e
 
     n_num = 2 * n_e_num
 
-    plasma_freq_num = conf.cfl / skin_depth_in_delta_x
+    plasma_freq_num = conf.cfl / conf.n_cells_per_skindepth
     average_gamma = 1 + 3 * delgam # approximation from Nättilä & Beloborodov (2021)
     conf.q0 = -average_gamma * (plasma_freq_num**2.0) / (n_e_num * (1.0 + conf.m0 / conf.m1))
     conf.q1 = abs(conf.q0)
@@ -68,7 +67,7 @@ if __name__ == "__main__":
     B0_num = np.sqrt(n_num * (conf.cfl**2.0) * sigma * m0_num)
 
     # Assumes cubic box.
-    L_num = conf.Nx * conf.NxMesh
+    L_num = conf.n_tiles[0] * conf.n_cells_per_tile[0]
     kpar_num = 2 * np.pi * modes_par / L_num
     kperp_num = 2 * np.pi * modes_perp / L_num
 
@@ -80,7 +79,7 @@ if __name__ == "__main__":
     w0_num = 0.8 * linear_freq_num
     gamma0_num = -0.6 * linear_freq_num
 
-    base_time_evolution = time_evolution = runko.sample_oscillating_langevin_antenna(size=conf.Nt,
+    base_time_evolution = time_evolution = runko.sample_oscillating_langevin_antenna(size=conf.n_laps,
                                                                                      characteristic_freq=w0_num,
                                                                                      decorrelation_rate=gamma0_num,
                                                                                      gen=rng)
@@ -96,7 +95,7 @@ if __name__ == "__main__":
         if conf.fixed_antenna:
             return runko.emf.threeD.antenna_mode(A=(0, 0, A_num), n=mode, lap_coeffs=base_time_evolution * random_phase)
         else:
-            time_evolution = runko.sample_oscillating_langevin_antenna(size=conf.Nt,
+            time_evolution = runko.sample_oscillating_langevin_antenna(size=conf.n_laps,
                                                                        characteristic_freq=w0_num,
                                                                        decorrelation_rate=gamma0_num,
                                                                        gen=rng)
@@ -110,21 +109,20 @@ if __name__ == "__main__":
         from runko.auto_outdir import resolve_outdir
         W = 21
         logger.info(f"{'--- [io] ---':}")
-        logger.info(f"  {'outdir':<{W}}= {conf.outdir}")
+        logger.info(f"  {'outdir':<{W}}= {conf.io_outdir}")
         logger.info(f"  {'resolved outdir':<{W}}= {resolve_outdir(conf)}")
-        logger.info(f"  {'prefix / postfix':<{W}}= {conf.prefix} / {conf.postfix}")
-        logger.info(f"  {'output_interval':<{W}}= {conf.output_interval}")
+        logger.info(f"  {'prefix / postfix':<{W}}= {conf.io_outidr_prefix} / {conf.io_outidr_postfix}")
+        logger.info(f"  {'output_interval':<{W}}= {conf.io_output_interval}")
 
         logger.info(f"{'--- [grid] ---':}")
-        logger.info(f"  {'tiles':<{W}}= {conf.Nx} x {conf.Ny} x {conf.Nz}")
-        logger.info(f"  {'mesh per tile':<{W}}= {conf.NxMesh} x {conf.NyMesh} x {conf.NzMesh}")
-        logger.info(f"  {'full grid':<{W}}= {conf.Nx*conf.NxMesh} x {conf.Ny*conf.NyMesh} x {conf.Nz*conf.NzMesh}")
-        logger.info(f"  {'grid in c/wp':<{W}}= {conf.Nx*conf.NxMesh/conf.c_omp:.1f} x {conf.Ny*conf.NyMesh/conf.c_omp:.1f} x {conf.Nz*conf.NzMesh/conf.c_omp:.1f}")
+        logger.info(f"  {'tiles':<{W}}= {conf.n_tiles}")
+        logger.info(f"  {'mesh per tile':<{W}}= {conf.n_cells_per_tile}")
+        full_grid = np.array(conf.n_tiles) * np.array(conf.n_cells_per_tile)
+        logger.info(f"  {'full grid':<{W}}= {full_grid}")
 
         logger.info(f"{'--- [simulation] ---':}")
-        logger.info(f"  {'Nt':<{W}}= {conf.Nt}")
+        logger.info(f"  {'laps':<{W}}= {conf.n_laps}")
         logger.info(f"  {'cfl':<{W}}= {conf.cfl}")
-        logger.info(f"  {'max plasma time':<{W}}= {conf.Nt * conf.c_omp:.1f} wp^-1")
 
         logger.info(f"{'--- [particles] ---':}")
         logger.info(f"  {'ppc':<{W}}= {n_e_num}")
@@ -135,7 +133,6 @@ if __name__ == "__main__":
         logger.info(f"{'--- [problem] ---':}")
         logger.info(f"  {'cold sigma':<{W}}= {cold_sigma}")
         logger.info(f"  {'sigma':<{W}}= {sigma}")
-        logger.info(f"  {'c/wp':<{W}}= {conf.c_omp}")
         logger.info(f"  {'B_init':<{W}}= {B0_num:.6g}")
         logger.info(f"  {'A':<{W}}= {A_num:.6g}")
         logger.info(f"  {'linear freq':<{W}}= {linear_freq_num:.6g}")
@@ -250,7 +247,7 @@ if __name__ == "__main__":
         x.io_ram_usage()
 
 
-        if simulation.lap % conf.output_interval == 0:
+        if simulation.lap % conf.io_output_interval == 0:
             x.io_emf_snapshot()
             x.io_prtcl_snapshot()
             simulation.log_timer_statistics()

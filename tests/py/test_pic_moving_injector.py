@@ -8,17 +8,10 @@ import runko
 
 def make_config():
     config = runko.Configuration(None)
-    config.Nx = 4
-    config.Ny = 1
-    config.Nz = 1
-    config.NxMesh = 10
-    config.NyMesh = 4
-    config.NzMesh = 4
-    config.xmin = 0
-    config.ymin = 0
-    config.zmin = 0
+    config.n_tiles = [4, 1, 1]
+    config.n_cells_per_tile = [10, 4, 4]
     config.cfl = 0.45
-    config.field_propagator = "FDTD2"
+    config.field_propagator = "fdtd2"
     config.q0 = -1
     config.m0 = 1
     config.q1 = 1
@@ -61,7 +54,7 @@ class TestBatchInjectInStripe(unittest.TestCase):
         tile.batch_inject_in_x_stripe(0, identity_pgen, -1.0, 11.0)
 
         posx, _, _ = tile.get_positions(0)
-        expected = config.NxMesh * config.NyMesh * config.NzMesh
+        expected = np.multiply.reduce(config.n_cells_per_tile)
         self.assertEqual(len(posx), expected)
 
     def test_stripe_partial_overlap(self):
@@ -72,7 +65,8 @@ class TestBatchInjectInStripe(unittest.TestCase):
 
         posx, _, _ = tile.get_positions(0)
         n_x_cells = 4  # cells 3, 4, 5, 6
-        expected = n_x_cells * config.NyMesh * config.NzMesh
+        expected = n_x_cells * config.n_cells_per_tile[1] \
+                             * config.n_cells_per_tile[2]
         self.assertEqual(len(posx), expected)
 
         # all injected x-positions should be within [3, 7)
@@ -114,7 +108,8 @@ class TestBatchInjectInStripe(unittest.TestCase):
 
         posx0, _, _ = tile.get_positions(0)
         posx1, _, _ = tile.get_positions(1)
-        expected = 3 * config.NyMesh * config.NzMesh
+        expected = 3 * config.n_cells_per_tile[1] \
+                     * config.n_cells_per_tile[2]
         self.assertEqual(len(posx0), expected)
         self.assertEqual(len(posx1), expected)
 
@@ -126,7 +121,7 @@ class TestBatchInjectInStripe(unittest.TestCase):
         tile.batch_inject_in_x_stripe(0, identity_pgen, 10.0, 20.0)
 
         posx, _, _ = tile.get_positions(0)
-        expected = config.NxMesh * config.NyMesh * config.NzMesh
+        expected = np.multiply.reduce(config.n_cells_per_tile)
         self.assertEqual(len(posx), expected)
 
     def test_batch_inject_to_cells_unchanged(self):

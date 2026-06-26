@@ -11,23 +11,12 @@ zero = lambda x, y, z: (0, 0, 0)
 
 def make_reflector_tile():
     config = runko.Configuration(None)
-    config.Nx = 4
-    config.Ny = 4
-    config.Nz = 4
-    config.NxMesh = 10
-    config.NyMesh = 11
-    config.NzMesh = 13
-    config.xmin = 0
-    config.ymin = 0
-    config.zmin = 0
+    config.n_tiles = [4, 4, 4]
+    config.n_cells_per_tile = [10, 11, 13]
     config.cfl = 1
-    config.field_propagator = "FDTD2"
+    config.field_propagator = "fdtd2"
     config.q0 = -1
     config.m0 = 1
-    config.delgam = 1e-5
-    config.temperature_ratio = 1.0
-    config.sigma = 40
-    config.c_omp = 1
     config.particle_pusher = "boris"
     config.field_interpolator = "linear_1st"
     config.current_depositer = "zigzag_1st"

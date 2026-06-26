@@ -28,7 +28,7 @@ if __name__ == "__main__":
     conf = runko.Configuration(args.conf)
     outdir = resolve_outdir(conf)
     cfl = conf.cfl
-    c_omp = conf.c_omp
+    c_omp = conf.n_cells_per_skindepth
 
     print(f"outdir = {outdir}")
 
@@ -38,7 +38,7 @@ if __name__ == "__main__":
     spectra_s1 = []
     u = None
 
-    for lap in range(0, conf.Nt + 1, conf.output_interval):
+    for lap in range(0, conf.n_laps + 1, conf.io_output_interval):
         fpath = os.path.join(outdir, f"pspectra_{lap}.bin")
         if not os.path.exists(fpath):
             continue
@@ -84,7 +84,7 @@ if __name__ == "__main__":
     ax_ep = axs[1, 0]  # e+ (species 1)
 
     # -- colormap --------------------------------------------------------------
-    tmax = conf.Nt * cfl / c_omp
+    tmax = conf.n_laps * cfl / c_omp
     norm = matplotlib.colors.Normalize(vmin=0.0, vmax=tmax)
     cmap = matplotlib.colormaps['turbo']
 

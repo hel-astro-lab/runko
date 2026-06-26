@@ -10,19 +10,11 @@ import runko
 def create_test_grid():
     config = runko.Configuration(None)
     config.tile_partitioning = "hilbert_curve"
-    # config.catepillar_track_length = 1
-    config.Nt = 3
-    config.Nx = 2
-    config.Ny = 2
-    config.Nz = 2
-    config.NxMesh = 10
-    config.NyMesh = 11
-    config.NzMesh = 13
-    config.xmin = 0
-    config.ymin = 0
-    config.zmin = 0
+    config.n_laps = 3
+    config.n_tiles = [2, 2, 2]
+    config.n_cells_per_tile = [10, 11, 13]
     config.cfl = 1
-    config.field_propagator = "FDTD2"
+    config.field_propagator = "fdtd2"
     config.outdir = tempfile.mkdtemp(prefix="runko-emf-test-output")
 
     return config, runko.TileGrid(config)
@@ -164,7 +156,7 @@ def emf_J_exchange():
     simulation.for_one_lap(f)
 
 
-    nx, ny, nz = conf.NxMesh, conf.NyMesh, conf.NzMesh
+    nx, ny, nz = conf.n_cells_per_tile
     halo_width = 3
     twohalo = 2 * halo_width
 

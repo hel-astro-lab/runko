@@ -1,0 +1,7 @@
+field_propagator, str, emf, "**options**: ftdt2, stencil"
+field_propagator_cfl_coeff, float, emf, "CFL in field propagator is multiplied by this (default: 1)."
+particle_pusher, str, pic, "**options**: boris, higuera_cary, faraday"
+field_interpolator, str, pic, "**options**: linear_1st, linear_1st_unrolled"
+current_depositor, str, pic, "**options**: binomial2, binomial2_unrolled"
+domain_decomposition, str, tile_grid, "How tiles are divided between MPI ranks. **options**: hilbert_curve, catepillar_track"
+catepillar_track_length, int, catepillar_track, FIXME

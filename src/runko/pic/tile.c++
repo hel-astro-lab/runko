@@ -58,9 +58,7 @@ void
 
     if(const auto pcontainer_args = make_opt_args(q_label, m_label)) {
       auto container = pic::ParticleContainer { pcontainer_args.value() };
-      if(prealloc_per_species > 0uz) {
-        container.prealloc_dead(prealloc_per_species);
-      }
+      if(prealloc_per_species > 0uz) { container.prealloc_dead(prealloc_per_species); }
       // insert_or_assign and not operator[], because if element is missing,
       // then operator[] will default construct it.
       // pic::ParticleContainer is not default constructible.
@@ -132,9 +130,10 @@ Tile<D>::Tile(
 {
   construct_particle_buffs(particle_buffs_, conf);
 
-  const auto Nx = conf.get_or_throw<std::size_t>("Nx");
-  const auto Ny = conf.get_or_throw<std::size_t>("Ny");
-  const auto Nz = conf.get_or_throw<std::size_t>("Nz");
+  const auto tiles = conf.get_or_throw<std::vector<std::ptrdiff_t>>("n_tiles");
+  const auto Nx    = static_cast<std::size_t>(tiles[0]);
+  const auto Ny    = static_cast<std::size_t>(tiles[1]);
+  const auto Nz    = static_cast<std::size_t>(tiles[2]);
 
   if(Nx * Ny * Nz >= 1uz << 24uz) {
     throw std::runtime_error { "PIC tile does not support this many tiles." };
@@ -310,7 +309,7 @@ void
   const auto vely_view = state_batch.vel[1].template unchecked<1>();
   const auto velz_view = state_batch.vel[2].template unchecked<1>();
 
-  auto states   = std::vector<runko::ParticleState<double>>(batch_size);
+  auto states = std::vector<runko::ParticleState<double>>(batch_size);
   for(const auto n: std::views::iota(0uz, batch_size)) {
     states[n] = runko::ParticleState<double> {
       .pos = { posx_view(n), posy_view(n), posz_view(n) },

@@ -11,23 +11,12 @@ def decimal_part(x: float):
 
 def make_test_tile(particle_pusher, field_interpolator):
     config = runko.Configuration(None)
-    config.Nx = 4
-    config.Ny = 4
-    config.Nz = 4
-    config.NxMesh = 10
-    config.NyMesh = 11
-    config.NzMesh = 13
-    config.xmin = 0
-    config.ymin = 0
-    config.zmin = 0
+    config.n_tiles = [4, 4, 4]
+    config.n_cells_per_tile = [10, 11, 13]
     config.cfl = 1
-    config.field_propagator = "FDTD2"
+    config.field_propagator = "fdtd2"
     config.q0 = -1
     config.m0 = 1
-    config.delgam = 1.0e-5
-    config.temperature_ratio = 1.0
-    config.sigma = 40
-    config.c_omp = 1
     config.particle_pusher = particle_pusher
     config.field_interpolator = field_interpolator
     config.current_depositer = "zigzag_1st"
@@ -36,12 +25,12 @@ def make_test_tile(particle_pusher, field_interpolator):
 
 
 def in_middle_part(x, y, z, config):
-    a = config.xmin + 3 < x
-    b = config.xmin + config.NxMesh - 3 > x
-    c = config.ymin + 3 < y
-    d = config.ymin + config.NyMesh - 3 > y
-    e = config.zmin + 3 < z
-    f = config.zmin + config.NzMesh - 3 > z
+    a = 3 < x
+    b = config.n_cells_per_tile[0] - 3 > x
+    c = 3 < y
+    d = config.n_cells_per_tile[1] - 3 > y
+    e = 3 < z
+    f = config.n_cells_per_tile[2] - 3 > z
     return a and b and c and d and e and f
 
 
@@ -323,10 +312,10 @@ class _particle_pusher_tests:
         tile.set_EBJ(E, zero, zero)
 
         i, j, k = tile.index
-        xA = (i + 0.1) * config.NxMesh
-        xB = (i + 0.9) * config.NxMesh
-        y = (j + 0.5) * config.NyMesh
-        z = (k + 0.5) * config.NzMesh
+        xA = (i + 0.1) * config.n_cells_per_tile[0]
+        xB = (i + 0.9) * config.n_cells_per_tile[0]
+        y = (j + 0.5) * config.n_cells_per_tile[1]
+        z = (k + 0.5) * config.n_cells_per_tile[2]
 
         particles = [runko.pic.threeD.ParticleState(pos=(xA, y, z), vel=(0, 0, 0)),
                      runko.pic.threeD.ParticleState(pos=(xB, y, z), vel=(0, 0, 0))]
@@ -354,10 +343,10 @@ class _particle_pusher_tests:
         tile.set_EBJ(E, zero, zero)
 
         i, j, k = tile.index
-        x = (i + 0.5) * config.NxMesh
-        yA = (j + 0.1) * config.NyMesh
-        yB = (j + 0.9) * config.NyMesh
-        z = (k + 0.5) * config.NzMesh
+        x = (i + 0.5) * config.n_cells_per_tile[0]
+        yA = (j + 0.1) * config.n_cells_per_tile[1]
+        yB = (j + 0.9) * config.n_cells_per_tile[1]
+        z = (k + 0.5) * config.n_cells_per_tile[2]
 
         particles = [runko.pic.threeD.ParticleState(pos=(x, yA, z), vel=(0, 0, 0)),
                      runko.pic.threeD.ParticleState(pos=(x, yB, z), vel=(0, 0, 0))]
@@ -385,10 +374,10 @@ class _particle_pusher_tests:
         tile.set_EBJ(E, zero, zero)
 
         i, j, k = tile.index
-        x = (i + 0.5) * config.NxMesh
-        y = (j + 0.5) * config.NyMesh
-        zA = (k + 0.1) * config.NzMesh
-        zB = (k + 0.9) * config.NzMesh
+        x = (i + 0.5) * config.n_cells_per_tile[0]
+        y = (j + 0.5) * config.n_cells_per_tile[1]
+        zA = (k + 0.1) * config.n_cells_per_tile[2]
+        zB = (k + 0.9) * config.n_cells_per_tile[2]
 
         particles = [runko.pic.threeD.ParticleState(pos=(x, y, zA), vel=(0, 0, 0)),
                      runko.pic.threeD.ParticleState(pos=(x, y, zB), vel=(0, 0, 0))]

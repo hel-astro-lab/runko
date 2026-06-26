@@ -1,0 +1,6 @@
+n_laps, int, :python:`Simulation`, Total number of time steps.
+n_tiles, list[int], :python:`TileGrid`, Numer of MPI tiles per dimension.
+n_cells_per_tile, list[int], emf, Grid cells per tile per dimension (dx=dy=dz=1).
+cfl, float, emf, Courant number dt/dx; (must be <= 0.5).
+qN, float, pic, "Charge of Nth particle species in code units (N=0, 1, ...)."
+mN, float, pic, "Mass-to-charge magnitude ratio of the Nth particle species (N=0, 1, ...)."

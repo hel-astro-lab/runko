@@ -13,16 +13,9 @@ class emf(unittest.TestCase):
     def test_unregonized_config_value_type_fails_gracefully(self):
 
         config = runko.Configuration(None)
-        config.Nx = 2
-        config.Ny = 3
-        config.Nz = 4
-        config.NxMesh = 10
-        config.NyMesh = 12
-        config.NzMesh = 14
-        config.xmin = -3.2
-        config.ymin = -2.3
-        config.zmin = 1
-        config.field_propagator = "FDTD2"
+        config.n_tiles = [2, 3, 4]
+        config.n_cells_per_tile = [10, 12, 14]
+        config.field_propagator = "fdtd2"
 
         class foo:
             def __inti__(self):
@@ -39,17 +32,10 @@ class emf(unittest.TestCase):
     def test_field_set_and_get_roundtrip(self):
 
         config = runko.Configuration(None)
-        config.Nx = 2
-        config.Ny = 3
-        config.Nz = 4
-        config.NxMesh = 10
-        config.NyMesh = 12
-        config.NzMesh = 14
-        config.xmin = -3.2
-        config.ymin = -2.3
-        config.zmin = 1
+        config.n_tiles = [2, 3, 4]
+        config.n_cells_per_tile = [10, 12, 14]
         config.cfl = 1
-        config.field_propagator = "FDTD2"
+        config.field_propagator = "fdtd2"
 
         tile_grid_idx = (0, 1, 2)
         tile = runko.emf.threeD.Tile(tile_grid_idx, config)
@@ -99,7 +85,7 @@ class emf(unittest.TestCase):
         self.assertIsNone(Jy.base)
         self.assertIsNone(Jz.base)
 
-        s = (config.NxMesh, config.NyMesh, config.NzMesh)
+        s = tuple(config.n_cells_per_tile)
         self.assertEqual(Ex.shape, s)
         self.assertEqual(Ey.shape, s)
         self.assertEqual(Ez.shape, s)
@@ -110,14 +96,14 @@ class emf(unittest.TestCase):
         self.assertEqual(Jy.shape, s)
         self.assertEqual(Jz.shape, s)
 
-        index_space = itertools.product(range(config.NxMesh),
-                                        range(config.NyMesh),
-                                        range(config.NzMesh))
+        index_space = itertools.product(range(config.n_cells_per_tile[0]),
+                                        range(config.n_cells_per_tile[1]),
+                                        range(config.n_cells_per_tile[2]))
         for i, j, k in index_space:
 
-            ii = config.xmin + tile_grid_idx[0] * config.NxMesh + i
-            jj = config.ymin + tile_grid_idx[1] * config.NyMesh + j
-            kk = config.zmin + tile_grid_idx[2] * config.NzMesh + k
+            ii = tile_grid_idx[0] * config.n_cells_per_tile[0] + i
+            jj = tile_grid_idx[1] * config.n_cells_per_tile[1] + j
+            kk = tile_grid_idx[2] * config.n_cells_per_tile[2] + k
 
             self.assertAlmostEqual(Ex[i, j, k], Einit(ii + 0.5, jj, kk)[0], places=5)
             self.assertAlmostEqual(Ey[i, j, k], Einit(ii, jj + 0.5, kk)[1], places=5)
@@ -135,17 +121,10 @@ class emf(unittest.TestCase):
     def test_field_batch_set(self):
 
         config = runko.Configuration(None)
-        config.Nx = 2
-        config.Ny = 3
-        config.Nz = 4
-        config.NxMesh = 10
-        config.NyMesh = 12
-        config.NzMesh = 14
-        config.xmin = -3.2
-        config.ymin = -2.3
-        config.zmin = 1
+        config.n_tiles = [2, 3, 4]
+        config.n_cells_per_tile = [10, 12, 14]
         config.cfl = 1
-        config.field_propagator = "FDTD2"
+        config.field_propagator = "fdtd2"
 
         tile_grid_idx = (0, 1, 2)
         tile = runko.emf.threeD.Tile(tile_grid_idx, config)
@@ -193,14 +172,14 @@ class emf(unittest.TestCase):
 
         (Ex, Ey, Ez), (Bx, By, Bz), (Jx, Jy, Jz) = tile.get_EBJ()
 
-        index_space = itertools.product(range(config.NxMesh),
-                                        range(config.NyMesh),
-                                        range(config.NzMesh))
+        index_space = itertools.product(range(config.n_cells_per_tile[0]),
+                                        range(config.n_cells_per_tile[1]),
+                                        range(config.n_cells_per_tile[2]))
         for i, j, k in index_space:
 
-            ii = config.xmin + tile_grid_idx[0] * config.NxMesh + i
-            jj = config.ymin + tile_grid_idx[1] * config.NyMesh + j
-            kk = config.zmin + tile_grid_idx[2] * config.NzMesh + k
+            ii = tile_grid_idx[0] * config.n_cells_per_tile[0] + i
+            jj = tile_grid_idx[1] * config.n_cells_per_tile[1] + j
+            kk = tile_grid_idx[2] * config.n_cells_per_tile[2] + k
 
             self.assertAlmostEqual(Ex[i, j, k], Exinit(ii + 0.5, jj, kk), places=5)
             self.assertAlmostEqual(Ey[i, j, k], Eyinit(ii, jj + 0.5, kk), places=5)
@@ -218,17 +197,10 @@ class emf(unittest.TestCase):
     def test_batch_setting_fields_with_incorrect_shape_throws(self):
 
         config = runko.Configuration(None)
-        config.Nx = 2
-        config.Ny = 3
-        config.Nz = 4
-        config.NxMesh = 10
-        config.NyMesh = 12
-        config.NzMesh = 14
-        config.xmin = -3.2
-        config.ymin = -2.3
-        config.zmin = 1
+        config.n_tiles = [2, 3, 4]
+        config.n_cells_per_tile = [10, 12, 14]
         config.cfl = 1
-        config.field_propagator = "FDTD2"
+        config.field_propagator = "fdtd2"
 
         tile_grid_idx = (0, 1, 2)
         tile = runko.emf.threeD.Tile(tile_grid_idx, config)
@@ -308,17 +280,10 @@ class emf(unittest.TestCase):
     def test_add_current(self):
 
         config = runko.Configuration(None)
-        config.Nx = 2
-        config.Ny = 3
-        config.Nz = 4
-        config.NxMesh = 10
-        config.NyMesh = 12
-        config.NzMesh = 14
-        config.xmin = 0
-        config.ymin = 0
-        config.zmin = 0
+        config.n_tiles = [2, 3, 4]
+        config.n_cells_per_tile = [10, 12, 14]
         config.cfl = 1
-        config.field_propagator = "FDTD2"
+        config.field_propagator = "fdtd2"
 
         tile_grid_idx = (0, 0, 0)
         tile = runko.emf.threeD.Tile(tile_grid_idx, config)
@@ -347,9 +312,9 @@ class emf(unittest.TestCase):
         Ax_arr, Ay_arr, Az_arr = Ex / Jx, Ey / Jy, Ez / Jz
         Ax, Ay, Az = Ax_arr.flat[0], Ay_arr.flat[0], Az_arr.flat[0]
 
-        index_space = itertools.product(range(config.NxMesh),
-                                        range(config.NyMesh),
-                                        range(config.NzMesh))
+        index_space = itertools.product(range(config.n_cells_per_tile[0]),
+                                        range(config.n_cells_per_tile[1]),
+                                        range(config.n_cells_per_tile[2]))
 
         for i, j, k in index_space:
             self.assertAlmostEqual(Ax, Ax_arr[i, j, k], places=5)
@@ -362,17 +327,10 @@ class emf(unittest.TestCase):
 
     def test_tile_index_is_set(self):
         config = runko.Configuration(None)
-        config.Nx = 2
-        config.Ny = 3
-        config.Nz = 4
-        config.NxMesh = 10
-        config.NyMesh = 12
-        config.NzMesh = 14
-        config.xmin = 0
-        config.ymin = 0
-        config.zmin = 0
+        config.n_tiles = [2, 3, 4]
+        config.n_cells_per_tile = [10, 12, 14]
+        config.field_propagator = "fdtd2"
         config.cfl = 1
-        config.field_propagator = "FDTD2"
 
         tile_grid_idx = [1, 2, 3]
         tile = runko.emf.threeD.Tile(tile_grid_idx, config)
@@ -394,17 +352,10 @@ class emf(unittest.TestCase):
 
     def test_bogus_tile_index_raises_exception(self):
         config = runko.Configuration(None)
-        config.Nx = 2
-        config.Ny = 3
-        config.Nz = 4
-        config.NxMesh = 10
-        config.NyMesh = 12
-        config.NzMesh = 14
-        config.xmin = 0
-        config.ymin = 0
-        config.zmin = 0
+        config.n_tiles = [2, 3, 4]
+        config.n_cells_per_tile = [10, 12, 14]
+        config.field_propagator = "fdtd2"
         config.cfl = 1
-        config.field_propagator = "FDTD2"
 
         with self.assertRaises(Exception):
             runko.emf.threeD.Tile((2, 2, 3), config)
@@ -428,24 +379,17 @@ class emf(unittest.TestCase):
     def test_global_coordinate_map(self):
 
         config = runko.Configuration(None)
-        config.Nx = 2
-        config.Ny = 3
-        config.Nz = 4
-        config.NxMesh = 10
-        config.NyMesh = 12
-        config.NzMesh = 14
-        config.xmin = -3.2
-        config.ymin = -2.3
-        config.zmin = 1
+        config.n_tiles = [2, 3, 4]
+        config.n_cells_per_tile = [10, 12, 14]
+        config.field_propagator = "fdtd2"
         config.cfl = 1
-        config.field_propagator = "FDTD2"
 
         tile_grid_idx = (0, 1, 2)
         tile = runko.emf.threeD.Tile(tile_grid_idx, config)
 
-        tile_origo_x = config.xmin + tile_grid_idx[0] * config.NxMesh
-        tile_origo_y = config.ymin + tile_grid_idx[1] * config.NyMesh
-        tile_origo_z = config.zmin + tile_grid_idx[2] * config.NzMesh
+        tile_origo_x = tile_grid_idx[0] * config.n_cells_per_tile[0]
+        tile_origo_y = tile_grid_idx[1] * config.n_cells_per_tile[1]
+        tile_origo_z = tile_grid_idx[2] * config.n_cells_per_tile[2]
 
         tile_origo = np.array((tile_origo_x, tile_origo_y, tile_origo_z))
 
@@ -453,9 +397,9 @@ class emf(unittest.TestCase):
             for i in range(3):
                 self.assertAlmostEqual(coords[i], correct[i], places=5)
 
-        index_space = itertools.product(np.linspace(-3, config.NxMesh + 3, 10),
-                                        np.linspace(-3, config.NyMesh + 3, 10),
-                                        np.linspace(-3, config.NzMesh + 3, 10))
+        index_space = itertools.product(np.linspace(-3, config.n_cells_per_tile[0] + 3, 10),
+                                        np.linspace(-3, config.n_cells_per_tile[1] + 3, 10),
+                                        np.linspace(-3, config.n_cells_per_tile[2] + 3, 10))
 
         m = tile.global_coordinate_map()
 

@@ -174,7 +174,7 @@ VAR_CONFIG = {
 def add_shock_derived(conf):
     """Compute derived charge/mass/B-field quantities on a v5 Configuration."""
     oppc = 2 * conf.ppc
-    omp  = conf.cfl / conf.c_omp
+    omp  = conf.cfl / conf.n_cells_per_skindepth
     conf.qe = -(omp**2 * conf.upstream_gamma) / (0.5 * oppc * (1.0 + conf.m0 / conf.m1))
     conf.me = conf.m0 * abs(conf.qe)
     conf.binit = math.sqrt(
@@ -191,7 +191,7 @@ def get_normalization(var, conf):
     cells that map to one coarse output cell, so number/current densities
     pick up an extra stride^3 factor. E,B are subsampled (no stride factor).
     """
-    stride3 = conf.stride**3
+    stride3 = conf.io_grid_stride**3
     n0_coarse = 2.0 * conf.ppc * stride3   # upstream coarse-cell density
     qe = abs(conf.qe)
 
@@ -331,11 +331,11 @@ if __name__ == "__main__":
     # -- config ----------------------------------------------------------------
     conf = runko.Configuration(args_cli.conf)
     add_shock_derived(conf)
-    conf.outdir = resolve_outdir(conf)
+    conf.io_outdir = resolve_outdir(conf)
     lap = args_cli.lap
 
     # output cell width in skin depths: each dump cell spans `stride` fine cells.
-    dx = conf.stride / conf.c_omp
+    dx = conf.io_grid_stride / conf.n_cells_per_skindepth
 
     # -- style -----------------------------------------------------------------
     if args_cli.dark: plt.style.use('dark_background')
@@ -347,7 +347,7 @@ if __name__ == "__main__":
     plt.rc('axes', labelsize=8)
 
     # -- read field data -------------------------------------------------------
-    flds_path = os.path.join(conf.outdir, f"flds_{lap}.bin")
+    flds_path = os.path.join(conf.io_outdir, f"flds_{lap}.bin")
     print(f"reading {flds_path}")
     fields = read_field_snapshot(flds_path)
 
@@ -380,7 +380,7 @@ if __name__ == "__main__":
     # -- read spectra data (optional) -----------------------------------------
     spec_panel_order = ['s0_u', 's0_bx', 's0_by', 's0_bz',
                         's1_u', 's1_bx', 's1_by', 's1_bz']
-    spec_path = os.path.join(conf.outdir, f"pspectra_{lap}.bin")
+    spec_path = os.path.join(conf.io_outdir, f"pspectra_{lap}.bin")
     spec_data = {}
     spec_x_edges = None
     u_edges = b_edges = None
@@ -491,7 +491,7 @@ if __name__ == "__main__":
     # -- save ------------------------------------------------------------------
     slap = str(lap).rjust(7, '0')
     suffix = "_tracked" if args_cli.track_shock else ""
-    fname_base = os.path.join(conf.outdir, f"shock_2d_{slap}{suffix}")
+    fname_base = os.path.join(conf.io_outdir, f"shock_2d_{slap}{suffix}")
 
     #plt.savefig(fname_base + '.pdf')
     #print(f"saved {fname_base}.pdf")
