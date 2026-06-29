@@ -8,6 +8,6 @@ io_output_interval, int, , Interval in laps between outputs.
 io_grid_stride, int, emf fields snapshot, "Field output stride i.e. downsample factor (**default**: 1)."
 io_n_sampled_prtcls, int, pic particle snapshot, "Number of particles to sample for particle snapshots (**default**: 0)."
 io_n_spectra_bins, int, pic spectra snapshot, "Number of bins for particle spectra (**default**: 200)."
-io_spectra_umin, float, pic spectra snapshot, "Lower u boundary in log10 scale (**default**: 1e-4)."
-io_spectra_umax, float, pic spectra snapshot, "Upper u boundary in log10 scale (**default**: 1e3)."
+io_spectra_umin, float, pic spectra snapshot, "Lower u boundary (**default**: 1e-4)."
+io_spectra_umax, float, pic spectra snapshot, "Upper u boundary (**default**: 1e3)."
 io_n_laps_in_timer_stats, int, :python:`Simulation`, "Number of latest laps included in simulation timer statistics (**default**: all laps)."
