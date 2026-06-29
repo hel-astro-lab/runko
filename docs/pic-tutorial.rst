@@ -17,16 +17,9 @@ Configuration
    import runko
 
    config = runko.Configuration(None)
-
-   config.Nt = 200 # Number of time steps.
-   # How many tiles:
-   config.Nx = 4
-   config.Ny = 4
-   config.Nz = 4
-   # Size of emf grid in each tile:
-   config.NxMesh = 20
-   config.NyMesh = 20
-   config.NzMesh = 20
+   config.n_laps = 200
+   config.n_tiles = [4, 4, 4]
+   config.n_cells_per_tile = [20, 20, 20]
    # ...
 
 
@@ -34,10 +27,7 @@ After importing :python:`runko` we create a config object with a :python:`None` 
 This indicates that we want an empty config. :python:`None` could be replaced by a path
 to an ``.ini`` file, but to keep the example self-contained,
 we set the configuration parameters inline.
-
-.. note::
-
-   TODO: document configuration parameters
+See :ref:`conf-params` for more information.
 
 
 Logging

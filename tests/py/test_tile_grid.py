@@ -8,15 +8,8 @@ class tile_grid(unittest.TestCase):
     def setUp(self):
         conf = runko.Configuration(None)
         conf.tile_partitioning = "hilbert_curve"
-        conf.Nx = 2
-        conf.Ny = 2
-        conf.Nz = 2
-        conf.NxMesh = 10
-        conf.NyMesh = 11
-        conf.NzMesh = 13
-        conf.xmin = 0
-        conf.ymin = 0
-        conf.zmin = 0
+        conf.n_tiles = [2, 2, 2]
+        conf.n_cells_per_tile = [10, 11, 13]
 
         self.test_grid = runko.TileGrid(conf)
 
@@ -29,15 +22,8 @@ class tile_grid(unittest.TestCase):
     def test_nonsense_tile_partitioning(self):
         conf = runko.Configuration(None)
         conf.tile_partitioning = "nonsense"
-        conf.Nx = 2
-        conf.Ny = 2
-        conf.Nz = 2
-        conf.NxMesh = 10
-        conf.NyMesh = 11
-        conf.NzMesh = 13
-        conf.xmin = 0
-        conf.ymin = 0
-        conf.zmin = 0
+        conf.n_tiles = [2, 2, 2]
+        conf.n_cells_per_tile = [10, 11, 13]
 
         with self.assertRaisesRegex(RuntimeError, r"tile_partitioning"):
             runko.TileGrid(conf)
@@ -45,15 +31,8 @@ class tile_grid(unittest.TestCase):
     def test_catepillar_track_requires_length(self):
         conf = runko.Configuration(None)
         conf.tile_partitioning = "catepillar_track"
-        conf.Nx = 2
-        conf.Ny = 2
-        conf.Nz = 2
-        conf.NxMesh = 10
-        conf.NyMesh = 11
-        conf.NzMesh = 13
-        conf.xmin = 0
-        conf.ymin = 0
-        conf.zmin = 0
+        conf.n_tiles = [2, 2, 2]
+        conf.n_cells_per_tile = [10, 11, 13]
 
         with self.assertRaisesRegex(RuntimeError, r"catepillar_track_length"):
             runko.TileGrid(conf)

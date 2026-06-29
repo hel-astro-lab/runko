@@ -22,3 +22,8 @@
     list-style:disc;
     margin-left:24px
 }
+
+table.docutils div.line-block {
+    margin-left: 0;
+    margin-bottom: 0;
+}

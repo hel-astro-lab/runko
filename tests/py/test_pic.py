@@ -3,20 +3,14 @@
 
 import unittest
 import runko
+import numpy as np
 
 def make_valid_emf_config():
     config = runko.Configuration(None)
-    config.Nx = 4
-    config.Ny = 4
-    config.Nz = 4
-    config.NxMesh = 10
-    config.NyMesh = 11
-    config.NzMesh = 13
-    config.xmin = 0
-    config.ymin = 0
-    config.zmin = 0
+    config.n_tiles = [4, 4, 4]
+    config.n_cells_per_tile = [10, 11, 13]
     config.cfl = 1
-    config.field_propagator = "FDTD2"
+    config.field_propagator = "fdtd2"
 
     return config
 
@@ -28,10 +22,6 @@ class pic_tile(unittest.TestCase):
         config = make_valid_emf_config()
         config.q0 = 1
         config.m0 = 1
-        config.delgam = 1.0e-5
-        config.temperature_ratio = 1.0
-        config.sigma = 40
-        config.c_omp = 1
         config.particle_pusher = "boris"
         config.field_interpolator = "linear_1st"
         config.current_depositer = "zigzag_1st"
@@ -56,10 +46,6 @@ class pic_tile(unittest.TestCase):
         config = make_valid_emf_config()
         config.q0 = 1
         config.m0 = 1
-        config.delgam = 1.0e-5
-        config.temperature_ratio = 1.0
-        config.sigma = 40
-        config.c_omp = 1
         config.particle_pusher = "boris"
         config.field_interpolator = "linear_1st"
         config.current_depositer = "zigzag_1st"
@@ -82,7 +68,8 @@ class pic_tile(unittest.TestCase):
         pos_x, pos_y, pos_z = tile.get_positions(0)
         vel_x, vel_y, vel_z = tile.get_velocities(0)
 
-        expected_num_of_particles = ppc * config.NxMesh * config.NyMesh * config.NzMesh
+        cells = np.multiply.reduce(config.n_cells_per_tile)
+        expected_num_of_particles = ppc * cells
 
         self.assertEqual(expected_num_of_particles, len(pos_x))
         self.assertEqual(expected_num_of_particles, len(pos_y))
@@ -110,12 +97,13 @@ class pic_tile(unittest.TestCase):
             self.assertEqual(vx, 0)
             self.assertEqual(vy, 0)
 
-        self.assertEqual(config.NxMesh * config.NyMesh * config.NzMesh, len(seen_pos))
+        cells = np.multiply.reduce(config.n_cells_per_tile)
+        self.assertEqual(cells, len(seen_pos))
 
         import itertools
-        cell_index_space = itertools.product(range(config.NxMesh),
-                                             range(config.NyMesh),
-                                             range(config.NzMesh))
+        cell_index_space = itertools.product(range(config.n_cells_per_tile[0]),
+                                             range(config.n_cells_per_tile[1]),
+                                             range(config.n_cells_per_tile[2]))
         for i, j, k in cell_index_space:
             self.assertTrue((i, j, k) in seen_pos)
 
@@ -129,10 +117,6 @@ class pic_tile(unittest.TestCase):
         config = make_valid_emf_config()
         config.q0 = 1
         config.m0 = 1
-        config.delgam = 1.0e-5
-        config.temperature_ratio = 1.0
-        config.sigma = 40
-        config.c_omp = 1
         config.particle_pusher = "boris"
         config.field_interpolator = "linear_1st"
         config.current_depositer = "zigzag_1st"
@@ -164,7 +148,7 @@ class pic_tile(unittest.TestCase):
         tile.inject_to_each_cell(0, make_gen(2))
         tile.inject_to_each_cell(0, make_gen(3))
 
-        N = config.NxMesh * config.NyMesh * config.NzMesh
+        N = np.multiply.reduce(config.n_cells_per_tile)
         assertLengths(3 * N)
 
         # Make sure all ids are unique:
@@ -179,10 +163,6 @@ class pic_tile(unittest.TestCase):
         config.m0 = 1
         config.q1 = 2
         config.m1 = 2
-        config.delgam = 1.0e-5
-        config.temperature_ratio = 1.0
-        config.sigma = 40
-        config.c_omp = 1
         config.particle_pusher = "boris"
         config.field_interpolator = "linear_1st"
         config.current_depositer = "zigzag_1st"
@@ -214,7 +194,7 @@ class pic_tile(unittest.TestCase):
         tile.inject_to_each_cell(0, particle_generator_electron)
         tile.inject_to_each_cell(1, particle_generator_ion)
 
-        N = config.NxMesh * config.NyMesh * config.NzMesh
+        N = np.multiply.reduce(config.n_cells_per_tile)
         assertLengths(0, N)
         assertLengths(1, 2 * N)
 
@@ -232,10 +212,6 @@ class pic_tile(unittest.TestCase):
         config.m0 = 1
         config.q1 = 1
         config.m1 = 1
-        config.delgam = 1.0e-5
-        config.temperature_ratio = 1.0
-        config.sigma = 40
-        config.c_omp = 1
         config.particle_pusher = "boris"
         config.field_interpolator = "linear_1st"
         config.current_depositer = "zigzag_1st"
@@ -264,7 +240,7 @@ class pic_tile(unittest.TestCase):
 
         tile.batch_inject_to_cells(ptype, pgen)
 
-        N = config.NxMesh * config.NyMesh * config.NzMesh
+        N = np.multiply.reduce(config.n_cells_per_tile)
         assertLengths(N)
 
         def r(h):
@@ -279,9 +255,9 @@ class pic_tile(unittest.TestCase):
         vel = set((r(vx), r(vy), r(vz)) for vx, vy, vz in zip(velx, vely, velz))
 
         import itertools
-        cell_index_space = itertools.product(range(config.NxMesh),
-                                             range(config.NyMesh),
-                                             range(config.NzMesh))
+        cell_index_space = itertools.product(range(config.n_cells_per_tile[0]),
+                                             range(config.n_cells_per_tile[1]),
+                                             range(config.n_cells_per_tile[2]))
 
         correct = set((i, j, k) for i, j, k in cell_index_space)
 
@@ -303,10 +279,6 @@ class pic_tile(unittest.TestCase):
         config.m0 = 1
         config.q1 = 1
         config.m1 = 1
-        config.delgam = 1.0e-5
-        config.temperature_ratio = 1.0
-        config.sigma = 40
-        config.c_omp = 1
         config.particle_pusher = "boris"
         config.field_interpolator = "linear_1st"
         config.current_depositer = "zigzag_1st"

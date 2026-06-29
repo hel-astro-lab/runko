@@ -88,10 +88,10 @@ def main(argv: list[str]):
         The output directories must be populated with timing data
         by calling `pickle_timer_statistics` method of `runko.Simulation` class.
         Timer statistics contains measurements from N latest laps
-        (based on configuration parameter `laps_in_timer_statistics`).
+        (based on configuration parameter `io_n_laps_in_timer_stats`).
         Some components are not run on every lap,
         so average time contribution per one lap is plotted:
-        average_duration * count / laps_in_timer_statistics.
+        average_duration * count / io_n_laps_in_timer_stats.
         Unique color-marker-pair is given to each component.
         By default, slowest and fastest ranks are plotted.
         """)

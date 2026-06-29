@@ -11,17 +11,10 @@ class emf_antenna(unittest.TestCase):
 
     def setUp(self):
         self.config = runko.Configuration(None)
-        self.config.Nx = 4
-        self.config.Ny = 4
-        self.config.Nz = 4
-        self.config.NxMesh = 40
-        self.config.NyMesh = 40
-        self.config.NzMesh = 40
-        self.config.xmin = -2.1
-        self.config.ymin = 4.2
-        self.config.zmin = 1.2
+        self.config.n_tiles = [4, 4, 4]
+        self.config.n_cells_per_tile = [40, 40, 40]
         self.config.cfl = 0.45
-        self.config.field_propagator = "FDTD2"
+        self.config.field_propagator = "fdtd2"
 
         self.zero_field = lambda x, y, z: np.zeros_like(x)
 
@@ -37,9 +30,9 @@ class emf_antenna(unittest.TestCase):
         self.make_test_tile = f
 
         # This has to be function, as itertools.product seems to be singel pass.
-        self.get_index_space = lambda : itertools.product(range(self.config.NxMesh),
-                                                          range(self.config.NyMesh),
-                                                          range(self.config.NzMesh))
+        self.get_index_space = lambda : itertools.product(range(self.config.n_cells_per_tile[0]),
+                                                          range(self.config.n_cells_per_tile[1]),
+                                                          range(self.config.n_cells_per_tile[2]))
 
     def test_antenna_mode_trivial_time_evolution(self):
         """
@@ -139,7 +132,7 @@ class emf_antenna(unittest.TestCase):
             gcmap = tile.global_coordinate_map()
 
 
-            K = 2 * np.pi * N / (self.config.Ny * self.config.NyMesh)
+            K = 2 * np.pi * N / (self.config.n_tiles[1] * self.config.n_cells_per_tile[1])
 
             for i, j, k in self.get_index_space():
                 _, yi, _ = gcmap((i + 0.5, j, k))

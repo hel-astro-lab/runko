@@ -12,30 +12,19 @@ def make_test_grid():
     config = runko.Configuration(None)
     config.tile_partitioning = "catepillar_track"
     config.catepillar_track_length = 1
-    config.Nt = 3
-    config.Nx = 2
-    config.Ny = 2
-    config.Nz = 2
-    config.NxMesh = 10
-    config.NyMesh = 11
-    config.NzMesh = 13
-    config.xmin = 0
-    config.ymin = 0
-    config.zmin = 0
+    config.n_laps = 3
+    config.n_tiles = [2, 2, 2]
+    config.n_cells_per_tile = [10, 11, 13]
     config.cfl = 1
-    config.field_propagator = "FDTD2"
+    config.field_propagator = "fdtd2"
     config.q0 = -1
     config.m0 = 1
     config.q1 = 1
     config.m1 = 1
-    config.delgam = 1.0e-5
-    config.temperature_ratio = 1.0
-    config.sigma = 40
-    config.c_omp = 1
     config.particle_pusher = "boris"
     config.field_interpolator = "linear_1st"
     config.current_depositer = "zigzag_1st"
-    config.outdir = tempfile.mkdtemp(prefix="runko-pic-test-output")
+    config.io_outdir = tempfile.mkdtemp(prefix="runko-pic-test-output")
 
     return config, runko.TileGrid(config)
 
@@ -251,9 +240,12 @@ def pic_communication():
                 ids = tile.get_ids(i)
 
                 for x, y, z, vx, vy, vz, id in zip(posx, posy, posz, velx, vely, velz, ids):
-                    x %= conf.NxMesh * conf.Nx
-                    y %= conf.NyMesh * conf.Ny
-                    z %= conf.NzMesh * conf.Nz
+                    tiles = np.array(conf.n_tiles)
+                    cells = np.array(conf.n_cells_per_tile)
+                    full_grid = tiles * cells
+                    x %= full_grid[0]
+                    y %= full_grid[1]
+                    z %= full_grid[2]
                     s = runko.pic.threeD.ParticleState(pos=(x, y, z), vel=(vx, vy, vz))
                     if id not in state_tracker[i]:
                         state_tracker[i][id] = [s]
@@ -403,9 +395,12 @@ def pic_conservation_of_ids():
                 ids = tile.get_ids(i)
 
                 for x, y, z, vx, vy, vz, id in zip(posx, posy, posz, velx, vely, velz, ids):
-                    x %= conf.NxMesh * conf.Nx
-                    y %= conf.NyMesh * conf.Ny
-                    z %= conf.NzMesh * conf.Nz
+                    tiles = np.array(conf.n_tiles)
+                    cells = np.array(conf.n_cells_per_tile)
+                    full_grid = tiles * cells
+                    x %= full_grid[0]
+                    y %= full_grid[1]
+                    z %= full_grid[2]
                     s = runko.pic.threeD.ParticleState(pos=(x, y, z), vel=(vx, vy, vz))
                     if id not in state_tracker[i]:
                         state_tracker[i][id] = [s]
@@ -462,7 +457,7 @@ def pic_kinetic_energy_reduction():
     simulation.for_one_lap(test_loop)
 
     if runko.on_main_rank():
-        d = np.loadtxt(conf.outdir + "/average_kinetic_energy.txt")
+        d = np.loadtxt(conf.io_outdir + "/average_kinetic_energy.txt")
         if np.any(d[1:] != 0):
             msg = f"Kinetic energies of zero particles should be zero: {d[1:]}"
             raise RuntimeError(msg)
@@ -488,7 +483,7 @@ def pic_kinetic_energy_reduction():
     simulation.for_one_lap(test_loop)
 
     if runko.on_main_rank():
-        d = np.loadtxt(conf.outdir + "/average_kinetic_energy.txt")
+        d = np.loadtxt(conf.io_outdir + "/average_kinetic_energy.txt")
 
         if d[1, 1] != 0:
             msg = f"Kinetic energies of unmoving particles should be zero: {d[1,1]}"
@@ -514,7 +509,7 @@ def pic_kinetic_energy_reduction():
     simulation.for_one_lap(test_loop)
 
     if runko.on_main_rank():
-        d = np.loadtxt(conf.outdir + "/average_kinetic_energy.txt")
+        d = np.loadtxt(conf.io_outdir + "/average_kinetic_energy.txt")
 
         if not np.isclose(2 * d[2, 1], d[2, 2]):
             msg = "Kinetic energy should be linear in number of moving particles: "
@@ -590,9 +585,9 @@ def pic_wrap_positions():
 
     conf, tile_grid = make_test_grid()
 
-    Lx = conf.Nx * conf.NxMesh  # 20
-    Ly = conf.Ny * conf.NyMesh  # 22
-    Lz = conf.Nz * conf.NzMesh  # 26
+    tiles = np.array(conf.n_tiles)
+    cells = np.array(conf.n_cells_per_tile)
+    Lx, Ly, Lz = tiles * cells
 
     eps = 0.25
     PS = runko.pic.threeD.ParticleState

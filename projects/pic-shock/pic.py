@@ -34,12 +34,12 @@ if __name__ == "__main__":
 
     ppc = conf.ppc
     sigma = conf.sigma
-    c_omp = conf.c_omp
-    theta = conf.theta                # dimensionless temperature kT/(mc^2)
-    theta_ratio = conf.theta_ratio    # T_ion / T_electron
+    c_omp = conf.n_cells_per_skindepth
+    theta = conf.theta0                # dimensionless temperature kT/(mc^2)
+    theta_ratio = conf.theta1_to_theta0    # T_ion / T_electron
     upstream_gamma = conf.upstream_gamma
     n_filter_passes = conf.n_filter_passes or 3
-    output_interval = conf.output_interval or 20
+    output_interval = conf.io_output_interval or 20
 
     # Bulk flow (upstream_gamma is always a Lorentz factor >= 1)
     beta = np.sqrt(1.0 - 1.0 / upstream_gamma**2)
@@ -63,11 +63,11 @@ if __name__ == "__main__":
     # --------------------------------------------------
     # Upstream field values
     Ex_up = 0.0
-    Ey_up = -beta*binit*conf.bz_proj
-    Ez_up = +beta*binit*conf.by_proj
-    Bx_up = binit*conf.bx_proj
-    By_up = binit*conf.by_proj
-    Bz_up = binit*conf.bz_proj
+    Ey_up = -beta*binit*conf.b_proj[2]
+    Ez_up = +beta*binit*conf.b_proj[1]
+    Bx_up = binit*conf.b_proj[0]
+    By_up = binit*conf.b_proj[1]
+    Bz_up = binit*conf.b_proj[2]
 
     # Field initialization
     Z  = lambda x, y, z: np.zeros_like(x)
@@ -83,24 +83,25 @@ if __name__ == "__main__":
         from runko.auto_outdir import resolve_outdir
         W = 21
         logger.info(f"{'--- [io] ---':}")
-        logger.info(f"  {'outdir':<{W}}= {conf.outdir}")
+        logger.info(f"  {'outdir':<{W}}= {conf.io_outdir}")
         logger.info(f"  {'resolved outdir':<{W}}= {resolve_outdir(conf)}")
-        logger.info(f"  {'prefix / postfix':<{W}}= {conf.prefix} / {conf.postfix}")
+        logger.info(f"  {'prefix / postfix':<{W}}= {conf.io_outdir_prefix} / {conf.io_outdir_postfix}")
         logger.info(f"  {'output_interval':<{W}}= {output_interval}")
-        logger.info(f"  {'spectra_nbins':<{W}}= {conf.spectra_nbins}")
-        logger.info(f"  {'spectra_umin':<{W}}= {conf.spectra_umin}")
-        logger.info(f"  {'spectra_umax':<{W}}= {conf.spectra_umax}")
+        logger.info(f"  {'spectra_nbins':<{W}}= {conf.io_n_spectra_bins}")
+        logger.info(f"  {'spectra_umin':<{W}}= {conf.io_spectra_umin}")
+        logger.info(f"  {'spectra_umax':<{W}}= {conf.io_spectra_umax}")
 
         logger.info(f"{'--- [grid] ---':}")
-        logger.info(f"  {'tiles':<{W}}= {conf.Nx} x {conf.Ny} x {conf.Nz}")
-        logger.info(f"  {'mesh per tile':<{W}}= {conf.NxMesh} x {conf.NyMesh} x {conf.NzMesh}")
-        logger.info(f"  {'full grid':<{W}}= {conf.Nx*conf.NxMesh} x {conf.Ny*conf.NyMesh} x {conf.Nz*conf.NzMesh}")
-        logger.info(f"  {'grid in c/wp':<{W}}= {conf.Nx*conf.NxMesh/c_omp:.1f} x {conf.Ny*conf.NyMesh/c_omp:.1f} x {conf.Nz*conf.NzMesh/c_omp:.1f}")
+        logger.info(f"  {'tiles':<{W}}= {conf.n_tiles}")
+        logger.info(f"  {'mesh per tile':<{W}}= {conf.n_cells_per_tile}")
+        full_grid = np.array(conf.n_tiles) * np.array(conf.n_cells_per_tile)
+        logger.info(f"  {'full grid':<{W}}= {full_grid}")
+        logger.info(f"  {'grid in c/wp':<{W}}= {full_grid / c_omp}")
 
         logger.info(f"{'--- [simulation] ---':}")
-        logger.info(f"  {'Nt':<{W}}= {conf.Nt}")
+        logger.info(f"  {'Nt':<{W}}= {conf.n_laps}")
         logger.info(f"  {'cfl':<{W}}= {conf.cfl}")
-        logger.info(f"  {'max plasma time':<{W}}= {conf.Nt * c_omp:.1f} wp^-1")
+        logger.info(f"  {'max plasma time':<{W}}= {conf.n_laps * c_omp:.1f} wp^-1")
 
         logger.info(f"{'--- [particles] ---':}")
         logger.info(f"  {'ppc':<{W}}= {ppc}")
@@ -114,10 +115,10 @@ if __name__ == "__main__":
         logger.info(f"  {'upstream gamma':<{W}}= {upstream_gamma}")
         logger.info(f"  {'upstream beta':<{W}}= {beta:.6g}")
         logger.info(f"  {'B_init':<{W}}= {binit:.6g}")
-        logger.info(f"  {'B direction':<{W}}= ({conf.bx_proj}, {conf.by_proj}, {conf.bz_proj})")
+        logger.info(f"  {'B direction':<{W}}= {conf.b_proj}")
         logger.info(f"  {'n_filter_passes':<{W}}= {n_filter_passes}")
         logger.info(f"  {'v_A':<{W}}= {np.sqrt(sigma / (1.0 + sigma)):.6g}")
-        logger.info(f"  {'Lx crossing':<{W}}= {conf.Nx*conf.NxMesh/conf.cfl:.0f} laps")
+        logger.info(f"  {'Lx crossing':<{W}}= {full_grid[0]/conf.cfl:.0f} laps")
         logger.info(f"  {'beta_ion / beta_e':<{W}}= {2.0*theta1 / (sigma*(m1/m0+1.0)/(m1/m0)):.6g} / {2.0*theta0 / (sigma*(1.0/m0+1.0)):.6g}")
 
         logger.info(f"{'--- [algorithms] ---':}")
@@ -131,7 +132,7 @@ if __name__ == "__main__":
     # --------------------------------------------------
     # Reflector wall and moving injector
 
-    Lx = conf.Nx * conf.NxMesh
+    Lx = full_grid[0]
     walloc = 15.0  # cell location of wall (leave >10 cells for BCs)
     wall = runko.pic.threeD.reflector_wall(walloc=walloc)
     conducting_bc = runko.emf.threeD.edge_bc(direction=0, side=0, position=walloc,
@@ -182,7 +183,7 @@ if __name__ == "__main__":
     #                                tiles and species).
     n_species = 2
     local_tiles_count = sum(1 for _ in tile_grid.local_tile_indices())
-    cells_per_tile = conf.NxMesh * conf.NyMesh * conf.NzMesh
+    cells_per_tile = np.multiply.reduce(conf.n_cells_per_tile)
     prealloc_caps = []
     if conf.prealloc_factor is not None:
         prealloc_caps.append(int(conf.prealloc_factor * ppc * cells_per_tile))

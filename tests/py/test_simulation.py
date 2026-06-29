@@ -9,18 +9,11 @@ def create_test_grid():
     config = runko.Configuration(None)
     config.tile_partitioning = "catepillar_track"
     config.catepillar_track_length = 1
-    config.Nt = 4
-    config.Nx = 1
-    config.Ny = 1
-    config.Nz = 1
-    config.NxMesh = 7
-    config.NyMesh = 7
-    config.NzMesh = 7
-    config.xmin = 0
-    config.ymin = 0
-    config.zmin = 0
+    config.n_tiles = [4, 1, 1]
+    config.n_cells_per_tile = [7, 7, 7]
+    config.n_laps = 4
     config.cfl = 1
-    config.field_propagator = "FDTD2"
+    config.field_propagator = "fdtd2"
 
     return config, runko.TileGrid(config)
 

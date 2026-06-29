@@ -28,8 +28,8 @@ namespace {
 emf::FieldPropagator
   parse_field_propagator(const std::string_view p)
 {
-  if(p == "FDTD2") {
-    return emf::FieldPropagator::FDTD2;
+  if(p == "fdtd2") {
+    return emf::FieldPropagator::fdtd2;
   } else if(p == "stencil") {
     return emf::FieldPropagator::stencil;
   } else {
@@ -83,12 +83,8 @@ Tile<D>::Tile(
   const std::array<std::size_t, 3> tile_indices,
   const toolbox::ConfigParser& p) :
   corgi::Tile<D>(),
-  yee_lattice_(
-    YeeLatticeCtorArgs { .Nx = p.get_or_throw<std::size_t>("NxMesh"),
-                         .Ny = p.get_or_throw<std::size_t>("NyMesh"),
-                         .Nz = p.get_or_throw<std::size_t>("NzMesh")
-
-    }),
+  yee_lattice_(make_yee_ctor_args_from_vector(
+    p.get_or_throw<std::vector<std::ptrdiff_t>>("n_cells_per_tile"))),
   cfl_ { p.get_or_throw<double>("cfl") },
   field_propagator_ { parse_field_propagator(
     p.get_or_throw<std::string>("field_propagator")) },
@@ -145,28 +141,16 @@ Tile<D>::Tile(
     stencil_coeffs_ = coeffs;
   }
 
-  auto one_or_throw = [](const double d) {
-    if(d != 1.0) {
-      throw std::logic_error {
-        "emf tile does not support d{x,y,z} values other than 1."
-      };
-    }
-    return std::optional { d };
-  };
-
-  std::ignore = p.get<double>("dx").and_then(one_or_throw);
-  std::ignore = p.get<double>("dy").and_then(one_or_throw);
-  std::ignore = p.get<double>("dz").and_then(one_or_throw);
-
-  const auto xmin = p.get_or_throw<double>("xmin");
-  const auto ymin = p.get_or_throw<double>("ymin");
-  const auto zmin = p.get_or_throw<double>("zmin");
+  const auto xmin = 0.0;
+  const auto ymin = 0.0;
+  const auto zmin = 0.0;
 
   const auto [i, j, k] = tile_indices;
 
-  const auto Nx = p.get_or_throw<std::size_t>("Nx");
-  const auto Ny = p.get_or_throw<std::size_t>("Ny");
-  const auto Nz = p.get_or_throw<std::size_t>("Nz");
+  const auto tiles = p.get_or_throw<std::vector<std::ptrdiff_t>>("n_tiles");
+  const auto Nx    = static_cast<std::size_t>(tiles[0]);
+  const auto Ny    = static_cast<std::size_t>(tiles[1]);
+  const auto Nz    = static_cast<std::size_t>(tiles[2]);
 
   if(Nx <= i or Ny <= j or Nz <= k) {
     throw std::runtime_error { "Trying to create tile outside of configured grid." };
@@ -377,8 +361,8 @@ void
 {
   using vt = emf::YeeLattice::value_type;
   switch(field_propagator_) {
-    case FieldPropagator::FDTD2:
-      yee_lattice_.push_b_FDTD2(static_cast<vt>(cfl_ / 2));
+    case FieldPropagator::fdtd2:
+      yee_lattice_.push_b_fdtd2(static_cast<vt>(cfl_ / 2));
       break;
     case FieldPropagator::stencil:
       yee_lattice_.push_b_stencil(static_cast<vt>(cfl_ / 2), stencil_coeffs_.value());
@@ -396,11 +380,11 @@ void
 {
   using vt = emf::YeeLattice::value_type;
   switch(field_propagator_) {
-    case FieldPropagator::FDTD2:
-      yee_lattice_.push_e_FDTD2(static_cast<vt>(cfl_));
+    case FieldPropagator::fdtd2:
+      yee_lattice_.push_e_fdtd2(static_cast<vt>(cfl_));
       break;
     case FieldPropagator::stencil:
-      yee_lattice_.push_e_FDTD2(static_cast<vt>(cfl_));
+      yee_lattice_.push_e_fdtd2(static_cast<vt>(cfl_));
       break;
     default:
       throw std::logic_error {
@@ -748,7 +732,7 @@ void
   const auto j1p1 = std::tuple { h, h + ey + 2uz };
   const auto k1p1 = std::tuple { h, h + ez + 2uz };
 
-  // FIXME: unify this with emf FDTD2.
+  // FIXME: unify this with emf fdtd2.
   auto curl = [&](
                 const auto coeff_,
                 const auto out,

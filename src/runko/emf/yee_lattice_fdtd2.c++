@@ -9,17 +9,17 @@
 namespace emf {
 
 void
-  YeeLattice::push_b_FDTD2(const value_type dt)
+  YeeLattice::push_b_fdtd2(const value_type dt)
 {
   tyvi::mdgrid_work w {};
-  push_b_FDTD2(w, dt);
+  push_b_fdtd2(w, dt);
   w.wait();
 }
 
 void
-  YeeLattice::push_b_FDTD2(const tyvi::mdgrid_work& w, const value_type dt)
+  YeeLattice::push_b_fdtd2(const tyvi::mdgrid_work& w, const value_type dt)
 {
-  /* FIXME: figure out if dt and corr from emf::FDTD2 are needed. */
+  /* FIXME: figure out if dt and corr from emf::fdtd2 are needed. */
   const auto h   = halo_size;
   const auto hp1 = h + 1uz;
 
@@ -58,17 +58,17 @@ void
 }
 
 void
-  YeeLattice::push_e_FDTD2(const value_type dt)
+  YeeLattice::push_e_fdtd2(const value_type dt)
 {
   tyvi::mdgrid_work w {};
-  push_e_FDTD2(w, dt);
+  push_e_fdtd2(w, dt);
   w.wait();
 }
 
 void
-  YeeLattice::push_e_FDTD2(const tyvi::mdgrid_work& w, const value_type dt)
+  YeeLattice::push_e_fdtd2(const tyvi::mdgrid_work& w, const value_type dt)
 {
-  /* FIXME: figure out if dt and corr from emf::FDTD2 are needed. */
+  /* FIXME: figure out if dt and corr from emf::fdtd2 are needed. */
 
   const auto h   = static_cast<runko::index_t>(halo_size);
   const auto hm1 = static_cast<runko::index_t>(halo_size - 1uz);

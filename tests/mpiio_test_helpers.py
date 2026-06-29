@@ -32,19 +32,12 @@ def make_config(Nx=1, Ny=1, Nz=1, NxMesh=8, NyMesh=8, NzMesh=8,
     config.tile_partitioning = tile_partitioning
     if tile_partitioning == "catepillar_track":
         config.catepillar_track_length = 1
-    config.Nx = Nx
-    config.Ny = Ny
-    config.Nz = Nz
-    config.NxMesh = NxMesh
-    config.NyMesh = NyMesh
-    config.NzMesh = NzMesh
-    config.xmin = 0
-    config.ymin = 0
-    config.zmin = 0
+    config.n_tiles = [Nx, Ny, Nz]
+    config.n_cells_per_tile = [NxMesh, NyMesh, NzMesh]
     config.cfl = 1
-    config.Nt = 1
-    config.field_propagator = "FDTD2"
-    config.outdir = outdir
+    config.n_laps = 1
+    config.field_propagator = "fdtd2"
+    config.io_outdir = outdir
     return config
 
 
@@ -65,7 +58,7 @@ def make_pic_config(Nx=1, Ny=1, Nz=1, NxMesh=8, NyMesh=8, NzMesh=8,
     config.delgam = 1e-5
     config.temperature_ratio = 1.0
     config.sigma = 40
-    config.c_omp = 1
+    config.n_cells_per_skindepth = 1
     config.particle_pusher = "boris"
     config.field_interpolator = "linear_1st"
     config.current_depositer = "zigzag_1st_atomic"
@@ -137,9 +130,9 @@ def write_and_read(tile_grid, outdir, config, stride=1, lap=0, nspecies=2,
 
     writer = MpiioFieldsWriter(
         outdir,
-        config.Nx, config.NxMesh,
-        config.Ny, config.NyMesh,
-        config.Nz, config.NzMesh,
+        config.n_tiles[0], config.n_cells_per_tile[0],
+        config.n_tiles[1], config.n_cells_per_tile[1],
+        config.n_tiles[2], config.n_cells_per_tile[2],
         stride, nspecies)
     if collective:
         writer.write_collective(tile_grid._corgi_grid, lap)
