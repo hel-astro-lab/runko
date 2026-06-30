@@ -36,7 +36,7 @@ Plasma perturbations that move at the speed of light :math:`c` and oscillate at 
 .. math::
     d_s = \frac{c}{\omega_{p,s}}
     \quad\mathrm{and}\quad
-    \
+    \hat{d}_e = \hat{R} \Delta x
 
 One skin depth in the code is :math:`\hat{R}` grid cells.
 
