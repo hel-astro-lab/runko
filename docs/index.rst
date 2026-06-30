@@ -78,6 +78,7 @@ Key contributors that provided additional features and/or improvements include
    :maxdepth: 2
 
    dev-workflow
+   debugging
    unittool
    versions
    documentation
