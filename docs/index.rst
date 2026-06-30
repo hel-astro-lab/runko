@@ -77,6 +77,7 @@ Key contributors that provided additional features and/or improvements include
    :caption: Developer notes:
    :maxdepth: 2
 
+   contributing
    dev-workflow
    debugging
    unittool
