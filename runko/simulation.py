@@ -475,7 +475,7 @@ class Simulation:
     def pickle_timer_statistics(self):
         """
         Writes pickled dictionary of timer statistics to `<outdir>/timer-statistics/<rank>.pkl`
-        which maps component name (str) to runko.TimerStatistic.
+        which maps component name (str) to runko.TimerStatistics.
         """
 
         self._timer_stats_file.parent.mkdir(exist_ok=True, parents=True)

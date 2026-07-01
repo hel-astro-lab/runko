@@ -4,7 +4,7 @@
 import pickle
 import pathlib
 from .configuration import Configuration
-from .runko_timer import TimerStatistic
+from .runko_timer import TimerStatistics
 
 
 def read_config(outdir: str) -> Configuration:
@@ -17,7 +17,7 @@ def read_config(outdir: str) -> Configuration:
 def read_timer_statistics(outdir: str) -> dict:
     """
     Returns dict that maps rank integer to dict read from outdir
-    that maps component name to runko.TimerStatistic.
+    that maps component name to runko.TimerStatistics.
     """
 
     stats = dict()

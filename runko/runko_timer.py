@@ -88,14 +88,34 @@ class Timer:
 
 
 @dataclass
-class TimerStatistic:
-    total: float
-    average: float
-    minimum: float
-    maximum: float
-    std_dev: float
-    count: int
-    measured_laps: int
+class TimerStatistics:
+    def __init__(self, data, measured_laps: int):
+        self.data = np.array(data)
+        self.measured_laps = measured_laps
+
+    @property
+    def total(self):
+        return np.sum(self.data)
+
+    @property
+    def average(self):
+        return np.mean(self.data)
+
+    @property
+    def minimum(self):
+        return np.min(self.data)
+
+    @property
+    def maximum(self):
+        return np.max(self.data)
+
+    @property
+    def std_dev(self):
+        return np.std(self.data)
+
+    @property
+    def count(self):
+        return len(self.data)
 
 
 def timer_statistics(timers: list[Timer]):
@@ -112,14 +132,6 @@ def timer_statistics(timers: list[Timer]):
 
     stats = dict()
     for name, elapsed_times in all_elapsed_times.items():
-        et = np.array(elapsed_times)
-
-        stats[name] = TimerStatistic(total=np.sum(et),
-                                     average=np.mean(et),
-                                     minimum=np.min(et),
-                                     maximum=np.max(et),
-                                     std_dev=np.std(et),
-                                     count=len(elapsed_times),
-                                     measured_laps=len(timers))
+        stats[name] = TimerStatistics(data=elapsed_times, measured_laps=len(timers))
 
     return stats
