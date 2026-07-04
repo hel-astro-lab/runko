@@ -17,8 +17,15 @@ import pickle
 import time
 import numpy as np
 import pathlib
+from dataclasses import dataclass
 from mpi4py import MPI
 from .ram_usage import get_rss_kB, get_gpu_mem_kB
+
+@dataclass
+class wait_measurement:
+    label: str
+    begin: float
+    end: float
 
 
 class Simulation:
@@ -54,6 +61,9 @@ class Simulation:
         self._lap_timers = []
         self._lap_wall_times = []
         self._lap_finish_times = []
+
+        # Each lap has their own list.
+        self._wait_measurements: list[list[wait_measurement]] = []
 
         self.verbose_laps = kwargs.get('verbose', True)
 
@@ -206,6 +216,7 @@ class Simulation:
 
         lap_wall_time_begin = time.time()
         lap_timer = Timer() if not disable_timing else None
+        self._wait_measurements.append([])
 
         def get_name(method, kwargs):
             if 'name' in kwargs:
@@ -290,12 +301,24 @@ class Simulation:
                                     self._logger.debug("Starting a handshake.")
                                     self._tile_grid._corgi_grid.recv_data(handshake_mode)
                                     self._tile_grid._corgi_grid.send_data(handshake_mode)
+                                    x = wait_measurement(
+                                        label="comm_external: handshake wait",
+                                        begin=time.time(),
+                                        end=None)
                                     self._tile_grid._corgi_grid.wait_data(handshake_mode)
+                                    x.end = time.time()
+                                    self._wait_measurements[-1].append(x)
 
                                 self._logger.debug("Starting virtual tile sync.")
                                 self._tile_grid._corgi_grid.recv_data(mode.value)
                                 self._tile_grid._corgi_grid.send_data(mode.value)
+                                x = wait_measurement(
+                                    label="comm_external: data wait",
+                                    begin=time.time(),
+                                    end=None)
                                 self._tile_grid._corgi_grid.wait_data(mode.value)
+                                x.end = time.time()
+                                self._wait_measurements[-1].append(x)
                         case _:
                             raise AttributeError(f"{method} is not supported communication type.")
             else:
@@ -423,9 +446,11 @@ class Simulation:
         if n_latests:
             timers = self._lap_timers[-n_latests:]
             lap_finish_times = self._lap_finish_times[-n_latests:]
+            waits = self._wait_measurements[-n_latests:]
         else:
             timers = self._lap_timers
             lap_finish_times = self._lap_finish_times
+            waits = self._wait_measurements
 
         for timer in timers:
             for name, measurement in timer.time_measurements.items():
@@ -449,6 +474,18 @@ class Simulation:
                 "pid": 0, # unused
                 "tid": self._rank, # Use tid as proxy for mpi rank.
                 "ts": 1e6 * t,
+            })
+
+        # Iterate over flattened waits.
+        for t in [x for y in waits for x in y]:
+            obj["traceEvents"].append({
+                "name": t.label,
+                "cat": "wait",
+                "ph": "X",
+                "pid": 0, # unused
+                "tid": self._rank, # Use tid as proxy for mpi rank.
+                "ts": 1e6 * t.begin,
+                "dur": 1e6 * (t.end - t.begin),
             })
 
         self._trace_file.parent.mkdir(exist_ok=True, parents=True)
