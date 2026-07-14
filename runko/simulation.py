@@ -290,35 +290,33 @@ class Simulation:
 
                     match method[5:]:
                         case "local":
-                            for mode in comm_modes:
-                                self._tile_grid._corgi_grid.local_communication(mode.value)
+                            self._tile_grid._corgi_grid.local_communication(mode.value)
 
                         case "external":
-                            for mode in comm_modes:
-                                handshake_mode = _virtual_tile_sync_handshake_mode(mode)
+                            handshake_mode = _virtual_tile_sync_handshake_mode(mode)
 
-                                if handshake_mode:
-                                    self._logger.debug("Starting a handshake.")
-                                    self._tile_grid._corgi_grid.recv_data(handshake_mode)
-                                    self._tile_grid._corgi_grid.send_data(handshake_mode)
-                                    x = wait_measurement(
-                                        label="comm_external: handshake wait",
-                                        begin=time.time(),
-                                        end=None)
-                                    self._tile_grid._corgi_grid.wait_data(handshake_mode)
-                                    x.end = time.time()
-                                    self._wait_measurements[-1].append(x)
-
-                                self._logger.debug("Starting virtual tile sync.")
-                                self._tile_grid._corgi_grid.recv_data(mode.value)
-                                self._tile_grid._corgi_grid.send_data(mode.value)
+                            if handshake_mode:
+                                self._logger.debug("Starting a handshake.")
+                                self._tile_grid._corgi_grid.recv_data(handshake_mode)
+                                self._tile_grid._corgi_grid.send_data(handshake_mode)
                                 x = wait_measurement(
-                                    label="comm_external: data wait",
+                                    label="comm_external: handshake wait",
                                     begin=time.time(),
                                     end=None)
-                                self._tile_grid._corgi_grid.wait_data(mode.value)
+                                self._tile_grid._corgi_grid.wait_data(handshake_mode)
                                 x.end = time.time()
                                 self._wait_measurements[-1].append(x)
+
+                            self._logger.debug("Starting virtual tile sync.")
+                            self._tile_grid._corgi_grid.recv_data(mode.value)
+                            self._tile_grid._corgi_grid.send_data(mode.value)
+                            x = wait_measurement(
+                                label="comm_external: data wait",
+                                begin=time.time(),
+                                end=None)
+                            self._tile_grid._corgi_grid.wait_data(mode.value)
+                            x.end = time.time()
+                            self._wait_measurements[-1].append(x)
                         case _:
                             raise AttributeError(f"{method} is not supported communication type.")
             else:
