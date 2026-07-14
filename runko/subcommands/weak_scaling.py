@@ -79,6 +79,29 @@ def sorted_by_key(key: list, *vals: list) -> None:
     return zip(*zipped)
 
 
+def calculate_max_splits(data: list):
+    """
+    Takes list of runko.TimerStatistics which each represent
+    data from different rank. Assumes that each TimerStatistics.count
+    is the same.
+    """
+
+    if len(data) == 0:
+        return np.array([])
+
+    laps = data[0].count
+    mins = 1e99 * np.ones(laps, dtype=float)
+    maxs = np.zeros(laps, dtype=float)
+
+    for lap_times in data:
+        assert(laps == lap_times.count)
+
+        for lap, time in enumerate(lap_times.data):
+            mins[lap] = min(mins[lap], time)
+            maxs[lap] = max(maxs[lap], time)
+
+    return np.array(maxs) - np.array(mins)
+
 
 def main(argv: list[str]):
     parser = argparse.ArgumentParser(
@@ -120,6 +143,16 @@ def main(argv: list[str]):
                         action="store_true",
                         help="""
                         Shade area between minimum and maximum time for each component.
+                        """)
+
+    parser.add_argument("--max-splits",
+                        action="store_true",
+                        help="""
+                        Plots the maximum splits for each component.
+                        Maximum split is defined to be the difference between the slowest
+                        and the fastest rank on the same lap.
+                        All available laps are searched for the largest maximum split.
+                        --shade-bounds, --draw-all, and --plot-totals are ignored.
                         """)
 
     parser.add_argument("--draw-all",
@@ -199,33 +232,47 @@ def main(argv: list[str]):
 
         c, m = string_to_color_n_marker(name)
 
-        for s in stats:
+        if args.max_splits:
+            max_split = np.max(calculate_max_splits(stats))
+
             if args.push_time:
-                t = s.average * s.count / s.measured_laps * ranks / n_particles
-            else:
-                t = s.average * s.count / s.measured_laps
+                max_split *= ranks / n_particles
 
-            l = min(l, t)
-            h = max(h, t)
+            ax.scatter([ranks],
+                       [max_split],
+                       label=name,
+                       color=c,
+                       marker=m)
+            # max_splits uses h to draw the lines that connect the markers.
+            h = max_split
+        else:
+            for s in stats:
+                if args.push_time:
+                    t = s.average * s.count / s.measured_laps * ranks / n_particles
+                else:
+                    t = s.average * s.count / s.measured_laps
 
-            if args.draw_all:
-                ax.scatter([ranks],
-                           [t],
+                l = min(l, t)
+                h = max(h, t)
+
+                if args.draw_all:
+                    ax.scatter([ranks],
+                               [t],
+                               label=name,
+                               color=c,
+                               marker=m)
+
+            if not args.draw_all:
+                ax.scatter([ranks, ranks],
+                           [l, h],
                            label=name,
                            color=c,
                            marker=m)
 
-        if not args.draw_all:
-            ax.scatter([ranks, ranks],
-                       [l, h],
-                       label=name,
-                       color=c,
-                       marker=m)
-
-        if ranks not in totals:
-            totals[ranks] = h
-        else:
-            totals[ranks] += h
+            if ranks not in totals:
+                totals[ranks] = h
+            else:
+                totals[ranks] += h
 
         if name not in lines:
             lines[name] = ([ranks], [l], [h])
@@ -267,6 +314,13 @@ The outdirs might not contain any timing data"""
             r, l, h = sorted_by_key(r, l, h)
             ax.fill_between(r, l, h, alpha=0.1, color=c)
 
+    if args.max_splits:
+        for name, (r, _, h) in lines.items():
+            c, _ = string_to_color_n_marker(name)
+            r, h = sorted_by_key(r, h)
+            ax.plot(r, h, alpha=0.2, color=c)
+
+
     # Filter out duplicate entries from the legend.
     handles, labels = ax.get_legend_handles_labels()
     unique_labels_set = set()
@@ -295,10 +349,16 @@ The outdirs might not contain any timing data"""
                   xticks=[],
                   yticks=[])
 
-    if args.push_time:
-        ylabel = "average push time [s]"
+    if args.max_splits:
+        if args.push_time:
+            ylabel = "max split (push time) [s]"
+        else:
+            ylabel = "max split [s]"
     else:
-        ylabel = "average time [s]"
+        if args.push_time:
+            ylabel = "average push time [s]"
+        else:
+            ylabel = "average time [s]"
 
     ax.set(xscale="log",
            yscale="log",
