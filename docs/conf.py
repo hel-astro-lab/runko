@@ -57,7 +57,6 @@ extensions = [
     "sphinx_tabs.tabs",
     "sphinx_copybutton"
 ]
-sphinx_tabs_disable_tab_closing = True
 
 # Breathe Configuration
 #breathe_default_project = "Runko"
