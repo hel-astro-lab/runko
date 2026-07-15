@@ -7,8 +7,14 @@
     },
     "configurePresets": [
         {
+            "name": "common",
+            "description": "General settings that apply to all configurations",
+            "hidden": true,
+            "binaryDir": "${sourceDir}/build/${presetName}"
+        },
+        {
             "name": "unix-cpu",
-            "binaryDir": "${sourceDir}/${presetName}",
+            "inherits": "common",
             "cacheVariables": {
                 "CMAKE_BUILD_TYPE": "Release",
                 "BUILD_TESTING": "ON",
@@ -22,7 +28,7 @@
         },
         {
             "name": "macos-cpu",
-            "binaryDir": "${sourceDir}/${presetName}",
+            "inherits": "common",
             "cacheVariables": {
                 "CMAKE_BUILD_TYPE": "Release",
                 "BUILD_TESTING": "ON",
@@ -37,7 +43,7 @@
         },
         {
             "name": "unix-hip",
-            "binaryDir": "${sourceDir}/${presetName}",
+            "inherits": "common",
             "cacheVariables": {
                 "CMAKE_BUILD_TYPE": "Release",
                 "BUILD_TESTING": "ON",
@@ -53,7 +59,7 @@
         },
         {
             "name": "lumi-cpu",
-            "binaryDir": "${sourceDir}/${presetName}",
+            "inherits": "common",
             "cacheVariables": {
                 "CMAKE_BUILD_TYPE": "Release",
                 "BUILD_TESTING": "ON",
@@ -68,7 +74,7 @@
         },
         {
             "name": "hile-cpu",
-            "binaryDir": "${sourceDir}/${presetName}",
+            "inherits": "common",
             "cacheVariables": {
                 "CMAKE_BUILD_TYPE": "Release",
                 "BUILD_TESTING": "ON",
@@ -83,7 +89,7 @@
         },
         {
             "name": "lumi-gpu",
-            "binaryDir": "${sourceDir}/${presetName}",
+            "inherits": "common",
             "cacheVariables": {
                 "CMAKE_BUILD_TYPE": "Release",
                 "BUILD_TESTING": "ON",
@@ -99,7 +105,7 @@
         },
         {
             "name": "hile-gpu",
-            "binaryDir": "${sourceDir}/${presetName}",
+            "inherits": "common",
             "cacheVariables": {
                 "CMAKE_BUILD_TYPE": "Release",
                 "BUILD_TESTING": "ON",
