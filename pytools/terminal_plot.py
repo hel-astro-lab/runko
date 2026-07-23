@@ -259,7 +259,11 @@ class TerminalPlot:
         # squeeze drops the trailing size-1 axis that the 2D→3D reshape above
         # leaves behind; otherwise stripe[i] becomes a 1-elt array and the
         # cmap lookup returns (1,4) instead of a 4-tuple.
-        self.screen = np.squeeze(self.rescale(data))
+        self.screen = self.rescale(data)
+        if self.ny == 1:
+            self.screen = np.reshape(self.screen, (self.nx, self.ny))
+        else:
+            self.screen = np.squeeze(self.screen)
 
         lines = [] # screen is collected here
 
