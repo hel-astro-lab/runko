@@ -43,8 +43,9 @@ ConfigParser::ConfigParser(const pybind11::handle& conf_obj)
       auto contains_strings = false;
 
 
-      for(const auto& [n, x]:
-          std::views::enumerate(pybind11::reinterpret_borrow<pybind11::list>(value))) {
+      // Workaround for clang-22 ICE with std::views::enumerate.
+      auto n = 0uz;
+      for(const auto& x: pybind11::reinterpret_borrow<pybind11::list>(value)) {
         const auto is_int   = pybind11::isinstance<pybind11::int_>(x);
         const auto is_float = pybind11::isinstance<pybind11::float_>(x);
         const auto is_str   = pybind11::isinstance<pybind11::str>(x);
@@ -63,6 +64,7 @@ ConfigParser::ConfigParser(const pybind11::handle& conf_obj)
         contains_ints    = contains_ints or is_int;
         contains_floats  = contains_floats or is_float;
         contains_strings = contains_strings or is_str;
+        ++n;
       }
 
       if(contains_ints and contains_floats and contains_strings) {
