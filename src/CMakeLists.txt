@@ -33,14 +33,28 @@ set (IO_FILES
      ./runko/io/snapshots/mpiio_spectra.c++
     )
 
+set (RUNKO_CPP_BINDINGS_FILES
+     "./runko/bindings/runko_cpp_bindings.c++"
+     ${TOOLS_FILES}
+     ${EMF_FILES}
+     ${PIC_FILES}
+     ${IO_FILES}
+    )
 
-pybind11_add_module(runko_cpp_bindings
-    ./runko/bindings/runko_cpp_bindings.c++
-    ${TOOLS_FILES}
-    ${EMF_FILES}
-    ${PIC_FILES}
-    ${IO_FILES}
-)
+
+add_library(runko_cpp_bindings MODULE)
+target_sources(runko_cpp_bindings PRIVATE ${RUNKO_CPP_BINDINGS_FILES})
+target_link_libraries(runko_cpp_bindings PRIVATE pybind11::module)
+
+pybind11_extension(runko_cpp_bindings)
+if(NOT MSVC AND NOT ${CMAKE_BUILD_TYPE} MATCHES Debug|RelWithDebInfo)
+    # Strip unnecessary sections of the binary on Linux/macOS.
+    pybind11_strip(runko_cpp_bindings)
+endif()
+
+set_target_properties(runko_cpp_bindings PROPERTIES CXX_VISIBILITY_PRESET "hidden"
+                                         HIP_VISIBILITY_PRESET "hidden"
+                                         CUDA_VISIBILITY_PRESET "hidden")
 
 target_link_libraries(runko_cpp_bindings
     PRIVATE
@@ -48,6 +62,14 @@ target_link_libraries(runko_cpp_bindings
     runko_warnings
     runko_dependencies
 )
+
+
+if(${tyvi_BACKEND} STREQUAL "hip")
+     foreach(file ${RUNKO_CPP_BINDINGS_FILES})
+         set_source_files_properties("${file}" PROPERTIES LANGUAGE HIP)
+     endforeach()
+     set_property(TARGET runko_cpp_bindings PROPERTY HIP_STANDARD 26)
+endif()
 
 # Install runko_cpp_bindings.
 install(TARGETS runko_cpp_bindings DESTINATION .)
