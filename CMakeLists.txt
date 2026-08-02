@@ -17,6 +17,11 @@ project(
     LANGUAGES CXX
 )
 
+if(${tyvi_BACKEND} STREQUAL "hip")
+    message(STATUS "runko: enabling hip")
+    enable_language(HIP)
+endif()
+
 find_package(OpenMP REQUIRED)
 find_package(MPI REQUIRED)
 
