@@ -3,8 +3,11 @@
 
 set (TOOLS_FILES
      ./runko/bindings/pytools.c++
+     ./runko/bindings/pyactions.c++
      ./runko/tools/config_parser.c++
      ./runko/tools/system.c++
+     ./runko/simulation.c++
+     ./runko/actions/env.c++
      )
 
 set (EMF_FILES

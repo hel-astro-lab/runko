@@ -3,6 +3,7 @@
 
 set(TESTS_TO_RUN
     unit_testing
+    simulation
 )
 
 foreach(test ${TESTS_TO_RUN})
