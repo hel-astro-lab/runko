@@ -53,6 +53,7 @@ target_compile_options(runko_warnings
 
 add_subdirectory(external/corgi)
 add_subdirectory(external/tyvi)
+add_subdirectory(external/entt)
 
 # Required for shared libraries.
 set_target_properties(tyvi PROPERTIES POSITION_INDEPENDENT_CODE TRUE)
@@ -63,6 +64,7 @@ target_link_libraries(runko_dependencies
     INTERFACE
     corgi
     tyvi
+    EnTT::EnTT
 )
 target_include_directories(runko_dependencies
     SYSTEM INTERFACE

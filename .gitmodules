@@ -6,3 +6,6 @@
 	path = external/tyvi
 	url = https://github.com/hel-astro-lab/tyvi
 	branch = pre-pika
+[submodule "external/entt"]
+	path = external/entt
+	url = https://github.com/skypjack/entt
