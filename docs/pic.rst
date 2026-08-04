@@ -19,6 +19,7 @@ A computational particle is therefore treated as a monolithic collection of "rea
 The computational particles interact with the electromagnetic fields — defined on a grid — via the Lorentz force.
 The electromagnetic fields are advanced self-consistently by the electric currents, `J = \sum_p w_p q_e \beta_p`, induced by the moving particles via Ampere's and Faraday's laws.
 
+.. _time:
 
 Time advancement
 ----------------
@@ -179,12 +180,20 @@ Total current is a sum over all the particles `p`, and species `s`, `\hat{J}_i =
 
 
 
-Particle pushing
+Particle pushers
 ----------------
 
-.. note:: 
-    TODO
+At the 3th step of :ref:`Time advancement <time>` particle pusher defines how to
+computes the velocity in the middle of the step: :math:`\mathbf{\hat{u}}^n`.
+The common challenge is that the expression of the involve :math:`\mathbf{\hat{u}}^{n+\frac12}`,
+which appears to make the update equation implicit.
+However, various pushers have procedures that allow solving the time evolution in steps,
+keeping the method explicit.
 
+More common pushers are: Boris pusher (Boris, 1970), Vay's method (Vay, 2008),
+and Higuera-Cary method (Higuera \& Cary, 2017).
+Main differentiating property of the pushers is how well they preserve
+the phase space structure.
 
 
 
