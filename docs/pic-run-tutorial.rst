@@ -1,9 +1,12 @@
 Running a PIC simulation
 ########################
 
-This tutorial walks through the different pieces that make up a runko PIC simulation,
-using the PIC turbulence example project at ``projects/pic-turbulence/pic.py`` as the running example.
-It focuses on technical aspects rather than on the underlying physics.
+This tutorial walks through the different pieces that make up a runko PIC simulation
+by roughly following the PIC turbulence example project at
+``projects/pic-turbulence/pic.py``.
+Focus of this tutorial is the techincal aspects of the simulation.
+See :ref:`PIC initialization tutorial <pic-init-tutorial>` for
+instructions on how to choose the physical parameters.
 
 .. role:: python(code)
    :language: python

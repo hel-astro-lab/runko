@@ -1,3 +1,5 @@
+.. _pic-init-tutorial:
+
 Initializing a PIC simulation
 #############################
 
