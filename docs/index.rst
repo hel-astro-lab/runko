@@ -60,7 +60,8 @@ Key contributors that provided additional features and/or improvements include
    :caption: Tutorials:
    :maxdepth: 2
 
-   pic-tutorial
+   pic-run-tutorial
+   pic-init
 
 .. toctree::
    :caption: Theory:

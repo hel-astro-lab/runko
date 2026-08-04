@@ -1,5 +1,5 @@
-PIC tutorial
-############
+Running a PIC simulation
+########################
 
 This tutorial walks through the different pieces that make up a runko PIC simulation,
 using the PIC turbulence example project at ``projects/pic-turbulence/pic.py`` as the running example.

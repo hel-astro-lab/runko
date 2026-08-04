@@ -1,3 +1,5 @@
+.. _plasma-params-theory:
+
 Plasma parameters
 =================
 
