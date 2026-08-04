@@ -20,21 +20,6 @@ The computational particles interact with the electromagnetic fields — defined
 The electromagnetic fields are advanced self-consistently by the electric currents, `J = \sum_p w_p q_e \beta_p`, induced by the moving particles via Ampere's and Faraday's laws.
 
 
-
-Initialization
---------------
-
-In our typical PIC simulations the pair plasma particles, `e^-` and `e^+`, are initialized exactly on top of each other.
-This means that the initial charge density is `\rho = 0`;
-therefore, there is no need to solve the `\nabla \cdot \mathbf{\hat{E}} = 4\pi \rho` in any stage.
-
-.. note::
-
-    Cold mobile ions can be implemented into the simulation by having `\rho \ne 0` (i.e., not initializing particles such that their charge cancels);
-    after this, the simulation behaves as if there are "ghost charges" (that do not evolve) on the grid.
-
-
-
 Time advancement
 ----------------
 

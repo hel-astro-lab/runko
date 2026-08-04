@@ -28,8 +28,21 @@ and then simplifyinig leads to:
    \hat \omega_p^2 = \sum_s \frac{\hat n_s |\hat q_s|} {\gamma_s r_s }
 
 
-Plasma with two species
-=======================
+Satisfying Gauss's law [for magnetism]
+======================================
+
+By using charge conserving current depositors,
+if Guass's law [for magnetism] is satisfied at the beginning
+then it is satisfied at all times.
+
+.. note::
+   Cold mobile ions can be implemented into the simulation by having `\rho \ne 0`
+   (i.e., not initializing particles such that their charge cancels);
+   after this, the simulation behaves as if there are "ghost charges"
+   (that do not evolve) on the grid.
+
+Pair-plasma
+===========
 
 We have two species labeled with ``e`` and ``i``.
 We will assume following:
