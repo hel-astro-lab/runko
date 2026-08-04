@@ -34,6 +34,12 @@ Yee lattice is used for `\mathbf{E}` and `\mathbf{B}` fields such that they are 
 
 where `\hat{\mathbf{E}}` is located in the middle of the cell sides and `\hat{\mathbf{B}}` in the center of the cell faces.
 This makes it easy to compute the curl of the fields in the equations below.
+Note that there is at most one component at any grid location.
+Therefore, we can drop the explicit component lables :math:`{x, y, z}` from the notation and for example simply write
+:math:`B_{z;\, n+\frac12, m+\frac12, l} = B_{n+\frac12, m+\frac12, l}`
+and :math:`E_{x;\, n+\frac12, m, l} = E_{n+\frac12, m, l}`.
+
+
 
 The time staggering, in turn, increases the temporal order of the scheme since all the updates are leapfrog-like, `x^{n+1} = x^n + v^{n+\frac{1}{2}} \Delta t`.
 
@@ -63,15 +69,34 @@ Finite-difference solvers
 
 Different FDTD solvers can be obtained by defining different discrete curl-operators,  `\nabla \times \mathbf{Q} \rightarrow \Delta[ \hat{\mathbf{Q}} ]_{\mathbf{x}}`, i.e., different finite-difference operators for the calculation of the derivative.
 
-.. note::
+FDTD2
+.....
 
-    TODO
+Second order accurate FDTD uses:
 
+.. math::
+   \left.\Delta[ \hat{\mathbf{Q}} ]_{\mathbf{x}}\right|_{n,m,l} =
+   \begin{bmatrix}
+     \left(Q_{n,m+\frac12,l} - Q_{n,m-\frac12,l}\right)
+     - \left(Q_{n,m,l+\frac12} - Q_{n,m,l-\frac12}\right) \\
+     \left(Q_{n,m,l+\frac12} - Q_{n,m,l-\frac12}\right)
+     - \left(Q_{n+\frac12,m,l} - Q_{n-\frac12,m,l}\right) \\
+     \left(Q_{n+\frac12,m,l} - Q_{n-\frac12,m,l}\right)
+     - \left(Q_{n,m+\frac12,l} - Q_{n,m-\frac12,l}\right)
+   \end{bmatrix}
+
+
+For more detailed derivation, see
+`Miro Palmu's master's theses <http://hdl.handle.net/10138/627079>`_.
 
 Filtering
 ---------
 
-.. note::
+In PIC, particles generate noisy current density to the grid.
+This noise can be smoothed by applying digital filters.
+Compared to using more particles or using higher order methods,
+filtering is computationally cheaper.
 
-    TODO
+.. admonition:: WIP
 
+   Expand this section.
