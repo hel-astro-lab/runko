@@ -16,7 +16,9 @@ Plasma skin depth
 
 Plasma perturbations that move at the speed of light :math:`c` and oscillate at the plasma/Langmuir frequency
 define a length scale known as the plasma skin depth :math:`d_s`.
-PIC simulation resolution is usually specified in terms of how many :math:`\Delta x` there are in one :math:`d_s`:
+PIC simulation resolution is usually specified in terms of
+skin depth resolution :math:`R_s`
+(i.e. how many :math:`\Delta x` there are in one :math:`d_s`):
 
 .. math:: d_s = \frac{c}{\omega_{p,s}} = R_s \Delta x
 
