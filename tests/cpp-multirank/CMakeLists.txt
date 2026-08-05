@@ -28,7 +28,7 @@ function(add_cpp_mpi_test name no_mpi_proc)
     )
 
     add_test(NAME "cpp-multirank-${name}" COMMAND
-        ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} ${no_mpi_proc} "${name}.test"
+        ${MPIEXEC} --bind-to none ${MPIEXEC_NUMPROC_FLAG} ${no_mpi_proc} "${name}.test"
     )
 endfunction(add_cpp_mpi_test)
 
