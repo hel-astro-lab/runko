@@ -1,4 +1,4 @@
-// Copyright 2025 - 2026, Miro Palmu, Joonas Nättilä and the runko contributors
+// Copyright 2026 - 2026, Miro Palmu, Joonas Nättilä and the runko contributors
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 #include "runko/simulation.h"
