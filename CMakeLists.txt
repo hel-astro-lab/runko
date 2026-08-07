@@ -17,6 +17,20 @@ project(
     LANGUAGES CXX
 )
 
+# Pika defines option(BUILD_SHARED_LIBS ...) which also makes tyvi a shared library.
+# However, for the python module we want them to be included into runko_cpp_bindings.so
+# otherwise it would not know where to find libtyvi.so or libpika.so.
+#
+# This has to be set with option(BUILD_SHARED_LIBS ...) as cmake docs state:
+#
+# > Note that if bringing external dependencies directly into the build,
+# > such as with FetchContent or a direct call to add_subdirectory(),
+# > and one of those dependencies has such a call to option(BUILD_SHARED_LIBS ...),
+# > the top level project must also call option(BUILD_SHARED_LIBS ...)
+# > before bringing in its dependencies. Failure to do so can lead to
+# > different behavior between the first and subsequent CMake runs.
+option(BUILD_SHARED_LIBS "Don't touch! Otherwise breaks python install." OFF)
+
 if(${tyvi_BACKEND} STREQUAL "hip")
     message(STATUS "runko: enabling hip")
     enable_language(HIP)
