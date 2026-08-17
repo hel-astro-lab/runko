@@ -2,7 +2,7 @@
 
 # Modern C++/Python CPU/GPU-portable plasma toolbox
 
-[![Documentation Status](https://readthedocs.org/projects/runko/badge/?version=latest)](https://runko.readthedocs.io/en/latest/?badge=latest) [![MIT](https://badges.frapsoft.com/os/mit/mit.svg?v=102)](https://github.com/natj/runko/LICENSE) 
+[![Documentation Status](https://readthedocs.org/projects/runko/badge/?version=latest)](https://runko.readthedocs.io/en/latest/?badge=latest) [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0) 
 
 R̯̥͎̺͚̙͈̖̝̩̘ͅu̖̩̹̤n̪̰͚̭̬̮̼͎̥͓ͅk̲̟͎͓̭̝o͔͙̗͓͇̺͇̥̜͖̥̹̘̼ i̪̮̠͇̪̯̲͕̪̻̫̹s͕̫͈̲͙͕̻̜ a̙̻̘͎̞͖̮͚̺̲̮͍͇̮͚ m̺̤͍̻̬͕̯̳̣o͙͔̠͕̠͓̥d̝̘̩̟̲̬͎͍̲e̮̭͉̖̣r̯̬̣̫̹̤̖n̼̪̥͚̫̱̜̞̫̼͔̙̯̜ C̹̻̮͎̰̟̻̭̝ͅ++/P̠̬͕y̦̣͎̜̬̯͖̩̬͍͓͈͙t̥̳̦̠h̬͇͕̭o̦͖̲͎̖n͈̟̬͓̤̖̬̬̼̙̳͖͇̤ C̯̼͙P̰̮̪͍̖̘͓͙͍U͙̺͚̖̫̖͕̖̥͕̼ͅ/G̞͕̮P̖͔̯͙̻̤̬̙̳͙̙̰U͕̹͓̹͇̻̯̰ 3D͈̞͖̺̱̯͎̖͖̱͎̰̯̲̦ͅ r̠͍̲̝̖̖͚̪͉͍̙͔̪̟͕̦ͅͅa͕̜̗̮̲̹̜͇̭̗̬͉̭̻̪̲̖ḓ̠̝̺̟͈͖̞̭̼ͅͅi̥̯̦̺͚͚̫̻̟̤a͚͇͈͔ṯ͖̬̙̠̻̦̩̺͖͙͕̝i͉͙ͅv̪̰̤̜̰̲e͓̖̤͉̮̞͚̹̯̭̗̣̭̟͇̣ͅ p̜͈̺̫̣̬̝̭̲̻ͅl̯͚̣̜̹̣̝͍̜ͅa̼̥̹͎͎̲̫̮̮s̳̣͙͖̠̘͈̣͇̹̮ͅm̲͙͖͕̥̫͕̲͎̪͎̜ͅa̭̥̹ c̞͕̗̙͎̞̣͉̥̹o͍͍͎̭̰̦̣̥͖̦d̮̥̙e͔͍̺̼̦͉̘̜̥̜̪̗̟̰ b̗̲̝̘̩̩̫̣̟̮̳̥̰͉̮̲͖ỵ͖͉ a̜͚͉̲̬̲̦̲̝n̠̝̪̮͈̭̹̲͕d̳̫̹̙̤̥̬̬̜̫̙͚ f͔̱̱̥̠̲̟o͔̠̦̠͕̪͍̤ṟ̜̣͉̥̖͓̳̯̳̜͇͓̬̱̖͖ͅ t̪̩̲̺̖̱̯̮̹̯̫̝̳͈̥̤̯̥h̻̫͕̗͍̼̦̰̹͔͙̣̯̱e̜̳͕̖̱̞̠ͅͅ ḁ̹͚͓s̯̖͔̭͍̼͍̺̰̭ͅt͔̫̰͇͍̥̹̺̹̫̠̲͎̠ͅr̰͖̲̟͓̰͇̜̖̼̙͔͖͈o̜̦͈̼͉ͅp̲̬̭͔͕͍̩͇͚͉̮̤̞̥͍ͅh̲͍͉y͉̖̣͔͎͔̥͎̣̮̰s̗͓̳̗͖̯͍̱͖̖̺̣̤̺̬͉̭̣i̩̠̖c̻̹͕̰͚̣̗̳̠̫̖̲̥͇̦̺s͉̩̙̝̰̥͍̙ c͔̥͎̺̜̗̣̱̘̲̝͔͈̥̘̱̪o̞͇̹̘̣͙͓̜̯͖̦̲͕͖̤̠m̭̼̦͎̦̙̭̝̟͓ͅm̝̖͓̮̪̬̰u̖̯̤͕͚̩͓̘͖n̺̜͎̣i̳̻͖̟̩͇̖̥͚̩̻̠̱̹t͎̗̤̲̞͓̤̦͙̰̞̭̭̫͔̫̬̮y̖̩͍͍̫̹͙̜̺͓͉̟̣͈̤̺.
 </br>
