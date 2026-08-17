@@ -189,11 +189,10 @@ The common challenge is that the expression of the involve :math:`\mathbf{\hat{u
 which appears to make the update equation implicit.
 However, various pushers have procedures that allow solving the time evolution in steps,
 keeping the method explicit.
-
-More common pushers are: Boris pusher (Boris, 1970), Vay's method (Vay, 2008),
+Commonly used pushers include Boris pusher (Boris, 1970), Vay's method (Vay, 2008),
 and Higuera-Cary method (Higuera \& Cary, 2017).
-Main differentiating property of the pushers is how well they preserve
-the phase space structure.
+Pushers differ in how well they preserve the phase space structure
+and how computationally expensive they are.
 
 
 
