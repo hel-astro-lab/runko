@@ -60,7 +60,7 @@ Total plasma frequency can thus be written as:
 
 Now by choosing :math:`|\hat q_0|` and :math:`m_0` such that
 :math:`r_e = \frac{\hat m_e }{| \hat q_e|} = 1` we get that
-:math:`r_i = \frac{\hat m_i}{\hat m_e}` and totale plasma frequency becomes:
+:math:`r_i = \frac{\hat m_i}{\hat m_e}` and total plasma frequency becomes:
 
 .. math:: \hat \omega_p^2 = \frac{\hat n |\hat q|}{\gamma}
           \left(1 + \frac{\hat m_e }{\hat m_i}\right)
