@@ -12,7 +12,7 @@ The main development branch is ``master``.
 Version history
 ---------------
 
-* v5.0: `CPU/GPU-backend refactor <https://github.com/hel-astro-lab/runko>`_
+* v5.0: `Pomegranate <https://github.com/hel-astro-lab/runko/tree/v5.0>`_ released in Oct 2026
 
     * Major code revision introducing the tyvi portability library backend.
 * v4.1: `Ripe Kiwi <https://github.com/hel-astro-lab/runko/tree/v4-qed>`_ released in Apr 2024
