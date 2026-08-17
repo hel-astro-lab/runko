@@ -57,6 +57,7 @@ Note that you have to uncomment lines for ``PyObject_Free`` and ``PyObject_Reall
 (`source <https://stackoverflow.com/questions/3982036/how-can-i-use-valgrind-with-python-c-extensions>`_).
 
 .. code:: shell
+
    valgrind --tool=memcheck --suppressions=valgrind-python.supp python <script.py>
 
 
