@@ -16,6 +16,7 @@ Under the hood, the framework uses the massively parallel grid infrastructure li
 Documentation is available at [runko.readthedocs.io](https://runko.readthedocs.io/en/latest/?badge=latest). 
 
 The design and usage of the code are described in detail in the accompanying [paper](https://arxiv.org/abs/1906.06306).
+Note that after this paper there has been major changes and it might be out of date.
 
 ## Quick getting started guide
 1) Follow the [installation instructions](https://runko.readthedocs.io/en/latest/installation.html) to get Runko running on your laptop.
@@ -49,6 +50,8 @@ PIC module has been used to simulate collisionless shocks in 2 and 3D. These sim
 Vlasov module has been used to simulate the development of beam instabilities in a stratified medium. 
 
 In this 1D1V simulation setup, we track the development of stratified beam instability in an atmosphere with a density contrast of over 5 orders of magnitude. Deep in the atmosphere, the penetrating beam excites Langmuir wave turbulence and heats the background plasma. 
+
+Note that v5.0 removed the Vlasov module. Experimental work is in progress to bring it back.
 
 ## How to cite?
 
