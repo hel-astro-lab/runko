@@ -152,7 +152,7 @@ def main(argv: list[str]):
                         Maximum split is defined to be the difference between the slowest
                         and the fastest rank on the same lap.
                         All available laps are searched for the largest maximum split.
-                        --shade-bounds, --draw-all, and --plot-totals are ignored.
+                        Incompatible with: --draw-all, --shade-bounds, --plot-totals and --stackplot.
                         """)
 
     parser.add_argument("--draw-all",
@@ -177,6 +177,17 @@ def main(argv: list[str]):
                         type=int)
 
     args = parser.parse_args(argv[1:])
+
+    # Maps args.* to what argument --* it actually represents.
+    name_map = lambda x: "--" + x.replace("_", "-")
+
+    arg_conflicts = {"max_splits": ["draw_all", "shade_bounds", "plot_totals"]}
+    for arg, conflicts in arg_conflicts.items():
+        if hasattr(args, arg):
+            for x in conflicts:
+                if hasattr(args, x):
+                    print(f"error: {name_map(x)} does not make sense with {name_map(arg)}")
+                    exit(1)
 
     outdirs = args.outdir
 
