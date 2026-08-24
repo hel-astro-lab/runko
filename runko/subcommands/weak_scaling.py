@@ -76,7 +76,10 @@ def string_to_color_n_marker(s,
 def sorted_by_key(key: list, *vals: list) -> None:
     zipped = list(zip(key, *vals))
     zipped.sort(key=lambda x: x[0])
-    return zip(*zipped)
+    ret_val = []
+    for x in zip(*zipped):
+        ret_val.append(list(x))
+    return ret_val
 
 
 def calculate_max_splits(data: list):
