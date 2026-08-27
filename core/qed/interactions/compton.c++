@@ -65,18 +65,18 @@ Compton::pair_float Compton::comp_cross_section(
   Vec3<float> beta = zv/gam;            // prtcl 3-velocity \beta
   float beta0 = norm(beta);
   float mu = dot(om, beta)/beta0;       // cosine of angle between incident photon and electron
-  float s = 0.5*x*gam*(1.0 - beta0*mu); // relativistic invariant
+  float s = x*gam*(1.0 - beta0*mu);     // relativistic invariant
 
 
   //# Approximate Taylor expansion for Compton total 
-  // cross-section if xi<0.01, error about 5e-6
+  // cross-section if xi<0.01, error about 3e-7
   float s0 = 0.0; 
   if(s < 0.01) {
-    s0 = 1.0 - 2.0*s + 5.2*s*s - 9.1*s*s*s;
+    s0 = 1.0 - 2.0*s + 5.2*s*s - 13.3*s*s*s;
 
     //# higher-order terms, not needed if xi<0.01 
     //# + 1144.0 * xi**4 / 35.0  - 544.0 * xi**5 / 7. 
-    //#+ 1892.0 * xi**6 / 21.0   
+    //#+ 3784.0 * xi**6 / 21.0   
   } else {
     // Exact formula for Klein-Nishina cross section in units of sigma_T
     s0 = (1.0/(s*s))*(4.0 + (s - 2.0 - 2.0/s)*log(1.0 + 2.0*s) + 2.0*s*s*(1.0 + s)/pow(1.0 + 2.0*s, 2) );
