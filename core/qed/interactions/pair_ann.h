@@ -17,10 +17,10 @@ public:
     Interaction(t1, t2)
   {
     name = "pair-ann";
-    //cross_section = 0.256; // 0.206 measured
   }
 
-  const float cross_section = 0.256; // 0.206 measured
+  // maximum of sigma_ann F/2 over all kinematics; 0.20798 at gamma_cm = 1.1354
+  const float cross_section = 0.208;
 
   tuple<float, float> get_minmax_ene( string t1, string t2, double ene) override final;
 

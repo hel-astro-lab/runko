@@ -17,12 +17,10 @@ public:
     Interaction(t1, t2)
   {
     name = "phot-ann";
-    //cross_section = 0.256; // 0.682; //0.51375; // 1.37*(3/8)*sigma_T // FIXME
-    //                       // 0.25564 measured
   }
 
-  // maximum cross section
-  const float cross_section = 0.256; // 1.37*(3/8)*sigma_T 
+  // maximum of sigma_gg F/2 over all kinematics; 0.25563 at x_i x_j (1-mu) = 3.96
+  const float cross_section = 0.256;
 
   tuple<float, float> get_minmax_ene( string t1, string t2, double ene) override final;
 
