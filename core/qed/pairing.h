@@ -568,6 +568,29 @@ public:
   }
 
 
+  // realized number of copies from the expected number n; floor(n)+1 with probability
+  // n - floor(n), so that the mean is n exactly
+  int realized_copy_num(float n)
+  {
+    return static_cast<int>( std::floor(n + rand()) );
+  }
+
+
+  // weight of each of the n_r copies that carry the transferred weight s.
+  //
+  // n >= 1: s/n_r, so that the copies sum to s in every single event (splitting).
+  // n <  1: s/n, the surviving copy carrying s in expectation (Russian roulette); there is no
+  //         n_r to divide by, since n_r is 0 or 1.
+  //
+  // NOTE: dividing by the expected n in both branches conserves the weight only in expectation,
+  //       and adds a fluctuation of relative size (n_r - n)/n to the weight and energy of every
+  //       event.
+  float copy_wgt(float s, float n, int n_r)
+  {
+    return (n >= 1.0f) ? s/static_cast<float>(n_r) : s/n;
+  }
+
+
   //--------------------------------------------------
   void solve_twobody(pic::Tile<D>& tile)
   {
@@ -968,46 +991,28 @@ public:
             float n4 = std::min( fw4, 32.0f );
 
             //--------------------------------------------------
-            if(t1 == t3 && t2 == t4) { // scattering interactions
+            const bool is_scattering = (t1 == t3) && (t2 == t4);
 
-              // redistribute weights among the new copies
-              w3 = w1/n3; 
-              w4 = w2/n4; 
-                
-              wmin = min(w3, w4); // minimum available weight
-              //wmax = max(w3, w4); // maximum available weight
+            // transferred weight; the largest a pair can move is the smaller of the two weights.
+            // Only this fraction of each parent takes part in the reaction.
+            wmin = min(w1, w2); 
 
-              //# NOTE these two expressions are equal: w_i = w_j/wmax == wmin/w_i
-              //# this is where the algorithm differs from original LP MC method by Stern95;
-              //# here, instead of killing the LP we do not update its energy.
+            // Probabilities that realize the transfer. They are formed from the PARENT weights:
+            // built instead from the weights of the copies, min(w1/n3, w2/n4), they would move
+            // n3*wmin on one side and n4*wmin on the other, which differ whenever n3 != n4 and
+            // leave the energy the one side gives up unequal to what the other takes.
+            if(is_scattering) {
 
-              // we can think here that only wmin = min(w1, w2) fraction of the LPs weight is 
-              // used in the interaction. If everything is used then (i.e., wmin=w1 for LP1 
-              // or wmin=w2 for LP2)) then prob_upd = 1
-
-              // NOTE: update probability is later reduced as if particle weights are w -> w*f_acc 
-              //       when accumulation is used
-
-              // NOTE every new particle has a change of prob_upd of being updated so this rejection sample 
-              // needs to be calculated using the new weights; then multiple evaluations of the rejection sampling
-                
-
-              // probability for the particle energy to be updated 
-              // NOTE: equals the prob_upd calculated with parent weights. Alternatively, we could check prob_upd
-              // once and add all the copies thereafter; this however leads to more MC sampling noise.
-              prob_upd3 = wmin/w3; //w2/wmax;
-              prob_upd4 = wmin/w4; //w1/wmax;
+              // this is where the algorithm differs from original LP MC method by Stern95;
+              // here, instead of killing the LP we do not update its energy.
+              // If everything is used (i.e., wmin=w1 for LP1 or wmin=w2 for LP2) then prob_upd = 1
+              prob_upd3 = wmin/w1;
+              prob_upd4 = wmin/w2;
 
               // check against wrong usage of these
               prob_kill3 = -1.0f;
               prob_kill4 = -1.0f;
             } else { // annihilation interactions
-
-              // weight of the new type is the minimum of the two incident particles
-              // share mutual weight between outgoing prtcls
-              wmin = min(w1, w2); // minimum available weight
-              w3 = wmin/n3; 
-              w4 = wmin/n4; 
 
               // probability to kill the parent (since not all of it may not be used)
               prob_kill3 = wmin/w1;
@@ -1020,44 +1025,39 @@ public:
 
 
             //--------------------------------------------------
-            // branch for rescaling electron-positron plasma to have unitary weights
+            // branch for rescaling electron-positron plasma to have unitary weights;
+            // there the weight is fixed and the copy number follows from it, the other way 
+            // around from the general rule below
 
-            // t1
-            if(t1 == t3 && t2 == t4) { // scattering interactions
+            const bool uni_w3 = force_ep_uni_w && (t3 == "e-" || t3 == "e+");
+            const bool uni_w4 = force_ep_uni_w && (t4 == "e-" || t4 == "e+");
 
-              // t3
-              if(force_ep_uni_w && (t3 == "e-" || t3 == "e+") ){ 
-                w3 = 1.0f;
-                n3 = facc3*w1/w3; // remembering to increase prtcl num w/ facc
-                facc3 = 1.0f; // restore facc (since it is taken care of by n3)
-              }
-                
-              //4
-              if(force_ep_uni_w && (t4 == "e-" || t4 == "e+") ){
-                w4 = 1.0f;
-                n4 = facc4*w2/w4; // remembering to increase prtcl num w/ facc
-                facc4 = 1.0f; // restore facc
-              }
-
-              // remember to recalc prob_upd
-              wmin = min(w3, w4); // minimum available weight
-              prob_upd3 = wmin/w3; 
-              prob_upd4 = wmin/w4; 
-
-            } else { // annihilation interactions
-                       
-              // t3
-              if(force_ep_uni_w && (t3 == "e-" || t3 == "e+") ){
-                w3 = 1.0;
-                n3 = wmin/w3;
-              }
-
-              // t4
-              if(force_ep_uni_w && ( t4 == "e-" || t4 == "e+") ){
-                w4 = 1.0;
-                n4 = wmin/w4;
-              }
+            if(uni_w3) {
+              w3 = 1.0f;
+              n3 = (is_scattering ? facc3*w1 : wmin)/w3; // remembering to increase prtcl num w/ facc
+              if(is_scattering) facc3 = 1.0f; // restore facc (since it is taken care of by n3)
             }
+
+            if(uni_w4) {
+              w4 = 1.0f;
+              n4 = (is_scattering ? facc4*w2 : wmin)/w4; // remembering to increase prtcl num w/ facc
+              if(is_scattering) facc4 = 1.0f; // restore facc
+            }
+
+
+            //--------------------------------------------------
+            // realized copy numbers, and the weight each copy carries.
+            //
+            // A scattering re-splits the parent's own weight, so its copies carry w1 and w2; a 
+            // conversion shares the transferred weight, so its products carry wmin on each side.
+            // The weight follows the REALIZED count and not the expected one, so that the copies
+            // sum to what they carry in every event instead of only on average.
+
+            const int n_r3 = realized_copy_num(n3);
+            const int n_r4 = realized_copy_num(n4);
+
+            if(!uni_w3) w3 = copy_wgt(is_scattering ? w1 : wmin, n3, n_r3);
+            if(!uni_w4) w4 = copy_wgt(is_scattering ? w2 : wmin, n4, n_r4);
 
 
             //--------------------------------------------------
@@ -1117,10 +1117,8 @@ public:
 
 
             //-------------------------------------------------- 
-            double ncop = 0.0;
-
             //if(t1 == t3) { // same type before/after interactions; update energy with prob_upd
-            if(t1 == t3 && t2 == t4) { // scattering interactions
+            if(is_scattering) { // scattering interactions
                              
               // -------------scattering interactions go here----------------
                 
@@ -1130,12 +1128,11 @@ public:
 
 
               timer.start_comp("add_sc_prtcl1");
-              double z1 = rand();
-              while(n3 > z1 + ncop) {
+              for(int ncop=0; ncop<n_r3; ncop++) {
 
                 // optimized routine that does not to leave holes in arrays 
                 // it first replaces the original value and only then adds if necessary
-                if(ncop < EPS) {
+                if(ncop == 0) {
                   if( rand() < prob_upd3 ) {
                     // NOTE: we keep location the same
                     cons[t1]->vel(0, n1) = ux3;
@@ -1173,13 +1170,12 @@ public:
                 //  }
                 //}
 
-                ncop += 1.0;
-              } // end of while
+              } // end of copy loop
               timer.stop_comp("add_sc_prtcl1");
 
               timer.start_comp("del_parent1");
               // remove parent prtcl if nothing was added
-              if( ncop < EPS ) {
+              if( n_r3 == 0 ) {
                 //cons[t1]->to_other_tiles.push_back( {1,1,1,n1} ); // NOTE: CPU version
                 cons[t1]->info(n1) = -1; // mark for deletion via outflow routines
                 cons[t1]->wgt(n1) = 0.0f; // make zero wgt so its omitted from loop
@@ -1205,11 +1201,9 @@ public:
               if( do_addition ) { // add if we are below tile limit
                                                    
                 timer.start_comp("add_prtcl1");
-                double z1 = rand();
-                while( n3 > z1 + ncop ){
+                for(int ncop=0; ncop<n_r3; ncop++){
                   // TODO NOTE lx3 here not lx1
                   cons[t3]->add_particle( {{lx3, ly3, lz3}}, {{ux3, uy3, uz3}}, w3); // new ene & w
-                  ncop += 1.0;
                 }
                 timer.stop_comp("add_prtcl1");
               }
@@ -1228,20 +1222,18 @@ public:
 
             //-------------------------------------------------- 
             // add prtcl t2/t4
-            ncop = 0.0;
 
             //if(t2 == t4) { // same type before/after interactions; update energy with prob_upd
-            if(t1 == t3 && t2 == t4) { // scattering interactions
+            if(is_scattering) { // scattering interactions
 
               // scattering interactions go here
 
               timer.start_comp("add_sc_prtcl2");
-              double z1 = rand();
-              while(n4 > z1 + ncop) {
+              for(int ncop=0; ncop<n_r4; ncop++) {
 
                 // optimized routine that does not to leave holes in arrays 
                 // it first replaces the original value and only then adds if necessary
-                if(ncop < EPS) {
+                if(ncop == 0) {
                   if( rand() < prob_upd4 ) {
                     // NOTE: we keep location the same
                     cons[t2]->vel(0, n2) = ux4;
@@ -1259,13 +1251,12 @@ public:
                   }
                 }
 
-                ncop += 1.0;
-              } // end of while
+              } // end of copy loop
               timer.stop_comp("add_sc_prtcl2");
 
               timer.start_comp("del_parent2");
               // remove parent prtcl if nothing was added
-              if( ncop < EPS ) {
+              if( n_r4 == 0 ) {
                 //cons[t2]->to_other_tiles.push_back( {1,1,1,n2} ); // NOTE: CPU version
                 cons[t2]->info(n2) = -1; // mark for deletion via outflow routines
                 cons[t2]->wgt(n2) = 0.0f; // make zero wgt so its omitted from loop
@@ -1284,12 +1275,10 @@ public:
               if( do_addition ) { // add if we are below tile limit
                                                  //
                 timer.start_comp("add_prtcl2");
-                double z1 = rand();
-                while( n4 > z1 + ncop ){
+                for(int ncop=0; ncop<n_r4; ncop++){
                   //cons[t4]->add_particle( {{lx2, ly2, lz2}}, {{ux4, uy4, uz4}}, w4); // new ene & w
                   // TODO note lx4 here
                   cons[t4]->add_particle( {{lx4, ly4, lz4}}, {{ux4, uy4, uz4}}, w4); // new ene & w
-                  ncop += 1.0;
                 }
                 timer.stop_comp("add_prtcl2");
               }
@@ -1593,8 +1582,10 @@ public:
           //--------------------------------------------------
           if(t1 == t3){ // single-body emission 
 
-            w3 = w1/n3; // new parent particle weight
-            w4 = w1/n4; // emitted prtcl inherits weight from parent
+            // emitted prtcl inherits weight from parent; the weight follows the REALIZED copy 
+            // number, so that the copies sum to what the parent gave up in every event
+            const int n_r4 = realized_copy_num(n4);
+            w4 = copy_wgt(w1, n4, n_r4);
 
             w4 = w4*iptr->wtar2wini; //add a growth factor calculated inside the processes' interact routine
                           
@@ -1616,17 +1607,12 @@ public:
                                                                 
               // add prtcl 4
               timer.start_comp("add_ems_prtcls");
-              float ncop = 0.0;
-              float z1 = rand();
 
               //saving the x-value of the created photon for 1D calculation if virtual curv used
               float ly1vir = use_vir_curvature ? lx1 : ly1;
 
-              //if(use_vir_curvature && lx1 > r_gap) z1 = n4 + 0.5; // prevent emission beyond gap size
-
-              while(n4 > z1 + ncop) {
+              for(int ncop=0; ncop<n_r4; ncop++) {
                 cons[t4]->add_particle( {{lx1, ly1vir, lz1}}, {{ux4, uy4, uz4}}, w4);
-                ncop += 1.0;
               }
               timer.stop_comp("add_ems_prtcls");
             }
