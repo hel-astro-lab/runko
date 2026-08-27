@@ -736,7 +736,12 @@ void bind_pic(py::module& m_sub)
             {
                 const auto nx = static_cast<pybind11::ssize_t>( s.nx );
                 const auto ny = static_cast<pybind11::ssize_t>( s.ny );
-                auto v = pybind11::array_t<float>( {nx, ny}, s.arrs[k].data() );
+                auto v = pybind11::array_t<float>(
+                    pybind11::array::ShapeContainer{ nx, ny },
+                    pybind11::array::StridesContainer{
+                      static_cast<pybind11::ssize_t>( ny*sizeof(float) ),
+                      static_cast<pybind11::ssize_t>(    sizeof(float) ) },
+                    s.arrs[k].data() );
                 return v;
             });
 

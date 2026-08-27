@@ -105,10 +105,13 @@ public:
 
     // resize histogram storate
     hist.resize(nbin);
-    hist_ene_edges.resize(nbin);
+    hist_ene_edges.resize(nbin+1);
 
-    // get logspace edges
-    toolbox::logspace(hist_emin, hist_emax, hist_nbin, hist_ene_edges);   
+    // nbin+1 bin edges for nbin bins; same grid as numpy's logspace(emin, emax, nbin+1)
+    toolbox::logspace(hist_emin, hist_emax, hist_nbin+1, hist_ene_edges);   
+
+    // start from empty bins; resize() leaves the new elements uninitialized
+    for(int i=0; i<hist_nbin; i++) hist[i] = 0.0;
 
     //std::cout << "hist init:" << std::endl;
     //for(size_t i=0; i<hist_nbin; i++) std::cout << "   " << i << " " << hist_ene_edges[i] << std::endl;
@@ -117,7 +120,13 @@ public:
   // update histogram
   void add_to_histogram(double x, double w)
   {
-    int i = toolbox::find_sorted_nearest(hist_ene_edges, x);
+    // find_sorted_nearest returns the index of the upper edge; bin i spans [edge_i, edge_i+1).
+    // values outside the range are lumped into the first/last bin so that no escaping
+    // energy is lost from the spectrum.
+    int i = toolbox::find_sorted_nearest(hist_ene_edges, x) - 1;
+    if(i < 0)            i = 0;
+    if(i > hist_nbin-1)  i = hist_nbin-1;
+
     hist[i] += w;
 
     //std::cout << "adding to hist " << i << " x" << x << " w:" << w << std::endl;

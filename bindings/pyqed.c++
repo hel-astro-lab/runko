@@ -168,18 +168,8 @@ auto declare_pairing(py::module& m)
     .def("inject_plaw_pairs",             &qed::Pairing<D>::inject_plaw_pairs)
     .def("add_interaction",               &qed::Pairing<D>::add_interaction, py::keep_alive<1,2>() )
     .def("rescale",                       &qed::Pairing<D>::rescale)
-    .def("get_hist_edges",   [](           qed::Pairing<D>& s)
-        {
-          const auto N = static_cast<pybind11::ssize_t>(s.hist_nbin);
-          auto v = pybind11::array_t<double>( {N}, s.hist_ene_edges.data() );
-          return v;
-        })
-    .def("get_hist_cnts",    [](qed::Pairing<D>& s)
-        {
-          const auto N = static_cast<pybind11::ssize_t>(s.hist_nbin);
-          auto v = pybind11::array_t<double>( {N}, s.hist.data() );
-          return v;
-        })
+    .def("get_hist_edges",   [](qed::Pairing<D>& s) { return s.hist_ene_edges.toVector(); })
+    .def("get_hist_cnts",    [](qed::Pairing<D>& s) { return s.hist.toVector(); })
     .def("timer_stats",    [](qed::Pairing<D>& s) { s.timer.comp_stats(); })
     .def("timer_clear",    [](qed::Pairing<D>& s) { s.timer.clear(); });
 }
@@ -294,18 +284,8 @@ void bind_qed(py::module& m_sub)
     .def("update_hist_lims",      &qed::PairingAll2All<3>::update_hist_lims)
     .def("clear_hist",            &qed::PairingAll2All<3>::clear_hist)
     .def("solve_twobody",         &qed::PairingAll2All<3>::solve_twobody)
-    .def("get_hist_edges",   [](   qed::PairingAll2All<3>& s)
-        {
-          const auto N = static_cast<pybind11::ssize_t>(s.hist_nbin);
-          auto v = pybind11::array_t<double>( {N}, s.hist_ene_edges.data() );
-          return v;
-        })
-    .def("get_hist_cnts",    [](   qed::PairingAll2All<3>& s)
-        {
-          const auto N = static_cast<pybind11::ssize_t>(s.hist_nbin);
-          auto v = pybind11::array_t<double>( {N}, s.hist.data() );
-          return v;
-        });
+    .def("get_hist_edges",   [](qed::PairingAll2All<3>& s) { return s.hist_ene_edges.toVector(); })
+    .def("get_hist_cnts",    [](qed::PairingAll2All<3>& s) { return s.hist.toVector(); });
 
 
 }
