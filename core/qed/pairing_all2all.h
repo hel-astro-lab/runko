@@ -58,7 +58,7 @@ public:
     gen(42), // gen(rd() ) 
     uni_dis(0.0, 1.0)
   { 
-    update_hist_lims(hist_emin, hist_emax, hist_nbin);
+    update_hist_lims(hist_emin, hist_emax, hist_nbin, hist_nmu);
   }
 
   //using Tile_map = std::unordered_map<TileID_t, Tileptr>;
@@ -80,10 +80,11 @@ public:
   bool force_ep_uni_w = true; 
 
   //--------------------------------------------------
-  //histogram for the leaking/escaping photons
+  //histogram for the leaking/escaping photons; 2D in energy and mu = cos(theta_z)
   double hist_emin = -4.0; // log10(emin)
   double hist_emax =  2.0; // log10(emax)
-  int    hist_nbin = 200;
+  int    hist_nbin = 200;  // energy bins
+  int    hist_nmu  =  32;  // mu bins over [-1,1]
 
   double leaked_ene  = 0.0;
   double leaked_wsum = 0.0;
@@ -94,40 +95,50 @@ public:
 
   double tau_global = 0.0;
   
-  ManVec<double> hist;
-  ManVec<double> hist_ene_edges;
+  ManVec<double> hist;           // nbin*nmu, row-major: hist[i*nmu + j]
+  ManVec<double> hist_ene_edges; // nbin+1
+  ManVec<double> hist_mu_edges;  // nmu+1
 
-  void update_hist_lims(double emin, double emax, int nbin)
+  void update_hist_lims(double emin, double emax, int nbin, int nmu)
   {
     hist_emin = emin;
     hist_emax = emax;
     hist_nbin = nbin;
+    hist_nmu  = nmu;
 
     // resize histogram storate
-    hist.resize(nbin);
+    hist.resize(nbin*nmu);
     hist_ene_edges.resize(nbin+1);
+    hist_mu_edges.resize(nmu+1);
 
     // nbin+1 bin edges for nbin bins; same grid as numpy's logspace(emin, emax, nbin+1)
     toolbox::logspace(hist_emin, hist_emax, hist_nbin+1, hist_ene_edges);   
 
+    // nmu+1 linear edges over [-1,1]; same grid as numpy's linspace(-1, 1, nmu+1)
+    toolbox::linspace(-1.0, 1.0, hist_nmu+1, hist_mu_edges);
+
     // start from empty bins; resize() leaves the new elements uninitialized
-    for(int i=0; i<hist_nbin; i++) hist[i] = 0.0;
+    for(int i=0; i<hist_nbin*hist_nmu; i++) hist[i] = 0.0;
 
     //std::cout << "hist init:" << std::endl;
     //for(size_t i=0; i<hist_nbin; i++) std::cout << "   " << i << " " << hist_ene_edges[i] << std::endl;
   }
 
   // update histogram
-  void add_to_histogram(double x, double w)
+  void add_to_histogram(double x, double mu, double w)
   {
     // find_sorted_nearest returns the index of the upper edge; bin i spans [edge_i, edge_i+1).
     // values outside the range are lumped into the first/last bin so that no escaping
     // energy is lost from the spectrum.
-    int i = toolbox::find_sorted_nearest(hist_ene_edges, x) - 1;
+    int i = toolbox::find_sorted_nearest(hist_ene_edges, x ) - 1;
+    int j = toolbox::find_sorted_nearest(hist_mu_edges,  mu) - 1;
+
     if(i < 0)            i = 0;
     if(i > hist_nbin-1)  i = hist_nbin-1;
+    if(j < 0)            j = 0;
+    if(j > hist_nmu-1)   j = hist_nmu-1;
 
-    hist[i] += w;
+    hist[i*hist_nmu + j] += w;
 
     //std::cout << "adding to hist " << i << " x" << x << " w:" << w << std::endl;
   }
@@ -135,7 +146,7 @@ public:
   // refill histogram with zeros 
   void clear_hist()
   {
-    for(int i=0; i<hist_nbin; i++) hist[i] = 0.0;
+    for(int i=0; i<hist_nbin*hist_nmu; i++) hist[i] = 0.0;
 
     leaked_ene  = 0.0;
     leaked_wsum = 0.0;
@@ -738,8 +749,11 @@ public:
         leaked_wsum += w;
         leaked_pnum += 1;
 
-        // book keeping of escaped flux
-        add_to_histogram(x, w);
+        // book keeping of escaped flux; mu = cos(theta) w.r.t. the z axis (guide field).
+        // NOTE: x = get_prtcl_ene() = |u| for a massless photon
+        float mu = (x > 0.0f) ? cons[t1]->vel(2, n1)/x : 0.0f;
+
+        add_to_histogram(x, mu, w);
 
         cons[t1]->info(n1) = -1; //to_other_tiles.push_back( {1,1,1,n1} ); // NOTE: CPU deletion version
         cons[t1]->wgt(n1) = 0.0f; 
