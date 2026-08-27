@@ -139,7 +139,8 @@ void MultiPhotAnn::interact(
   //std::cout << " \n";
 
   // get minimum chi_e so that the photon energy is <1e-4; 
-  // this sets the y-axis of XI as logspace(chi,emin, chi_x, 33)
+  // this sets the y-axis of XI as logspace(chi,emin, 0.5*chi_x, 33): the spectrum is symmetric
+  // about chi_x/2 and the table is the cumulative of its lower half alone
   // the fitting function is accurate to <0.2%
   float logchie_min = log10( bkn_plaw(chi_x, 0.01876, 0.103, 0.931, 0.0475, 1.08) );
                                                                                 
@@ -199,7 +200,7 @@ void MultiPhotAnn::interact(
 
   //--------------------------------------------------
   // we have found the correct x-slice; now find y-value
-  float dy_logchie = ( log10(chi_x) - logchie_min )/(dim1 - 1);
+  float dy_logchie = ( log10(0.5f*chi_x) - logchie_min )/(dim1 - 1);
 
 
   if( j == 0 ){
@@ -208,7 +209,7 @@ void MultiPhotAnn::interact(
 
   } else { // interpolate in y-dim
 
-    // logarithmic value from chi_e,min to chi_x
+    // logarithmic value from chi_e,min to chi_x/2
     logchie = logchie_min + dy_logchie*(j-1 + dy); 
   }
 
@@ -218,7 +219,7 @@ void MultiPhotAnn::interact(
   chi_ep = pow(10.0f, logchie);
 
   //--------------------------------------------------
-  // xi table is symmetric around maximum value; need to randomize which particle gets more energy
+  // chi_ep <= chi_x/2 is the lower-energy lepton; a coin decides which species carries it
 
   float chi_e, chi_p; // electron and positron quantum numbers
   if( rand() < 0.5 ) {
@@ -229,7 +230,7 @@ void MultiPhotAnn::interact(
     chi_e = chi_x - chi_p;
   }
 
-  // cap small values; the substraction can sometimes result in negative values when chi_e ~ chi_x
+  // floor against round-off; chi_ep <= chi_x/2 makes the subtraction positive by construction
   chi_e = chi_e < 0.0 ? 1.0e-4 : chi_e;
   chi_p = chi_p < 0.0 ? 1.0e-4 : chi_p;
 
