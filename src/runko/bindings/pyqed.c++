@@ -211,6 +211,35 @@ void
       },
       py::arg("channel"),
       py::arg("weight") = false)
+    .def("inject_pairs_plaw", &qed::Tile<3>::inject_pairs_plaw, py::arg("ell"), py::arg("p"), py::arg("gmin"), py::arg("gmax"))
+    .def("inject_photons", &qed::Tile<3>::inject_photons, py::arg("ell"), py::arg("theta"), py::arg("w"), py::arg("planck") = true)
+    .def("heat_diffusive", &qed::Tile<3>::heat_diffusive, py::arg("ell"))
+    .def("escape_photons", &qed::Tile<3>::escape_photons)
+    .def("reset_budget", &qed::Tile<3>::reset_budget)
+    .def("tau_ssa", &qed::Tile<3>::tau_ssa, py::arg("x"))
+    .def(
+      "budget",
+      [](const qed::Tile<3>& t) {
+        const auto& b = t.budget();
+        py::dict d;
+        d["inj_E"]  = b.inj_E;
+        d["inj_W"]  = b.inj_W;
+        d["heat_E"] = b.heat_E;
+        d["esc_E"]  = b.esc_E;
+        d["esc_W"]  = b.esc_W;
+        return d;
+      })
+    .def(
+      "escaped_spectrum",
+      [](const qed::Tile<3>& t) {
+        // (bin edges, x ell_x per bin) -- the sums are in energy units, the caller divides by steps
+        const auto h = t.escaped_spectrum();
+        auto edges   = std::vector<double>(h.size() + 1);
+        for(auto i = 0uz; i <= h.size(); ++i) {
+          edges[i] = qed::Sampler::ESC_LO * std::pow(qed::Sampler::ESC_HI / qed::Sampler::ESC_LO, static_cast<double>(i) / static_cast<double>(h.size()));
+        }
+        return py::make_tuple(to_ndarray(edges), to_ndarray(h));
+      })
     .def(
       "reset_momenta",
       [](qed::Tile<3>& t, const std::string& s, const std::vector<std::array<double, 3>>& u) {

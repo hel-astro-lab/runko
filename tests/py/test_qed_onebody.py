@@ -14,7 +14,7 @@ import unittest
 import numpy as np
 from scipy.special import kv
 import runko
-from runko.qed import physics as ph
+ph = runko.qed.physics
 
 WL = 1e-3
 H_SSA = 4.111e9      # ell_B = 10 -> b_perp = 1e-3

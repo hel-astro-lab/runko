@@ -228,6 +228,34 @@ public:
   [[nodiscard]] std::map<std::string, double> counts() const;
   [[nodiscard]] std::map<std::string, double> moved() const;
   [[nodiscard]] std::string report() const;
+
+  // ---- sources and sinks of the open box; every one accumulates into the budget
+  struct [[nodiscard]] Budget {
+    double inj_E { 0 }, inj_W { 0 };   // energy and pair depth injected
+    double heat_E { 0 };               // energy of the diffusive heating
+    double esc_E { 0 }, esc_W { 0 };   // energy and weight escaped
+  };
+  Budget budget;
+  static constexpr int NESC = 100;     // log bins of the escaping spectrum over [1e-8, 1e2]
+  static constexpr double ESC_LO = 1e-8, ESC_HI = 1e2;
+
+  /// pairs at the power ell per step: dN/dgamma ~ gamma^-p on [gmin, gmax], each lepton isotropic
+  void inject_pairs_plaw(TileView& t, double ell, double p, double gmin, double gmax);
+  /// photons at the power ell per step, weight w each: a Wien (Gamma(3, Theta)) or Planck spectrum
+  void inject_photons(TileView& t, double ell, double theta, double w, bool planck);
+  /// stochastic heating of the leptons at the power ell per step: momentum diffusion with D = D_0 p^2
+  void heat_diffusive(TileView& t, double ell);
+  /// remove photons with the slab escape probability at the current pair depth
+  void escape_photons(TileView& t);
+  /// x ell_x of the escaped photons per log bin, summed since the budget was reset
+  [[nodiscard]] std::vector<double> escaped_spectrum() const;
+  void reset_budget();
+  /// self-absorption depth across the box of a photon of energy x against the current leptons
+  [[nodiscard]] double tau_ssa(const TileView& t, double x) const;
+
+private:
+  thrust::device_vector<double> esc_hist_;
+  thrust::device_vector<double> dbudget_;
 };
 
 }  // namespace qed

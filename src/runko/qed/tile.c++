@@ -266,6 +266,48 @@ double
 }
 
 template<std::size_t D>
+void
+  Tile<D>::inject_pairs_plaw(const double ell, const double p, const double gmin, const double gmax)
+{
+  auto t = view();
+  for(auto s = 0uz; s < 3uz; ++s) { t.id_base[s] = this->reserve_ids(sp_[s], 1uz << 20uz); }
+  sampler_.inject_pairs_plaw(t, ell, p, gmin, gmax);
+}
+
+template<std::size_t D>
+void
+  Tile<D>::inject_photons(const double ell, const double theta, const double w, const bool planck)
+{
+  auto t = view();
+  for(auto s = 0uz; s < 3uz; ++s) { t.id_base[s] = this->reserve_ids(sp_[s], 1uz << 20uz); }
+  sampler_.inject_photons(t, ell, theta, w, planck);
+}
+
+template<std::size_t D>
+void
+  Tile<D>::heat_diffusive(const double ell)
+{
+  auto t = view();
+  sampler_.heat_diffusive(t, ell);
+}
+
+template<std::size_t D>
+void
+  Tile<D>::escape_photons()
+{
+  auto t = view();
+  sampler_.escape_photons(t);
+}
+
+template<std::size_t D>
+double
+  Tile<D>::tau_ssa(const double x)
+{
+  auto t = view();
+  return sampler_.tau_ssa(t, x);
+}
+
+template<std::size_t D>
 std::vector<std::int32_t>
   Tile<D>::get_slot_keys(const Species s)
 {

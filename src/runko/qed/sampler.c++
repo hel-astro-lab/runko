@@ -314,6 +314,7 @@ Sampler::Sampler(const Box& b, const Params& p, const std::vector<std::string>& 
   }
   counters_.assign(c_count, 0);
   dstat_.assign(d_count, 0.0);
+  dbudget_.assign(2, 0.0);
 }
 
 thrust::device_vector<double>&
@@ -354,6 +355,8 @@ void
   ev_cs_.resize(n);
   const auto cs = thrust::raw_pointer_cast(ev_cs_.data());
   const auto ord0 = thrust::counting_iterator<I>(0);
+  // the base of a cell is read by every event of the cell and updated by all of them, so the
+  // update is a second pass: reading and adding in one kernel would race
   if(sorted) {
     thrust::inclusive_scan_by_key(
       w.on_this(), cell, cell + static_cast<std::ptrdiff_t>(n), q, cs);
@@ -361,7 +364,9 @@ void
       const auto base = car_p[cell[i]];
       const auto m    = sstd::floor(base + cs[i]) - sstd::floor(base + cs[i] - q[i]);
       out[i]          = static_cast<std::int32_t>(m);
-      sstd::atomic_add(&car_p[cell[i]], q[i] - m);
+    });
+    thrust::for_each(w.on_this(), ord0, ord0 + static_cast<std::ptrdiff_t>(n), [=](const I i) {
+      sstd::atomic_add(&car_p[cell[i]], q[i] - static_cast<double>(out[i]));
     });
   } else {
     // the tail of a species is not cell-ordered: sort a permutation by cell first
@@ -379,7 +384,9 @@ void
       const auto base = car_p[keys_p[i]];
       const auto m    = sstd::floor(base + cs[i]) - sstd::floor(base + cs[i] - q[j]);
       out[j]          = static_cast<std::int32_t>(m);
-      sstd::atomic_add(&car_p[keys_p[i]], q[j] - m);
+    });
+    thrust::for_each(w.on_this(), ord0, ord0 + static_cast<std::ptrdiff_t>(n), [=](const I i) {
+      sstd::atomic_add(&car_p[cell[i]], q[i] - static_cast<double>(out[i]));
     });
   }
   w.wait();
@@ -1255,6 +1262,259 @@ void
     w.wait();
   }
   this->place(c, keyC);
+}
+
+// ---------------------------------------------------------------- sources and sinks
+namespace {
+
+/// the reaction cell of a position, for a staged record
+[[nodiscard]]
+constexpr Staged
+  staged_at(const Vec3& u, const float* pos, const double w, const int n_r, const int cell, const int species, const int bit)
+{
+  return Staged { .u       = { static_cast<float>(u[0]), static_cast<float>(u[1]), static_cast<float>(u[2]) },
+                  .pos     = { pos[0], pos[1], pos[2] },
+                  .w       = static_cast<float>(w),
+                  .n_r     = n_r,
+                  .cell    = cell,
+                  .species = species,
+                  .bit     = bit };
+}
+
+enum BStat : int { b_E = 0, b_W, b_count };
+
+}  // namespace
+
+void
+  Sampler::inject_pairs_plaw(TileView& t, const double ell, const double p, const double gmin, const double gmax)
+{
+  // The number of pairs follows from the energy the compactness injects and the mean energy of the
+  // spectrum, rounded stochastically; the two charges draw their energies independently.
+  double gm;
+  if(p == 1.0) {
+    gm = (gmax - gmin) / std::log(gmax / gmin);
+  } else {
+    const auto a = 1.0 - p, b = 2.0 - p;
+    gm = p == 2.0 ? (b / a) * (std::pow(gmax, a) - std::pow(gmin, a)) / (std::pow(gmax, b) - std::pow(gmin, b))
+                  : (a / b) * (std::pow(gmax, b) - std::pow(gmin, b)) / (std::pow(gmax, a) - std::pow(gmin, a));
+  }
+  const auto wl    = box.w_lep;
+  const auto npair = box.dE(ell) / (2.0 * gm * wl);
+  auto rng0        = runko::Rng { runko::rng_key(par.seed, istep_, 0, 300), 0 };
+  const auto n     = static_cast<std::size_t>(std::floor(npair + rng0.uniform()));
+  if(n == 0) { return; }
+  Ctx c { .t = &t, .v = {}, .old_size = {}, .ncell = 0, .nb = par.nbin };
+  c.refresh_all();
+  c.ncell = c.v[0].lay.ncell;
+  staged_.resize(2 * n);
+  thrust::fill(counters_.begin(), counters_.begin() + 1, 0);
+  thrust::fill(dbudget_.begin(), dbudget_.end(), 0.0);
+  const auto stg  = thrust::raw_pointer_cast(staged_.data());
+  const auto cnt  = thrust::raw_pointer_cast(counters_.data());
+  const auto db   = thrust::raw_pointer_cast(dbudget_.data());
+  const auto key  = runko::rng_key(par.seed, istep_, 0, 301);
+  const auto mins = t.mins, maxs = t.maxs;
+  const auto lay  = c.v[1].lay;
+  const auto w    = tyvi::mdgrid_work {};
+  const auto i0   = thrust::counting_iterator<I>(0);
+  thrust::for_each(w.on_this(), i0, i0 + static_cast<std::ptrdiff_t>(n), [=](const I i) {
+    auto rng = runko::Rng { key, i };
+    const float pos[3] = { mins[0] + (maxs[0] - mins[0]) * static_cast<float>(rng.uniform()),
+                           mins[1] + (maxs[1] - mins[1]) * static_cast<float>(rng.uniform()),
+                           mins[2] + (maxs[2] - mins[2]) * static_cast<float>(rng.uniform()) };
+    const auto cell    = lay.cell_of(pos[0], pos[1], pos[2]);
+    for(auto sp = 1; sp <= 2; ++sp) {
+      const auto z   = rng.uniform();
+      const auto gam = sstd::pow(sstd::pow(gmin, 1.0 - p) + z * (sstd::pow(gmax, 1.0 - p) - sstd::pow(gmin, 1.0 - p)), 1.0 / (1.0 - p));
+      const auto u   = sstd::sqrt(gam * gam - 1.0) * iso_dir(rng);
+      const auto k   = static_cast<std::size_t>(sstd::atomic_fetch_add(&cnt[c_staged], std::int32_t { 1 }));
+      stg[k]         = staged_at(u, pos, wl, 1, cell, sp, 0);
+      sstd::atomic_add(&db[b_E], wl * gam);
+    }
+  });
+  w.wait();
+  {
+    thrust::host_vector<double> h = dbudget_;
+    budget.inj_E += h[b_E];
+    budget.inj_W += 2.0 * static_cast<double>(n) * wl;
+  }
+  this->place(c, key);
+}
+
+void
+  Sampler::inject_photons(TileView& t, const double ell, const double theta, const double wph, const bool planck)
+{
+  const auto xmean = (planck ? 2.701 : 3.0) * theta;
+  const auto nph   = box.dE(ell) / (xmean * wph);
+  auto rng0        = runko::Rng { runko::rng_key(par.seed, istep_, 0, 302), 0 };
+  const auto n     = static_cast<std::size_t>(std::floor(nph + rng0.uniform()));
+  if(n == 0) { return; }
+  Ctx c { .t = &t, .v = {}, .old_size = {}, .ncell = 0, .nb = par.nbin };
+  c.refresh_all();
+  c.ncell = c.v[0].lay.ncell;
+  staged_.resize(n);
+  thrust::fill(counters_.begin(), counters_.begin() + 1, 0);
+  thrust::fill(dbudget_.begin(), dbudget_.end(), 0.0);
+  const auto stg  = thrust::raw_pointer_cast(staged_.data());
+  const auto cnt  = thrust::raw_pointer_cast(counters_.data());
+  const auto db   = thrust::raw_pointer_cast(dbudget_.data());
+  const auto key  = runko::rng_key(par.seed, istep_, 0, 303);
+  const auto mins = t.mins, maxs = t.maxs;
+  const auto lay  = c.v[0].lay;
+  const auto w    = tyvi::mdgrid_work {};
+  const auto i0   = thrust::counting_iterator<I>(0);
+  thrust::for_each(w.on_this(), i0, i0 + static_cast<std::ptrdiff_t>(n), [=](const I i) {
+    auto rng = runko::Rng { key, i };
+    const float pos[3] = { mins[0] + (maxs[0] - mins[0]) * static_cast<float>(rng.uniform()),
+                           mins[1] + (maxs[1] - mins[1]) * static_cast<float>(rng.uniform()),
+                           mins[2] + (maxs[2] - mins[2]) * static_cast<float>(rng.uniform()) };
+    // Wien: a Gamma(3, Theta) deviate; Planck: the term j of the Bose series first, then Gamma(3)/j
+    auto j = 1.0;
+    if(planck) {
+      const auto z1 = 1.2020569 * rng.uniform();
+      auto cum      = 1.0;
+      while(z1 > cum and j < 50.0) {
+        j += 1.0;
+        cum += 1.0 / (j * j * j);
+      }
+    }
+    const auto x    = -theta * sstd::log(rng.uniform() * rng.uniform() * rng.uniform()) / j;
+    const auto k    = static_cast<std::size_t>(sstd::atomic_fetch_add(&cnt[c_staged], std::int32_t { 1 }));
+    stg[k]          = staged_at(x * iso_dir(rng), pos, wph, 1, lay.cell_of(pos[0], pos[1], pos[2]), 0, static_cast<int>(rng.uniform() < 0.5));
+    sstd::atomic_add(&db[b_E], wph * x);
+  });
+  w.wait();
+  {
+    thrust::host_vector<double> h = dbudget_;
+    budget.inj_E += h[b_E];
+  }
+  this->place(c, key);
+}
+
+void
+  Sampler::heat_diffusive(TileView& t, const double ell)
+{
+  // The Ito kick of the isotropic Fokker-Planck operator (1/p^2) d/dp [p^2 D dn/dp], taken on the
+  // momentum vector so that it also scatters the direction. Its expected energy gain per lepton is
+  // D_0 p^2 (4 gamma^2 + 1)/gamma^3, and D_0 is chosen every step so that the summed gain is exactly
+  // the energy the compactness injects.
+  Ctx c { .t = &t, .v = {}, .old_size = {}, .ncell = 0, .nb = par.nbin };
+  c.refresh_all();
+  const auto w  = tyvi::mdgrid_work {};
+  auto tot      = 0.0;
+  for(auto s = 1uz; s <= 2uz; ++s) {
+    const auto v  = c.v[s];
+    const auto n  = t.con[s]->size();
+    const auto i0 = thrust::counting_iterator<I>(0);
+    tot += thrust::transform_reduce(
+      w.on_this(), i0, i0 + static_cast<std::ptrdiff_t>(n),
+      [=](const I i) {
+        if(not v.alive(i)) { return 0.0; }
+        const auto p   = v.u(i);
+        const auto p2  = toolbox::dot(p, p);
+        const auto gam = sstd::sqrt(1.0 + p2);
+        return v.w(i) * p2 * (4.0 * gam * gam + 1.0) / (gam * gam * gam);
+      },
+      0.0, thrust::plus<double> {});
+  }
+  if(tot <= 0.0) { return; }
+  const auto D0 = box.dE(ell) / tot;
+  thrust::fill(dbudget_.begin(), dbudget_.end(), 0.0);
+  const auto db = thrust::raw_pointer_cast(dbudget_.data());
+  for(auto s = 1uz; s <= 2uz; ++s) {
+    const auto v   = c.v[s];
+    const auto n   = t.con[s]->size();
+    const auto key = runko::rng_key(par.seed, istep_, s, 304);
+    const auto i0  = thrust::counting_iterator<I>(0);
+    thrust::for_each(w.on_this(), i0, i0 + static_cast<std::ptrdiff_t>(n), [=](const I i) {
+      if(not v.alive(i)) { return; }
+      auto rng      = runko::Rng { key, i };
+      const auto p  = v.u(i);
+      const auto p2 = toolbox::dot(p, p);
+      const auto sd = sstd::sqrt(2.0 * D0 * p2);
+      const auto p1 = (1.0 + 2.0 * D0) * p + Vec3(sd * rng.normal(), sd * rng.normal(), sd * rng.normal());
+      sstd::atomic_add(&db[b_E], v.w(i) * (sstd::sqrt(1.0 + toolbox::dot(p1, p1)) - sstd::sqrt(1.0 + p2)));
+      v.set_u(i, p1);
+      v.touch(i);
+    });
+  }
+  w.wait();
+  thrust::host_vector<double> h = dbudget_;
+  budget.heat_E += h[b_E];
+}
+
+void
+  Sampler::escape_photons(TileView& t)
+{
+  Ctx c { .t = &t, .v = {}, .old_size = {}, .ncell = 0, .nb = par.nbin };
+  c.refresh_all();
+  const auto tau_T = Pop::totals(*t.con[1]).W + Pop::totals(*t.con[2]).W;
+  if(esc_hist_.size() != static_cast<std::size_t>(NESC)) { esc_hist_.assign(NESC, 0.0); }
+  thrust::fill(dbudget_.begin(), dbudget_.end(), 0.0);
+  const auto db   = thrust::raw_pointer_cast(dbudget_.data());
+  const auto hist = thrust::raw_pointer_cast(esc_hist_.data());
+  const auto v    = c.v[0];
+  const auto n    = t.con[0]->size();
+  const auto key  = runko::rng_key(par.seed, istep_, 0, 305);
+  const auto bx   = box;
+  const auto llo  = std::log(ESC_LO), dl = (std::log(ESC_HI) - std::log(ESC_LO)) / NESC;
+  const auto w    = tyvi::mdgrid_work {};
+  const auto i0   = thrust::counting_iterator<I>(0);
+  thrust::for_each(w.on_this(), i0, i0 + static_cast<std::ptrdiff_t>(n), [=](const I i) {
+    if(not v.alive(i)) { return; }
+    auto rng     = runko::Rng { key, i };
+    const auto x = v.e(i);
+    if(not(rng.uniform() < bx.p_esc(x, tau_T))) { return; }
+    const auto wg = v.w(i);
+    v.kill(i);
+    sstd::atomic_add(&db[b_E], x * wg);
+    sstd::atomic_add(&db[b_W], wg);
+    const auto b = sstd::clamp(static_cast<int>(sstd::floor((sstd::log(x) - llo) / dl)), 0, NESC - 1);
+    sstd::atomic_add(&hist[b], x * wg);
+  });
+  w.wait();
+  thrust::host_vector<double> h = dbudget_;
+  budget.esc_E += h[b_E];
+  budget.esc_W += h[b_W];
+}
+
+std::vector<double>
+  Sampler::escaped_spectrum() const
+{
+  if(esc_hist_.empty()) { return std::vector<double>(NESC, 0.0); }
+  thrust::host_vector<double> h = esc_hist_;
+  return std::vector<double>(h.begin(), h.end());
+}
+
+void
+  Sampler::reset_budget()
+{
+  budget = Budget {};
+  thrust::fill(esc_hist_.begin(), esc_hist_.end(), 0.0);
+}
+
+double
+  Sampler::tau_ssa(const TileView& t, const double x) const
+{
+  // With weight in units of depth, the absorptions per crossing of a photon are the sum over the
+  // leptons of their weight times 2 sigma-hat F: the depth of the box in this channel, the analogue
+  // of tau_T. Its unit crossing marks x_SSA.
+  const auto b = box.b_perp();
+  if(b <= 0.0) { return 0.0; }
+  const auto w = tyvi::mdgrid_work {};
+  auto out     = 0.0;
+  const auto k = Vec3(x, 0.0, 0.0);
+  for(auto s = 1uz; s <= 2uz; ++s) {
+    auto& con     = *t.con[s];
+    const auto v  = PView { con.pos_mds(), con.vel_mds(), con.ids_mds(), con.wgt_mds(), con.has_particle_weights(), static_cast<float>(con.weight()), static_cast<float>(con.args().mass), {} };
+    const auto n  = con.size();
+    const auto i0 = thrust::counting_iterator<I>(0);
+    out += thrust::transform_reduce(
+      w.on_this(), i0, i0 + static_cast<std::ptrdiff_t>(n),
+      [=](const I i) { return v.alive(i) ? v.w(i) * 2.0 * ssa::rate(k, v.u(i), b, 0.0) : 0.0; },
+      0.0, thrust::plus<double> {});
+  }
+  return out;
 }
 
 // ---------------------------------------------------------------- diagnostics

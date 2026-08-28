@@ -96,6 +96,16 @@ public:
   [[nodiscard]] std::map<std::string, double> counts() const { return sampler_.counts(); }
   [[nodiscard]] std::map<std::string, double> moved() const { return sampler_.moved(); }
   [[nodiscard]] std::string report() const { return sampler_.report(); }
+
+  // ---- the open box
+  void inject_pairs_plaw(double ell, double p, double gmin, double gmax);
+  void inject_photons(double ell, double theta, double w, bool planck);
+  void heat_diffusive(double ell);
+  void escape_photons();
+  [[nodiscard]] const Sampler::Budget& budget() const { return sampler_.budget; }
+  void reset_budget() { sampler_.reset_budget(); }
+  [[nodiscard]] std::vector<double> escaped_spectrum() const { return sampler_.escaped_spectrum(); }
+  [[nodiscard]] double tau_ssa(double x);
 };
 
 }  // namespace qed
