@@ -46,6 +46,10 @@ namespace pic {
 struct ParticleContainerArgs {
   std::size_t N;
   double charge, mass;
+  /// Common weight of the species (leptons, ions); 1 unless configured.
+  double weight { 1 };
+  /// Species whose particles carry individual weights (photons).
+  bool per_particle_weights { false };
 };
 
 template<typename F, typename T>
@@ -76,9 +80,13 @@ private:
   runko::device_vec_segments<value_type> vel_;
   /// Id for each particle.
   runko::device_scalar_segments<runko::prtc_id_type> ids_;
+  /// Weight of each particle; empty unless the species carries per-particle weights.
+  runko::device_scalar_segments<value_type> wgt_;
 
   double charge_;
   double mass_;
+  double weight_;
+  bool per_particle_weights_;
 
   /// Reusable buffer for particle trackers.
   thrust::device_vector<runko::index_t> tracker_cache_;
@@ -125,6 +133,14 @@ public:
     std::optional<std::array<value_type, 3>> wrap_mins = {},
     std::optional<std::array<value_type, 3>> wrap_maxs = {});
 
+  /// Scatter the alive particles to the slots given per particle index, into a
+  /// fresh buffer of `total` slots whose other slots are dead. The layout of a
+  /// binned, padded reaction table is built with this.
+  void place(const thrust::device_vector<runko::index_t>& slots, std::size_t total);
+
+  /// Append n dead slots at the end.
+  void grow(std::size_t n);
+
   /// Pre-allocate N dead-particle slots on an empty container.
   ///
   /// Sizes pos_/vel_/ids_ to N and tags every id with runko::dead_prtc_id.
@@ -145,6 +161,12 @@ public:
   std::array<std::vector<value_type>, 3> get_positions();
   std::array<std::vector<value_type>, 3> get_velocities();
   std::vector<runko::prtc_id_type> get_ids();
+  /// Weights of the alive particles; the common weight repeated for species without
+  /// per-particle weights.
+  std::vector<value_type> get_weights();
+
+  [[nodiscard]] double weight() const { return weight_; }
+  [[nodiscard]] bool has_particle_weights() const { return per_particle_weights_; }
 
   [[nodiscard]]
   auto pos_mds() const
@@ -162,6 +184,36 @@ public:
   auto ids_mds() const
   {
     return ids_.mds();
+  }
+
+  [[nodiscard]]
+  auto wgt_mds() const
+  {
+    return wgt_.mds();
+  }
+
+  [[nodiscard]]
+  auto pos_mds()
+  {
+    return pos_.mds();
+  }
+
+  [[nodiscard]]
+  auto vel_mds()
+  {
+    return vel_.mds();
+  }
+
+  [[nodiscard]]
+  auto ids_mds()
+  {
+    return ids_.mds();
+  }
+
+  [[nodiscard]]
+  auto wgt_mds()
+  {
+    return wgt_.mds();
   }
 
   /// Wraps coordinates outside of given extents.
@@ -208,6 +260,9 @@ public:
   inline void push_particles_faraday(
     double cfl,
     runko::EB_interpolator<value_type> auto interpolator);
+
+  /// Push massless particles along their momentum at the speed of light.
+  inline void push_particles_photon(double cfl);
 
   emf::YeeLattice::CurrentContributions current_zigzag_1st(
     const std::array<value_type, 3> lattice_origo_coordinates,
@@ -266,7 +321,8 @@ template<std::ranges::forward_range R>
                                 .vel { static_cast<value_type>(state.vel[0]),
                                        static_cast<value_type>(state.vel[1]),
                                        static_cast<value_type>(state.vel[2]) },
-                                .id = state.id };
+                                .id  = state.id,
+                                .wgt = static_cast<value_type>(state.wgt) };
     });
 
   const auto new_states_h = thrust::host_vector<value_state_type>(
@@ -327,14 +383,18 @@ template<std::ranges::forward_range R>
   }
 
   {
-    const auto args = rn::begin(spans)->container->args();
-    this->charge_   = args.charge;
-    this->mass_     = args.mass;
+    const auto args             = rn::begin(spans)->container->args();
+    this->charge_               = args.charge;
+    this->mass_                 = args.mass;
+    this->weight_               = args.weight;
+    this->per_particle_weights_ = args.per_particle_weights;
 
     const auto consistent_given_charge_n_mass =
       rn::all_of(spans, [this](const auto& span) {
         const auto args = span.container->args();
-        return this->charge_ == args.charge and this->mass_ == args.mass;
+        return this->charge_ == args.charge and this->mass_ == args.mass and
+               this->weight_ == args.weight and
+               this->per_particle_weights_ == args.per_particle_weights;
       });
     if(not consistent_given_charge_n_mass) {
       throw std::runtime_error {
@@ -370,10 +430,13 @@ template<std::ranges::forward_range R>
   this->pos_.resize(Ntotal);
   this->vel_.resize(Ntotal);
   this->ids_.resize(Ntotal);
+  if(this->per_particle_weights_) { this->wgt_.resize(Ntotal); }
 
   const auto pos_mds = this->pos_.mds();
   const auto vel_mds = this->vel_.mds();
   const auto ids_mds = this->ids_.mds();
+  const auto wgt_mds = this->wgt_.mds();
+  const auto weighted = this->per_particle_weights_;
 
   const auto handle_span = [&](
                              tyvi::mdgrid_work& w,
@@ -399,6 +462,14 @@ template<std::ranges::forward_range R>
     w.for_each_index(ids_submds, [=](const auto idx) {
       ids_submds[idx][] = other_ids_submds[idx][];
     });
+    if(weighted) {
+      const auto other_wgt_mds    = span.container->wgt_.mds();
+      const auto other_wgt_submds = std::submdspan(other_wgt_mds, s);
+      const auto wgt_submds       = std::submdspan(wgt_mds, location_in_this);
+      w.for_each_index(wgt_submds, [=](const auto idx) {
+        wgt_submds[idx][] = other_wgt_submds[idx][];
+      });
+    }
   };
 
   auto works = std::vector<tyvi::mdgrid_work>(begins.size());
@@ -507,11 +578,14 @@ inline void
   this->pos_.resize(Pnum + Ntotal);
   this->vel_.resize(Pnum + Ntotal);
   this->ids_.resize(Pnum + Ntotal);
+  if(this->per_particle_weights_) { this->wgt_.resize(Pnum + Ntotal); }
 
   // 3.
-  const auto pos_mds = this->pos_.mds();
-  const auto vel_mds = this->vel_.mds();
-  const auto ids_mds = this->ids_.mds();
+  const auto pos_mds  = this->pos_.mds();
+  const auto vel_mds  = this->vel_.mds();
+  const auto ids_mds  = this->ids_.mds();
+  const auto wgt_mds  = this->wgt_.mds();
+  const auto weighted = this->per_particle_weights_;
 
   for(auto n = 0uz; n < spans.size(); ++n) {
     const auto n_span   = spans[n];
@@ -546,6 +620,7 @@ inline void
         vel_mds[j][2] = state.vel[2];
 
         ids_mds[j][] = state.id;
+        if(weighted) { wgt_mds[j][] = state.wgt; }
       });
 
     } else {
@@ -564,6 +639,7 @@ inline void
         vel_mds[j][2] = state.vel[2];
 
         ids_mds[j][] = state.id;
+        if(weighted) { wgt_mds[j][] = state.wgt; }
       });
     }
 
@@ -592,6 +668,7 @@ inline void
   const auto vel1 = this->vel_.component_view<one>();
   const auto vel2 = this->vel_.component_view<two>();
   const auto ids  = this->ids_.component_view<>();
+  const auto wgt  = this->wgt_.component_view<>();
 
   namespace rn                       = std::ranges;
   const auto particle_ordinals_begin = thrust::counting_iterator<runko::index_t>(0uz);
@@ -687,6 +764,15 @@ inline void
     this->tracker_cache_.end(),
     p,
     vel2.begin());
+  if(this->per_particle_weights_) {
+    std::ignore = thrust::copy(w.on_this(), wgt.begin(), wgt.end(), p);
+    std::ignore = thrust::gather(
+      w.on_this(),
+      this->tracker_cache_.begin(),
+      this->tracker_cache_.end(),
+      p,
+      wgt.begin());
+  }
 
   this->generic_cache_.resize(sizeof(runko::prtc_id_type) * this->size());
   const auto pt = reinterpret_cast<runko::prtc_id_type*>(
@@ -706,3 +792,4 @@ inline void
 #include "runko/pic/particle_boris.h"
 #include "runko/pic/particle_faraday.h"
 #include "runko/pic/particle_higuera_cary.h"
+#include "runko/pic/particle_photon.h"

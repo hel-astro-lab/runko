@@ -45,6 +45,46 @@ atomic_add(T* addr, T val) {
 }
 
 // =====================================================================
+// atomic_max / atomic_min — for non-negative floating point values
+// =====================================================================
+// On HIP the bit pattern of a non-negative IEEE number orders like an
+// unsigned integer of the same width, so the integer atomics serve.
+
+template<typename T>
+constexpr void
+atomic_max(T* addr, T val) {
+#ifdef TYVI_BACKEND_CPU
+    std::atomic_ref<T> r(*addr);
+    auto old = r.load(std::memory_order_relaxed);
+    while (old < val and not r.compare_exchange_weak(old, val, std::memory_order_relaxed)) {}
+#elif defined(TYVI_BACKEND_HIP)
+    if constexpr (std::is_same_v<T, float>) {
+        ::atomicMax(reinterpret_cast<unsigned int*>(addr), __float_as_uint(val));
+    } else {
+        ::atomicMax(reinterpret_cast<unsigned long long*>(addr),
+                    static_cast<unsigned long long>(__double_as_longlong(val)));
+    }
+#endif
+}
+
+template<typename T>
+constexpr void
+atomic_min(T* addr, T val) {
+#ifdef TYVI_BACKEND_CPU
+    std::atomic_ref<T> r(*addr);
+    auto old = r.load(std::memory_order_relaxed);
+    while (old > val and not r.compare_exchange_weak(old, val, std::memory_order_relaxed)) {}
+#elif defined(TYVI_BACKEND_HIP)
+    if constexpr (std::is_same_v<T, float>) {
+        ::atomicMin(reinterpret_cast<unsigned int*>(addr), __float_as_uint(val));
+    } else {
+        ::atomicMin(reinterpret_cast<unsigned long long*>(addr),
+                    static_cast<unsigned long long>(__double_as_longlong(val)));
+    }
+#endif
+}
+
+// =====================================================================
 // sin / cos — constexpr type-dispatched wrappers
 // =====================================================================
 

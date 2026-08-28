@@ -29,6 +29,9 @@ struct ParticleState {
   vec3 pos;
   vec3 vel;
   prtc_id_type id;
+  /// Statistical weight. Species without per-particle weights carry 1 here and the
+  /// common weight of their container instead.
+  T wgt { 1 };
 };
 
 static_assert(std::is_trivially_copyable_v<ParticleState<float>>);

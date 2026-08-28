@@ -287,6 +287,7 @@ void
     if(!wall_is_in_tile(wall)) continue;
 
     for(auto& [_, pbuff]: particle_buffs_) {
+      if(pbuff.args().charge == 0.0) { continue; }  // neutral: no current to correct
       pbuff
         .reflect_at_wall(wall, reflector_correction_J_.value(), origo_pos, this->cfl_);
     }

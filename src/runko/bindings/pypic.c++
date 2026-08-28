@@ -13,6 +13,7 @@
 #include "runko/tools/config_parser.h"
 
 #include <memory>
+#include <optional>
 #include <ranges>
 #include <string>
 #include <tuple>
@@ -53,19 +54,33 @@ void
   // object for storing single particle data
   using PS = runko::ParticleState<double>;
   py::class_<PS>(m_3d, "ParticleState")
-    .def(py::init<PS::vec3, PS::vec3>(), py::arg("pos"), py::arg("vel"))
+    .def(
+      py::init([](const PS::vec3 pos, const PS::vec3 vel, const double wgt) {
+        return PS { .pos = pos, .vel = vel, .id = 0, .wgt = wgt };
+      }),
+      py::arg("pos"),
+      py::arg("vel"),
+      py::arg("wgt") = 1.0)
     .def_readwrite("pos", &PS::pos)
-    .def_readwrite("vel", &PS::vel);
+    .def_readwrite("vel", &PS::vel)
+    .def_readwrite("wgt", &PS::wgt);
 
   // object for storing a batch of multiple particle's data
   using PSB = pic::ParticleStateBatch;
   py::class_<PSB>(m_3d, "ParticleStateBatch")
     .def(
-      py::init<PSB::container_type, PSB::container_type>(),
+      py::init([](
+                 PSB::container_type pos,
+                 PSB::container_type vel,
+                 std::optional<py::array_t<double>> wgt) {
+        return PSB { .pos = std::move(pos), .vel = std::move(vel), .wgt = std::move(wgt) };
+      }),
       py::arg("pos"),
-      py::arg("vel"))
+      py::arg("vel"),
+      py::arg("wgt") = py::none())
     .def_readwrite("pos", &PSB::pos)
-    .def_readwrite("vel", &PSB::vel);
+    .def_readwrite("vel", &PSB::vel)
+    .def_readwrite("wgt", &PSB::wgt);
 
   // reflector wall data structure
   using RW = pic::reflector_wall;
@@ -122,6 +137,11 @@ void
       "get_ids",
       [](pic::Tile<3>& tile, const std::size_t p) {
         return to_ndarray(tile.get_ids(p));
+      })
+    .def(
+      "get_weights",
+      [](pic::Tile<3>& tile, const std::size_t p) {
+        return to_ndarray(tile.get_weights(p));
       })
     .def("pack_outgoing_particles", &pic::Tile<3>::pack_outgoing_particles)
     .def("inject_to_each_cell", &pic::Tile<3>::inject_to_each_cell)

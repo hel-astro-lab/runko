@@ -31,8 +31,10 @@ void
   using opt_args_t = std::optional<pic::ParticleContainerArgs>;
 
   // Return optional containing the arguments if q and m are found in conf.
-  const auto make_opt_args =
-    [&](const std::string& q_label, const std::string& m_label) -> opt_args_t {
+  const auto make_opt_args = [&](
+                               const std::string& q_label,
+                               const std::string& m_label,
+                               const std::string& w_label) -> opt_args_t {
     const auto q_to_qm_tuple = [&](const auto q) {
       return conf.get<double>(m_label).transform(
         [&](const auto m) { return std::tuple { q, m }; });
@@ -40,8 +42,14 @@ void
 
     const auto qm_tuple_to_args = [&](const auto qm) {
       const auto [q, m] = qm;
+      const auto w      = conf.get<double>(w_label).value_or(1.0);
 
-      return pic::ParticleContainerArgs { .N = 0, .charge = q, .mass = m };
+      // a massless species (photons) carries per-particle weights
+      return pic::ParticleContainerArgs { .N                    = 0,
+                                          .charge               = q,
+                                          .mass                 = m,
+                                          .weight               = w,
+                                          .per_particle_weights = (m == 0.0) };
     };
 
     return conf.get<double>(q_label)
@@ -55,8 +63,9 @@ void
   for(auto i = 0uz; true; ++i) {
     const auto q_label = std::format("q{}", i);
     const auto m_label = std::format("m{}", i);
+    const auto w_label = std::format("w{}", i);
 
-    if(const auto pcontainer_args = make_opt_args(q_label, m_label)) {
+    if(const auto pcontainer_args = make_opt_args(q_label, m_label, w_label)) {
       auto container = pic::ParticleContainer { pcontainer_args.value() };
       if(prealloc_per_species > 0uz) { container.prealloc_dead(prealloc_per_species); }
       // insert_or_assign and not operator[], because if element is missing,
@@ -165,6 +174,13 @@ std::vector<runko::prtc_id_type>
   Tile<D>::get_ids(const std::size_t p)
 {
   return particle_buffs_.at(p).get_ids();
+}
+
+template<std::size_t D>
+std::vector<typename Tile<D>::value_type>
+  Tile<D>::get_weights(const std::size_t p)
+{
+  return particle_buffs_.at(p).get_weights();
 }
 
 template<std::size_t D>
@@ -317,6 +333,16 @@ void
       .id  = this->consume_next_id_(particle_type)
     };
   }
+  if(state_batch.wgt) {
+    const auto& wa = state_batch.wgt.value();
+    if(wa.ndim() != 1 or static_cast<std::size_t>(wa.shape(0)) != batch_size) {
+      throw std::runtime_error {
+        "pic::Tile::batch_inject_in_x_stripe: weights must match the batch length."
+      };
+    }
+    const auto wgt_view = wa.template unchecked<1>();
+    for(const auto n: std::views::iota(0uz, batch_size)) { states[n].wgt = wgt_view(n); }
+  }
 
   this->particle_buffs_.at(particle_type).add_particles(states);
 }
@@ -334,6 +360,11 @@ void
 
   auto push_impl = [&](const auto& interpolator) {
     for(auto& [_, pbuff]: particle_buffs_) {
+      // massless species move at c along their momentum, whatever the pusher
+      if(pbuff.args().mass == 0.0) {
+        pbuff.push_particles_photon(this->cfl_);
+        continue;
+      }
       switch(particle_pusher_) {
         case ParticlePusher::boris:
           pbuff.push_particles_boris(this->cfl_, interpolator);
@@ -379,6 +410,7 @@ void
   switch(current_depositer_) {
     case CurrentDepositer::zigzag_1st:
       for(const auto& [_, pcontainer]: this->particle_buffs_) {
+        if(pcontainer.args().charge == 0.0) { continue; }  // neutral: no current
         this->yee_lattice_.deposit_current(
           pcontainer.current_zigzag_1st(origo_pos, this->cfl_));
       }
@@ -398,6 +430,7 @@ void
         .wait();
 
       for(const auto& [_, pcontainer]: this->particle_buffs_) {
+        if(pcontainer.args().charge == 0.0) { continue; }  // neutral: no current
         pcontainer.current_zigzag_1st(generated_J, origo_pos, this->cfl_);
       }
 

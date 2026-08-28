@@ -40,6 +40,8 @@ struct ParticleStateBatch {
 
   container_type pos;
   container_type vel;
+  /// Per-particle weights; empty for species that carry the container weight.
+  std::optional<pybind11::array_t<double>> wgt {};
 };
 
 /*! \brief pic tile
@@ -89,6 +91,8 @@ public:
   ///
   /// `qx`:    charge of x:th particle species (x is natural number)
   /// `mx`:    mass of x:th particle species (x is natural number)
+  /// `wx`:    common weight of the species, optional (1); a massless species
+  ///          carries per-particle weights instead
   ///
   /// `particle_pusher`:     scheme to update particles velocities and positions
   /// `fields_interpolator`: scheme to interpolate E and B fields to particles
@@ -107,6 +111,7 @@ public:
   std::array<std::vector<value_type>, 3> get_positions(std::size_t);
   std::array<std::vector<value_type>, 3> get_velocities(std::size_t);
   std::vector<runko::prtc_id_type> get_ids(std::size_t);
+  std::vector<value_type> get_weights(std::size_t);
 
 
   using particle_generator =
