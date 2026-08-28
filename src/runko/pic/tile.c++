@@ -499,6 +499,20 @@ ParticleContainer&
 }
 
 template<std::size_t D>
+runko::prtc_id_type
+  Tile<D>::reserve_ids(const std::size_t species, const std::size_t n)
+{
+  auto& next          = this->next_particle_ordinals_.at(species);
+  const auto ordinal  = static_cast<runko::prtc_id_type>(next);
+  next += n;
+  const auto tile_tag = static_cast<runko::prtc_id_type>(this->tile_tag_);
+  if(next >= 2uz << 40uz) {
+    throw std::runtime_error { "PIC tile ran out of particle ids (2^40 per species)!" };
+  }
+  return (tile_tag << 40uz) | ordinal;
+}
+
+template<std::size_t D>
 double
   Tile<D>::total_kinetic_energy(const std::size_t particle_type) const
 {

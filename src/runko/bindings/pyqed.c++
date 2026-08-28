@@ -1,6 +1,12 @@
 // Copyright 2026 - 2026, Miro Palmu, Joonas Nättilä and the runko contributors
 // SPDX-License-Identifier: GPL-3.0-or-later
 
+#include "runko/qed/interactions/qed1_bw.h"
+#include "runko/qed/interactions/qed1_syn.h"
+#include "runko/qed/interactions/qed2_ann.h"
+#include "runko/qed/interactions/qed2_comp.h"
+#include "runko/qed/interactions/qed2_gg.h"
+#include "runko/qed/interactions/qed2_ssa.h"
 #include "runko/qed/tile.h"
 #include "runko/qed/virtual_tile.h"
 #include "runko/tools/config_parser.h"
@@ -38,10 +44,74 @@ qed::Species
 namespace qed {
 namespace py = pybind11;
 
+namespace {
+/// the physics functions, vectorized over numpy arrays, for tests and analysis
+void
+  bind_physics(py::module& m)
+{
+  using qed::Vec3;
+  m.attr("ALPHA")    = qed::ALPHA;
+  m.attr("BQ_G")     = qed::BQ_G;
+  m.attr("SYN_GMIN") = qed::syn::GMIN;
+  m.attr("BW_XMIN")  = qed::bw::XMIN;
+  m.def("b_from_ellB", py::vectorize([](const double ell_B, const double H) { return qed::b_from_ellB(ell_B, H); }));
+  m.def("sigma_kn", py::vectorize([](const double x) { return qed::comp::sigma_kn(x); }));
+  m.def(
+    "rate_compton",
+    py::vectorize([](double kx, double ky, double kz, double ux, double uy, double uz) {
+      return qed::comp::rate(Vec3(kx, ky, kz), Vec3(ux, uy, uz));
+    }));
+  m.def(
+    "rate_ann",
+    py::vectorize([](double ax, double ay, double az, double bx, double by, double bz) {
+      return qed::ann::rate(Vec3(ax, ay, az), Vec3(bx, by, bz));
+    }));
+  m.def(
+    "rate_gg",
+    py::vectorize([](double ax, double ay, double az, double bx, double by, double bz) {
+      return qed::gg::rate(Vec3(ax, ay, az), Vec3(bx, by, bz));
+    }));
+  m.def(
+    "rate_ssa",
+    py::vectorize([](double kx, double ky, double kz, double ux, double uy, double uz, double b, double x_min) {
+      return qed::ssa::rate(Vec3(kx, ky, kz), Vec3(ux, uy, uz), b, x_min);
+    }));
+  m.def("ssa_bound", py::vectorize([](double b, double x_min, double xlo, double glo, double ghi) {
+          return qed::ssa::bound(b, x_min, xlo, glo, ghi);
+        }));
+  m.def("G_syn", py::vectorize([](double ce, double cg) { return qed::ssa::G_syn(ce, cg); }));
+  m.def("T_syn", py::vectorize([](double chi) { return qed::syn::T(chi); }));
+  m.def("g_syn", py::vectorize([](double chi) { return qed::syn::g(chi); }));
+  m.def("P_syn", py::vectorize([](double chi, double r) { return qed::syn::P(chi, r); }));
+  m.def("r_syn", py::vectorize([](double z, double chi) { return qed::syn::r_of(z, chi); }));
+  m.def("rmean_syn", py::vectorize([](double chi, double rmin) { return qed::syn::rmean(chi, rmin); }));
+  m.def("xmean_syn", py::vectorize([](double chi, double gam, bool kinetic, double x_min) {
+          return qed::syn::xmean(chi, gam, kinetic, x_min);
+        }));
+  m.def("rate_syn", py::vectorize([](double ux, double uy, double uz, double b, double x_min, bool kinetic) {
+          return qed::syn::rate(Vec3(ux, uy, uz), b, x_min, kinetic);
+        }));
+  m.def("T_bw", py::vectorize([](double chi) { return qed::bw::T(chi); }));
+  m.def("P_bw", py::vectorize([](double chi, double r) { return qed::bw::P(chi, r); }));
+  m.def("r_bw", py::vectorize([](double z, double chi) { return qed::bw::r_of(z, chi); }));
+  m.def("rate_bw", py::vectorize([](double kx, double ky, double kz, double b) {
+          return qed::bw::rate(Vec3(kx, ky, kz), b);
+        }));
+  m.def("facc_syn", py::vectorize([](double gam, double xm, double acc, double kappa) {
+          return qed::facc_syn(gam, xm, acc, kappa);
+        }));
+  m.def("gamma_cooled", py::vectorize([](double gam, double lam, double xm, double b, double N1) {
+          return qed::gamma_cooled(gam, lam, xm, b, N1);
+        }));
+}
+}  // namespace
+
 void
   bind_qed(py::module& m_sub)
 {
   py::module m_3d = m_sub.def_submodule("threeD", "3D specializations");
+  py::module m_ph = m_sub.def_submodule("physics", "the QED process functions, vectorized");
+  bind_physics(m_ph);
 
   py::class_<
     qed::VirtualTile<3>,
@@ -129,7 +199,23 @@ void
         d["P"] = tt.P;
         return d;
       })
-    .def("tau_T", &qed::Tile<3>::tau_T);
+    .def("tau_T", &qed::Tile<3>::tau_T)
+    .def("interact", &qed::Tile<3>::interact)
+    .def("counts", &qed::Tile<3>::counts)
+    .def("moved", &qed::Tile<3>::moved)
+    .def("report", &qed::Tile<3>::report)
+    .def(
+      "pair_sum",
+      [](qed::Tile<3>& t, const std::string& channel, const bool weight) {
+        return t.pair_sum(channel, weight);
+      },
+      py::arg("channel"),
+      py::arg("weight") = false)
+    .def(
+      "reset_momenta",
+      [](qed::Tile<3>& t, const std::string& s, const std::vector<std::array<double, 3>>& u) {
+        t.reset_momenta(species_of(s), u);
+      });
 }
 
 }  // namespace qed

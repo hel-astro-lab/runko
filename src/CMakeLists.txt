@@ -32,6 +32,7 @@ set (QED_FILES
      ./runko/qed/tile.c++
      ./runko/qed/virtual_tile.c++
      ./runko/qed/layout.c++
+     ./runko/qed/sampler.c++
      )
 
 set (IO_FILES

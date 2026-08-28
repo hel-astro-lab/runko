@@ -103,8 +103,6 @@ class [[nodiscard]] Pop {
   // scratch
   thrust::device_vector<runko::index_t> keys_, ord_, cnt_, slots_;
 
-  /// widen the bounds of every key by every live LP it holds
-  void touch_all(pic::ParticleContainer& con);
 
 public:
   Pop(bool keyed, double mass);
@@ -128,6 +126,9 @@ public:
 
   /// keep the key array in step with a container that grew: new slots are tail (-1)
   void follow_container(const pic::ParticleContainer& con);
+
+  /// widen the bounds of every key by every live LP it holds
+  void touch_all(pic::ParticleContainer& con);
 
   /// number of live LPs and their summed weight, energy and momentum
   struct Totals {

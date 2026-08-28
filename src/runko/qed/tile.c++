@@ -4,6 +4,12 @@
 #include "runko/qed/tile.h"
 
 #include "runko/tools/random.h"
+#include "thrust/count.h"
+#include "thrust/for_each.h"
+#include "thrust/host_vector.h"
+#include "thrust/iterator/counting_iterator.h"
+#include "thrust/transform_scan.h"
+#include "tyvi/mdgrid.h"
 
 #include <format>
 #include <stdexcept>
@@ -16,7 +22,8 @@ Tile<D>::Tile(
   const toolbox::ConfigParser& conf) :
   corgi::Tile<D>(),
   emf::Tile<D>(tile_grid_idx, conf),
-  pic::Tile<D>(tile_grid_idx, conf)
+  pic::Tile<D>(tile_grid_idx, conf),
+  sampler_ { Box {}, Params {}, {} }
 {
   // ---- the roles of the species, from their charge and mass
   auto found = std::array { false, false, false };
@@ -49,12 +56,12 @@ Tile<D>::Tile(
     throw std::runtime_error { "qed::Tile needs a cubic tile (n_cells_per_tile equal)." };
   }
   const auto cfl = conf.get_or_throw<double>("cfl");
-  box_ = Box { .H_lamC = conf.get_or_throw<double>("qed_H_lamC"),
-               .dt     = cfl / static_cast<double>(cells[0]),
-               .w_lep  = this->particles(sp_[1]).weight(),
-               .ell_B  = conf.get<double>("qed_ell_B").value_or(0.0),
-               .x_min  = conf.get<double>("qed_x_min").value_or(0.0) };
-  if(this->particles(sp_[2]).weight() != box_.w_lep) {
+  const auto box = Box { .H_lamC = conf.get_or_throw<double>("qed_H_lamC"),
+                         .dt     = cfl / static_cast<double>(cells[0]),
+                         .w_lep  = this->particles(sp_[1]).weight(),
+                         .ell_B  = conf.get<double>("qed_ell_B").value_or(0.0),
+                         .x_min  = conf.get<double>("qed_x_min").value_or(0.0) };
+  if(this->particles(sp_[2]).weight() != box.w_lep) {
     throw std::runtime_error { "qed::Tile: electron and positron weights must agree." };
   }
 
@@ -62,21 +69,51 @@ Tile<D>::Tile(
   const auto geti = [&](const char* key, const int def) {
     return static_cast<int>(conf.get<std::ptrdiff_t>(key).value_or(def));
   };
-  par_.nbin       = geti("qed_nbin", par_.nbin);
-  par_.ncell_edge = geti("qed_n_reaction_cells", par_.ncell_edge);
-  par_.nsort      = geti("qed_nsort", par_.nsort);
-  par_.smin       = geti("qed_smin", par_.smin);
-  par_.n_cap      = geti("qed_n_cap", par_.n_cap);
-  par_.nsub_max   = geti("qed_nsub_max", par_.nsub_max);
-  par_.slack      = conf.get<double>("qed_slack").value_or(par_.slack);
-  par_.a_res      = conf.get<double>("qed_a_res").value_or(par_.a_res);
-  par_.x_ref      = conf.get<double>("qed_x_ref").value_or(par_.x_ref);
-  par_.acc_syn    = conf.get<double>("qed_acc_syn").value_or(par_.acc_syn);
-  par_.kappa      = conf.get<double>("qed_kappa_acc").value_or(par_.kappa);
-  par_.seed       = static_cast<std::uint64_t>(conf.get<std::ptrdiff_t>("qed_seed").value_or(1));
-  if(par_.nbin < 1 or par_.ncell_edge < 1 or par_.nsort < 1 or par_.smin < 1) {
+  auto par       = Params {};
+  par.nbin       = geti("qed_nbin", par.nbin);
+  par.ncell_edge = geti("qed_n_reaction_cells", par.ncell_edge);
+  par.nsort      = geti("qed_nsort", par.nsort);
+  par.smin       = geti("qed_smin", par.smin);
+  par.n_cap      = geti("qed_n_cap", par.n_cap);
+  par.nsub_max   = geti("qed_nsub_max", par.nsub_max);
+  par.slack      = conf.get<double>("qed_slack").value_or(par.slack);
+  par.a_res      = conf.get<double>("qed_a_res").value_or(par.a_res);
+  par.x_ref      = conf.get<double>("qed_x_ref").value_or(par.x_ref);
+  par.acc_syn    = conf.get<double>("qed_acc_syn").value_or(par.acc_syn);
+  par.kappa      = conf.get<double>("qed_kappa_acc").value_or(par.kappa);
+  par.seed       = static_cast<std::uint64_t>(conf.get<std::ptrdiff_t>("qed_seed").value_or(1));
+  if(par.nbin < 1 or par.ncell_edge < 1 or par.nsort < 1 or par.smin < 1) {
     throw std::runtime_error { "qed::Tile: nbin, n_reaction_cells, nsort and smin must be >= 1." };
   }
+  auto channels = std::vector<std::string> {};
+  if(const auto cs = conf.get<std::vector<std::string>>("qed_channels")) {
+    channels = cs.value();
+  } else if(const auto c1 = conf.get<std::string>("qed_channels")) {
+    // a comma-separated list
+    auto rest = c1.value();
+    while(not rest.empty()) {
+      const auto pos = rest.find(',');
+      auto item      = rest.substr(0, pos);
+      rest           = pos == std::string::npos ? "" : rest.substr(pos + 1);
+      while(not item.empty() and item.front() == ' ') { item.erase(0, 1); }
+      while(not item.empty() and item.back() == ' ') { item.pop_back(); }
+      if(not item.empty()) { channels.push_back(item); }
+    }
+  }
+  sampler_ = Sampler { box, par, channels };
+}
+
+template<std::size_t D>
+TileView
+  Tile<D>::view()
+{
+  auto t = TileView { .con      = { &this->particles(sp_[0]), &this->particles(sp_[1]), &this->particles(sp_[2]) },
+                      .pop      = { &pops_[0], &pops_[1], &pops_[2] },
+                      .mins     = layout_mins(),
+                      .maxs     = layout_maxs(),
+                      .id_base  = {},
+                      .ids_used = {} };
+  return t;
 }
 
 template<std::size_t D>
@@ -101,17 +138,23 @@ template<std::size_t D>
 void
   Tile<D>::sort_particles()
 {
-  const auto lp = LayoutParams { .nbin       = par_.nbin,
-                                 .ncell_edge = par_.ncell_edge,
-                                 .slack      = par_.slack,
-                                 .smin       = par_.smin };
-  for(auto s = 0uz; s < pops_.size(); ++s) {
-    pops_[s].layout(
-      this->particles(sp_[s]),
-      lp,
-      layout_mins(),
-      layout_maxs(),
-      runko::rng_key(par_.seed, istep_, s, 0));
+  auto t = view();
+  sampler_.layout(t);
+}
+
+template<std::size_t D>
+void
+  Tile<D>::interact()
+{
+  auto t = view();
+  // ids for the products of the step: a block per species, returned unused ones are lost
+  constexpr auto block = 1uz << 20uz;
+  for(auto s = 0uz; s < 3uz; ++s) { t.id_base[s] = this->reserve_ids(sp_[s], block); }
+  sampler_.step(t);
+  for(auto s = 0uz; s < 3uz; ++s) {
+    if(t.ids_used[s] > block) {
+      throw std::runtime_error { "qed::Tile::interact: more than 2^20 products of one species in a step." };
+    }
   }
 }
 
@@ -147,7 +190,7 @@ void
   }
   auto& con      = this->particles(species(s));
   con            = pic::ParticleContainer { con.args() };  // empty, same species
-  auto rng       = runko::Rng { runko::rng_key(par_.seed, istep_, 7, 0), 0 };
+  auto rng       = runko::Rng { runko::rng_key(sampler_.par.seed, sampler_.step(), 7, 0), 0 };
   auto states    = std::vector<runko::ParticleState<double>>(u.size());
   const auto lo  = this->mins;
   const auto hi  = this->maxs;
@@ -163,6 +206,63 @@ void
   }
   this->inject(species(s), std::move(states));
   pop(s).invalidate();
+}
+
+template<std::size_t D>
+void
+  Tile<D>::reset_momenta(const Species s, const std::vector<std::array<double, 3>>& u)
+{
+  auto& con    = this->particles(species(s));
+  const auto n = con.size();
+  auto h       = thrust::host_vector<float>(3 * u.size());
+  for(auto i = 0uz; i < u.size(); ++i) {
+    for(auto q = 0uz; q < 3uz; ++q) { h[3 * i + q] = static_cast<float>(u[i][q]); }
+  }
+  const auto d       = thrust::device_vector<float>(h);
+  const auto ids_mds = con.ids_mds();
+  const auto vel_mds = con.vel_mds();
+  const auto w       = tyvi::mdgrid_work {};
+  // rank of every slot among the alive ones, in slot order
+  auto rank     = thrust::device_vector<runko::index_t>(n);
+  const auto i0 = thrust::counting_iterator<runko::index_t>(0);
+  thrust::transform_exclusive_scan(
+    w.on_this(),
+    i0,
+    i0 + static_cast<std::ptrdiff_t>(n),
+    rank.begin(),
+    [=](const runko::index_t i) {
+      return ids_mds[i][] != runko::dead_prtc_id ? runko::index_t { 1 } : runko::index_t { 0 };
+    },
+    runko::index_t { 0 },
+    thrust::plus<runko::index_t> {});
+  const auto nalive = static_cast<std::size_t>(thrust::count_if(
+    w.on_this(), i0, i0 + static_cast<std::ptrdiff_t>(n), [=](const runko::index_t i) {
+      return ids_mds[i][] != runko::dead_prtc_id;
+    }));
+  if(nalive != u.size()) {
+    throw std::runtime_error { "reset_momenta: one momentum per live LP is needed" };
+  }
+  const auto rk = thrust::raw_pointer_cast(rank.data());
+  const auto dp = thrust::raw_pointer_cast(d.data());
+  thrust::for_each(w.on_this(), i0, i0 + static_cast<std::ptrdiff_t>(n), [=](const runko::index_t i) {
+    if(ids_mds[i][] == runko::dead_prtc_id) { return; }
+    for(auto q = 0uz; q < 3uz; ++q) { vel_mds[i][q] = dp[3 * rk[i] + q]; }
+  });
+  w.wait();
+  pop(s).touch_all(con);
+}
+
+template<std::size_t D>
+double
+  Tile<D>::pair_sum(const std::string& channel, const bool weight)
+{
+  auto t = view();
+  for(auto i = 0uz; i < N_CHANNELS; ++i) {
+    if(channel == channel_name(static_cast<Channel>(i))) {
+      return sampler_.pair_sum(static_cast<Channel>(i), t, weight);
+    }
+  }
+  throw std::runtime_error { "pair_sum: unknown channel " + channel };
 }
 
 template<std::size_t D>

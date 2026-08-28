@@ -195,6 +195,8 @@ void
 void
   Pop::touch_all(pic::ParticleContainer& con)
 {
+  if(not laid_) { return; }  // no tables to widen; the next layout builds them
+  this->follow_container(con);
   const auto ids_mds = con.ids_mds();
   const auto vel_mds = con.vel_mds();
   const auto wgt_mds = con.wgt_mds();

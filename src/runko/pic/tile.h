@@ -186,6 +186,9 @@ public:
   /// Mutable access to particle container for a given species.
   ParticleContainer& particles(std::size_t species);
 
+  /// Reserve n consecutive particle ids of a species; returns the first.
+  runko::prtc_id_type reserve_ids(std::size_t species, std::size_t n);
+
   /// Returns average kinetic energy of given particle type.
   ///
   /// Kinetic energy is given in units of mc^2,

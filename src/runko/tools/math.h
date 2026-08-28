@@ -45,6 +45,20 @@ atomic_add(T* addr, T val) {
 }
 
 // =====================================================================
+// atomic_fetch_add — returns the previous value (integers)
+// =====================================================================
+
+template<typename T>
+constexpr T
+atomic_fetch_add(T* addr, T val) {
+#ifdef TYVI_BACKEND_CPU
+    return std::atomic_ref<T>(*addr).fetch_add(val, std::memory_order_relaxed);
+#elif defined(TYVI_BACKEND_HIP)
+    return ::atomicAdd(addr, val);
+#endif
+}
+
+// =====================================================================
 // atomic_max / atomic_min — for non-negative floating point values
 // =====================================================================
 // On HIP the bit pattern of a non-negative IEEE number orders like an
