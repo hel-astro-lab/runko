@@ -492,6 +492,13 @@ const ParticleContainer&
 }
 
 template<std::size_t D>
+ParticleContainer&
+  Tile<D>::particles(const std::size_t species)
+{
+  return this->particle_buffs_.at(species);
+}
+
+template<std::size_t D>
 double
   Tile<D>::total_kinetic_energy(const std::size_t particle_type) const
 {

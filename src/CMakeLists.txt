@@ -27,6 +27,13 @@ set (PIC_FILES
      ./runko/pic/reflector_wall.c++
      )
 
+set (QED_FILES
+     ./runko/bindings/pyqed.c++
+     ./runko/qed/tile.c++
+     ./runko/qed/virtual_tile.c++
+     ./runko/qed/layout.c++
+     )
+
 set (IO_FILES
      ./runko/io/snapshots/mpiio_fields.c++
      ./runko/io/snapshots/mpiio_particles.c++
@@ -39,6 +46,7 @@ pybind11_add_module(runko_cpp_bindings
     ${TOOLS_FILES}
     ${EMF_FILES}
     ${PIC_FILES}
+    ${QED_FILES}
     ${IO_FILES}
 )
 

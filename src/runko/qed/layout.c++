@@ -1,0 +1,318 @@
+// Copyright 2026 - 2026, Miro Palmu, Joonas Nättilä and the runko contributors
+// SPDX-License-Identifier: GPL-3.0-or-later
+
+#include "runko/qed/layout.h"
+
+#include "runko/tools/random.h"
+#include "thrust/binary_search.h"
+#include "thrust/copy.h"
+#include "thrust/fill.h"
+#include "thrust/for_each.h"
+#include "thrust/host_vector.h"
+#include "thrust/iterator/counting_iterator.h"
+#include "thrust/iterator/transform_iterator.h"
+#include "thrust/reduce.h"
+#include "thrust/scan.h"
+#include "thrust/sort.h"
+#include "thrust/transform.h"
+#include "tyvi/mdgrid.h"
+
+#include <limits>
+#include <stdexcept>
+
+namespace qed {
+
+using I = runko::index_t;
+
+Pop::Pop(const bool keyed, const double mass) : keyed_ { keyed }, mass_ { static_cast<float>(mass) } {}
+
+void
+  Pop::layout(
+    pic::ParticleContainer& con,
+    const LayoutParams& par,
+    const std::array<float, 3> mins,
+    const std::array<float, 3> maxs,
+    const std::uint64_t rng_key)
+{
+  // The only kernel of the scheme that runs over the particles; it is amortized over the sort
+  // epoch and shared with the sort the particle pusher needs anyway. The bins are log-spaced
+  // in the kinetic energy between the extremes of the live population, so every bound is
+  // equally tight in every bin, and a sparse tail costs nothing: an empty bin launches no lane.
+  par_  = par;
+  mins_ = mins;
+  maxs_ = maxs;
+  const auto ncell = par.ncell_edge * par.ncell_edge * par.ncell_edge;
+  nkeys_           = (keyed_ ? 2 : 1) * ncell * par.nbin;
+
+  const auto n = con.size();
+  const auto w = tyvi::mdgrid_work {};
+
+  const auto ids_mds = con.ids_mds();
+  const auto vel_mds = con.vel_mds();
+  const auto pos_mds = con.pos_mds();
+  const auto m       = mass_;
+
+  const auto energy = [=](const I i) {
+    const auto vx = vel_mds[i][0], vy = vel_mds[i][1], vz = vel_mds[i][2];
+    return sstd::sqrt(m * m + vx * vx + vy * vy + vz * vz);
+  };
+  const auto alive = [=](const I i) { return ids_mds[i][] != runko::dead_prtc_id; };
+
+  const auto ord0 = thrust::counting_iterator<I>(0);
+  const auto ordN = ord0 + static_cast<std::ptrdiff_t>(n);
+
+  // ---- energy extremes of the live population fix the bins of the epoch
+  const auto inf  = std::numeric_limits<float>::infinity();
+  const auto kin  = [=](const I i) {
+    return alive(i) ? energy(i) - m : inf;
+  };
+  const auto kin_hi = [=](const I i) {
+    return alive(i) ? energy(i) - m : -inf;
+  };
+  const auto lo = thrust::reduce(
+    w.on_this(),
+    thrust::make_transform_iterator(ord0, kin),
+    thrust::make_transform_iterator(ordN, kin),
+    inf,
+    thrust::minimum<float> {});
+  const auto hi = thrust::reduce(
+    w.on_this(),
+    thrust::make_transform_iterator(ord0, kin_hi),
+    thrust::make_transform_iterator(ordN, kin_hi),
+    -inf,
+    thrust::maximum<float> {});
+  if(par.nbin > 1 and lo < hi) {
+    const auto vlo = sstd::max(static_cast<double>(lo), 1e-30);
+    auto vhi       = static_cast<double>(hi) * (1.0 + 1e-6);
+    vhi            = sstd::max(vhi, vlo * (1.0 + 1e-6));
+    llo_           = sstd::log(vlo);
+    dl_            = (sstd::log(vhi) - llo_) / par.nbin;
+  } else {
+    llo_ = -1e300;  // everything in bin 0
+    dl_  = 1e300;
+  }
+
+  // ---- key of every slot, dead ones to a sentinel past the last key
+  auto v = this->view();
+  v.llo  = llo_;
+  v.dl   = dl_;
+  keys_.resize(n);
+  ord_.resize(n);
+  const auto sentinel = static_cast<I>(nkeys_);
+  const auto keyed    = keyed_;
+  thrust::transform(w.on_this(), ord0, ordN, keys_.begin(), [=](const I i) -> I {
+    if(not alive(i)) { return sentinel; }
+    const auto cell = v.cell_of(pos_mds[i][0], pos_mds[i][1], pos_mds[i][2]);
+    const auto ebin = v.bin_of(static_cast<double>(energy(i)));
+    const auto bit  = keyed ? static_cast<int>(runko::Rng { rng_key, i }.uniform() < 0.5) : 0;
+    return static_cast<I>(v.key_of(cell, ebin, bit));
+  });
+  thrust::copy(w.on_this(), ord0, ordN, ord_.begin());
+  thrust::sort_by_key(w.on_this(), keys_.begin(), keys_.end(), ord_.begin());
+
+  // ---- counts per key from the sorted keys, then the capacities and offsets
+  const auto nk = static_cast<std::size_t>(nkeys_);
+  cnt_.resize(nk + 1);
+  const auto key0 = thrust::counting_iterator<I>(0);
+  thrust::lower_bound(
+    w.on_this(),
+    keys_.begin(),
+    keys_.end(),
+    key0,
+    key0 + static_cast<std::ptrdiff_t>(nk + 1),
+    cnt_.begin());  // cnt_[k] = first sorted position of key k; cnt_[nk] = live total
+  const auto starts = thrust::raw_pointer_cast(cnt_.data());
+  if(prod_.size() != nk) {
+    prod_.assign(nk, I { 0 });
+  }
+  cap_.resize(nk);
+  b_.resize(nk);
+  fill_.resize(nk);
+  const auto prod_p = thrust::raw_pointer_cast(prod_.data());
+  const auto slack  = par.slack;
+  const auto smin   = static_cast<I>(par.smin);
+  thrust::transform(
+    w.on_this(),
+    key0,
+    key0 + static_cast<std::ptrdiff_t>(nk),
+    cap_.begin(),
+    [=](const I k) -> I {
+      // slack: a fraction of the live LPs, a floor, and what the key took in the previous
+      // epoch with room to spare, so that a key that fills fast gets the slots it will need
+      const auto c    = starts[k + 1] - starts[k];
+      const auto need = static_cast<I>(sstd::ceil(1.5 * static_cast<double>(prod_p[k])));
+      const auto sl   = static_cast<I>(sstd::ceil(slack * static_cast<double>(c)));
+      return c + sstd::max(sstd::max(sl, smin), need);
+    });
+  thrust::exclusive_scan(w.on_this(), cap_.begin(), cap_.end(), b_.begin(), I { 0 });
+  const auto total = thrust::reduce(w.on_this(), cap_.begin(), cap_.end(), I { 0 });
+  thrust::transform(
+    w.on_this(),
+    key0,
+    key0 + static_cast<std::ptrdiff_t>(nk),
+    fill_.begin(),
+    [=](const I k) -> I { return starts[k + 1] - starts[k]; });
+  thrust::fill(w.on_this(), prod_.begin(), prod_.end(), I { 0 });
+
+  // ---- slot of every live LP: its key's offset plus its rank inside the key
+  slots_.resize(n);
+  const auto keys_p  = thrust::raw_pointer_cast(keys_.data());
+  const auto ord_p   = thrust::raw_pointer_cast(ord_.data());
+  const auto b_p     = thrust::raw_pointer_cast(b_.data());
+  const auto slots_p = thrust::raw_pointer_cast(slots_.data());
+  const auto nlive   = static_cast<std::ptrdiff_t>(cnt_.back());
+  thrust::for_each(w.on_this(), ord0, ord0 + nlive, [=](const I j) {
+    const auto k       = keys_p[j];
+    slots_p[ord_p[j]]  = b_p[k] + (j - starts[k]);
+  });
+  con.place(slots_, static_cast<std::size_t>(total));
+
+  // ---- key of every slot, and the bounds of every key from what it holds
+  skey_.resize(static_cast<std::size_t>(total));
+  const auto slot0 = thrust::counting_iterator<I>(0);
+  thrust::upper_bound(
+    w.on_this(),
+    b_.begin(),
+    b_.end(),
+    slot0,
+    slot0 + static_cast<std::ptrdiff_t>(total),
+    skey_.begin());
+  thrust::transform(
+    w.on_this(),
+    skey_.begin(),
+    skey_.end(),
+    skey_.begin(),
+    [](const std::int32_t k) { return k - 1; });
+
+  wmax_.assign(nk, 0.0f);
+  emin_.assign(nk, inf);
+  emax_.assign(nk, 0.0f);
+  laid_ = true;
+  this->touch_all(con);
+  w.wait();
+}
+
+void
+  Pop::touch_all(pic::ParticleContainer& con)
+{
+  const auto ids_mds = con.ids_mds();
+  const auto vel_mds = con.vel_mds();
+  const auto wgt_mds = con.wgt_mds();
+  const auto weighted = con.has_particle_weights();
+  const auto w0       = static_cast<float>(con.weight());
+  const auto m        = mass_;
+  const auto v        = this->view();
+  tyvi::mdgrid_work {}
+    .for_each_index(
+      ids_mds,
+      [=](const auto idx) {
+        if(ids_mds[idx][] == runko::dead_prtc_id) { return; }
+        const auto k = v.skey[idx[0]];
+        if(k < 0) { return; }
+        const auto vx = vel_mds[idx][0], vy = vel_mds[idx][1], vz = vel_mds[idx][2];
+        const auto e  = sstd::sqrt(m * m + vx * vx + vy * vy + vz * vz);
+        const auto wg = weighted ? wgt_mds[idx][] : w0;
+        sstd::atomic_max(&v.wmax[k], wg);
+        sstd::atomic_max(&v.emax[k], e);
+        sstd::atomic_min(&v.emin[k], e);
+      })
+    .wait();
+}
+
+LayoutView
+  Pop::view()
+{
+  const auto ncell = par_.ncell_edge * par_.ncell_edge * par_.ncell_edge;
+  return LayoutView { .skey       = thrust::raw_pointer_cast(skey_.data()),
+                      .b          = thrust::raw_pointer_cast(b_.data()),
+                      .cap        = thrust::raw_pointer_cast(cap_.data()),
+                      .fill       = thrust::raw_pointer_cast(fill_.data()),
+                      .prod       = thrust::raw_pointer_cast(prod_.data()),
+                      .wmax       = thrust::raw_pointer_cast(wmax_.data()),
+                      .emin       = thrust::raw_pointer_cast(emin_.data()),
+                      .emax       = thrust::raw_pointer_cast(emax_.data()),
+                      .nbin       = par_.nbin,
+                      .ncell_edge = par_.ncell_edge,
+                      .ncell      = ncell,
+                      .nkeys      = nkeys_,
+                      .keyed      = keyed_,
+                      .mass       = mass_,
+                      .llo        = llo_,
+                      .dl         = dl_,
+                      .mins       = mins_,
+                      .maxs       = maxs_ };
+}
+
+void
+  Pop::follow_container(const pic::ParticleContainer& con)
+{
+  const auto n = con.size();
+  if(skey_.size() < n) { skey_.resize(n, std::int32_t { -1 }); }
+}
+
+Pop::Totals
+  Pop::totals(const pic::ParticleContainer& con)
+{
+  const auto ids_mds = con.ids_mds();
+  const auto vel_mds = con.vel_mds();
+  const auto wgt_mds = con.wgt_mds();
+  const auto weighted = con.has_particle_weights();
+  const auto w0       = static_cast<double>(con.weight());
+  const auto m        = con.args().mass;
+  using V5            = toolbox::VecD<double, 6>;
+  const auto ord0     = thrust::counting_iterator<I>(0);
+  const auto f        = [=](const I i) {
+    if(ids_mds[i][] == runko::dead_prtc_id) { return V5 {}; }
+    const double vx = vel_mds[i][0], vy = vel_mds[i][1], vz = vel_mds[i][2];
+    const auto e    = sstd::sqrt(m * m + vx * vx + vy * vy + vz * vz);
+    const auto wg   = weighted ? static_cast<double>(wgt_mds[i][]) : w0;
+    return V5(1.0, wg, wg * e, wg * vx, wg * vy, wg * vz);
+  };
+  const auto w = tyvi::mdgrid_work {};
+  const auto t = thrust::reduce(
+    w.on_this(),
+    thrust::make_transform_iterator(ord0, f),
+    thrust::make_transform_iterator(ord0 + static_cast<std::ptrdiff_t>(con.size()), f),
+    V5 {},
+    [](const V5& a, const V5& b) { return a + b; });
+  return Totals { t[0], t[1], t[2], { t[3], t[4], t[5] } };
+}
+
+std::vector<std::int32_t>
+  Pop::get_slot_keys(const pic::ParticleContainer& con)
+{
+  this->follow_container(con);
+  const auto n       = con.size();
+  const auto ids_mds = con.ids_mds();
+  auto out           = thrust::device_vector<std::int32_t>(n);
+  const auto w       = tyvi::mdgrid_work {};
+  const auto end     = thrust::copy_if(
+    w.on_this(),
+    skey_.begin(),
+    skey_.begin() + static_cast<std::ptrdiff_t>(n),
+    thrust::counting_iterator<I>(0),
+    out.begin(),
+    [=](const I i) { return ids_mds[i][] != runko::dead_prtc_id; });
+  const auto h = thrust::host_vector<std::int32_t>(out.begin(), end);
+  return std::vector<std::int32_t>(h.begin(), h.end());
+}
+
+Pop::Tables
+  Pop::get_tables()
+{
+  Tables t;
+  thrust::host_vector<I> b = b_, cap = cap_, fill = fill_, prod = prod_;
+  thrust::host_vector<float> wmax = wmax_, emin = emin_, emax = emax_;
+  t.b.assign(b.begin(), b.end());
+  t.cap.assign(cap.begin(), cap.end());
+  t.fill.assign(fill.begin(), fill.end());
+  t.prod.assign(prod.begin(), prod.end());
+  t.wmax.assign(wmax.begin(), wmax.end());
+  t.emin.assign(emin.begin(), emin.end());
+  t.emax.assign(emax.begin(), emax.end());
+  t.llo = llo_;
+  t.dl  = dl_;
+  return t;
+}
+
+}  // namespace qed

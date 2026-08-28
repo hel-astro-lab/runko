@@ -183,6 +183,8 @@ public:
 
   /// Const access to particle container for a given species.
   const ParticleContainer& particles(std::size_t species) const;
+  /// Mutable access to particle container for a given species.
+  ParticleContainer& particles(std::size_t species);
 
   /// Returns average kinetic energy of given particle type.
   ///
