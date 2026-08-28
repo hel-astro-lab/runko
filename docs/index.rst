@@ -72,6 +72,7 @@ Key contributors that provided additional features and/or improvements include
    plasma
    emf
    pic
+   qed
 
 
 .. toctree::
