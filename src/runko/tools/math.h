@@ -177,6 +177,41 @@ log10(const T x) {
 }
 
 
+// =====================================================================
+// exp / log / log1p / expm1 / tanh / atanh / cbrt / pow — type-dispatched
+// =====================================================================
+
+#define RUNKO_SSTD_UNARY(name)                       \
+  template<typename T>                               \
+  constexpr auto name(const T x) {                   \
+    if constexpr (std::is_same_v<T, float>) {        \
+      return ::name##f(x);                           \
+    } else {                                         \
+      return ::name(x);                              \
+    }                                                \
+  }
+
+RUNKO_SSTD_UNARY(exp)
+RUNKO_SSTD_UNARY(log)
+RUNKO_SSTD_UNARY(log1p)
+RUNKO_SSTD_UNARY(expm1)
+RUNKO_SSTD_UNARY(tanh)
+RUNKO_SSTD_UNARY(atanh)
+RUNKO_SSTD_UNARY(cbrt)
+
+#undef RUNKO_SSTD_UNARY
+
+template<typename T>
+constexpr auto
+pow(const T x, const T y) {
+    if constexpr (std::is_same_v<T, float>) {
+        return ::powf(x, y);
+    } else {
+        return ::pow(x, y);
+    }
+}
+
+
 /// Signum of value
 template <typename T> int sign(const T& val) {
     return (T(0) < val) - (val < T(0));

@@ -3,6 +3,7 @@
 
 set(TESTS_TO_RUN
     unit_testing
+    qed_random
 )
 
 foreach(test ${TESTS_TO_RUN})
