@@ -4,6 +4,7 @@
 set(TESTS_TO_RUN
     unit_testing
     qed_random
+    qed2
 )
 
 foreach(test ${TESTS_TO_RUN})
