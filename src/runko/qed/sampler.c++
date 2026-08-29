@@ -51,6 +51,7 @@ struct ChCompton {
   static constexpr Sel sel2     = Sel::cell;
   static constexpr double c_l   = 1.0;
   static constexpr bool has_dgm = true;
+  static constexpr double g_min = 1.0;                 // every lepton scatters
   constexpr double rate(const Vec3& k, const Vec3& u) const { return comp::rate(k, u); }
   constexpr double bound(double lo1, double hi1, double lo2, double hi2) const
   {
@@ -105,6 +106,7 @@ struct ChSSA {
   static constexpr Sel sel2     = Sel::cell;
   static constexpr double c_l   = 1.0;
   static constexpr bool has_dgm = true;
+  static constexpr double g_min = ssa::GMIN;           // no absorption below the threshold
   /// the rate at the absorbing lepton's field b (its pitch angle in the tile field)
   constexpr double rate(const Vec3& k, const Vec3& u, const double b) const
   {
@@ -599,11 +601,13 @@ void
         const auto w2  = static_cast<double>(s2.wmax[cb]);
         auto shv       = n1 > 0.0 and n2 > 0.0 ? ch.bound(lo1, hi1, lo2, hi2) : 0.0;
         // bound on the effective weight of the merged pairs from the two maxima alone: f_kin is
-        // extremal at the corners of the gamma range, so they bound it from below
+        // extremal at the corners of the gamma range, so they bound it from below; leptons
+        // below the channel's threshold never react, so the range starts there
         auto wmv = sstd::max(w1, w2);
         if constexpr(Ch::has_dgm) {
           if(kappa > 0.0) {
-            const auto fk = sstd::min(fkin(ch, kappa, hi1, lo2), fkin(ch, kappa, hi1, hi2));
+            const auto glo = sstd::max(lo2, Ch::g_min);
+            const auto fk  = sstd::min(fkin(ch, kappa, hi1, glo), fkin(ch, kappa, hi1, hi2));
             wmv           = sstd::max(w2, w1 / fk);
           }
         }
