@@ -62,7 +62,7 @@ private:
 
   static constexpr int num_prtcl_fields_ = mpiio::num_prtcl_fields;
 
-  /// Scratch buffer: [local_sampled][12] in SoA layout.
+  /// Scratch buffer: [local_sampled][13] in SoA layout.
   /// Field f is contiguous at offset f * local_sampled in the underlying span.
   runko::PrtclFieldList<float> prtcl_buf_;
 

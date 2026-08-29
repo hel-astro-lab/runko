@@ -215,11 +215,14 @@ bool mpiio::ParticlesWriter<3>::write_payload_(MPI_File fh, corgi::Grid<3>& grid
       }
       const auto alive_p = thrust::raw_pointer_cast(alive.data());
 
-      // Pack all 12 fields into prtcl_buf_
+      // Pack all 13 fields into prtcl_buf_
       using vt = pic::ParticleContainer::value_type;
 
       const auto src_pos = container.pos_mds();
       const auto src_vel = container.vel_mds();
+      const auto src_wgt = container.wgt_mds();
+      const auto weighted = container.has_particle_weights();
+      const auto w0 = static_cast<vt>(container.weight());
       const auto interpolator = tile.EB_linear_1st_interpolator();
 
       const auto dst_range = std::array<std::size_t, 2>{
@@ -247,6 +250,7 @@ bool mpiio::ParticlesWriter<3>::write_payload_(MPI_File fh, corgi::Grid<3>& grid
           dst_sub[idx][9]  = B[0]; // bx
           dst_sub[idx][10] = B[1]; // by
           dst_sub[idx][11] = B[2]; // bz
+          dst_sub[idx][12] = weighted ? src_wgt[si][] : w0;  // wgt
         })
         .wait();
 
