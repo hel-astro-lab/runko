@@ -523,15 +523,7 @@ template<std::size_t D>
 runko::prtc_id_type
   Tile<D>::consume_next_id_(const std::size_t particle_type)
 {
-  const auto ordinal =
-    static_cast<runko::prtc_id_type>(this->next_particle_ordinals_.at(particle_type)++);
-  const auto tile_tag = static_cast<runko::prtc_id_type>(this->tile_tag_);
-
-  if(ordinal >= 2uz << 40uz) {
-    throw std::runtime_error { "PIC tile ran out of particle ids (2^40 per species)!" };
-  }
-
-  return (tile_tag << 40uz) | ordinal;
+  return this->reserve_ids(particle_type, 1);
 }
 
 
