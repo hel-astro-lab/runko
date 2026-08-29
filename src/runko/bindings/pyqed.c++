@@ -20,6 +20,24 @@
 
 namespace {
 
+/// the log edges of the escaping spectrum and the linear edges of its direction cosine
+std::vector<double>
+  esc_edges()
+{
+  auto e = std::vector<double>(qed::Sampler::NESC + 1);
+  for(auto i = 0uz; i < e.size(); ++i) {
+    e[i] = qed::Sampler::ESC_LO * std::pow(qed::Sampler::ESC_HI / qed::Sampler::ESC_LO, static_cast<double>(i) / qed::Sampler::NESC);
+  }
+  return e;
+}
+std::vector<double>
+  mu_edges()
+{
+  auto e = std::vector<double>(qed::Sampler::NMU + 1);
+  for(auto i = 0uz; i < e.size(); ++i) { e[i] = -1.0 + 2.0 * static_cast<double>(i) / qed::Sampler::NMU; }
+  return e;
+}
+
 /// the species role of its python name
 qed::Species
   species_of(const std::string& name)
@@ -107,6 +125,9 @@ void
   py::module m_3d = m_sub.def_submodule("threeD", "3D specializations");
   py::module m_ph = m_sub.def_submodule("physics", "the QED process functions, vectorized");
   bind_physics(m_ph);
+  m_sub.attr("LAMC_CM")   = qed::LAMC_CM;
+  m_sub.attr("ESC_EDGES") = to_ndarray(esc_edges());   // log bins of the escaping spectrum
+  m_sub.attr("MU_EDGES")  = to_ndarray(mu_edges());    // linear bins of its direction cosine
 
   // ---- the virtual (halo) tile: the pic one, registered so that the grid can build it
   py::class_<
@@ -242,12 +263,7 @@ void
       "escaped_spectrum",
       [](const qed::Tile<3>& t) {
         // (bin edges, x ell_x per bin) -- the sums are in energy units, the caller divides by steps
-        const auto h = t.escaped_spectrum();
-        auto edges   = std::vector<double>(h.size() + 1);
-        for(auto i = 0uz; i <= h.size(); ++i) {
-          edges[i] = qed::Sampler::ESC_LO * std::pow(qed::Sampler::ESC_HI / qed::Sampler::ESC_LO, static_cast<double>(i) / static_cast<double>(h.size()));
-        }
-        return py::make_tuple(to_ndarray(edges), to_ndarray(h));
+        return py::make_tuple(to_ndarray(esc_edges()), to_ndarray(t.escaped_spectrum()));
       })
     // in-place momentum reset of the live LPs (thermostats of the tests)
     .def(
