@@ -365,6 +365,12 @@ class qed_twobody(unittest.TestCase):
         sol = solve_ivp(ode, [0, steps], [W10, W20, 0.0], t_eval=[steps], rtol=1e-8)
         for n in range(steps):
             t.interact()
+        # every pair is born at one position: electrons and positrons coincide, so no charge
+        # density is added and div E is what the fields had
+        pm = np.sort(np.stack(t.get_positions(t.species("e-")), 1), axis=0)
+        pp = np.sort(np.stack(t.get_positions(t.species("e+")), 1), axis=0)
+        self.assertGreater(len(pm), 100)
+        np.testing.assert_array_equal(pm, pp)
         x, w = energies(t, "ph")
         # the weight the reactions moved, which is what the ~3300 events make good to 2 %
         self.check("W1 loss/ODE", 1.0, (W10 - w[x < 1.0].sum()) / (W10 - sol.y[0][-1]), 0.05)

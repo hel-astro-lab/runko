@@ -977,6 +977,8 @@ void
     } else {
       const auto nl = n3p[e];
       if(nl > 0) {
+        // both leptons at the position of the incident photon: a pair born on top of itself adds
+        // no charge density, so div E stays what the fields had
         stage(e, pa, posi, wl, nl, cell, 1, 0);
         stage(e, pb, posi, wl, nl, cell, 2, 0);
       }
@@ -1254,6 +1256,7 @@ void
       auto rngC    = runko::Rng { keyC, i };
       const auto P = bw::sample(v.u(i), b, rngC);
       if(n3[e] > 0) {
+        // the pair at the photon's position, on top of each other: no charge density is added
         stage(P.um, i, wl, n3[e], 1, 0);
         stage(P.up, i, wl, n3[e], 2, 0);
       }
@@ -1323,7 +1326,7 @@ void
                            mins[1] + (maxs[1] - mins[1]) * static_cast<float>(rng.uniform()),
                            mins[2] + (maxs[2] - mins[2]) * static_cast<float>(rng.uniform()) };
     const auto cell    = lay.cell_of(pos[0], pos[1], pos[2]);
-    for(auto sp = 1; sp <= 2; ++sp) {
+    for(auto sp = 1; sp <= 2; ++sp) {  // electron and positron at the same position: neutral
       const auto z   = rng.uniform();
       const auto gam = sstd::pow(sstd::pow(gmin, 1.0 - p) + z * (sstd::pow(gmax, 1.0 - p) - sstd::pow(gmin, 1.0 - p)), 1.0 / (1.0 - p));
       const auto u   = sstd::sqrt(gam * gam - 1.0) * iso_dir(rng);
