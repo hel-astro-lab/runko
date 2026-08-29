@@ -302,6 +302,10 @@ void
 {
   auto& con    = this->particles(species(s));
   const auto n = con.size();
+  // one momentum per live LP, no more, no less
+  if(con.number_alive() != u.size()) {
+    throw std::runtime_error { "reset_momenta: one momentum per live LP is needed" };
+  }
   // the momenta flattened to the device
   auto h       = thrust::host_vector<float>(3 * u.size());
   for(auto i = 0uz; i < u.size(); ++i) {
@@ -324,14 +328,6 @@ void
     },
     runko::index_t { 0 },
     thrust::plus<runko::index_t> {});
-  // one momentum per live LP, no more, no less
-  const auto nalive = static_cast<std::size_t>(thrust::count_if(
-    w.on_this(), i0, i0 + static_cast<std::ptrdiff_t>(n), [=](const runko::index_t i) {
-      return ids_mds[i][] != runko::dead_prtc_id;
-    }));
-  if(nalive != u.size()) {
-    throw std::runtime_error { "reset_momenta: one momentum per live LP is needed" };
-  }
   const auto rk = thrust::raw_pointer_cast(rank.data());
   const auto dp = thrust::raw_pointer_cast(d.data());
   // one lane per slot: a live slot takes the momentum of its rank

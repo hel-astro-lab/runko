@@ -465,7 +465,7 @@ void
   Ctx c { t, par.nbin };
   for(auto s = 0uz; s < 3uz; ++s) {
     stats.slots[s] += static_cast<double>(t.con[s]->size());
-    stats.live[s] += Pop::totals(*t.con[s]).N;
+    stats.live[s] += static_cast<double>(t.con[s]->number_alive());
     t.ids_used[s] = 0;
   }
   thrust::fill(counters_.begin(), counters_.end(), 0);
