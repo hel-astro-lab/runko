@@ -1,6 +1,7 @@
 // Copyright 2016 - 2026, Miro Palmu, Joonas Nättilä and the runko contributors
 // SPDX-License-Identifier: GPL-3.0-or-later
 
+#include "runko/bindings/runko_cpp_bindings.h"
 #include "runko/particles_common.h"
 #include "runko/pic/reflector_wall.h"
 #include "runko/pic/tile.h"
@@ -14,27 +15,10 @@
 
 #include <memory>
 #include <optional>
-#include <ranges>
 #include <string>
 #include <tuple>
 #include <unordered_map>
 #include <utility>
-
-namespace {
-namespace py = pybind11;
-template<typename T>
-auto
-  to_ndarray(const std::vector<T>& vec)
-{
-  const auto grid_shape = std::array { vec.size() };
-  auto mda              = py::array_t<T, py::array::c_style>(grid_shape);
-  auto mda_mut          = mda.template mutable_unchecked<1>();
-
-  for(const auto i: std::views::iota(0uz, vec.size())) { mda_mut(i) = vec[i]; }
-
-  return std::move(mda);
-}
-}  // namespace
 
 //--------------------------------------------------
 // experimental PIC module

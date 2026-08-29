@@ -1,6 +1,7 @@
 // Copyright 2026 - 2026, Miro Palmu, Joonas Nättilä and the runko contributors
 // SPDX-License-Identifier: GPL-3.0-or-later
 
+#include "runko/bindings/runko_cpp_bindings.h"
 #include "runko/qed/interactions/qed1_bw.h"
 #include "runko/qed/interactions/qed1_syn.h"
 #include "runko/qed/interactions/qed2_ann.h"
@@ -18,19 +19,6 @@
 #include <vector>
 
 namespace {
-namespace py = pybind11;
-
-/// a host vector as a 1-D numpy array (one copy)
-template<typename T>
-auto
-  to_ndarray(const std::vector<T>& vec)
-{
-  const auto shape = std::array { vec.size() };
-  auto mda         = py::array_t<T, py::array::c_style>(shape);
-  auto mut         = mda.template mutable_unchecked<1>();
-  for(auto i = 0uz; i < vec.size(); ++i) { mut(i) = vec[i]; }
-  return mda;
-}
 
 /// the species role of its python name
 qed::Species
