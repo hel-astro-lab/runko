@@ -312,6 +312,12 @@ struct Sampler::Ctx {
   int ncell;                          // reaction cells of the tile
   int nb;                             // energy bins per cell
 
+  Ctx(TileView& tile, const int nbin) : t { &tile }, v {}, ncell { 0 }, nb { nbin }
+  {
+    refresh_all();
+    ncell = v[0].lay.ncell;
+  }
+
   // rebuild the views after a container was resized
   void refresh_all()
   {
@@ -455,9 +461,7 @@ void
   if(need) { this->layout(t); }
 
   // ---- the context of the step and its slot/live statistics
-  Ctx c { .t = &t, .v = {}, .ncell = 0, .nb = par.nbin };
-  c.refresh_all();
-  c.ncell = c.v[0].lay.ncell;
+  Ctx c { t, par.nbin };
   for(auto s = 0uz; s < 3uz; ++s) {
     stats.slots[s] += static_cast<double>(t.con[s]->size());
     stats.live[s] += Pop::totals(*t.con[s]).N;
@@ -1407,9 +1411,7 @@ void
   const auto n     = static_cast<std::size_t>(std::floor(npair + rng0.uniform()));   // rounded stochastically
   if(n == 0) { return; }
   // ---- the staging buffer: one record per lepton, placed by the common place kernel
-  Ctx c { .t = &t, .v = {}, .ncell = 0, .nb = par.nbin };
-  c.refresh_all();
-  c.ncell = c.v[0].lay.ncell;
+  Ctx c { t, par.nbin };
   staged_.resize(2 * n);
   thrust::fill(counters_.begin(), counters_.begin() + 1, 0);
   thrust::fill(dbudget_.begin(), dbudget_.end(), 0.0);
@@ -1456,9 +1458,7 @@ void
   const auto n     = static_cast<std::size_t>(std::floor(nph + rng0.uniform()));   // rounded stochastically
   if(n == 0) { return; }
   // ---- the staging buffer: one record per photon
-  Ctx c { .t = &t, .v = {}, .ncell = 0, .nb = par.nbin };
-  c.refresh_all();
-  c.ncell = c.v[0].lay.ncell;
+  Ctx c { t, par.nbin };
   staged_.resize(n);
   thrust::fill(counters_.begin(), counters_.begin() + 1, 0);
   thrust::fill(dbudget_.begin(), dbudget_.end(), 0.0);
@@ -1507,8 +1507,7 @@ void
   // momentum vector so that it also scatters the direction. Its expected energy gain per lepton is
   // D_0 p^2 (4 gamma^2 + 1)/gamma^3, and D_0 is chosen every step so that the summed gain is exactly
   // the energy the compactness injects.
-  Ctx c { .t = &t, .v = {}, .ncell = 0, .nb = par.nbin };
-  c.refresh_all();
+  Ctx c { t, par.nbin };
   const auto w  = tyvi::mdgrid_work {};
   auto tot      = 0.0;   // summed expected gain per unit D_0 over both lepton species
   // ---- the normalization: reduce w p^2 (4 gamma^2 + 1)/gamma^3 over the live leptons
@@ -1558,8 +1557,7 @@ void
 void
   Sampler::escape_photons(TileView& t, const double tau_ext, const double dt_ext)
 {
-  Ctx c { .t = &t, .v = {}, .ncell = 0, .nb = par.nbin };
-  c.refresh_all();
+  Ctx c { t, par.nbin };
   // the pair depth the escape sees: the whole slab's, given by the driver, or this tile's own
   const auto tau_T  = tau_ext >= 0.0 ? tau_ext : Pop::totals(*t.con[1]).W + Pop::totals(*t.con[2]).W;
   const auto dt_esc = dt_ext > 0.0 ? dt_ext : box.dt;   // the step in crossings of that slab
