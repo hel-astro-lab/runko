@@ -166,12 +166,18 @@ struct PView {
     ids[i][] = runko::dead_prtc_id;
     if(weighted) { wgt[i][] = 0.0f; }
   }
-  /// widen the bounds of the key of a slot updated in place
+  /// a slot updated in place: widen the bounds of its key, or, if the kick took it out of its
+  /// energy bin, drop it from the key -- inert until the next layout, like a tail product --
+  /// so that the bounds of a bin stay those of the bin
   constexpr void touch(const I i) const
   {
     const auto k = lay.skey[i];
     if(k < 0) { return; }
     const auto ee = static_cast<float>(e(i));
+    if(lay.bin_of(ee) != lay.bin_of_key(k)) {
+      lay.skey[i] = -1;
+      return;
+    }
     const auto ww = static_cast<float>(w(i));
     sstd::atomic_max(&lay.emax[k], ee);
     sstd::atomic_min(&lay.emin[k], ee);
@@ -835,7 +841,8 @@ void
     lj[lane] = j;
     lf[lane] = 1.0;
     lacc[lane] = 0;
-    const auto virt = not(v1.alive(i) and v2.alive(j));   // a dead slot: nothing to react
+    // a dead slot, or one dropped from its key by a kick: nothing to react
+    const auto virt = not(v1.alive(i) and v2.alive(j)) or v1.lay.skey[i] < 0 or v2.lay.skey[j] < 0;
     if(virt) {
       sstd::atomic_add(&ds[d_virt], 1.0);
       return;

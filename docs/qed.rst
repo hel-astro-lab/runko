@@ -96,7 +96,8 @@ events from the bin tables alone, pairs particles by two-level stratified sampli
 proposal against the true rate with a single uniform, and realizes the accepted events with
 per-cell systematic rounding; a one-body channel evaluates the rate of every particle and fires
 on it. Products land in the slack of their own key, reactive at once, or in the tail, inert
-until the next sort.
+until the next sort; a parent that a kick took out of its energy bin is likewise inert until
+the next sort, so that the bounds of a bin stay those of the bin.
 
 In a lap the driver calls ``x.prtcl_interact()`` for the reactions and, for an open box,
 ``x.grid_heat_diffusive(ell)``, ``x.grid_inject_pairs_plaw(ell, p, gmin, gmax)``,
