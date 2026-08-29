@@ -70,8 +70,8 @@ if __name__ == "__main__":
 
     # --------------------------------------------------
     # Records: the pair and energy budgets every rec_every laps; spectra over the last quarter
-    rec = dict(t=[], tau=[], Wg=[], Eg=[], Epm=[], N=[], ell_esc=[], ell_in=[], gbar=[], dtau_inj=[], counts=[], moved=[])
-    prev = dict(counts=None, moved=None, esc_E=0.0, inj_E=0.0, inj_W=0.0)
+    rec = dict(t=[], tau=[], Wg=[], Eg=[], Epm=[], N=[], ell_esc=[], gbar=[], dtau_inj=[], counts=[], moved=[])
+    prev = dict(counts=None, moved=None, esc_E=0.0, inj_W=0.0)
     lep_p, lep_w = [], []
     nlate = int(0.75 * conf.n_laps)
     t_start = time.time()
@@ -87,15 +87,14 @@ if __name__ == "__main__":
             rec["Wg"].append(tt["ph"]["W"]); rec["Eg"].append(tt["ph"]["E"]); rec["Epm"].append(tt["e-"]["E"] + tt["e+"]["E"])
             rec["gbar"].append((tt["e-"]["E"] + tt["e+"]["E"]) / max(tau, 1e-300))
             rec["N"].append([tt[s]["N"] for s in ("ph", "e-", "e+")])
-            # rates since the previous record: escaping and injected power, injected depth
+            # rates since the previous record: escaping power, injected depth
             span = rec_every * dt
             rec["ell_esc"].append((bud["esc_E"] - prev["esc_E"]) / span if lap else 0.0)
-            rec["ell_in"].append((bud["inj_E"] + bud["heat_E"] - prev["inj_E"]) / span if lap else 0.0)
             rec["dtau_inj"].append((bud["inj_W"] - prev["inj_W"]) / span if lap else 0.0)
             # events and moved weight per channel since the previous record
             rec["counts"].append({k: cn[k] - (prev["counts"][k] if prev["counts"] else 0.0) for k in cn})
             rec["moved"].append({k: mv[k] - (prev["moved"][k] if prev["moved"] else 0.0) for k in mv})
-            prev.update(counts=cn, moved=mv, esc_E=bud["esc_E"], inj_E=bud["inj_E"] + bud["heat_E"], inj_W=bud["inj_W"])
+            prev.update(counts=cn, moved=mv, esc_E=bud["esc_E"], inj_W=bud["inj_W"])
             # lepton momenta over the last quarter, for the late distribution
             if lap >= nlate:
                 vx, vy, vz = (np.asarray(a) for a in tile.get_velocities(tile.species("e-")))
@@ -110,7 +109,7 @@ if __name__ == "__main__":
         if lap == nlate:
             for tile in simulation.local_tiles():
                 tile.reset_budget()          # the escaping spectrum of the last quarter
-            prev.update(esc_E=0.0, inj_E=0.0, inj_W=0.0)
+            prev.update(esc_E=0.0, inj_W=0.0)
         # the reactions, then the sources and the sink of the open box
         x.prtcl_interact()
         x.grid_heat_diffusive(conf.ell_th)
@@ -140,7 +139,7 @@ if __name__ == "__main__":
     edges, h = tile.escaped_spectrum(); cx = np.sqrt(edges[1:] * edges[:-1])
     ellx = h / nl / dt / np.diff(np.log(edges))
     # records as arrays; channel rates and the pair budget per crossing
-    for k in ("t", "tau", "Wg", "Eg", "Epm", "N", "ell_esc", "ell_in", "gbar", "dtau_inj"):
+    for k in ("t", "tau", "Wg", "Eg", "Epm", "N", "ell_esc", "gbar", "dtau_inj"):
         rec[k] = np.array(rec[k])
     names = list(rec["counts"][0])
     rates = {k: np.array([c[k] for c in rec["counts"]]) / (rec_every * dt) for k in names}
@@ -180,7 +179,7 @@ if __name__ == "__main__":
         logger.info(tile.report())
         np.savez_compressed(os.path.join(outdir, "corona.npz"),
                             t=rec["t"], tau=rec["tau"], Wg=rec["Wg"], Eg=rec["Eg"], Epm=rec["Epm"], N=rec["N"],
-                            ell_esc=rec["ell_esc"], ell_in=rec["ell_in"], gbar=rec["gbar"], dtau_cre=dtau_cre, dtau_ann=dtau_ann, dtau_inj=rec["dtau_inj"],
+                            ell_esc=rec["ell_esc"], gbar=rec["gbar"], dtau_cre=dtau_cre, dtau_ann=dtau_ann, dtau_inj=rec["dtau_inj"],
                             rate_names=np.array(names), rates=np.array([rates[k] for k in names]),
                             cx=cx, ellx=ellx, lep_p=lp, lep_w=lw, ph_x=ph_x, ph_w=ph_w,
                             scalars=np.array([tau, ell_esc, ell_inj, x_peak, x_ssa, slope, gbar, nl, len(lep_p) // 2, w_lep, conf.qed_x_min, x_unit, tss[0], cre, ann, inj, conf.qed_a_res or 0.7, conf.qed_x_ref or 1e-5]))

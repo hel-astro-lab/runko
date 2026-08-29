@@ -25,7 +25,7 @@ def setup_rc():
 
 def load(fname):
     d = np.load(fname)
-    rec = {k: d[k] for k in ("t", "tau", "Wg", "Eg", "Epm", "N", "ell_esc", "ell_in", "gbar", "dtau_cre", "dtau_ann", "dtau_inj")}
+    rec = {k: d[k] for k in ("t", "tau", "Wg", "Eg", "Epm", "N", "ell_esc", "gbar", "dtau_cre", "dtau_ann", "dtau_inj")}
     rec["rates"] = {k: d["rates"][i] for i, k in enumerate(d["rate_names"])}
     sc = list(d["scalars"])
     return dict(rec=rec, cx=d["cx"], ellx=d["ellx"], lep_p=d["lep_p"], lep_w=d["lep_w"], ph_x=d["ph_x"], ph_w=d["ph_w"],
