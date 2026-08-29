@@ -236,14 +236,13 @@ class Simulation:
             if method.startswith("prtcl_"):
                 method_mapper = { "prtcl_push" : "push_particles",
                                   "prtcl_sort" : "sort_particles",
-                                  "prtcl_interact" : "interact",
                                   "prtcl_pack_outgoing" : "pack_outgoing_particles",
                                   "prtcl_deposit_current" : "deposit_current",
                                   "prtcl_reflect_particles" : "reflect_particles",
                                   "prtcl_advance_reflector_walls" : "advance_reflector_walls" }
 
-                if method in method_mapper:
-                    method = method_mapper[method]
+                # any other prtcl_<verb> is the tile method <verb>
+                method = method_mapper.get(method, method[6:])
 
                 for tile in self.local_tiles():
                     getattr(tile, method)()
