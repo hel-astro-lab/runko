@@ -10,6 +10,7 @@
 #include "thrust/iterator/counting_iterator.h"
 #include "thrust/sort.h"
 #include "thrust/transform_scan.h"
+#include "thrust/logical.h"
 #include "tyvi/mdgrid.h"
 
 #include <format>
@@ -163,6 +164,21 @@ void
 }
 
 template<std::size_t D>
+bool
+  Tile<D>::lattice_has_field()
+{
+  using I = runko::index_t;
+  const auto Bmds = std::get<1>(this->yee_lattice_.view_EBJ_on_device());
+  const auto n1 = static_cast<I>(Bmds.extent(1)), n2 = static_cast<I>(Bmds.extent(2));
+  const auto n  = static_cast<I>(Bmds.extent(0)) * n1 * n2;
+  const auto f0 = thrust::counting_iterator<I>(0);
+  return thrust::any_of(tyvi::mdgrid_work {}.on_this(), f0, f0 + n, [=](const I f) {
+    const auto i = f / (n1 * n2), j = (f / n2) % n1, k = f % n2;
+    return Bmds[i, j, k][0] != 0.0f or Bmds[i, j, k][1] != 0.0f or Bmds[i, j, k][2] != 0.0f;
+  });
+}
+
+template<std::size_t D>
 TileView
   Tile<D>::view()
 {
@@ -206,7 +222,15 @@ template<std::size_t D>
 void
   Tile<D>::interact()
 {
-  if(B0_ > 0.0 and sampler_.box.b_perp() > 0.0) { summarize_field(); }   // the lattice moved since the last lap
+  if(sampler_.box.b_perp() > 0.0) {
+    if(B0_ > 0.0) {
+      summarize_field();   // the lattice moved since the last lap
+    } else if(lattice_has_field()) {
+      throw std::runtime_error {
+        "qed::Tile::interact: the lattice carries a field but qed_B0 is not set; the channels would see the uniform field of ell_B alone."
+      };
+    }
+  }
   auto t = view();
   // the products take ids from the next free one of their species; the step reports how many
   for(auto s = 0uz; s < 3uz; ++s) { t.id_base[s] = this->reserve_ids(sp_[s], 0); }

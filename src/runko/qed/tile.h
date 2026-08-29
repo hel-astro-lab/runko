@@ -49,6 +49,8 @@ private:
   [[nodiscard]] FieldView field_view();
   /// the median |B| and the mean direction of the lattice field
   void summarize_field();
+  /// whether any cell of the lattice carries a magnetic field
+  [[nodiscard]] bool lattice_has_field();
 
 public:
   /// Construct from the config. On top of the pic::Tile keys:
