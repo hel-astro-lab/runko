@@ -408,10 +408,6 @@ void
       const auto m    = sstd::floor(base + cs[i]) - sstd::floor(base + cs[i] - q[i]);
       out[i]          = static_cast<std::int32_t>(m);
     });
-    // one lane per event: the cell's remainder advances by what was asked minus what was given
-    thrust::for_each(w.on_this(), ord0, ord0 + static_cast<std::ptrdiff_t>(n), [=](const I i) {
-      sstd::atomic_add(&car_p[cell[i]], q[i] - static_cast<double>(out[i]));
-    });
   } else {
     // the tail of a species is not cell-ordered: sort a permutation by cell first
     ev_perm_.resize(n);
@@ -430,11 +426,11 @@ void
       const auto m    = sstd::floor(base + cs[i]) - sstd::floor(base + cs[i] - q[j]);
       out[j]          = static_cast<std::int32_t>(m);
     });
-    // the remainders advance as above
-    thrust::for_each(w.on_this(), ord0, ord0 + static_cast<std::ptrdiff_t>(n), [=](const I i) {
-      sstd::atomic_add(&car_p[cell[i]], q[i] - static_cast<double>(out[i]));
-    });
   }
+  // one lane per event: the cell's remainder advances by what was asked minus what was given
+  thrust::for_each(w.on_this(), ord0, ord0 + static_cast<std::ptrdiff_t>(n), [=](const I i) {
+    sstd::atomic_add(&car_p[cell[i]], q[i] - static_cast<double>(out[i]));
+  });
   w.wait();
 }
 
