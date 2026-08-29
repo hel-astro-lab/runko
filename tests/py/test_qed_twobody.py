@@ -281,7 +281,7 @@ class qed_twobody(CheckMixin, unittest.TestCase):
             um, wm = mj_pop(2 * Npm, th, rng); up, wp = mj_pop(2 * Npm, th, rng)
             set_pop(t, "e-", um, wm); set_pop(t, "e+", up, wp); set_pop(t, "ph", np.zeros((0, 3)), np.zeros(0))
             denom = 0.0
-            for n in range(150):  # ~4500 events: the Poisson scatter of the rate is 1.5 %
+            for n in range(600):  # 2000-3000 events: the Poisson scatter of the rate is 2 %
                 denom += t.totals("e-")["W"] * t.totals("e+")["W"] / N2(dt)
                 thermostat(t, "e-", th, rng); thermostat(t, "e+", th, rng); t.interact()
             rho = t.counts()["pairann"] * WL / denom
