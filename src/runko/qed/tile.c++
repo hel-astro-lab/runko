@@ -200,16 +200,10 @@ void
   Tile<D>::interact()
 {
   auto t = view();
-  // ids for the products of the step: a block per species, returned unused ones are lost
-  constexpr auto block = 1uz << 20uz;
-  for(auto s = 0uz; s < 3uz; ++s) { t.id_base[s] = this->reserve_ids(sp_[s], block); }
+  // the products take ids from the next free one of their species; the step reports how many
+  for(auto s = 0uz; s < 3uz; ++s) { t.id_base[s] = this->reserve_ids(sp_[s], 0); }
   sampler_.step(t);
-  // the block must have covered every product; more would have made duplicate ids
-  for(auto s = 0uz; s < 3uz; ++s) {
-    if(t.ids_used[s] > block) {
-      throw std::runtime_error { "qed::Tile::interact: more than 2^20 products of one species in a step." };
-    }
-  }
+  for(auto s = 0uz; s < 3uz; ++s) { this->reserve_ids(sp_[s], t.ids_used[s]); }
 }
 
 template<std::size_t D>
@@ -368,9 +362,9 @@ void
   Tile<D>::inject_pairs_plaw(const double ell, const double p, const double gmin, const double gmax)
 {
   auto t = view();
-  // ids for the injected LPs, a block per species as in interact()
-  for(auto s = 0uz; s < 3uz; ++s) { t.id_base[s] = this->reserve_ids(sp_[s], 1uz << 20uz); }
+  for(auto s = 0uz; s < 3uz; ++s) { t.id_base[s] = this->reserve_ids(sp_[s], 0); }
   sampler_.inject_pairs_plaw(t, ell, p, gmin, gmax);
+  for(auto s = 0uz; s < 3uz; ++s) { this->reserve_ids(sp_[s], t.ids_used[s]); }
 }
 
 template<std::size_t D>
@@ -378,9 +372,9 @@ void
   Tile<D>::inject_photons(const double ell, const double theta, const double w, const bool planck)
 {
   auto t = view();
-  // ids for the injected LPs, a block per species as in interact()
-  for(auto s = 0uz; s < 3uz; ++s) { t.id_base[s] = this->reserve_ids(sp_[s], 1uz << 20uz); }
+  for(auto s = 0uz; s < 3uz; ++s) { t.id_base[s] = this->reserve_ids(sp_[s], 0); }
   sampler_.inject_photons(t, ell, theta, w, planck);
+  for(auto s = 0uz; s < 3uz; ++s) { this->reserve_ids(sp_[s], t.ids_used[s]); }
 }
 
 template<std::size_t D>
