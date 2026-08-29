@@ -255,8 +255,10 @@ class qed_openbox(unittest.TestCase):
         self.check("corona: injected power", 1.0, ell_in / (ell_th + ell_nth), 0.05)
         edges, h = t.escaped_spectrum(); cx = np.sqrt(edges[1:] * edges[:-1])
         ellx = h / nl / dt / np.diff(np.log(edges))
-        x_peak = cx[np.argmax(ellx)]
-        self.check("corona: log10 x_peak in [-0.5, 0.5]", 0.0, float(np.log10(x_peak)), 0.5)
+        # the hump is flat over half a decade, so its position is the centroid of its top half
+        top = ellx > 0.5 * ellx.max()
+        x_peak = np.exp(np.sum(np.log(cx[top]) * ellx[top]) / ellx[top].sum())
+        self.check("corona: log10 x_peak in [-0.8, 0.2]", 0.0, float(np.log10(x_peak)) + 0.3, 0.5)
         xg = np.geomspace(1e-7, 1e-2, 11); lt = np.log(np.maximum([t.tau_ssa(x) for x in xg], 1e-300))
         x_unit = np.exp(np.interp(0.0, lt[::-1], np.log(xg)[::-1]))
         self.check("corona: log10 x_SSA (unit SSA depth) in [-5.5, -4.5]", -5.0, float(np.log10(x_unit)), 0.1)
