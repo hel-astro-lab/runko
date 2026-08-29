@@ -27,6 +27,10 @@ struct TileInfo {
 
 /// MPI-IO writer for sampled particle snapshots in a flat binary format.
 ///
+static_assert(
+  static_cast<int32_t>(runko::detail::prtcl_io_element<double>.dim) == num_prtcl_fields,
+  "the particle snapshot element carries one value per snapshot field");
+
 /// Each output file contains a 512-byte header followed by num_prtcl_fields
 /// 1D arrays (x, y, z, ux, uy, uz, ex, ey, ez, bx, by, bz) stored
 /// contiguously in SoA layout.
