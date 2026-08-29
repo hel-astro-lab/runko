@@ -109,8 +109,8 @@ struct [[nodiscard]] Stats {
   std::size_t steps { 0 };                       // steps taken
   double cell_lanes { 0 };                       // (cell, bin, bin) lanes of the envelope kernels
   std::array<ChannelStats, N_CHANNELS> ch {};    // per channel
-  // per species (index 0 carries the totals): products placed in slack / in the tail, slots, live LPs
-  std::array<double, 3> slackprod {}, tailprod {}, slots {}, live {};
+  double slackprod { 0 }, tailprod { 0 };              // products placed in slack / in the tail
+  std::array<double, 3> slots {}, live {};             // per species: slots, live LPs
 };
 
 // ---------------------------------------------------------------- one-body bookkeeping
@@ -205,7 +205,7 @@ private:
   /// a one-body channel: one lane per slot
   void onebody(Ctx& c, Channel which, int l);
   /// the staged products into the slack of their keys or the tail
-  void place(Ctx& c, std::uint64_t key);
+  void place(Ctx& c);
   /// the summed absorbed energies onto the leptons, along their momenta
   void apply_dgam(Ctx& c, Species s);
   /// rewiden the bounds of the keys of the kicked slots
@@ -270,7 +270,7 @@ public:
 
 private:
   thrust::device_vector<double> esc_hist_;      // NESC: x ell_x per log bin
-  thrust::device_vector<double> esc_mu_hist_;   // NESC x NMU: the same per escape direction  // x ell_x of the escaped photons per log bin
+  thrust::device_vector<double> esc_mu_hist_;   // NESC x NMU: the same per escape direction
   thrust::device_vector<double> dbudget_;   // energy and weight accumulated by one source or sink
 };
 

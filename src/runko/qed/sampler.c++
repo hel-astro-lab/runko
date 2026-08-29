@@ -74,7 +74,6 @@ struct ChAnn {
   {
     return ann::bound(lo1, hi1, lo2, hi2);
   }
-  constexpr double dgmax(double, double) const { return 0.0; }
 };
 
 // photon-photon pair production: photon bit 0 on photon bit 1; converts, bounded by sigma_gg
@@ -91,7 +90,6 @@ struct ChGG {
   {
     return gg::bound(lo1, hi1, lo2, hi2);
   }
-  constexpr double dgmax(double, double) const { return 0.0; }
 };
 
 // synchrotron self-absorption: photon on a lepton of either charge; the lepton absorbs it,
@@ -219,14 +217,12 @@ struct SideView {
 };
 
 /// the rate of the pair (p1, p2); absorption takes the partner's field across its pitch angle
-template<typename Ch, typename V>
+template<typename Ch>
 [[nodiscard]]
 constexpr double
-  pair_rate(const Ch& ch, const FieldView& fv, const V& v2, const runko::index_t j, const Vec3& p1, const Vec3& p2)
+  pair_rate(const Ch& ch, const FieldView& fv, const Vec3& p1, const Vec3& p2)
 {
   if constexpr(Ch::kind == Kind::absorb) {
-    std::ignore = v2;
-    std::ignore = j;
     return ch.rate(p1, p2, fv.b_ssa(p2 / sstd::max(toolbox::norm(p2), 1e-300)));
   } else {
     return ch.rate(p1, p2);
@@ -260,12 +256,12 @@ constexpr int
   return lo;
 }
 
-/// resolution function: LPs per unit weight go as (x/x_ref)^a for photons, 1 for leptons
+/// resolution function of the photons: LPs per unit weight go as (x/x_ref)^a
 [[nodiscard]]
 constexpr double
-  f_res(const Species t, const double e, const double a, const double x_ref)
+  f_res(const double e, const double a, const double x_ref)
 {
-  return t == Species::ph ? sstd::pow(e / x_ref, a) : 1.0;
+  return sstd::pow(e / x_ref, a);
 }
 
 /// realize the copy number n of a product of weight s: (n_r, weight of each copy). n >= 1 splits
@@ -313,16 +309,10 @@ enum Counter : int { c_staged = 0, c_tail0, c_tail1, c_tail2, c_slack, c_tailn, 
 struct Sampler::Ctx {
   TileView* t;                        // the tile's containers, layouts, extent and ids
   std::array<PView, 3> v;             // views of ph, e-, e+; stale after a resize
-  std::array<std::size_t, 3> old_size {};
   int ncell;                          // reaction cells of the tile
   int nb;                             // energy bins per cell
 
   // rebuild the views after a container was resized
-  void refresh(const Species s)
-  {
-    const auto i = static_cast<std::size_t>(s);
-    v[i]         = make_view(*t->con[i], *t->pop[i]);
-  }
   void refresh_all()
   {
     for(auto i = 0uz; i < 3uz; ++i) { v[i] = make_view(*t->con[i], *t->pop[i]); }
@@ -465,7 +455,7 @@ void
   if(need) { this->layout(t); }
 
   // ---- the context of the step and its slot/live statistics
-  Ctx c { .t = &t, .v = {}, .old_size = {}, .ncell = 0, .nb = par.nbin };
+  Ctx c { .t = &t, .v = {}, .ncell = 0, .nb = par.nbin };
   c.refresh_all();
   c.ncell = c.v[0].lay.ncell;
   for(auto s = 0uz; s < 3uz; ++s) {
@@ -857,7 +847,7 @@ void
     if(not(u < wf)) { return; }
     sstd::atomic_add(&ds[d_wpass], 1.0);
     const auto p1v = v1.u(i), p2v = v2.u(j);
-    const auto rate = pair_rate(ch, fv, v2, j, p1v, p2v);
+    const auto rate = pair_rate(ch, fv, p1v, p2v);
     auto weff = sstd::max(wi, wj);                        // effective weight of the merged pair
     if constexpr(Ch::has_dgm) {
       if(kappa > 0.0) {
@@ -976,9 +966,6 @@ void
   }
 
   // ---- the decisions, by the systematic rounding of every cell
-  const auto sp1 = std::string(NAMES[static_cast<int>(Ch::t1)]), sp2 = std::string(NAMES[static_cast<int>(ch.t2)]);
-  std::ignore = sp1;
-  std::ignore = sp2;
   const auto tag1 = std::to_string(static_cast<int>(Ch::t1)), tag2 = std::to_string(static_cast<int>(ch.t2));   // carry sites are per species
   // scatter: update the photon, kick the lepton; absorb: remove the photon, kick the lepton;
   // convert: remove both, and for photon-photon also count the lepton pairs
@@ -1006,7 +993,7 @@ void
   const auto a_res = par.a_res, x_ref = par.x_ref;
   const auto n_cap = par.n_cap;
   // append one product record to the staging buffer
-  const auto stage = [=](const I e, const Vec3& p, const float* pos, const double w_each, const int n_r, const int cell, const int species, const int bit) {
+  const auto stage = [=](const Vec3& p, const float* pos, const double w_each, const int n_r, const int cell, const int species, const int bit) {
     const auto k = static_cast<std::size_t>(sstd::atomic_fetch_add(&cnt[c_staged], std::int32_t { 1 }));
     stg[k]       = Staged { .u       = { static_cast<float>(p[0]), static_cast<float>(p[1]), static_cast<float>(p[2]) },
                             .pos     = { pos[0], pos[1], pos[2] },
@@ -1015,7 +1002,6 @@ void
                             .cell    = cell,
                             .species = species,
                             .bit     = bit };
-    std::ignore  = e;
   };
   // one lane per accepted event: apply the decisions to the parents, stage the products
   thrust::for_each(w.on_this(), ev0, ev0 + static_cast<std::ptrdiff_t>(na), [=](const I e) {
@@ -1031,13 +1017,13 @@ void
         // the parent takes the new state and is realized as the copies the resolution function
         // asks for; the parent is the first copy
         const auto x0 = v1.e(i), x1 = toolbox::norm(pa);
-        const auto n  = f_res(Species::ph, x1, a_res, x_ref) / f_res(Species::ph, x0, a_res, x_ref);
+        const auto n  = f_res(x1, a_res, x_ref) / f_res(x0, a_res, x_ref);
         const auto cp = copies(n, v1.w(i), rng, n_cap);
         if(cp.n_r >= 1) {
           v1.set_u(i, pa);
           v1.set_w(i, cp.w_each);
           v1.touch(i);
-          if(cp.n_r > 1) { stage(e, pa, posi, cp.w_each, cp.n_r - 1, cell, 0, v1.lay.skey[i] >= 0 ? v1.lay.skey[i] % 2 : 0); }
+          if(cp.n_r > 1) { stage(pa, posi, cp.w_each, cp.n_r - 1, cell, 0, v1.lay.skey[i] >= 0 ? v1.lay.skey[i] % 2 : 0); }
         } else {
           v1.kill(i);  // the roulette merged it away
         }
@@ -1058,10 +1044,10 @@ void
       // annihilation: each photon realized as the copies its resolution asks for
       const auto s  = sstd::min(v1.w(i), v2.w(j));
       const auto x0 = toolbox::norm(pa), x1 = toolbox::norm(pb);
-      const auto ca = copies(f_res(Species::ph, x0, a_res, x_ref), s, rng, n_cap);
-      if(ca.n_r >= 1) { stage(e, pa, posi, ca.w_each, ca.n_r, cell, 0, static_cast<int>(rng.uniform() < 0.5)); }
-      const auto cb = copies(f_res(Species::ph, x1, a_res, x_ref), s, rng, n_cap);
-      if(cb.n_r >= 1) { stage(e, pb, posi, cb.w_each, cb.n_r, cell, 0, static_cast<int>(rng.uniform() < 0.5)); }
+      const auto ca = copies(f_res(x0, a_res, x_ref), s, rng, n_cap);
+      if(ca.n_r >= 1) { stage(pa, posi, ca.w_each, ca.n_r, cell, 0, static_cast<int>(rng.uniform() < 0.5)); }
+      const auto cb = copies(f_res(x1, a_res, x_ref), s, rng, n_cap);
+      if(cb.n_r >= 1) { stage(pb, posi, cb.w_each, cb.n_r, cell, 0, static_cast<int>(rng.uniform() < 0.5)); }
       if(n1p[e] > 0) { v1.kill(i); }
       if(n2p[e] > 0) { v2.kill(j); }
     } else {
@@ -1069,8 +1055,8 @@ void
       if(nl > 0) {
         // both leptons at the position of the incident photon: a pair born on top of itself adds
         // no charge density, so div E stays what the fields had
-        stage(e, pa, posi, wl, nl, cell, 1, 0);
-        stage(e, pb, posi, wl, nl, cell, 2, 0);
+        stage(pa, posi, wl, nl, cell, 1, 0);
+        stage(pb, posi, wl, nl, cell, 2, 0);
       }
       if(n1p[e] > 0) { v1.kill(i); }
       if(n2p[e] > 0) { v2.kill(j); }
@@ -1080,7 +1066,7 @@ void
   // ---- the kicked leptons take their summed changes, then the products are placed
   if constexpr(Ch::kind == Kind::absorb) { apply_dgam(c, ch.t2); }
   if constexpr(Ch::kind == Kind::scatter) { touch_marked(c, ch.t2); }
-  this->place(c, keyC);
+  this->place(c);
 }
 
 // the lepton takes the summed energy of its absorptions along its direction of motion
@@ -1125,7 +1111,7 @@ void
 
 // ---------------------------------------------------------------- products: slack of their key, overflow to the tail
 void
-  Sampler::place(Ctx& c, const std::uint64_t key)
+  Sampler::place(Ctx& c)
 {
   const auto nst = static_cast<std::size_t>(counters_[c_staged]);   // staged records
   if(nst == 0) { return; }
@@ -1197,10 +1183,9 @@ void
       c.t->ids_used[s] += static_cast<std::size_t>(h[c_id0 + static_cast<int>(s)]);
       c.t->id_base[s] += static_cast<runko::prtc_id_type>(h[c_id0 + static_cast<int>(s)]);
     }
-    stats.slackprod[0] += h[c_slack];
-    stats.tailprod[0] += h[c_tailn];
+    stats.slackprod += h[c_slack];
+    stats.tailprod += h[c_tailn];
   }
-  std::ignore = key;
 }
 
 // ---------------------------------------------------------------- one-body channels
@@ -1304,7 +1289,7 @@ void
       sstd::atomic_add(&ds[d_wem], wem);
       sstd::atomic_add(&ds[d_facc], f);
       // the photon LP, split or rouletted by the resolution function
-      const auto cp = copies(f_res(Species::ph, x, a_res, x_ref), wem, rngC, n_cap);
+      const auto cp = copies(f_res(x, a_res, x_ref), wem, rngC, n_cap);
       if(cp.n_r >= 1) { stage(P.k, i, cp.w_each, cp.n_r, 0, static_cast<int>(rngC.uniform() < 0.5)); }
     });
     w.wait();
@@ -1378,7 +1363,7 @@ void
     });
     w.wait();
   }
-  this->place(c, keyC);
+  this->place(c);
 }
 
 // ---------------------------------------------------------------- sources and sinks
@@ -1422,7 +1407,7 @@ void
   const auto n     = static_cast<std::size_t>(std::floor(npair + rng0.uniform()));   // rounded stochastically
   if(n == 0) { return; }
   // ---- the staging buffer: one record per lepton, placed by the common place kernel
-  Ctx c { .t = &t, .v = {}, .old_size = {}, .ncell = 0, .nb = par.nbin };
+  Ctx c { .t = &t, .v = {}, .ncell = 0, .nb = par.nbin };
   c.refresh_all();
   c.ncell = c.v[0].lay.ncell;
   staged_.resize(2 * n);
@@ -1459,7 +1444,7 @@ void
     budget.inj_E += h[b_E];
     budget.inj_W += 2.0 * static_cast<double>(n) * wl;
   }
-  this->place(c, key);
+  this->place(c);
 }
 
 void
@@ -1471,7 +1456,7 @@ void
   const auto n     = static_cast<std::size_t>(std::floor(nph + rng0.uniform()));   // rounded stochastically
   if(n == 0) { return; }
   // ---- the staging buffer: one record per photon
-  Ctx c { .t = &t, .v = {}, .old_size = {}, .ncell = 0, .nb = par.nbin };
+  Ctx c { .t = &t, .v = {}, .ncell = 0, .nb = par.nbin };
   c.refresh_all();
   c.ncell = c.v[0].lay.ncell;
   staged_.resize(n);
@@ -1512,7 +1497,7 @@ void
     thrust::host_vector<double> h = dbudget_;
     budget.inj_E += h[b_E];
   }
-  this->place(c, key);
+  this->place(c);
 }
 
 void
@@ -1522,7 +1507,7 @@ void
   // momentum vector so that it also scatters the direction. Its expected energy gain per lepton is
   // D_0 p^2 (4 gamma^2 + 1)/gamma^3, and D_0 is chosen every step so that the summed gain is exactly
   // the energy the compactness injects.
-  Ctx c { .t = &t, .v = {}, .old_size = {}, .ncell = 0, .nb = par.nbin };
+  Ctx c { .t = &t, .v = {}, .ncell = 0, .nb = par.nbin };
   c.refresh_all();
   const auto w  = tyvi::mdgrid_work {};
   auto tot      = 0.0;   // summed expected gain per unit D_0 over both lepton species
@@ -1573,7 +1558,7 @@ void
 void
   Sampler::escape_photons(TileView& t, const double tau_ext, const double dt_ext)
 {
-  Ctx c { .t = &t, .v = {}, .old_size = {}, .ncell = 0, .nb = par.nbin };
+  Ctx c { .t = &t, .v = {}, .ncell = 0, .nb = par.nbin };
   c.refresh_all();
   // the pair depth the escape sees: the whole slab's, given by the driver, or this tile's own
   const auto tau_T  = tau_ext >= 0.0 ? tau_ext : Pop::totals(*t.con[1]).W + Pop::totals(*t.con[2]).W;
@@ -1700,7 +1685,7 @@ double
         for(I j = 0; j < n2; ++j) {
           if(not v2.alive(j)) { continue; }
           const auto wj = v2.w(j);
-          s += sstd::max(wi, wj) * (weight ? sstd::min(wi, wj) : 1.0) * 2.0 * pair_rate(ch, fv, v2, j, p1, v2.u(j));
+          s += sstd::max(wi, wj) * (weight ? sstd::min(wi, wj) : 1.0) * 2.0 * pair_rate(ch, fv, p1, v2.u(j));
         }
         return s;
       },
@@ -1764,7 +1749,7 @@ std::string
         NAMES[i], s.M / ns, s.acc / ns, 100.0 * s.virt / std::max(1.0, s.M), s.wem / ns, s.facc / std::max(1.0, s.acc));
     }
   }
-  o << std::format("   products slack / tail  : {:.2f}/{:.2f}\n", stats.slackprod[0] / ns, stats.tailprod[0] / ns);
+  o << std::format("   products slack / tail  : {:.2f}/{:.2f}\n", stats.slackprod / ns, stats.tailprod / ns);
   return o.str();
 }
 
