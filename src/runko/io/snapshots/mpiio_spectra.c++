@@ -173,10 +173,10 @@ void mpiio::SpectraWriter<3>::histogram_tile(emf::Tile<3>& tile)
       .for_each_index(
         pos_mds,
         [=](const auto idx) {
-          const bool alive = tag_mds[idx][] != runko::dead_prtc_id;
+          if(tag_mds[idx][] == runko::dead_prtc_id) { return; }   // a free slot deposits nothing
           // the deposit is the particle's weight (the species weight unless it carries its own)
-          const vt dep = alive ? (weighted ? wgt_mds[idx][] : w0) : vt{0};
-        
+          const vt dep = weighted ? wgt_mds[idx][] : w0;
+
           // particle x position -> x bin
           const auto px = pos_mds[idx][0] - mx;
           const auto ix = static_cast<runko::index_t>(sstd::floor(px * inv_stride));
@@ -204,7 +204,7 @@ void mpiio::SpectraWriter<3>::histogram_tile(emf::Tile<3>& tile)
           const auto ib_by = bin(sstd::floor((uy * inv_gamma + vt{1}) * inv_dbeta));
           const auto ib_bz = bin(sstd::floor((uz * inv_gamma + vt{1}) * inv_dbeta));
 
-          // unconditional atomic deposits
+          // atomic deposits
           sstd::atomic_add(&thrust::raw_reference_cast(buf_mds[ix, ib_u ][base_field + 0]), dep);
           sstd::atomic_add(&thrust::raw_reference_cast(buf_mds[ix, ib_bx][base_field + 1]), dep);
           sstd::atomic_add(&thrust::raw_reference_cast(buf_mds[ix, ib_by][base_field + 2]), dep);
