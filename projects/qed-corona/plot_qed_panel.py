@@ -39,12 +39,10 @@ def record_laps(outdir):
                   if os.path.basename(f)[4:-4].isdigit())
 
 
-def load_series(outdir, conf, dt_box):
-    """the time series: qed_timeseries.npz when the run finished, else rebuilt from the records"""
+def load_series(outdir):
+    """the time series qed_timeseries.npz, written when the run finished; None before that"""
     path = os.path.join(outdir, "qed_timeseries.npz")
-    if os.path.exists(path):
-        return dict(np.load(path, allow_pickle=True))
-    return None
+    return dict(np.load(path, allow_pickle=True)) if os.path.exists(path) else None
 
 
 def energy_series(outdir, conf, w_unit):
@@ -168,7 +166,7 @@ if __name__ == "__main__":
     n_t = conf.n_tiles[0]
     dt_box = conf.cfl / conf.n_cells_per_tile[0] / n_t
     laps = record_laps(args.outdir)
-    series = load_series(args.outdir, conf, dt_box)
+    series = load_series(args.outdir)
     energies = energy_series(args.outdir, conf, conf.w0)
     todo = laps if args.all else [args.lap if args.lap is not None else laps[-1]]
     for lap in todo:

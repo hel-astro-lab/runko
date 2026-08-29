@@ -29,7 +29,7 @@ def field_laps(outdir):
 
 def plot(outdir, lap, axis, save):
     path = os.path.join(outdir, f"flds_{lap}.bin")
-    hdr = read_header(path); F = read_field_snapshot(path)
+    F = read_field_snapshot(path)
     b0 = np.mean(F["bz"])
     F["dbz"] = F["bz"] - b0                     # the perturbation about the mean field
     sl = {"z": lambda a: a[a.shape[0] // 2, :, :], "y": lambda a: a[:, a.shape[1] // 2, :], "x": lambda a: a[:, :, a.shape[2] // 2]}[axis]

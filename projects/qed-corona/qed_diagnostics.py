@@ -9,18 +9,19 @@ root, which writes qed_<lap>.npz and, at the end, qed_timeseries.npz."""
 import os
 import numpy as np
 from mpi4py import MPI
+import runko
 
 SPECIES = ("ph", "e-", "e+")
-X_BINS = np.logspace(-8, 2, 101)      # photon energy, for the spectra
+X_BINS = runko.qed.ESC_EDGES          # photon energy: the escape bins of the sampler
+MU_BINS = runko.qed.MU_EDGES          # escape direction cosine
 P_BINS = np.logspace(-2, 3, 61)       # lepton momentum
 W_BINS = np.logspace(-9, 1, 61)       # photon weight
-MU_BINS = np.linspace(-1, 1, 33)
 
 
 class QedDiagnostics:
 
-    def __init__(self, simulation, conf, dt_box, n_tiles_edge, outdir):
-        self.sim, self.conf, self.dt, self.nt, self.outdir = simulation, conf, dt_box, n_tiles_edge, outdir
+    def __init__(self, simulation, dt_box, n_tiles_edge, outdir):
+        self.sim, self.dt, self.nt, self.outdir = simulation, dt_box, n_tiles_edge, outdir
         self.comm = MPI.COMM_WORLD
         self.series = {k: [] for k in ("lap", "t", "tau", "tau_min", "tau_max", "W", "E", "N", "ell_esc", "esc_W", "heat_E",
                                        "counts", "moved", "n_ev")}
@@ -32,11 +33,12 @@ class QedDiagnostics:
         loc = np.zeros(14); taus = []
         counts = None; moved = None
         for tile in self.sim.local_tiles():
+            tt = {s: tile.totals(s) for s in SPECIES}
             for i, s in enumerate(SPECIES):
-                tt = tile.totals(s); loc[i] += tt["W"]; loc[3 + i] += tt["E"]; loc[6 + i] += tt["N"]
+                loc[i] += tt[s]["W"]; loc[3 + i] += tt[s]["E"]; loc[6 + i] += tt[s]["N"]
             b = tile.budget()
             loc[9:14] += [b["esc_E"], b["esc_W"], b["heat_E"], b["inj_E"], b["inj_W"]]
-            taus.append(tile.totals("e-")["W"] + tile.totals("e+")["W"])
+            taus.append(tt["e-"]["W"] + tt["e+"]["W"])
             cn, mv = tile.counts(), tile.moved()
             if self.names is None:
                 self.names = sorted(cn)
@@ -54,8 +56,7 @@ class QedDiagnostics:
                  ph_wn=np.zeros(len(W_BINS) - 1), ph_xw2=np.zeros((len(X_BINS) - 1, len(W_BINS) - 1)),
                  lep_pw=np.zeros(len(P_BINS) - 1), lep_pn=np.zeros(len(P_BINS) - 1))
         for tile in self.sim.local_tiles():
-            edges, hx = tile.escaped_spectrum()
-            h["esc"] += hx; h["esc_mu"] += tile.escaped_mu_spectrum()
+            h["esc"] += tile.escaped_spectrum()[1]; h["esc_mu"] += tile.escaped_mu_spectrum()
             tile.reset_budget()
             vx, vy, vz = (np.asarray(a) for a in tile.get_velocities(tile.species("ph")))
             x = np.sqrt(vx * vx + vy * vy + vz * vz); w = np.asarray(tile.get_weights(tile.species("ph")))

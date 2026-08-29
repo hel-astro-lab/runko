@@ -146,7 +146,7 @@ if __name__ == "__main__":
 
     simulation.prelude(sync_EB)
 
-    diag = QedDiagnostics(simulation, conf, dt_box, n_t, outdir)
+    diag = QedDiagnostics(simulation, dt_box, n_t, outdir)
     t_start = time.time()
     last_record = 0
 
