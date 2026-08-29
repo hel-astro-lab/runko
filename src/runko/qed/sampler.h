@@ -150,6 +150,25 @@ struct [[nodiscard]] Staged {
   std::int32_t bit;      // photon sub-range bit
 };
 
+/// One side of a two-body channel: the one or two sub-ranges of every (cell, bin) as one virtual range.
+struct [[nodiscard]] SideView {
+  using I = runko::index_t;
+  const I* base0;      // first slot of sub-range 0 of every (cell, bin)
+  const I* cnt0;       // its slot count (live + appended)
+  const I* base1;      // first slot of sub-range 1 (the second photon bit), 0 if absent
+  const I* cnt1;       // its count, 0 if absent
+  const float* wmax;   // largest weight over both sub-ranges
+  const float* emin;   // energy bounds over both sub-ranges
+  const float* emax;
+  [[nodiscard]] constexpr I N(const int cb) const { return cnt0[cb] + cnt1[cb]; }
+  /// virtual index v in [0, N) of group cb -> slot
+  [[nodiscard]] constexpr I pick(const int cb, const I v) const
+  {
+    const auto c0 = cnt0[cb];
+    return v < c0 ? base0[cb] + v : base1[cb] + v - c0;
+  }
+};
+
 /// What the sampler needs of the tile for one step.
 struct [[nodiscard]] TileView {
   FieldView field;                              // the field the channels see
@@ -199,9 +218,9 @@ private:
   /// a two-body channel: envelope, sub-cycling, then one pass per sub-step
   template<typename Ch>
   void twobody(Ctx& c, const Ch& ch, int l);
-  /// one pass of a two-body channel: count, thin, react, place
+  /// one pass of a two-body channel over its two sides: count, thin, react, place
   template<typename Ch>
-  void pass(Ctx& c, const Ch& ch, int l, int r, int nsub);
+  void pass(Ctx& c, const Ch& ch, int l, int r, int nsub, const SideView& s1, const SideView& s2);
   /// a one-body channel: one lane per slot
   void onebody(Ctx& c, Channel which, int l);
   /// the staged products into the slack of their keys or the tail

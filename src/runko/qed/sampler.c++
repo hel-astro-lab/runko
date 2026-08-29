@@ -198,24 +198,6 @@ PView
                  .lay      = pop.view() };
 }
 
-/// one side of a channel: the one or two sub-ranges of every (cell, bin) as one virtual range
-struct SideView {
-  const I* base0;      // first slot of sub-range 0 of every (cell, bin)
-  const I* cnt0;       // its slot count (live + appended)
-  const I* base1;      // first slot of sub-range 1 (the second photon bit), 0 if absent
-  const I* cnt1;       // its count, 0 if absent
-  const float* wmax;   // largest weight over both sub-ranges
-  const float* emin;   // energy bounds over both sub-ranges
-  const float* emax;
-  [[nodiscard]] constexpr I N(const int cb) const { return cnt0[cb] + cnt1[cb]; }
-  /// virtual index v in [0, N) of group cb -> slot
-  [[nodiscard]] constexpr I pick(const int cb, const I v) const
-  {
-    const auto c0 = cnt0[cb];
-    return v < c0 ? base0[cb] + v : base1[cb] + v - c0;
-  }
-};
-
 /// the rate of the pair (p1, p2); absorption takes the partner's field across its pitch angle
 template<typename Ch>
 [[nodiscard]]
@@ -660,12 +642,12 @@ void
   st.nsub_max_seen = sstd::max(st.nsub_max_seen, ns);
   st.nsub_steps += (ns > 1);
   // the sub-steps, each with the envelope divided by their number
-  for(auto r = 0; r < ns; ++r) { pass(c, ch, l, r, ns); }
+  for(auto r = 0; r < ns; ++r) { pass(c, ch, l, r, ns, s1, s2); }
 }
 
 template<typename Ch>
 void
-  Sampler::pass(Ctx& c, const Ch& ch, const int l, const int r, const int nsub)
+  Sampler::pass(Ctx& c, const Ch& ch, const int l, const int r, const int nsub, const SideView& s1, const SideView& s2)
 {
   // ---- sizes, one random stream per kernel of this (channel, sub-step), the device stats
   const auto i1    = static_cast<std::size_t>(Ch::t1);   // incident species index
@@ -682,15 +664,6 @@ void
   const auto keyC  = runko::rng_key(par.seed, step, static_cast<std::uint64_t>(r), static_cast<std::uint64_t>(3 + 4 * l));  // react kernels: products, copies
   thrust::fill(dstat_.begin(), dstat_.end(), 0.0);
   const auto ds = thrust::raw_pointer_cast(dstat_.data());   // the DStat accumulators
-
-  const auto s1 = SideView { thrust::raw_pointer_cast(base1_.data()), thrust::raw_pointer_cast(cnt1_.data()),
-                             thrust::raw_pointer_cast(base1_.data()) + ncb, thrust::raw_pointer_cast(cnt1_.data()) + ncb,
-                             thrust::raw_pointer_cast(wmax1_.data()), thrust::raw_pointer_cast(emin1_.data()),
-                             thrust::raw_pointer_cast(emax1_.data()) };
-  const auto s2 = SideView { thrust::raw_pointer_cast(base2_.data()), thrust::raw_pointer_cast(cnt2_.data()),
-                             thrust::raw_pointer_cast(base2_.data()) + ncb, thrust::raw_pointer_cast(cnt2_.data()) + ncb,
-                             thrust::raw_pointer_cast(wmax2_.data()), thrust::raw_pointer_cast(emin2_.data()),
-                             thrust::raw_pointer_cast(emax2_.data()) };
   const auto Lam = thrust::raw_pointer_cast(Lam_.data()), sh = thrust::raw_pointer_cast(sh_.data());  // envelope and rate bound per bin pair
   const auto wmp = thrust::raw_pointer_cast(wm_.data());                                              // weight bound per bin pair
 
