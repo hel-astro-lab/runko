@@ -87,30 +87,36 @@ constexpr Shape
   return Shape { a, b, n };
 }
 
-/// Cumulative probability that an emitted photon takes at most the fraction r of chi_e.
+/// Cumulative probability that an emitted photon takes at most the fraction r of chi_e, from
+/// the shape at that chi_e: the callers that evaluate P many times compute the shape once.
+[[nodiscard]]
+constexpr double
+  P(const Shape& s, const double r)
+{
+  // A Pade form in v = 1 - r^(1/3), anchored at p(0) = 0 by c = a - b - 1 and at p(1) = 1
+  // by every term vanishing at r = 1.
+  const auto c  = s.a - s.b - 1.0;              // anchors p(0) = 0
+  const auto v  = 1.0 - sstd::cbrt(r);          // the Pade variable
+  const auto vn = sstd::pow(v, s.n);            // the form is in the powers 2n, 3n, 4n of v
+  return 1.0 - s.a * vn * vn * vn * vn / (1.0 + s.b * vn * vn + c * vn * vn * vn);
+}
 [[nodiscard]]
 constexpr double
   P(const double chi_e, const double r)
 {
-  // A Pade form in v = 1 - r^(1/3), anchored at p(0) = 0 by c = a - b - 1 and at p(1) = 1
-  // by every term vanishing at r = 1.
-  const auto [a, b, n] = shape(chi_e);
-  const auto c         = a - b - 1.0;              // anchors p(0) = 0
-  const auto v         = 1.0 - sstd::cbrt(r);      // the Pade variable
-  return 1.0 - a * sstd::pow(v, 4.0 * n) /
-                 (1.0 + b * sstd::pow(v, 2.0 * n) + c * sstd::pow(v, 3.0 * n));
+  return P(shape(chi_e), r);
 }
 
 /// chi_gamma/chi_e of the emitted photon, from a uniform deviate z, by inverting P.
 [[nodiscard]]
 constexpr double
-  r_of(double z, const double chi_e)
+  r_of(double z, const Shape& s, const double chi_e)
 {
   // p = z is a quartic in u = (1 - r^(1/3))^n: the resolvent cubic by Cardano, then one root
   // of the depressed quartic; the sign of hi picks the branch that stays real and positive.
   // The first square root also divides: RMIN floors that divisor alone.
   z                    = sstd::clamp(z, ZCLIP, 1.0 - ZCLIP);
-  const auto [a, b, n] = shape(chi_e);
+  const auto [a, b, n] = s;
   const auto c         = a - b - 1.0;
   // the quartic a u^4 + B u^2 + C u + D = 0 with z cleared from the denominator ...
   const auto B         = -b * (1.0 - z);
@@ -144,6 +150,12 @@ constexpr double
   const auto xn = (z < 0.998 or chi_e >= 0.1) ? sstd::pow(sstd::max(x, 0.0), 1.0 / n) : xser;
   const auto r  = x < 0.0 ? 1.0 : (1.0 - xn) * (1.0 - xn) * (1.0 - xn);  // negative x: round-off
   return sstd::clamp(r, 0.0, 1.0);
+}
+[[nodiscard]]
+constexpr double
+  r_of(const double z, const double chi_e)
+{
+  return r_of(z, shape(chi_e), chi_e);
 }
 
 /// Fraction of the emitted photons above the floor r_min: 1 - P(chi_e, r_min), or 0 when the
@@ -187,7 +199,8 @@ constexpr double
   // few decades below the photon energy scale r ~ chi_e; the sliver below the first node is
   // added in closed form.
   chi_e           = sstd::max(chi_e, 1e-12);       // zero field floored, as in shape()
-  const auto P0   = P(chi_e, r_min);               // cumulative at the floor
+  const auto s    = shape(chi_e);                  // one shape for every node
+  const auto P0   = P(s, r_min);                   // cumulative at the floor
   // first node, below the spectrum's scale
   auto r_lo       = sstd::max(r_min, 1e-7 * sstd::min(chi_e, 1.0));
   r_lo            = sstd::min(r_lo, 1.0 - 1e-12);
@@ -198,10 +211,10 @@ constexpr double
   for(auto i = 0; i <= n; ++i) {
     const auto r = sstd::exp(lr0 * (1.0 - static_cast<double>(i) / n));
     const auto w = (i == 0 or i == n) ? 1.0 : (i % 2 == 1 ? 4.0 : 2.0);
-    sum += w * (1.0 - P(chi_e, r)) * r;
+    sum += w * (1.0 - P(s, r)) * r;
   }
   const auto h    = -lr0 / n;
-  const auto tail = h / 3.0 * sum + (r_lo - r_min) * (1.0 - P(chi_e, r_lo));
+  const auto tail = h / 3.0 * sum + (r_lo - r_min) * (1.0 - P(s, r_lo));
   return r_min + tail / sstd::max(1.0 - P0, TINY);
 }
 
@@ -232,10 +245,11 @@ constexpr Products
   const auto us    = sstd::sqrt(sstd::max(gam * gam - 1.0, TINY));  // its momentum, to be rescaled
   const auto om    = u / us;                       // emission direction, along the momentum
   const auto chi_e = gam * b_perp;
+  const auto s     = shape(chi_e);
   // cumulative at the floor, 0 without one
-  const auto P0    = P(chi_e, r_floor(x_min, gam, kinetic));
+  const auto P0    = P(s, r_floor(x_min, gam, kinetic));
   // fraction drawn above the floor
-  const auto r     = r_of(P0 + (1.0 - P0) * rng.uniform(), chi_e);
+  const auto r     = r_of(P0 + (1.0 - P0) * rng.uniform(), s, chi_e);
   const auto x     = (kinetic ? gam - 1.0 : gam) * r;  // photon energy
   const auto gam1  = sstd::max(gam - x, 1.0);      // lepton energy after the emission
   return Products { x * om, om * sstd::sqrt(sstd::max(gam1 * gam1 - 1.0, 0.0)) };
