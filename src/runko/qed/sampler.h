@@ -212,6 +212,7 @@ private:
   thrust::device_vector<double> ev_q1_, ev_q2_, ev_q3_, ev_cs_;  // decision probabilities (update/kick/lepton count) and their scan
   thrust::device_vector<std::int32_t> ev_n1_, ev_n2_, ev_n3_, ev_cell_;  // the rounded decisions and the cell
   thrust::device_vector<runko::index_t> ev_perm_;                // cell-sorted order of unsorted events
+  thrust::device_vector<std::int32_t> ev_keys_;                  // their cells, sorted alongside
   thrust::device_vector<float> ev_p_;  // product momenta, 6 per event
   std::uint64_t istep_ { 0 };          // steps taken: the time index of the random streams
 

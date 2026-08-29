@@ -416,11 +416,12 @@ void
   } else {
     // the tail of a species is not cell-ordered: sort a permutation by cell first
     ev_perm_.resize(n);
-    auto keys = thrust::device_vector<std::int32_t>(cell, cell + static_cast<std::ptrdiff_t>(n));
+    ev_keys_.resize(n);
+    thrust::copy(w.on_this(), cell, cell + static_cast<std::ptrdiff_t>(n), ev_keys_.begin());
     thrust::copy(w.on_this(), ord0, ord0 + static_cast<std::ptrdiff_t>(n), ev_perm_.begin());
-    thrust::stable_sort_by_key(w.on_this(), keys.begin(), keys.end(), ev_perm_.begin());
+    thrust::stable_sort_by_key(w.on_this(), ev_keys_.begin(), ev_keys_.end(), ev_perm_.begin());
     const auto perm  = thrust::raw_pointer_cast(ev_perm_.data());   // event of sorted position i
-    const auto keys_p = thrust::raw_pointer_cast(keys.data());       // its cell
+    const auto keys_p = thrust::raw_pointer_cast(ev_keys_.data());   // its cell
     const auto qs    = thrust::make_transform_iterator(ord0, [=](const I i) { return q[perm[i]]; });
     // running sum in sorted order, then the counts written back to the events' own order
     thrust::inclusive_scan_by_key(
