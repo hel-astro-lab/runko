@@ -268,8 +268,10 @@ bool mpiio::SpectraWriter<3>::write_payload_(MPI_File fh, corgi::Grid<3>& grid)
     // Write each field: one contiguous block of nxt_*nbins_ floats
     for (int f = 0; f < num_fields_; f++) {
       const MPI_Offset field_base = hdr_size + f * field_bytes;
+      // the tile's row of nxt_ x-cells inside the (Nz, Ny, nx_global, nbins) block
       const MPI_Offset file_offset = field_base +
-          static_cast<MPI_Offset>((tk * Ny_ + tj) * nx_global_ + ti * nxt_ * nbins_ * static_cast<int>(sizeof(float)));
+          static_cast<MPI_Offset>((tk * Ny_ + tj) * nx_global_ + ti * nxt_) * nbins_
+            * static_cast<MPI_Offset>(sizeof(float));
 
       const int buf_offset = f * tile_row_elems;
 
