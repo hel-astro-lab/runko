@@ -17,8 +17,6 @@ from mpi4py import MPI
 
 from qed_diagnostics import QedDiagnostics
 
-LAMC_CM = 3.8615926796e-11   # reduced Compton wavelength, cm
-
 
 if __name__ == "__main__":
     comm = MPI.COMM_WORLD
@@ -42,7 +40,7 @@ if __name__ == "__main__":
     n_cells = conf.n_cells_per_tile[0]
     if conf.n_tiles != [n_t] * 3 or conf.n_cells_per_tile != [n_cells] * 3:
         raise RuntimeError("qed-pic needs a cubic grid of cubic tiles")
-    conf.qed_H_lamC = conf.H_cm / n_t / LAMC_CM      # tile edge in Compton wavelengths
+    conf.qed_H_lamC = conf.H_cm / n_t / runko.qed.LAMC_CM   # tile edge in Compton wavelengths
     dt_tile = conf.cfl / n_cells                     # step in crossings of a tile
     dt_box = dt_tile / n_t                           # and of the box
     conf.n_laps = int(round(conf.n_cross / dt_box))

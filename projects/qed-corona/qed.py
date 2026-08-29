@@ -12,30 +12,6 @@ import argparse
 import os
 import time
 
-LAMC_CM = 3.8615926796e-11   # reduced Compton wavelength, cm
-
-
-def sample_mj(theta, n, rng):
-    """Maxwell-Juettner momenta |p| at temperature theta (Pozdnyakov et al. / Sobol)"""
-    out = np.empty(n); k = 0
-    while k < n:
-        m = 2 * (n - k) + 10
-        if theta < 0.29:
-            xi1 = rng.random(m); xi2 = rng.random(m); xip = -1.5 * np.log(xi1)
-            acc = xi2 ** 2 < 0.151 * (1 + theta * xip) ** 2 * xip * (2 + theta * xip) * xi1
-            p = np.sqrt(theta * xip * (2 + theta * xip))[acc]
-        else:
-            xi = rng.random((m, 4))
-            eta = -theta * np.log(xi[:, 0] * xi[:, 1] * xi[:, 2]); zeta = -theta * np.log(np.prod(xi, 1))
-            p = eta[zeta ** 2 - eta ** 2 > 1]
-        take = min(len(p), n - k); out[k:k + take] = p[:take]; k += take
-    return out
-
-
-def iso_dirs(n, rng):
-    cz = -1 + 2 * rng.random(n); ph = 2 * np.pi * rng.random(n); sz = np.sqrt(1 - cz * cz)
-    return np.stack([sz * np.cos(ph), sz * np.sin(ph), cz], 1)
-
 
 if __name__ == "__main__":
     logger = runko.runko_logger()
@@ -50,7 +26,7 @@ if __name__ == "__main__":
 
     # --------------------------------------------------
     # The box: the tile edge in Compton wavelengths and the step in light crossings of it
-    conf.qed_H_lamC = conf.H_cm / LAMC_CM
+    conf.qed_H_lamC = conf.H_cm / runko.qed.LAMC_CM
     dt = conf.cfl / conf.n_cells_per_tile[0]
     conf.n_laps = int(round(conf.n_cross / dt))
     w_lep = conf.w0
@@ -79,8 +55,8 @@ if __name__ == "__main__":
         # Maxwell-Juettner pairs at the initial depth tau0, no photons
         npm = int(round(0.5 * conf.tau0 / w_lep))
         for s in ("e-", "e+"):
-            p = sample_mj(conf.theta0, npm, rng)
-            tile.set_particles(s, [tuple(v) for v in p[:, None] * iso_dirs(npm, rng)], [w_lep] * npm)
+            u = np.stack(runko.sample_boosted_juttner_synge(npm, conf.theta0, beta=0, gen=rng), 1)
+            tile.set_particles(s, [tuple(v) for v in u], [w_lep] * npm)
         tile.set_particles("ph", [], [])
         b = tile.box()
         x_grid = np.geomspace(1e-7, 1e-2, 11)
