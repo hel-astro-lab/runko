@@ -99,44 +99,6 @@ atomic_min(T* addr, T val) {
 }
 
 // =====================================================================
-// sin / cos — constexpr type-dispatched wrappers
-// =====================================================================
-
-template<typename T>
-constexpr auto
-sin(const T x) {
-    if constexpr (std::is_same_v<T, float>) {
-        return ::sinf(x);
-    } else {
-        return ::sin(x);
-    }
-}
-
-template<typename T>
-constexpr auto
-cos(const T x) {
-    if constexpr (std::is_same_v<T, float>) {
-        return ::cosf(x);
-    } else {
-        return ::cos(x);
-    }
-}
-
-// =====================================================================
-// sqrt — constexpr type-dispatched wrapper
-// =====================================================================
-
-template<typename T>
-constexpr auto
-sqrt(const T x) {
-    if constexpr (std::is_same_v<T, float>) {
-        return ::sqrtf(x);
-    } else {
-        return ::sqrt(x);
-    }
-}
-
-// =====================================================================
 // min / max — SIMD-friendly value-based min/max
 // =====================================================================
 // Using ternary instead of std::min/std::max to avoid reference
@@ -188,51 +150,9 @@ fmod(const T a, const T b) {
     }
 }
 
-// =====================================================================
-// floor — SIMD-friendly floor (FRINTM on ARM NEON)
-// =====================================================================
-
-template<typename T>
-constexpr auto
-floor(const T x) {
-    if constexpr (std::is_same_v<T, float>) {
-        return ::floorf(x);
-    } else {
-        return ::floor(x);
-    }
-}
 
 // =====================================================================
-// ceil — SIMD-friendly ceil (FRINTP on ARM NEON)
-// =====================================================================
-
-template<typename T>
-constexpr auto
-ceil(const T x) {
-    if constexpr (std::is_same_v<T, float>) {
-        return ::ceilf(x);
-    } else {
-        return ::ceil(x);
-    }
-}
-
-// =====================================================================
-// log10 — constexpr type-dispatched wrapper
-// =====================================================================
-
-template<typename T>
-constexpr auto
-log10(const T x) {
-    if constexpr (std::is_same_v<T, float>) {
-        return ::log10f(x);
-    } else {
-        return ::log10(x);
-    }
-}
-
-
-// =====================================================================
-// exp / log / log1p / expm1 / tanh / atanh / cbrt / pow — type-dispatched
+// the unary functions — type-dispatched (::name for double, ::namef for float); pow below
 // =====================================================================
 
 #define RUNKO_SSTD_UNARY(name)                       \
@@ -245,6 +165,12 @@ log10(const T x) {
     }                                                \
   }
 
+RUNKO_SSTD_UNARY(sin)
+RUNKO_SSTD_UNARY(cos)
+RUNKO_SSTD_UNARY(sqrt)
+RUNKO_SSTD_UNARY(floor)
+RUNKO_SSTD_UNARY(ceil)
+RUNKO_SSTD_UNARY(log10)
 RUNKO_SSTD_UNARY(exp)
 RUNKO_SSTD_UNARY(log)
 RUNKO_SSTD_UNARY(log1p)
