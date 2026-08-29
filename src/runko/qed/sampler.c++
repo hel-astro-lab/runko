@@ -1389,6 +1389,7 @@ void
   const auto lay  = c.v[1].lay;
   const auto w    = tyvi::mdgrid_work {};
   const auto i0   = thrust::counting_iterator<I>(0);
+  const auto glo  = sstd::pow(gmin, 1.0 - p), ghi = sstd::pow(gmax, 1.0 - p);   // the cumulative of gamma^-p at the ends
   // one lane per pair: a uniform position, the two energies from the power law, isotropic
   thrust::for_each(w.on_this(), i0, i0 + static_cast<std::ptrdiff_t>(n), [=](const I i) {
     auto rng = runko::Rng { key, i };
@@ -1398,7 +1399,7 @@ void
     const auto cell    = lay.cell_of(pos[0], pos[1], pos[2]);
     for(auto sp = 1; sp <= 2; ++sp) {  // electron and positron at the same position: neutral
       const auto z   = rng.uniform();
-      const auto gam = sstd::pow(sstd::pow(gmin, 1.0 - p) + z * (sstd::pow(gmax, 1.0 - p) - sstd::pow(gmin, 1.0 - p)), 1.0 / (1.0 - p));   // inverse cumulative of gamma^-p
+      const auto gam = sstd::pow(glo + z * (ghi - glo), 1.0 / (1.0 - p));   // inverse cumulative of gamma^-p
       const auto u   = sstd::sqrt(gam * gam - 1.0) * iso_dir(rng);
       const auto k   = static_cast<std::size_t>(sstd::atomic_fetch_add(&cnt[c_staged], std::int32_t { 1 }));
       stg[k]         = staged_at(u, pos, wl, 1, cell, sp, 0);
