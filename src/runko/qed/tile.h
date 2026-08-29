@@ -35,13 +35,20 @@ private:
   std::vector<Pop> pops_;             // ph, e-, e+
   Sampler sampler_;                   // the Monte Carlo state of this tile
   double B0_ { 0.0 };                 // reference field in code units; 0: the uniform field of the box
-  thrust::device_vector<float> babs_;   // |B| per cell, for the tile's median field
-  thrust::device_vector<double> bsum_;  // summed B vector, for the tile's mean direction
+  // the tile field of self-absorption, summarized once per lap by interact(): the median |B|
+  // over the cells in units of B_Q and the mean direction
+  double b_tile_ { 0.0 };
+  Vec3 bhat_ { 0.0, 0.0, 1.0 };
+  bool summarized_ { false };
+  thrust::device_vector<float> babs_;   // |B| per cell, scratch of the median
 
   /// the containers, layouts and extent of this tile as the sampler takes them
   [[nodiscard]] TileView view();
-  /// the field the channels see this lap: uniform, or the lattice scaled to the critical field
+  /// the field the channels see: uniform, or the lattice scaled to the critical field with the
+  /// tile summary of the last interact() (of the first call if none ran)
   [[nodiscard]] FieldView field_view();
+  /// the median |B| and the mean direction of the lattice field
+  void summarize_field();
 
 public:
   /// Construct from the config. On top of the pic::Tile keys:

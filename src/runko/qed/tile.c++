@@ -129,30 +129,37 @@ FieldView
     return FieldView { .uniform = true, .b0 = b0, .bscale = 0.0, .b_tile = b0, .bhat = Vec3(0.0, 0.0, 1.0),
                        .at = this->EB_linear_1st_interpolator() };
   }
-  // the tile field of self-absorption: the median |B| over the cells and the mean direction
-  const auto bscale = b0 / B0_;
-  const auto Bmds = std::get<1>(this->yee_lattice_.view_EBJ_on_device());
-  const auto n1 = Bmds.extent(1), n2 = Bmds.extent(2);
-  babs_.resize(Bmds.extent(0) * n1 * n2);
-  bsum_.assign(3, 0.0);
-  const auto babs = thrust::raw_pointer_cast(babs_.data());
-  const auto bsum = thrust::raw_pointer_cast(bsum_.data());
-  tyvi::mdgrid_work {}
-    .for_each_index(Bmds, [=](const auto idx) {
-      const auto bx = Bmds[idx][0], by = Bmds[idx][1], bz = Bmds[idx][2];
-      babs[(idx[0] * n1 + idx[1]) * n2 + idx[2]] = sstd::sqrt(bx * bx + by * by + bz * bz);
-      sstd::atomic_add(&bsum[0], static_cast<double>(bx));
-      sstd::atomic_add(&bsum[1], static_cast<double>(by));
-      sstd::atomic_add(&bsum[2], static_cast<double>(bz));
-    })
-    .wait();
-  thrust::sort(babs_.begin(), babs_.end());
-  const auto b_tile = bscale * static_cast<double>(babs_[babs_.size() / 2]);
-  auto bhat         = Vec3(bsum_[0], bsum_[1], bsum_[2]);
-  const auto nb     = toolbox::norm(bhat);
-  bhat              = nb > 0.0 ? bhat / nb : Vec3(0.0, 0.0, 1.0);
-  return FieldView { .uniform = false, .b0 = b0, .bscale = bscale, .b_tile = b_tile, .bhat = bhat,
+  if(not summarized_) { summarize_field(); }
+  return FieldView { .uniform = false, .b0 = b0, .bscale = b0 / B0_, .b_tile = b0 / B0_ * b_tile_, .bhat = bhat_,
                      .at = this->EB_linear_1st_interpolator() };
+}
+
+template<std::size_t D>
+void
+  Tile<D>::summarize_field()
+{
+  using I = runko::index_t;
+  const auto Bmds = std::get<1>(this->yee_lattice_.view_EBJ_on_device());
+  const auto n1 = static_cast<I>(Bmds.extent(1)), n2 = static_cast<I>(Bmds.extent(2));
+  const auto n  = static_cast<I>(Bmds.extent(0)) * n1 * n2;
+  // the field of cell f in flat order
+  const auto at = [=](const I f) {
+    const auto i = f / (n1 * n2), j = (f / n2) % n1, k = f % n2;
+    return Vec3(static_cast<double>(Bmds[i, j, k][0]), static_cast<double>(Bmds[i, j, k][1]), static_cast<double>(Bmds[i, j, k][2]));
+  };
+  const auto w  = tyvi::mdgrid_work {};
+  const auto f0 = thrust::counting_iterator<I>(0);
+  // |B| per cell for the median, in code units; the summed vector for the direction
+  babs_.resize(static_cast<std::size_t>(n));
+  const auto babs = thrust::raw_pointer_cast(babs_.data());
+  thrust::for_each(w.on_this(), f0, f0 + n, [=](const I f) { babs[f] = static_cast<float>(toolbox::norm(at(f))); });
+  const auto bsum = thrust::transform_reduce(w.on_this(), f0, f0 + n, at, Vec3(0.0, 0.0, 0.0), [](const Vec3& a, const Vec3& b) { return a + b; });
+  w.wait();
+  thrust::sort(babs_.begin(), babs_.end());
+  b_tile_       = static_cast<double>(babs_[babs_.size() / 2]);
+  const auto nb = toolbox::norm(bsum);
+  bhat_         = nb > 0.0 ? bsum / nb : Vec3(0.0, 0.0, 1.0);
+  summarized_   = true;
 }
 
 template<std::size_t D>
@@ -199,6 +206,7 @@ template<std::size_t D>
 void
   Tile<D>::interact()
 {
+  if(B0_ > 0.0 and sampler_.box.b_perp() > 0.0) { summarize_field(); }   // the lattice moved since the last lap
   auto t = view();
   // the products take ids from the next free one of their species; the step reports how many
   for(auto s = 0uz; s < 3uz; ++s) { t.id_base[s] = this->reserve_ids(sp_[s], 0); }
