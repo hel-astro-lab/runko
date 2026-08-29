@@ -14,95 +14,21 @@ import unittest
 import numpy as np
 from scipy.special import kv
 import runko
+
+from tests.qed_test_helpers import (H, WL, make_tile, box_N1, set_pop, empty, iso_dirs, spread, mono_pop, state,
+                                    totals, CheckMixin)
+
+
 ph = runko.qed.physics
 
-WL = 1e-3
-H_SSA = 4.111e9      # ell_B = 10 -> b_perp = 1e-3
-NC = 64
 
-
-def make(seed, dt, H, ell_B, x_min=0.0, channels=None, acc_syn=3.0, nbin=8):
-    c = runko.Configuration(None)
-    c.n_tiles = [1, 1, 1]
-    c.n_cells_per_tile = [NC, NC, NC]
-    c.cfl = dt * NC
-    c.field_propagator = "fdtd2"
-    c.q0, c.m0, c.w0 = -1, 1, WL
-    c.q1, c.m1, c.w1 = 1, 1, WL
-    c.q2, c.m2 = 0, 0
-    c.particle_pusher = "boris"
-    c.field_interpolator = "linear_1st"
-    c.current_depositer = "zigzag_1st"
-    c.qed_H_lamC = H
-    c.qed_ell_B = ell_B
-    c.qed_x_min = x_min
-    c.qed_nbin, c.qed_nsort, c.qed_slack, c.qed_smin = nbin, 1, 0.1, 4
-    c.qed_a_res, c.qed_x_ref = 0.0, 1e-2
-    c.qed_acc_syn = acc_syn
-    c.qed_seed = seed
-    if channels:
-        c.qed_channels = list(channels)
-    t = runko.qed.threeD.Tile((0, 0, 0), c)
-    zero = lambda x, y, z: (0, 0, 0)
-    t.set_EBJ(zero, zero, zero)
-    return t
-
-
-def box_N1(seed, N1, ell_B=10.0, H=H_SSA, x_min=0.0, **kw):
-    """the box whose one-body clock is N1: the step follows from the size"""
-    return make(seed, 1.0 / (ph.ALPHA * N1 * H), H, ell_B, x_min, **kw)
-
-
-def rows(u):
-    return [tuple(map(float, v)) for v in np.asarray(u).reshape(-1, 3)]
-
-
-def set_pop(t, s, u, w):
-    t.set_particles(s, rows(u), [float(x) for x in np.asarray(w)])
-
-
-def empty(t, species):
-    for s in species:
-        t.set_particles(s, [], [])
-
-
-def iso_dirs(n, rng):
-    cz = -1 + 2 * rng.random(n); phi = 2 * np.pi * rng.random(n); sz = np.sqrt(1 - cz * cz)
-    return np.stack([sz * np.cos(phi), sz * np.sin(phi), cz], 1)
-
-
-def spread(n, rng):
-    return WL * np.exp(rng.uniform(np.log(0.3), np.log(3.0), n))
-
-
-def mono_pop(n, e, mass, rng):
-    p = np.sqrt(max(e * e - mass * mass, 0.0)) if mass > 0 else e
-    return p * iso_dirs(n, rng), (WL * np.ones(n) if mass > 0 else spread(n, rng))
-
-
-def state(t, s):
-    m = 0.0 if s == "ph" else 1.0
-    vx, vy, vz = (np.asarray(a) for a in t.get_velocities(t.species(s)))
-    u = np.stack([vx, vy, vz], 1)
-    return u, np.sqrt(m * m + np.sum(u * u, 1)), np.asarray(t.get_weights(t.species(s)))
-
-
-def totals(t):
-    tt = {s: t.totals(s) for s in ("ph", "e-", "e+")}
-    return tt, sum(v["E"] for v in tt.values())
-
-
-class qed_onebody(unittest.TestCase):
-
-    def check(self, name, pred, meas, tol):
-        err = abs(meas - pred) / (abs(pred) if pred != 0 else 1.0)
-        self.assertLessEqual(err, tol, f"{name}: predicted {pred:.5g}, measured {meas:.5g}, tol {tol}")
+class qed_onebody(CheckMixin, unittest.TestCase):
 
     # ================================================================== test 9: self-absorption
     def test9_self_absorption(self):
         dt, ell_B, x_min = 2e-3, 10.0, 1e-2
         g0, Nph, Ne, nseed = 10.0, 4000, 1500, 16
-        b = float(ph.b_from_ellB(ell_B, H_SSA))
+        b = float(ph.b_from_ellB(ell_B, H))
         # ---- the rate against the classical closed form, at gammas where its 1/gamma^2 correction is
         # below the accuracy of the fitted synchrotron functions
         bc = 1e-10
@@ -117,12 +43,12 @@ class qed_onebody(unittest.TestCase):
         xc = 1.5 * g0 * g0 * b
         x = xc * np.exp(rng.uniform(np.log(0.05), np.log(5.0), Nph))
         uph, wph = x[:, None] * iso_dirs(Nph, rng), spread(Nph, rng)
-        base = make(1, dt, H_SSA, ell_B, x_min, channels=["ssa-"])
+        base = make_tile(1, dt, ell_B=ell_B, x_min=x_min, channels=["ssa-"])
         set_pop(base, "ph", uph, wph); set_pop(base, "e-", ue, we); empty(base, ["e+"])
         exp = base.pair_sum("ssa-", True)
         meas, nev = [], []
         for sd in range(nseed):
-            t = make(1 + 100 * sd, dt, H_SSA, ell_B, x_min, channels=["ssa-"])
+            t = make_tile(1 + 100 * sd, dt, ell_B=ell_B, x_min=x_min, channels=["ssa-"])
             set_pop(t, "ph", uph, wph); set_pop(t, "e-", ue, we); empty(t, ["e+"])
             t.interact(); meas.append(t.moved()["ssa-"]); nev.append(t.counts()["ssa-"])
         meas = np.array(meas)
@@ -130,7 +56,7 @@ class qed_onebody(unittest.TestCase):
         self.assertGreater(meas.mean() / np.mean(nev) / WL, 1.0)  # merged: more weight than events x w_lep
         # ---- a long run: energy transfer, weight bookkeeping
         steps = 60
-        t = make(1, dt, H_SSA, ell_B, x_min, channels=["ssa-"])
+        t = make_tile(1, dt, ell_B=ell_B, x_min=x_min, channels=["ssa-"])
         set_pop(t, "ph", uph, wph); set_pop(t, "e-", ue, we); empty(t, ["e+"])
         t0, E0 = totals(t)
         for n in range(steps):
@@ -177,7 +103,7 @@ class qed_onebody(unittest.TestCase):
     def test10_synchrotron(self):
         g0, Ne, nseed = 30.0, 20000, 8
         N1r = 0.02                                   # resolved: lambda ~ 0.07 per lepton and step
-        b = float(ph.b_from_ellB(10.0, H_SSA)); chi = g0 * b
+        b = float(ph.b_from_ellB(10.0, H)); chi = g0 * b
         rng = np.random.default_rng(32)
         pop = mono_pop(Ne, g0, 1.0, rng)
         lam0 = float(ph.rate_syn(np.sqrt(g0 * g0 - 1), 0.0, 0.0, b, 0.0, False)) / N1r
@@ -248,7 +174,7 @@ class qed_onebody(unittest.TestCase):
 
     # ================================================================== test 11: magnetic pair production
     def bw_box(self, seed, N1, x0, Nph, spread_x=1.0):
-        t = box_N1(seed, N1, ell_B=2.4323, H=1e5, channels=["bw"])
+        t = box_N1(seed, N1, ell_B=2.4323, H_lamC=1e5, channels=["bw"])
         rng = np.random.default_rng(seed + 17)
         x = x0 * (np.exp(rng.uniform(-np.log(spread_x), np.log(spread_x), Nph)) if spread_x > 1 else np.ones(Nph))
         set_pop(t, "ph", x[:, None] * iso_dirs(Nph, rng), spread(Nph, rng)); empty(t, ["e-", "e+"])

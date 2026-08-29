@@ -85,20 +85,11 @@ class photon_pusher(unittest.TestCase):
     def test_weights_survive_tile_communication(self):
         """photons crossing into the neighbouring tile keep their weights through pack/unpack"""
         import tempfile
-        config = runko.Configuration(None)
+        config, _ = make_tile()
         config.tile_partitioning = "catepillar_track"
         config.catepillar_track_length = 1
         config.n_laps = 1
         config.n_tiles = [2, 1, 1]
-        config.n_cells_per_tile = [8, 8, 8]
-        config.cfl = 0.45
-        config.field_propagator = "fdtd2"
-        config.q0, config.m0 = -1, 1
-        config.q1, config.m1 = 1, 1
-        config.q2, config.m2 = 0, 0
-        config.particle_pusher = "boris"
-        config.field_interpolator = "linear_1st"
-        config.current_depositer = "zigzag_1st"
         config.io_outdir = tempfile.mkdtemp(prefix="runko-photon-comm-")
         tile_grid = runko.TileGrid(config)
         rng = np.random.default_rng(3)

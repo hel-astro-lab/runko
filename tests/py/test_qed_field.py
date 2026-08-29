@@ -8,55 +8,29 @@ has the quantum parameter of the magnetic compactness qed_ell_B."""
 import unittest
 import numpy as np
 import runko
-from test_qed_onebody import iso_dirs, rows, set_pop, empty, state, box_N1, H_SSA, WL, NC
+from tests.qed_test_helpers import H, WL, NC, make_tile, iso_dirs, set_pop, empty, state, CheckMixin
 
 ph = runko.qed.physics
 
 
 def make(seed, N1, ell_B, B0, channels, Bz_of_x, acc_syn=0.0):
     """a tile whose lattice field is Bz(x) (code units), the channels reading it"""
-    dt = 1.0 / (ph.ALPHA * N1 * H_SSA)
-    c = runko.Configuration(None)
-    c.n_tiles = [1, 1, 1]
-    c.n_cells_per_tile = [NC, NC, NC]
-    c.cfl = dt * NC
-    c.field_propagator = "fdtd2"
-    c.q0, c.m0, c.w0 = -1, 1, WL
-    c.q1, c.m1, c.w1 = 1, 1, WL
-    c.q2, c.m2 = 0, 0
-    c.particle_pusher = "boris"
-    c.field_interpolator = "linear_1st"
-    c.current_depositer = "zigzag_1st"
-    c.qed_H_lamC = H_SSA
-    c.qed_ell_B = ell_B
-    c.qed_B0 = B0
-    c.qed_nbin, c.qed_nsort, c.qed_slack, c.qed_smin = 8, 1, 0.1, 4
-    c.qed_a_res, c.qed_x_ref = 0.0, 1e-2
-    c.qed_acc_syn = acc_syn
-    c.qed_seed = seed
-    c.qed_channels = list(channels)
-    t = runko.qed.threeD.Tile((0, 0, 0), c)
-    zero = lambda x, y, z: (0, 0, 0)
-    t.set_EBJ(zero, lambda x, y, z: (0, 0, Bz_of_x(x)), zero)
-    return t, dt
+    dt = 1.0 / (ph.ALPHA * N1 * H)
+    return make_tile(seed, dt, Bz=Bz_of_x, ell_B=ell_B, channels=channels, acc_syn=acc_syn, qed_B0=B0), dt
 
 
 def positions(t, s):
     return np.stack([np.asarray(a) for a in t.get_positions(t.species(s))], 1)
 
 
-class qed_field(unittest.TestCase):
-
-    def check(self, name, pred, meas, tol):
-        err = abs(meas - pred) / (abs(pred) if pred != 0 else 1.0)
-        self.assertLessEqual(err, tol, f"{name}: predicted {pred:.5g}, measured {meas:.5g}, tol {tol}")
+class qed_field(CheckMixin, unittest.TestCase):
 
     def test_emission_follows_the_local_field(self):
         """gamma = 30 leptons, isotropic, in a lattice whose Bz is B0 for x < NC/2 and B0/4 beyond:
         each lepton emits at the rate of its own b_eff = b0 |beta x B|/B0, so the emission
         counted per half agrees with the per-lepton expectation of that half"""
         g0, N1, B0, ell_B = 30.0, 0.02, 2.0, 10.0
-        b0 = float(ph.b_from_ellB(ell_B, H_SSA))
+        b0 = float(ph.b_from_ellB(ell_B, H))
         rng = np.random.default_rng(3)
         n = 20000
         u = np.sqrt(g0 * g0 - 1) * iso_dirs(n, rng)

@@ -19,36 +19,11 @@ from scipy.integrate import quad, solve_ivp
 from scipy.optimize import brentq
 import runko
 
-WL = 1e-3          # lepton LP weight, Thomson depths
-H = 4.111e9        # tile edge in Compton wavelengths
-NC = 64            # cells per tile edge; dt = cfl/NC crossings
+from tests.qed_test_helpers import (WL, make_tile, rows, set_pop, iso_dirs, mj_momenta, spread, mono_pop,
+                                    CheckMixin)
 
 
 # ======================================================================================= helpers
-def make(seed, dt=5e-3, channels=None, nbin=8, nsort=1, slack=0.1, a_res=0.0, x_ref=1e-2):
-    c = runko.Configuration(None)
-    c.n_tiles = [1, 1, 1]
-    c.n_cells_per_tile = [NC, NC, NC]
-    c.cfl = dt * NC
-    c.field_propagator = "fdtd2"
-    c.q0, c.m0, c.w0 = -1, 1, WL
-    c.q1, c.m1, c.w1 = 1, 1, WL
-    c.q2, c.m2 = 0, 0
-    c.particle_pusher = "boris"
-    c.field_interpolator = "linear_1st"
-    c.current_depositer = "zigzag_1st"
-    c.qed_H_lamC = H
-    c.qed_nbin, c.qed_nsort, c.qed_slack, c.qed_smin = nbin, nsort, slack, 4
-    c.qed_a_res, c.qed_x_ref = a_res, x_ref
-    c.qed_seed = seed
-    if channels:
-        c.qed_channels = list(channels)
-    t = runko.qed.threeD.Tile((0, 0, 0), c)
-    zero = lambda x, y, z: (0, 0, 0)
-    t.set_EBJ(zero, zero, zero)
-    return t
-
-
 def N2(dt):
     return 1.0 / dt
 
@@ -61,53 +36,22 @@ def set_pop(t, s, u, w):
     t.set_particles(s, rows(u), [float(x) for x in np.asarray(w)])
 
 
-def iso_dirs(n, rng):
-    cz = -1 + 2 * rng.random(n); ph = 2 * np.pi * rng.random(n); sz = np.sqrt(1 - cz * cz)
-    return np.stack([sz * np.cos(ph), sz * np.sin(ph), cz], 1)
-
-
 def iso_pairs(n, rng):
     v = iso_dirs(n // 2, rng)
     return np.concatenate([v, -v])
 
 
-def sample_mj(theta, n, rng):
-    """Maxwell-Juettner momenta at temperature theta (Pozdnyakov et al. / Sobol)"""
-    out = np.empty(n); k = 0
-    while k < n:
-        m = 2 * (n - k) + 10
-        if theta < 0.29:
-            xi1 = rng.random(m); xi2 = rng.random(m); xip = -1.5 * np.log(xi1)
-            acc = xi2 ** 2 < 0.151 * (1 + theta * xip) ** 2 * xip * (2 + theta * xip) * xi1
-            p = np.sqrt(theta * xip * (2 + theta * xip))[acc]
-        else:
-            xi = rng.random((m, 4))
-            eta = -theta * np.log(xi[:, 0] * xi[:, 1] * xi[:, 2]); zeta = -theta * np.log(np.prod(xi, 1))
-            p = eta[zeta ** 2 - eta ** 2 > 1]
-        take = min(len(p), n - k); out[k:k + take] = p[:take]; k += take
-    return out
-
-
-def spread(n, rng):
-    return WL * np.exp(rng.uniform(np.log(0.3), np.log(3.0), n))
-
-
 def mj_pop(n, theta, rng):
+    """Maxwell-Juettner leptons in momentum-balanced pairs"""
     n -= n % 2
-    p = sample_mj(theta, n // 2, rng); p = np.concatenate([p, p])
-    return p[:, None] * iso_pairs(n, rng), WL * np.ones(n)
+    u = mj_momenta(n // 2, theta, rng)
+    return np.concatenate([u, -u]), WL * np.ones(n)
 
 
 def wien_pop(n, theta, rng):
     n -= n % 2
     x = rng.gamma(3.0, theta, n // 2); x = np.concatenate([x, x])
     return x[:, None] * iso_pairs(n, rng), spread(n, rng)
-
-
-def mono_pop(n, e, mass, rng, w=None):
-    p = np.sqrt(max(e * e - mass * mass, 0.0)) if mass > 0 else e
-    ww = (WL * np.ones(n) if mass > 0 else spread(n, rng)) if w is None else w * np.ones(n)
-    return p * iso_dirs(n, rng), ww
 
 
 def init_pairs(t, Nph, Npm, th_ph, th_pm, rng):
@@ -124,7 +68,7 @@ def energies(t, s):
 
 def thermostat(t, s, theta, rng):
     n = int(t.totals(s)["N"])
-    t.reset_momenta(s, rows(sample_mj(theta, n, rng)[:, None] * iso_dirs(n, rng)))
+    t.reset_momenta(s, rows(mj_momenta(n, theta, rng)))
 
 
 def reset_photons(t, x, rng):
@@ -177,8 +121,7 @@ def rate_ann(um, up):
 
 
 def mj_ann_average(theta, rng, n=400000):
-    pm = sample_mj(theta, n, rng); pp = sample_mj(theta, n, rng)
-    return float(np.mean(2 * rate_ann(pm[:, None] * iso_dirs(n, rng), pp[:, None] * iso_dirs(n, rng))))
+    return float(np.mean(2 * rate_ann(mj_momenta(n, theta, rng), mj_momenta(n, theta, rng))))
 
 
 def sigma_gg(q):
@@ -198,21 +141,17 @@ def rho_gg(x1, x2):
 
 
 # ======================================================================================= tests
-class qed_twobody(unittest.TestCase):
-
-    def check(self, name, pred, meas, tol):
-        err = abs(meas - pred) / (abs(pred) if pred != 0 else 1.0)
-        self.assertLessEqual(err, tol, f"{name}: predicted {pred:.5g}, measured {meas:.5g}, tol {tol}")
+class qed_twobody(CheckMixin, unittest.TestCase):
 
     def test8_rate_exactness(self):
         """first-step event counts against the exact pair sum, for several steps"""
         Nph, Npm, nseed = 8000, 2000, 60  # the seed mean is good to 0.7 %
         for dt in (1e-2, 5e-3, 2e-3):
-            base = make(1, dt=dt); init_pairs(base, Nph, Npm, 0.05, 2.0, np.random.default_rng(1))
+            base = make_tile(1, dt=dt); init_pairs(base, Nph, Npm, 0.05, 2.0, np.random.default_rng(1))
             exp = sum(base.pair_sum(c) for c in ("compton-", "compton+", "pairann", "photann"))
             meas = []
             for sd in range(nseed):
-                t = make(1 + 100 * sd, dt=dt); init_pairs(t, Nph, Npm, 0.05, 2.0, np.random.default_rng(1))
+                t = make_tile(1 + 100 * sd, dt=dt); init_pairs(t, Nph, Npm, 0.05, 2.0, np.random.default_rng(1))
                 t.interact(); meas.append(sum(t.counts().values()))
             meas = np.array(meas)
             self.check(f"events/expected dt={dt:.0e} (+- {meas.std()/np.sqrt(nseed)/exp:.3f})", 1.0, meas.mean() / exp, 0.03)
@@ -222,7 +161,7 @@ class qed_twobody(unittest.TestCase):
         beta, steps, Nph, Npm = 0.5, 3000, 8000, 2000
         dt = 5e-3
         rng = np.random.default_rng(1)
-        t = make(1, dt=dt)
+        t = make_tile(1, dt=dt)
         bvec = np.array([0.0, 0.0, beta]); G = 1 / np.sqrt(1 - beta * beta)
         u, w = wien_pop(Nph, 0.05, rng); _, u = boost(-bvec, np.linalg.norm(u, axis=1), u); set_pop(t, "ph", u, w)
         for s in ("e-", "e+"):
@@ -248,7 +187,7 @@ class qed_twobody(unittest.TestCase):
         self.check("|dE|/E0", 0.0, rec["dE"].max(), 0.03)
 
     def compton_box(self, seed, uph, wph, Ne, theta, dt=5e-3):
-        t = make(seed, dt=dt, channels=["compton-"])
+        t = make_tile(seed, dt=dt, channels=["compton-"])
         rng = np.random.default_rng(seed + 3)
         set_pop(t, "ph", uph, wph); u, w = mj_pop(Ne, theta, rng); set_pop(t, "e-", u, w)
         set_pop(t, "e+", np.zeros((0, 3)), np.zeros(0))
@@ -298,7 +237,7 @@ class qed_twobody(unittest.TestCase):
         xmean = 3 * theta
         rng = np.random.default_rng(24)
         ue, we = mono_pop(Ne, g0, 1.0, rng); uph, wph = wien_pop(Nph, theta, rng)
-        t = make(1, dt=dt, channels=["compton-"]); set_pop(t, "ph", uph, wph); set_pop(t, "e-", ue, we)
+        t = make_tile(1, dt=dt, channels=["compton-"]); set_pop(t, "ph", uph, wph); set_pop(t, "e-", ue, we)
         set_pop(t, "e+", np.zeros((0, 3)), np.zeros(0))
         tau_step = wph.sum() / N2(dt); gm = []
         for n in range(steps + 1):
@@ -315,7 +254,7 @@ class qed_twobody(unittest.TestCase):
         Npm, steps = 4000, 200
         # (a) cold decay: W(n) = W_0/(1 + (3/8) W_0 n/N_2)
         rng = np.random.default_rng(32)
-        t = make(1, dt=dt, channels=["pairann"])
+        t = make_tile(1, dt=dt, channels=["pairann"])
         um, wm = mj_pop(Npm, 1e-3, rng); up, wp = mj_pop(Npm, 1e-3, rng)
         set_pop(t, "e-", um, wm); set_pop(t, "e+", up, wp); set_pop(t, "ph", np.zeros((0, 3)), np.zeros(0))
         W = []
@@ -327,7 +266,7 @@ class qed_twobody(unittest.TestCase):
         self.check("cold W(end)/W_th", 1.0, W[-1] / W_th[-1], 0.05)
         # the annihilation line at Theta = 0.01
         rng = np.random.default_rng(38); th = 0.01
-        t = make(1, dt=dt, channels=["pairann"])
+        t = make_tile(1, dt=dt, channels=["pairann"])
         um, wm = mj_pop(Npm, th, rng); up, wp = mj_pop(Npm, th, rng)
         set_pop(t, "e-", um, wm); set_pop(t, "e+", up, wp); set_pop(t, "ph", np.zeros((0, 3)), np.zeros(0))
         for n in range(60):
@@ -338,7 +277,7 @@ class qed_twobody(unittest.TestCase):
         # (b) thermal rates: leptons thermostatted while they deplete
         for th in (0.05, 0.2, 1.0):
             rng = np.random.default_rng(42)
-            t = make(1, dt=dt, channels=["pairann"])
+            t = make_tile(1, dt=dt, channels=["pairann"])
             um, wm = mj_pop(2 * Npm, th, rng); up, wp = mj_pop(2 * Npm, th, rng)
             set_pop(t, "e-", um, wm); set_pop(t, "e+", up, wp); set_pop(t, "ph", np.zeros((0, 3)), np.zeros(0))
             denom = 0.0
@@ -353,7 +292,7 @@ class qed_twobody(unittest.TestCase):
         x1, x2, n1, n2, steps = 0.6, 2.5, 6000, 6000, 300
         r12, r22 = rho_gg(x1, x2), rho_gg(x2, x2)
         rng = np.random.default_rng(44)
-        t = make(1, dt=dt, channels=["photann"])
+        t = make_tile(1, dt=dt, channels=["photann"])
         u1, w1 = mono_pop(n1, x1, 0.0, rng, w=WL); u2, w2 = mono_pop(n2, x2, 0.0, rng, w=WL)
         u1 *= (1 + 1e-3 * (rng.random(n1) - 0.5))[:, None]; u2 *= (1 + 1e-3 * (rng.random(n2) - 0.5))[:, None]
         set_pop(t, "ph", np.concatenate([u1, u2]), np.concatenate([w1, w2]))

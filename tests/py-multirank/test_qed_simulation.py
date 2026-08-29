@@ -11,8 +11,8 @@ import numpy as np
 from mpi4py import MPI
 
 import runko
+from tests.qed_test_helpers import WL, make_conf, rows, iso_dirs, mj_momenta, spread
 
-WL = 1e-3
 NC = 8
 
 
@@ -23,47 +23,14 @@ def broadcast_outdir():
 
 
 def make_grid(seed=1):
-    config = runko.Configuration(None)
+    # the closed-box species and sampler settings; no splitting: photon count and weight are conserved exactly
+    config = make_conf(seed, 0.45 / NC, nc=NC, nsort=5, slack=0.2, channels=["compton-", "compton+"])
     config.tile_partitioning = "catepillar_track"
     config.catepillar_track_length = 1
     config.n_laps = 20
     config.n_tiles = [2, 2, 2]
-    config.n_cells_per_tile = [NC, NC, NC]
-    config.cfl = 0.45
-    config.field_propagator = "fdtd2"
-    config.q0, config.m0, config.w0 = -1, 1, WL
-    config.q1, config.m1, config.w1 = 1, 1, WL
-    config.q2, config.m2 = 0, 0
-    config.particle_pusher = "boris"
-    config.field_interpolator = "linear_1st"
-    config.current_depositer = "zigzag_1st"
-    config.qed_H_lamC = 4.111e9
-    config.qed_nbin, config.qed_nsort, config.qed_slack, config.qed_smin = 8, 5, 0.2, 4
-    config.qed_a_res = 0.0                      # no splitting: photon count and weight are conserved exactly
-    config.qed_seed = seed
-    config.qed_channels = ["compton-", "compton+"]
     config.io_outdir = broadcast_outdir()
     return config, runko.TileGrid(config)
-
-
-def iso_dirs(n, rng):
-    cz = -1 + 2 * rng.random(n); ph = 2 * np.pi * rng.random(n); sz = np.sqrt(1 - cz * cz)
-    return np.stack([sz * np.cos(ph), sz * np.sin(ph), cz], 1)
-
-
-def sample_mj(theta, n, rng):
-    out = np.empty(n); k = 0
-    while k < n:
-        m = 2 * (n - k) + 10
-        xi = rng.random((m, 4))
-        eta = -theta * np.log(xi[:, 0] * xi[:, 1] * xi[:, 2]); zeta = -theta * np.log(np.prod(xi, 1))
-        p = eta[zeta ** 2 - eta ** 2 > 1]
-        take = min(len(p), n - k); out[k:k + take] = p[:take]; k += take
-    return out
-
-
-def rows(u):
-    return [tuple(map(float, v)) for v in np.asarray(u).reshape(-1, 3)]
 
 
 def totals(simulation):
@@ -85,10 +52,9 @@ def test_qed_across_tiles():
         tile.set_EBJ(zero, zero, zero)
         nph, npm = 2000, 400
         x = rng.gamma(3.0, 0.05, nph)
-        tile.set_particles("ph", rows(x[:, None] * iso_dirs(nph, rng)), list(WL * np.exp(rng.uniform(np.log(0.3), np.log(3.0), nph))))
+        tile.set_particles("ph", rows(x[:, None] * iso_dirs(nph, rng)), list(spread(nph, rng)))
         for s in ("e-", "e+"):
-            p = sample_mj(2.0, npm, rng)
-            tile.set_particles(s, rows(p[:, None] * iso_dirs(npm, rng)), [WL] * npm)
+            tile.set_particles(s, rows(mj_momenta(npm, 2.0, rng)), [WL] * npm)
         tile_grid.add_tile(tile, idx)
     simulation = tile_grid.configure_simulation(conf)
     t0 = totals(simulation)

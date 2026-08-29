@@ -10,47 +10,15 @@
 import unittest
 import numpy as np
 import runko
-from test_qed_twobody import (WL, H, NC, rows, set_pop, iso_dirs, spread, mj_pop, wien_pop, mono_pop,
-                              init_pairs, energies, thermostat, reset_photons, totals, mj_ann_average, rho_gg)
-from test_qed_onebody import box_N1 as box_N1_field, state, empty
+from tests.qed_test_helpers import (WL, H, make_tile, set_pop, iso_dirs, mj_momenta, mono_pop, box_N1, state, empty,
+                                    CheckMixin)
+from test_qed_twobody import (mj_pop, wien_pop, init_pairs, energies, thermostat, reset_photons, totals,
+                              mj_ann_average, rho_gg)
 
 ph = runko.qed.physics
-LAMC_CM = 3.8615926796e-11
 
 
-def make(seed, dt, H_lamC=H, w_lep=WL, ell_B=0.0, x_min=0.0, channels=None, nbin=8, nsort=1, slack=0.1,
-         a_res=0.0, x_ref=1e-2, kappa=0.1, acc_syn=3.0, smin=4, nsub_max=8):
-    c = runko.Configuration(None)
-    c.n_tiles = [1, 1, 1]
-    c.n_cells_per_tile = [NC, NC, NC]
-    c.cfl = dt * NC
-    c.field_propagator = "fdtd2"
-    c.q0, c.m0, c.w0 = -1, 1, w_lep
-    c.q1, c.m1, c.w1 = 1, 1, w_lep
-    c.q2, c.m2 = 0, 0
-    c.particle_pusher = "boris"
-    c.field_interpolator = "linear_1st"
-    c.current_depositer = "zigzag_1st"
-    c.qed_H_lamC = H_lamC
-    c.qed_ell_B = ell_B
-    c.qed_x_min = x_min
-    c.qed_nbin, c.qed_nsort, c.qed_slack, c.qed_smin = nbin, nsort, slack, smin
-    c.qed_a_res, c.qed_x_ref = a_res, x_ref
-    c.qed_kappa_acc, c.qed_acc_syn, c.qed_nsub_max = kappa, acc_syn, nsub_max
-    c.qed_seed = seed
-    if channels:
-        c.qed_channels = list(channels)
-    t = runko.qed.threeD.Tile((0, 0, 0), c)
-    zero = lambda x, y, z: (0, 0, 0)
-    t.set_EBJ(zero, zero, zero)
-    return t
-
-
-class qed_openbox(unittest.TestCase):
-
-    def check(self, name, pred, meas, tol):
-        err = abs(meas - pred) / (abs(pred) if pred != 0 else 1.0)
-        self.assertLessEqual(err, tol, f"{name}: predicted {pred:.5g}, measured {meas:.5g}, tol {tol}")
+class qed_openbox(CheckMixin, unittest.TestCase):
 
     # ================================================================== test 6: pair balance
     def test6_pair_balance(self):
@@ -64,7 +32,7 @@ class qed_openbox(unittest.TestCase):
         rho_ann = mj_ann_average(Theta, np.random.default_rng(7), 400000)
         for il, ell in enumerate((1.35, 4.05, 12.15)):
             rng = np.random.default_rng(52 + il)
-            t = make(1, dt, w_lep=wl)
+            t = make_tile(1, dt, w_lep=wl)
             um, _ = mj_pop(Ne0, Theta, rng); up, _ = mj_pop(Ne0, Theta, rng)
             set_pop(t, "e-", um, wl * np.ones(len(um))); set_pop(t, "e+", up, wl * np.ones(len(up)))
             ni = ell * dt / (3 * Theta * wl)          # injected photons per step at the weight w_lep
@@ -100,7 +68,7 @@ class qed_openbox(unittest.TestCase):
         same escape, and the direction histogram sums to the spectrum"""
         dt = 5e-3
         rng = np.random.default_rng(21)
-        tiles = [make(11, dt), make(11, dt)]
+        tiles = [make_tile(11, dt), make_tile(11, dt)]
         for t in tiles:
             init_pairs(t, 4000, 1000, 0.1, 1.0, np.random.default_rng(21))
             t.sort_particles()
@@ -117,7 +85,7 @@ class qed_openbox(unittest.TestCase):
         np.testing.assert_allclose(hmu.sum(1), h, rtol=1e-12)
         self.assertAlmostEqual(h.sum(), b0["esc_E"], delta=1e-9 * b0["esc_E"])
         # a smaller step in crossings escapes proportionally fewer
-        t = make(11, dt); init_pairs(t, 4000, 1000, 0.1, 1.0, np.random.default_rng(21)); t.sort_particles()
+        t = make_tile(11, dt); init_pairs(t, 4000, 1000, 0.1, 1.0, np.random.default_rng(21)); t.sort_particles()
         t.escape_photons(tau, dt / 4)
         self.assertLess(t.budget()["esc_W"], 0.5 * b0["esc_W"])
         t.reset_budget()
@@ -131,7 +99,7 @@ class qed_openbox(unittest.TestCase):
         for k in (1, 3, 10):
             # k times the weight on k times fewer LPs: the same physical box, hence the same evolution
             rng = np.random.default_rng(1)
-            t = make(1, dt, w_lep=k * WL)
+            t = make_tile(1, dt, w_lep=k * WL)
             u, w = wien_pop(8000 // k, 0.05, rng); set_pop(t, "ph", u, k * w)
             for s in ("e-", "e+"):
                 u, w = mj_pop(2000 // k, 2.0, rng); set_pop(t, s, u, k * w)
@@ -151,7 +119,7 @@ class qed_openbox(unittest.TestCase):
         a, xref, steps_b = 0.3, 1e-2, 1500
         bins = np.logspace(-2, 1.3, 25); cx = np.sqrt(bins[1:] * bins[:-1])
         rng = np.random.default_rng(1)
-        t = make(1, dt, a_res=a, x_ref=xref)
+        t = make_tile(1, dt, a_res=a, x_ref=xref)
         init_pairs(t, 8000, 2000, 0.05, 2.0, rng)
         hN = np.zeros(len(cx)); hW = np.zeros(len(cx))
         for n in range(steps_b + 1):
@@ -174,11 +142,9 @@ class qed_openbox(unittest.TestCase):
             wsc, dEl, nev = [], [], []
             for sd in range(nseed):
                 rng = np.random.default_rng(62 + sd)
-                t = make(1 + 100 * sd, dt, channels=["compton-"], kappa=kappa)
+                t = make_tile(1 + 100 * sd, dt, channels=["compton-"], kappa=kappa)
                 set_pop(t, "ph", x0 * iso_dirs(Nph, rng), 1e3 * WL * np.ones(Nph))
-                ue = np.array([0.0]); 
-                from test_qed_twobody import sample_mj
-                p = sample_mj(th, Ne, rng); set_pop(t, "e-", p[:, None] * iso_dirs(Ne, rng), WL * np.ones(Ne)); empty(t, ["e+"])
+                set_pop(t, "e-", mj_momenta(Ne, th, rng), WL * np.ones(Ne)); empty(t, ["e+"])
                 dE = 0.0
                 for n in range(nstep):
                     reset_photons(t, x0, rng); thermostat(t, "e-", th, rng)
@@ -186,10 +152,9 @@ class qed_openbox(unittest.TestCase):
                 wsc.append(t.moved()["compton-"] / nstep); dEl.append(dE / nstep); nev.append(t.counts()["compton-"] / nstep)
             out[kappa] = (np.mean(wsc), np.std(wsc) / np.sqrt(nseed), np.mean(dEl), np.std(dEl) / np.sqrt(nseed), np.mean(nev))
         rng = np.random.default_rng(62)
-        base = make(1, dt, channels=["compton-"], kappa=0.0)
+        base = make_tile(1, dt, channels=["compton-"], kappa=0.0)
         set_pop(base, "ph", x0 * iso_dirs(Nph, rng), 1e3 * WL * np.ones(Nph))
-        from test_qed_twobody import sample_mj
-        p = sample_mj(th, Ne, rng); set_pop(base, "e-", p[:, None] * iso_dirs(Ne, rng), WL * np.ones(Ne)); empty(base, ["e+"])
+        set_pop(base, "e-", mj_momenta(Ne, th, rng), WL * np.ones(Ne)); empty(base, ["e+"])
         exp_w = base.pair_sum("compton-", True)      # the weight the events move, independent of the merging
         m, p_ = out[0.1], out[0.0]
         self.assertLess(m[4], 0.5 * p_[4], "merging must cut the event count")
@@ -207,7 +172,7 @@ class qed_openbox(unittest.TestCase):
         pop = mono_pop(Ne2, g0, 1.0, rng)
         helper = qed_onebody()
         def box(seed):
-            t = box_N1_field(seed, N1, ell_B=10.0, H=H, x_min=xmin, channels=["syn-"], acc_syn=0.0)
+            t = box_N1(seed, N1, ell_B=10.0, H_lamC=H, x_min=xmin, channels=["syn-"], acc_syn=0.0)
             set_pop(t, "e-", pop[0], pop[1]); empty(t, ["e+", "ph"])
             return t
         nex, wex, eex = helper.syn_expected(box(1), b, N1, x_min=xmin, acc=0.0)
@@ -231,14 +196,13 @@ class qed_openbox(unittest.TestCase):
     def test12c_corona(self):
         """the hard state of Nattila (2024): ell_th = 7, ell_nth = 1 (slope 6 on 3 < gamma < 30), ell_B = 0.8;
         a short run only checks that the box is heading to its steady state"""
-        H_lamC, dt, n_cross = 9e6 / LAMC_CM, 1e-3, 3.0
+        H_lamC, dt, n_cross = 9e6 / runko.qed.LAMC_CM, 1e-3, 3.0
         ell_th, ell_nth, p_inj, g_inj = 7.0, 1.0, 6.0, (3.0, 30.0)
-        t = make(101, dt, H_lamC=H_lamC, ell_B=0.8, x_min=5e-6, nbin=16, nsort=10, slack=0.5, a_res=0.7, x_ref=1e-5)
+        t = make_tile(101, dt, H_lamC=H_lamC, ell_B=0.8, x_min=5e-6, nbin=16, nsort=10, slack=0.5, a_res=0.7, x_ref=1e-5)
         rng = np.random.default_rng(1)
-        from test_qed_twobody import sample_mj
         Npm = int(round(0.5 * 1.0 / WL))
         for s in ("e-", "e+"):
-            p = sample_mj(0.5, Npm, rng); set_pop(t, s, p[:, None] * iso_dirs(Npm, rng), WL * np.ones(Npm))
+            set_pop(t, s, mj_momenta(Npm, 0.5, rng), WL * np.ones(Npm))
         empty(t, ["ph"])
         self.assertGreater(t.tau_ssa(5e-6), 1.0, "the floor must sit below the unit SSA depth")
         steps = int(round(n_cross / dt)); nlate = int(0.75 * steps)
