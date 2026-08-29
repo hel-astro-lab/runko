@@ -224,9 +224,6 @@ bool mpiio::ParticlesWriter<3>::write_payload_(MPI_File fh, corgi::Grid<3>& grid
 
       // Pack all 12 fields into prtcl_buf_
       using vt = pic::ParticleContainer::value_type;
-      const auto mx = static_cast<vt>(tile.mins[0]);
-      const auto my = static_cast<vt>(tile.mins[1]);
-      const auto mz = static_cast<vt>(tile.mins[2]);
 
       const auto src_pos = container.pos_mds();
       const auto src_vel = container.vel_mds();
@@ -240,9 +237,9 @@ bool mpiio::ParticlesWriter<3>::write_payload_(MPI_File fh, corgi::Grid<3>& grid
         .for_each_index(dst_sub, [=](const auto idx) {
           const auto si = static_cast<std::size_t>(idx[0] * stride_t);
 
-          dst_sub[idx][0]  = src_pos[si][0] + mx;   // global x
-          dst_sub[idx][1]  = src_pos[si][1] + my;   // global y
-          dst_sub[idx][2]  = src_pos[si][2] + mz;   // global z
+          dst_sub[idx][0]  = src_pos[si][0];        // x (stored global)
+          dst_sub[idx][1]  = src_pos[si][1];        // y
+          dst_sub[idx][2]  = src_pos[si][2];        // z
           dst_sub[idx][3]  = src_vel[si][0];        // ux
           dst_sub[idx][4]  = src_vel[si][1];        // uy
           dst_sub[idx][5]  = src_vel[si][2];        // uz
