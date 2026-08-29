@@ -165,12 +165,17 @@ void mpiio::SpectraWriter<3>::histogram_tile(emf::Tile<3>& tile)
     const auto pos_mds = pic_tile->particles(static_cast<runko::index_t>(s)).pos_mds();
     const auto vel_mds = pic_tile->particles(static_cast<runko::index_t>(s)).vel_mds();
     const auto tag_mds = pic_tile->particles(static_cast<runko::index_t>(s)).ids_mds();
+    const auto wgt_mds = pic_tile->particles(static_cast<runko::index_t>(s)).wgt_mds();
+    const auto weighted = pic_tile->particles(static_cast<runko::index_t>(s)).has_particle_weights();
+    const auto w0 = static_cast<vt>(pic_tile->particles(static_cast<runko::index_t>(s)).weight());
 
     tyvi::mdgrid_work {}
       .for_each_index(
         pos_mds,
         [=](const auto idx) {
           const bool alive = tag_mds[idx][] != runko::dead_prtc_id;
+          // the deposit is the particle's weight (the species weight unless it carries its own)
+          const vt dep = alive ? (weighted ? wgt_mds[idx][] : w0) : vt{0};
         
           // particle x position -> x bin
           const auto px = pos_mds[idx][0] - mx;
@@ -200,10 +205,10 @@ void mpiio::SpectraWriter<3>::histogram_tile(emf::Tile<3>& tile)
           const auto ib_bz = bin(sstd::floor((uz * inv_gamma + vt{1}) * inv_dbeta));
 
           // unconditional atomic deposits
-          sstd::atomic_add(&thrust::raw_reference_cast(buf_mds[ix, ib_u ][base_field + 0]), static_cast<vt>(alive));
-          sstd::atomic_add(&thrust::raw_reference_cast(buf_mds[ix, ib_bx][base_field + 1]), static_cast<vt>(alive));
-          sstd::atomic_add(&thrust::raw_reference_cast(buf_mds[ix, ib_by][base_field + 2]), static_cast<vt>(alive));
-          sstd::atomic_add(&thrust::raw_reference_cast(buf_mds[ix, ib_bz][base_field + 3]), static_cast<vt>(alive));
+          sstd::atomic_add(&thrust::raw_reference_cast(buf_mds[ix, ib_u ][base_field + 0]), dep);
+          sstd::atomic_add(&thrust::raw_reference_cast(buf_mds[ix, ib_bx][base_field + 1]), dep);
+          sstd::atomic_add(&thrust::raw_reference_cast(buf_mds[ix, ib_by][base_field + 2]), dep);
+          sstd::atomic_add(&thrust::raw_reference_cast(buf_mds[ix, ib_bz][base_field + 3]), dep);
         })
       .wait();
   }
