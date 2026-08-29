@@ -43,13 +43,16 @@
 
 namespace pic {
 
+/// What a species is: photons move at c along their momentum, deposit no current and carry
+/// individual weights; everything else is a charged massive species.
+enum class SpeciesKind { charged, photon };
+
 struct ParticleContainerArgs {
   std::size_t N;
   double charge, mass;
   /// Common weight of the species (leptons, ions); 1 unless configured.
   double weight { 1 };
-  /// Species whose particles carry individual weights (photons).
-  bool per_particle_weights { false };
+  SpeciesKind kind { SpeciesKind::charged };
 };
 
 template<typename F, typename T>
@@ -86,7 +89,7 @@ private:
   double charge_;
   double mass_;
   double weight_;
-  bool per_particle_weights_;
+  SpeciesKind kind_;
 
   /// Reusable buffer for particle trackers.
   thrust::device_vector<runko::index_t> tracker_cache_;
@@ -169,7 +172,9 @@ public:
   std::vector<value_type> get_weights();
 
   [[nodiscard]] double weight() const { return weight_; }
-  [[nodiscard]] bool has_particle_weights() const { return per_particle_weights_; }
+  [[nodiscard]] SpeciesKind kind() const { return kind_; }
+  /// photons carry a weight per particle; the other species share the species weight
+  [[nodiscard]] bool has_particle_weights() const { return kind_ == SpeciesKind::photon; }
 
   [[nodiscard]]
   auto pos_mds() const
@@ -390,14 +395,14 @@ template<std::ranges::forward_range R>
     this->charge_               = args.charge;
     this->mass_                 = args.mass;
     this->weight_               = args.weight;
-    this->per_particle_weights_ = args.per_particle_weights;
+    this->kind_                 = args.kind;
 
     const auto consistent_given_charge_n_mass =
       rn::all_of(spans, [this](const auto& span) {
         const auto args = span.container->args();
         return this->charge_ == args.charge and this->mass_ == args.mass and
                this->weight_ == args.weight and
-               this->per_particle_weights_ == args.per_particle_weights;
+               this->kind_ == args.kind;
       });
     if(not consistent_given_charge_n_mass) {
       throw std::runtime_error {
@@ -433,13 +438,13 @@ template<std::ranges::forward_range R>
   this->pos_.resize(Ntotal);
   this->vel_.resize(Ntotal);
   this->ids_.resize(Ntotal);
-  if(this->per_particle_weights_) { this->wgt_.resize(Ntotal); }
+  if(this->has_particle_weights()) { this->wgt_.resize(Ntotal); }
 
   const auto pos_mds = this->pos_.mds();
   const auto vel_mds = this->vel_.mds();
   const auto ids_mds = this->ids_.mds();
   const auto wgt_mds = this->wgt_.mds();
-  const auto weighted = this->per_particle_weights_;
+  const auto weighted = this->has_particle_weights();
 
   const auto handle_span = [&](
                              tyvi::mdgrid_work& w,
@@ -581,14 +586,14 @@ inline void
   this->pos_.resize(Pnum + Ntotal);
   this->vel_.resize(Pnum + Ntotal);
   this->ids_.resize(Pnum + Ntotal);
-  if(this->per_particle_weights_) { this->wgt_.resize(Pnum + Ntotal); }
+  if(this->has_particle_weights()) { this->wgt_.resize(Pnum + Ntotal); }
 
   // 3.
   const auto pos_mds  = this->pos_.mds();
   const auto vel_mds  = this->vel_.mds();
   const auto ids_mds  = this->ids_.mds();
   const auto wgt_mds  = this->wgt_.mds();
-  const auto weighted = this->per_particle_weights_;
+  const auto weighted = this->has_particle_weights();
 
   for(auto n = 0uz; n < spans.size(); ++n) {
     const auto n_span   = spans[n];
@@ -767,7 +772,7 @@ inline void
     this->tracker_cache_.end(),
     p,
     vel2.begin());
-  if(this->per_particle_weights_) {
+  if(this->has_particle_weights()) {
     std::ignore = thrust::copy(w.on_this(), wgt.begin(), wgt.end(), p);
     std::ignore = thrust::gather(
       w.on_this(),

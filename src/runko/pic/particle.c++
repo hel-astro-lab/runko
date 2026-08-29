@@ -31,11 +31,11 @@ ParticleContainer::ParticleContainer(const ParticleContainerArgs args) :
   pos_(args.N),
   vel_(args.N),
   ids_(args.N),
-  wgt_(args.per_particle_weights ? args.N : 0uz),
+  wgt_(args.kind == SpeciesKind::photon ? args.N : 0uz),
   charge_ { args.charge },
   mass_ { args.mass },
   weight_ { args.weight },
-  per_particle_weights_ { args.per_particle_weights }
+  kind_ { args.kind }
 {
 }
 
@@ -52,7 +52,7 @@ void
   this->pos_.resize(N);
   this->vel_.resize(N);
   this->ids_.resize(N);
-  if(this->per_particle_weights_) { this->wgt_.resize(N); }
+  if(this->has_particle_weights()) { this->wgt_.resize(N); }
 
   // Only the id distinguishes a dead slot. Pushers, depositors, and reflectors
   // early-return on id == dead_prtc_id, so pos_ and vel_ are never read for
@@ -95,7 +95,7 @@ ParticleContainerArgs
            .charge               = charge_,
            .mass                 = mass_,
            .weight               = weight_,
-           .per_particle_weights = per_particle_weights_ };
+           .kind                 = kind_ };
 }
 
 std::array<std::vector<ParticleContainer::value_type>, 3>
@@ -193,7 +193,7 @@ std::vector<ParticleContainer::value_type>
   auto host_ids = runko::host_scalar_segments<runko::prtc_id_type>(this->size());
   tyvi::copy_d2h(this->ids_, host_ids);
   auto host_wgt = runko::host_scalar_segments<value_type>(this->wgt_.size());
-  if(this->per_particle_weights_) { tyvi::copy_d2h(this->wgt_, host_wgt); }
+  if(this->has_particle_weights()) { tyvi::copy_d2h(this->wgt_, host_wgt); }
 
   auto tmp = std::vector<value_type>(this->size());
 
@@ -203,7 +203,7 @@ std::vector<ParticleContainer::value_type>
   for(const auto [i]: tyvi::sstd::index_space(idmds)) {
     if(idmds[i][] == runko::dead_prtc_id) { continue; }
 
-    tmp[n] = this->per_particle_weights_ ? wmds[i][] : static_cast<value_type>(weight_);
+    tmp[n] = this->has_particle_weights() ? wmds[i][] : static_cast<value_type>(weight_);
     ++n;
   }
 
@@ -226,7 +226,7 @@ void
   auto vel_new = runko::device_vec_segments<value_type>(total);
   auto ids_new = runko::device_scalar_segments<runko::prtc_id_type>(total);
   auto wgt_new =
-    runko::device_scalar_segments<value_type>(this->per_particle_weights_ ? total : 0uz);
+    runko::device_scalar_segments<value_type>(this->has_particle_weights() ? total : 0uz);
 
   const auto w        = tyvi::mdgrid_work {};
   const auto ids_span = ids_new.component_view<>();
@@ -241,7 +241,7 @@ void
   const auto vel_out  = vel_new.mds();
   const auto ids_out  = ids_new.mds();
   const auto wgt_out  = wgt_new.mds();
-  const auto weighted = this->per_particle_weights_;
+  const auto weighted = this->has_particle_weights();
   const auto slot_p   = thrust::raw_pointer_cast(slots.data());
 
   tyvi::mdgrid_work {}
@@ -273,7 +273,7 @@ void
   this->pos_.resize(old + n);
   this->vel_.resize(old + n);
   this->ids_.resize(old + n);
-  if(this->per_particle_weights_) { this->wgt_.resize(old + n); }
+  if(this->has_particle_weights()) { this->wgt_.resize(old + n); }
 
   const auto w        = tyvi::mdgrid_work {};
   const auto ids_span = this->ids_.component_view<>();
@@ -342,7 +342,7 @@ std::map<runko::grid_neighbor<3>, std::pair<std::size_t, std::size_t>>
   const auto vel_mds  = this->vel_.mds();
   const auto ids_mds  = this->ids_.mds();
   const auto wgt_mds  = this->wgt_.mds();
-  const auto weighted = this->per_particle_weights_;
+  const auto weighted = this->has_particle_weights();
   const auto w0       = static_cast<value_type>(this->weight_);
 
   const auto coords_to_subregion_index = [=](const auto x, const auto y, const auto z) {
@@ -503,12 +503,12 @@ ParticleContainer::ParticleContainer(const ParticleContainer& other)
   tyvi::copy_d2d(other.pos_, this->pos_);
   tyvi::copy_d2d(other.vel_, this->vel_);
   tyvi::copy_d2d(other.ids_, this->ids_);
-  if(other.per_particle_weights_) { tyvi::copy_d2d(other.wgt_, this->wgt_); }
+  if(other.has_particle_weights()) { tyvi::copy_d2d(other.wgt_, this->wgt_); }
 
   this->charge_               = other.charge_;
   this->mass_                 = other.mass_;
   this->weight_               = other.weight_;
-  this->per_particle_weights_ = other.per_particle_weights_;
+  this->kind_ = other.kind_;
 }
 
 
@@ -518,12 +518,12 @@ ParticleContainer&
   tyvi::copy_d2d(other.pos_, this->pos_);
   tyvi::copy_d2d(other.vel_, this->vel_);
   tyvi::copy_d2d(other.ids_, this->ids_);
-  if(other.per_particle_weights_) { tyvi::copy_d2d(other.wgt_, this->wgt_); }
+  if(other.has_particle_weights()) { tyvi::copy_d2d(other.wgt_, this->wgt_); }
 
   this->charge_               = other.charge_;
   this->mass_                 = other.mass_;
   this->weight_               = other.weight_;
-  this->per_particle_weights_ = other.per_particle_weights_;
+  this->kind_ = other.kind_;
 
   return *this;
 }

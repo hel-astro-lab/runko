@@ -44,12 +44,12 @@ void
       const auto [q, m] = qm;
       const auto w      = conf.get<double>(w_label).value_or(1.0);
 
-      // a massless species (photons) carries per-particle weights
-      return pic::ParticleContainerArgs { .N                    = 0,
-                                          .charge               = q,
-                                          .mass                 = m,
-                                          .weight               = w,
-                                          .per_particle_weights = (m == 0.0) };
+      // a massless species is the photons
+      return pic::ParticleContainerArgs { .N      = 0,
+                                          .charge = q,
+                                          .mass   = m,
+                                          .weight = w,
+                                          .kind   = m == 0.0 ? pic::SpeciesKind::photon : pic::SpeciesKind::charged };
     };
 
     return conf.get<double>(q_label)
@@ -360,8 +360,8 @@ void
 
   auto push_impl = [&](const auto& interpolator) {
     for(auto& [_, pbuff]: particle_buffs_) {
-      // massless species move at c along their momentum, whatever the pusher
-      if(pbuff.args().mass == 0.0) {
+      // photons move at c along their momentum, whatever the pusher
+      if(pbuff.args().kind == pic::SpeciesKind::photon) {
         pbuff.push_particles_photon(this->cfl_);
         continue;
       }
@@ -410,7 +410,7 @@ void
   switch(current_depositer_) {
     case CurrentDepositer::zigzag_1st:
       for(const auto& [_, pcontainer]: this->particle_buffs_) {
-        if(pcontainer.args().charge == 0.0) { continue; }  // neutral: no current
+        if(pcontainer.args().kind == pic::SpeciesKind::photon) { continue; }  // no current
         this->yee_lattice_.deposit_current(
           pcontainer.current_zigzag_1st(origo_pos, this->cfl_));
       }
@@ -430,7 +430,7 @@ void
         .wait();
 
       for(const auto& [_, pcontainer]: this->particle_buffs_) {
-        if(pcontainer.args().charge == 0.0) { continue; }  // neutral: no current
+        if(pcontainer.args().kind == pic::SpeciesKind::photon) { continue; }  // no current
         pcontainer.current_zigzag_1st(generated_J, origo_pos, this->cfl_);
       }
 

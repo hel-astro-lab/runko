@@ -33,8 +33,8 @@ Tile<D>::Tile(
   // every species of the pic tile is assigned a role or skipped
   for(auto i = 0uz; i < this->number_of_species(); ++i) {
     const auto a = this->particles(i).args();
-    if(a.mass == 0.0) {
-      if(found[0]) { throw std::runtime_error { "qed::Tile: more than one massless species." }; }
+    if(a.kind == pic::SpeciesKind::photon) {
+      if(found[0]) { throw std::runtime_error { "qed::Tile: more than one photon species." }; }
       sp_[0]   = i;
       found[0] = true;
     } else if(a.mass == 1.0 and a.charge != 0.0) {
