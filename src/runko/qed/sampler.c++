@@ -52,7 +52,7 @@ struct ChCompton {
   static constexpr double c_l   = 1.0;
   static constexpr bool has_dgm = true;
   constexpr double rate(const Vec3& k, const Vec3& u) const { return comp::rate(k, u); }
-  constexpr double bound(double lo1, double hi1, double lo2, double hi2, double, double) const
+  constexpr double bound(double lo1, double hi1, double lo2, double hi2) const
   {
     return comp::bound(lo1, hi1, lo2, hi2);
   }
@@ -69,7 +69,7 @@ struct ChAnn {
   static constexpr double c_l   = 1.0;
   static constexpr bool has_dgm = false;
   constexpr double rate(const Vec3& um, const Vec3& up) const { return ann::rate(um, up); }
-  constexpr double bound(double lo1, double hi1, double lo2, double hi2, double, double) const
+  constexpr double bound(double lo1, double hi1, double lo2, double hi2) const
   {
     return ann::bound(lo1, hi1, lo2, hi2);
   }
@@ -86,7 +86,7 @@ struct ChGG {
   static constexpr double c_l   = 2.0;  // the bit-split same-species channel
   static constexpr bool has_dgm = false;
   constexpr double rate(const Vec3& k1, const Vec3& k2) const { return gg::rate(k1, k2); }
-  constexpr double bound(double lo1, double hi1, double lo2, double hi2, double, double) const
+  constexpr double bound(double lo1, double hi1, double lo2, double hi2) const
   {
     return gg::bound(lo1, hi1, lo2, hi2);
   }
@@ -97,6 +97,7 @@ struct ChGG {
 // bounded by a scan of the rate over the lepton bin at the photon bin's floor
 struct ChSSA {
   Species t2;                                          // the lepton species, e- or e+
+  double b_tile;                                       // the tile field, an upper bound of every lepton's b_ssa
   double x_min;                                        // floor of the synchrotron band
   static constexpr Species t1   = Species::ph;
   static constexpr Kind kind    = Kind::absorb;
@@ -104,15 +105,15 @@ struct ChSSA {
   static constexpr Sel sel2     = Sel::cell;
   static constexpr double c_l   = 1.0;
   static constexpr bool has_dgm = true;
-  /// the rate at the absorbing lepton's own field
+  /// the rate at the absorbing lepton's field b (its pitch angle in the tile field)
   constexpr double rate(const Vec3& k, const Vec3& u, const double b) const
   {
     return ssa::rate(k, u, b, x_min);
   }
-  /// over the field range [b_lo, b_hi] of the absorbing bin
-  constexpr double bound(double lo1, double /*hi1*/, double lo2, double hi2, double b_lo, double b_hi) const
+  /// the bound at the tile field, which every lepton's b_ssa is below
+  constexpr double bound(double lo1, double /*hi1*/, double lo2, double hi2) const
   {
-    return ssa::bound(b_lo, b_hi, x_min, lo1, lo2, hi2);
+    return ssa::bound(b_tile, x_min, lo1, lo2, hi2);
   }
   constexpr double dgmax(double x, double) const { return ssa::dgmax(x, 0.0); }
 };
@@ -163,12 +164,6 @@ struct PView {
     ids[i][] = runko::dead_prtc_id;
     if(weighted) { wgt[i][] = 0.0f; }
   }
-  /// the field slot i feels along its motion, in units of B_Q
-  [[nodiscard]] constexpr double b(const I i, const FieldView& fv) const
-  {
-    const auto p = u(i);
-    return fv.b_eff(pos[i][0], pos[i][1], pos[i][2], p / sstd::max(e(i), 1e-300));
-  }
   /// widen the bounds of the key of a slot updated in place
   constexpr void touch(const I i) const
   {
@@ -179,16 +174,6 @@ struct PView {
     sstd::atomic_max(&lay.emax[k], ee);
     sstd::atomic_min(&lay.emin[k], ee);
     sstd::atomic_max(&lay.wmax[k], ww);
-  }
-  /// a lepton kicked into a new direction feels a new field: widen the field range too
-  constexpr void touch(const I i, const FieldView& fv) const
-  {
-    touch(i);
-    const auto k = lay.skey[i];
-    if(k < 0 or mass <= 0.0f) { return; }
-    const auto bb = static_cast<float>(b(i, fv));
-    sstd::atomic_max(&lay.bmax[k], bb);
-    sstd::atomic_min(&lay.bmin[k], bb);
   }
 };
 
@@ -207,30 +192,6 @@ PView
                  .lay      = pop.view() };
 }
 
-/// the field range of every key of a lepton species, from its live slots: the absorption
-/// envelope of the step spans it, and touch() and place() widen it as the step goes
-void
-  field_range(const PView& v, const FieldView& fv)
-{
-  const auto lay = v.lay;
-  const auto inf = std::numeric_limits<float>::infinity();
-  thrust::fill_n(thrust::device, lay.bmin, lay.nkeys, inf);
-  thrust::fill_n(thrust::device, lay.bmax, lay.nkeys, 0.0f);
-  tyvi::mdgrid_work {}
-    .for_each_index(
-      v.ids,
-      [=](const auto idx) {
-        const auto i = static_cast<I>(idx[0]);
-        if(not v.alive(i)) { return; }
-        const auto k = lay.skey[i];
-        if(k < 0) { return; }
-        const auto bb = static_cast<float>(v.b(i, fv));
-        sstd::atomic_max(&lay.bmax[k], bb);
-        sstd::atomic_min(&lay.bmin[k], bb);
-      })
-    .wait();
-}
-
 /// one side of a channel: the one or two sub-ranges of every (cell, bin) as one virtual range
 struct SideView {
   const I* base0;      // first slot of sub-range 0 of every (cell, bin)
@@ -240,8 +201,6 @@ struct SideView {
   const float* wmax;   // largest weight over both sub-ranges
   const float* emin;   // energy bounds over both sub-ranges
   const float* emax;
-  const float* bmin;   // field range over both sub-ranges (leptons)
-  const float* bmax;
   [[nodiscard]] constexpr I N(const int cb) const { return cnt0[cb] + cnt1[cb]; }
   /// virtual index v in [0, N) of group cb -> slot
   [[nodiscard]] constexpr I pick(const int cb, const I v) const
@@ -251,15 +210,16 @@ struct SideView {
   }
 };
 
-/// the rate of the pair (p1, p2); a field channel reads the partner's field at its position
+/// the rate of the pair (p1, p2); absorption takes the partner's field across its pitch angle
 template<typename Ch, typename V>
 [[nodiscard]]
 constexpr double
   pair_rate(const Ch& ch, const FieldView& fv, const V& v2, const runko::index_t j, const Vec3& p1, const Vec3& p2)
 {
   if constexpr(Ch::kind == Kind::absorb) {
-    const auto gam = sstd::sqrt(1.0 + toolbox::dot(p2, p2));
-    return ch.rate(p1, p2, fv.b_eff(v2.pos[j][0], v2.pos[j][1], v2.pos[j][2], p2 / gam));
+    std::ignore = v2;
+    std::ignore = j;
+    return ch.rate(p1, p2, fv.b_ssa(p2 / sstd::max(toolbox::norm(p2), 1e-300)));
   } else {
     return ch.rate(p1, p2);
   }
@@ -520,9 +480,7 @@ void
     const auto j = static_cast<std::size_t>(rng.integer(i));
     std::swap(order[i - 1], order[j]);
   }
-  // the field range of every lepton key, for the absorption envelopes of the step
-  field_range(c.v[1], t.field);
-  field_range(c.v[2], t.field);
+  const auto b_tile = t.field.b_tile;   // the tile field bounds the absorption envelopes
   // dispatch each channel to the kernels of its record type
   for(const auto l: order) {
     switch(static_cast<Channel>(l)) {
@@ -530,8 +488,8 @@ void
       case Channel::compton_p: twobody(c, ChCompton { Species::ep }, l); break;
       case Channel::pairann: twobody(c, ChAnn {}, l); break;
       case Channel::photann: twobody(c, ChGG {}, l); break;
-      case Channel::ssa_m: twobody(c, ChSSA { Species::em, box.x_min }, l); break;
-      case Channel::ssa_p: twobody(c, ChSSA { Species::ep, box.x_min }, l); break;
+      case Channel::ssa_m: twobody(c, ChSSA { Species::em, b_tile, box.x_min }, l); break;
+      case Channel::ssa_p: twobody(c, ChSSA { Species::ep, b_tile, box.x_min }, l); break;
       default: onebody(c, static_cast<Channel>(l), l); break;
     }
   }
@@ -563,21 +521,16 @@ void
                       thrust::device_vector<I>& cnt0,
                       thrust::device_vector<float>& wmax,
                       thrust::device_vector<float>& emin,
-                      thrust::device_vector<float>& emax,
-                      thrust::device_vector<float>& bmin,
-                      thrust::device_vector<float>& bmax) {
+                      thrust::device_vector<float>& emax) {
     base0.resize(static_cast<std::size_t>(2 * ncb));
     cnt0.resize(static_cast<std::size_t>(2 * ncb));
     wmax.resize(static_cast<std::size_t>(ncb));
     emin.resize(static_cast<std::size_t>(ncb));
     emax.resize(static_cast<std::size_t>(ncb));
-    bmin.resize(static_cast<std::size_t>(ncb));
-    bmax.resize(static_cast<std::size_t>(ncb));
     const auto lay = c.v[is].lay;
     const auto b0 = thrust::raw_pointer_cast(base0.data()), c0 = thrust::raw_pointer_cast(cnt0.data());  // [0, ncb) sub-range 0, [ncb, 2 ncb) sub-range 1
     const auto wm = thrust::raw_pointer_cast(wmax.data());
     const auto lo = thrust::raw_pointer_cast(emin.data()), hi = thrust::raw_pointer_cast(emax.data());
-    const auto blo = thrust::raw_pointer_cast(bmin.data()), bhi = thrust::raw_pointer_cast(bmax.data());
     const auto inf = std::numeric_limits<float>::infinity();
     // one lane per (cell, bin): the keys the side spans and the bounds over them
     thrust::for_each(
@@ -592,15 +545,12 @@ void
         b0[cb] = lay.b[k0];
         c0[cb] = lay.fill[k0];
         auto wmx = lay.wmax[k0], emn = lay.emin[k0], emx = lay.emax[k0];
-        auto bmn = lay.bmin[k0], bmx = lay.bmax[k0];
         if(k1 >= 0) {
           b0[ncb + cb] = lay.b[k1];
           c0[ncb + cb] = lay.fill[k1];
           wmx = sstd::max(wmx, lay.wmax[k1]);
           emn = sstd::min(emn, lay.emin[k1]);
           emx = sstd::max(emx, lay.emax[k1]);
-          bmn = sstd::min(bmn, lay.bmin[k1]);
-          bmx = sstd::max(bmx, lay.bmax[k1]);
         } else {
           b0[ncb + cb] = 0;
           c0[ncb + cb] = 0;
@@ -608,24 +558,19 @@ void
         wm[cb] = wmx;
         lo[cb] = c0[cb] + c0[ncb + cb] > 0 ? emn : inf;
         hi[cb] = emx;
-        // a group whose live leptons are all gone has no range: no field, no absorption
-        blo[cb] = bmn <= bmx ? bmn : 0.0f;
-        bhi[cb] = bmn <= bmx ? bmx : 0.0f;
       });
   };
-  side(i1, Ch::sel1, base1_, cnt1_, wmax1_, emin1_, emax1_, bmin1_, bmax1_);
-  side(i2, Ch::sel2, base2_, cnt2_, wmax2_, emin2_, emax2_, bmin2_, bmax2_);
+  side(i1, Ch::sel1, base1_, cnt1_, wmax1_, emin1_, emax1_);
+  side(i2, Ch::sel2, base2_, cnt2_, wmax2_, emin2_, emax2_);
   // the two sides as the kernels read them
   const auto s1 = SideView { thrust::raw_pointer_cast(base1_.data()), thrust::raw_pointer_cast(cnt1_.data()),
                              thrust::raw_pointer_cast(base1_.data()) + ncb, thrust::raw_pointer_cast(cnt1_.data()) + ncb,
                              thrust::raw_pointer_cast(wmax1_.data()), thrust::raw_pointer_cast(emin1_.data()),
-                             thrust::raw_pointer_cast(emax1_.data()), thrust::raw_pointer_cast(bmin1_.data()),
-                             thrust::raw_pointer_cast(bmax1_.data()) };
+                             thrust::raw_pointer_cast(emax1_.data()) };
   const auto s2 = SideView { thrust::raw_pointer_cast(base2_.data()), thrust::raw_pointer_cast(cnt2_.data()),
                              thrust::raw_pointer_cast(base2_.data()) + ncb, thrust::raw_pointer_cast(cnt2_.data()) + ncb,
                              thrust::raw_pointer_cast(wmax2_.data()), thrust::raw_pointer_cast(emin2_.data()),
-                             thrust::raw_pointer_cast(emax2_.data()), thrust::raw_pointer_cast(bmin2_.data()),
-                             thrust::raw_pointer_cast(bmax2_.data()) };
+                             thrust::raw_pointer_cast(emax2_.data()) };
 
   // ---- the envelope of every bin pair: slot counts and the bounds of those bins, nothing else
   Lam_.resize(static_cast<std::size_t>(npair));
@@ -652,8 +597,7 @@ void
         const auto n2  = static_cast<double>(s2.N(cb));
         const auto lo2 = static_cast<double>(s2.emin[cb]), hi2 = static_cast<double>(s2.emax[cb]);
         const auto w2  = static_cast<double>(s2.wmax[cb]);
-        const auto bl2 = static_cast<double>(s2.bmin[cb]), bh2 = static_cast<double>(s2.bmax[cb]);
-        auto shv       = n1 > 0.0 and n2 > 0.0 ? ch.bound(lo1, hi1, lo2, hi2, bl2, bh2) : 0.0;
+        auto shv       = n1 > 0.0 and n2 > 0.0 ? ch.bound(lo1, hi1, lo2, hi2) : 0.0;
         // bound on the effective weight of the merged pairs from the two maxima alone: f_kin is
         // extremal at the corners of the gamma range, so they bound it from below
         auto wmv = sstd::max(w1, w2);
@@ -742,13 +686,11 @@ void
   const auto s1 = SideView { thrust::raw_pointer_cast(base1_.data()), thrust::raw_pointer_cast(cnt1_.data()),
                              thrust::raw_pointer_cast(base1_.data()) + ncb, thrust::raw_pointer_cast(cnt1_.data()) + ncb,
                              thrust::raw_pointer_cast(wmax1_.data()), thrust::raw_pointer_cast(emin1_.data()),
-                             thrust::raw_pointer_cast(emax1_.data()), thrust::raw_pointer_cast(bmin1_.data()),
-                             thrust::raw_pointer_cast(bmax1_.data()) };
+                             thrust::raw_pointer_cast(emax1_.data()) };
   const auto s2 = SideView { thrust::raw_pointer_cast(base2_.data()), thrust::raw_pointer_cast(cnt2_.data()),
                              thrust::raw_pointer_cast(base2_.data()) + ncb, thrust::raw_pointer_cast(cnt2_.data()) + ncb,
                              thrust::raw_pointer_cast(wmax2_.data()), thrust::raw_pointer_cast(emin2_.data()),
-                             thrust::raw_pointer_cast(emax2_.data()), thrust::raw_pointer_cast(bmin2_.data()),
-                             thrust::raw_pointer_cast(bmax2_.data()) };
+                             thrust::raw_pointer_cast(emax2_.data()) };
   const auto Lam = thrust::raw_pointer_cast(Lam_.data()), sh = thrust::raw_pointer_cast(sh_.data());  // envelope and rate bound per bin pair
   const auto wmp = thrust::raw_pointer_cast(wm_.data());                                              // weight bound per bin pair
 
@@ -1138,7 +1080,6 @@ void
   const auto v  = c.v[is];
   const auto dgam = thrust::raw_pointer_cast(dgam_.data());
   const auto touched = thrust::raw_pointer_cast(touched_.data());
-  const auto fv = c.t->field;
   // one lane per slot: rescale |u| to the energy after the absorptions, on the mass shell
   tyvi::mdgrid_work {}
     .for_each_index(v.ids, [=](const auto idx) {
@@ -1150,7 +1091,7 @@ void
       const auto g0 = sstd::sqrt(1.0 + toolbox::dot(u0, u0));
       const auto g1 = g0 + dg;
       v.set_u(i, u0 * (sstd::sqrt(g1 * g1 - 1.0) / sstd::sqrt(sstd::max(g0 * g0 - 1.0, 1e-300))));
-      v.touch(i, fv);
+      v.touch(i);
     })
     .wait();
 }
@@ -1162,12 +1103,11 @@ void
   const auto is = static_cast<std::size_t>(s);
   const auto v  = c.v[is];
   const auto touched = thrust::raw_pointer_cast(touched_.data());
-  const auto fv = c.t->field;
   // one lane per slot
   tyvi::mdgrid_work {}
     .for_each_index(v.ids, [=](const auto idx) {
       const auto i = static_cast<I>(idx[0]);
-      if(touched[i] != 0 and v.alive(i)) { v.touch(i, fv); }
+      if(touched[i] != 0 and v.alive(i)) { v.touch(i); }
     })
     .wait();
 }
@@ -1202,7 +1142,6 @@ void
   const auto cnt = thrust::raw_pointer_cast(counters_.data());   // tail and id counters
   const auto v   = c.v;
   const auto idb = c.t->id_base;                                  // first free id per species
-  const auto fv  = c.t->field;                                    // the field a lepton product feels
   // one lane per staged record: every copy takes a slot in the slack of its key or in the tail
   thrust::for_each(w.on_this(), r0, r0 + static_cast<std::ptrdiff_t>(nst), [=](const I k) {
     const auto rec = stg[k];
@@ -1222,12 +1161,6 @@ void
         sstd::atomic_max(&lay.wmax[kk], rec.w);
         sstd::atomic_max(&lay.emax[kk], static_cast<float>(e));
         sstd::atomic_min(&lay.emin[kk], static_cast<float>(e));
-        if(rec.species != 0) {
-          const auto bb = static_cast<float>(fv.b_eff(
-            rec.pos[0], rec.pos[1], rec.pos[2], Vec3(rec.u[0] / e, rec.u[1] / e, rec.u[2] / e)));
-          sstd::atomic_max(&lay.bmax[kk], bb);
-          sstd::atomic_min(&lay.bmin[kk], bb);
-        }
         sstd::atomic_add(&cnt[c_slack], std::int32_t { 1 });
       } else {
         const auto t = sstd::atomic_fetch_add(&cnt[c_tail0 + rec.species], std::int32_t { 1 });
@@ -1339,7 +1272,7 @@ void
         dgu = gam - g1;  // the energy the step took, to be carried by the LP
       }
       if(not fire) {
-        if(not slow) { v.touch(i, fv); }
+        if(not slow) { v.touch(i); }
         return;
       }
       const auto mult = slow ? 1.0 : dgu / sstd::max(xm, 1e-300);   // emissions the LP stands for
@@ -1355,7 +1288,7 @@ void
         const auto g1 = sstd::max(gam - dgc, 1.0);
         v.set_u(i, u * (sstd::sqrt(sstd::max(g1 * g1 - 1.0, 0.0)) / sstd::sqrt(sstd::max(gam * gam - 1.0, 1e-300))));
       }
-      v.touch(i, fv);
+      v.touch(i);
       sstd::atomic_add(&ds[d_wpass], 1.0);  // fired
       sstd::atomic_add(&ds[d_wem], wem);
       sstd::atomic_add(&ds[d_facc], f);
@@ -1581,7 +1514,6 @@ void
   Ctx c { .t = &t, .v = {}, .old_size = {}, .ncell = 0, .nb = par.nbin };
   c.refresh_all();
   const auto w  = tyvi::mdgrid_work {};
-  const auto fv = t.field;
   auto tot      = 0.0;   // summed expected gain per unit D_0 over both lepton species
   // ---- the normalization: reduce w p^2 (4 gamma^2 + 1)/gamma^3 over the live leptons
   for(auto s = 1uz; s <= 2uz; ++s) {
@@ -1618,7 +1550,7 @@ void
       const auto p1 = (1.0 + 2.0 * D0) * p + Vec3(sd * rng.normal(), sd * rng.normal(), sd * rng.normal());   // drift plus noise
       sstd::atomic_add(&db[b_E], v.w(i) * (sstd::sqrt(1.0 + toolbox::dot(p1, p1)) - sstd::sqrt(1.0 + p2)));
       v.set_u(i, p1);
-      v.touch(i, fv);
+      v.touch(i);
     });
   }
   w.wait();
@@ -1706,7 +1638,7 @@ double
   // leptons of their weight times 2 sigma-hat F: the depth of the box in this channel, the analogue
   // of tau_T. Its unit crossing marks x_SSA.
   if(box.b_perp() <= 0.0) { return 0.0; }
-  const auto fv = t.field;             // each lepton absorbs in its own field
+  const auto fv = t.field;             // each lepton absorbs at the tile field across its pitch angle
   const auto w  = tyvi::mdgrid_work {};
   auto out      = 0.0;
   const auto k  = Vec3(x, 0.0, 0.0);   // the rate depends on x, gamma and the field only
@@ -1721,8 +1653,7 @@ double
       [=](const I i) {
         if(not v.alive(i)) { return 0.0; }
         const auto u   = v.u(i);
-        const auto gam = sstd::sqrt(1.0 + toolbox::dot(u, u));
-        const auto b   = fv.b_eff(v.pos[i][0], v.pos[i][1], v.pos[i][2], u / gam);
+        const auto b   = fv.b_ssa(u / sstd::max(toolbox::norm(u), 1e-300));
         return v.w(i) * 2.0 * ssa::rate(k, u, b, 0.0);
       },
       0.0, thrust::plus<double> {});
@@ -1772,8 +1703,8 @@ double
     case Channel::compton_p: return run(ChCompton { Species::ep });
     case Channel::pairann: return run(ChAnn {});
     case Channel::photann: return run(ChGG {});
-    case Channel::ssa_m: return run(ChSSA { Species::em, box.x_min });
-    case Channel::ssa_p: return run(ChSSA { Species::ep, box.x_min });
+    case Channel::ssa_m: return run(ChSSA { Species::em, fv.b_tile, box.x_min });
+    case Channel::ssa_p: return run(ChSSA { Species::ep, fv.b_tile, box.x_min });
     default: throw std::runtime_error { "pair_sum: not a two-body channel" };
   }
 }

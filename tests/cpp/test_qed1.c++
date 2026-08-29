@@ -211,30 +211,6 @@ const suite<"one-body and self-absorption physics"> _ = [] {
     }
     expect(qed::ssa::bound(1e-3, 0.0, std::numeric_limits<double>::infinity(), 3.0, 10.0) == 0.0);
   };
-
-  "self-absorption bound over a field range dominates the rate at every field"_test = [] {
-    // a turbulent tile: every lepton feels its own field in [0, b_hi]; the bin bound must
-    // cover the rate wherever in that range the kernel peaks
-    auto rng = runko::Rng { runko::rng_key(14, 0, 0, 0), 0 };
-    for(auto n = 0; n < 200; ++n) {
-      const auto b_hi = std::exp(-9.0 + 6.0 * rng.uniform());
-      const auto xlo  = std::exp(-12.0 + 8.0 * rng.uniform());
-      const auto xhi  = xlo * std::exp(3.0 * rng.uniform());
-      const auto glo  = 3.0 * std::exp(4.0 * rng.uniform());
-      const auto ghi  = glo * std::exp(1.5 * rng.uniform());
-      const auto sh   = qed::ssa::bound(0.0, b_hi, 0.0, xlo, glo, ghi);
-      for(auto m = 0; m < 300; ++m) {
-        const auto x = xlo * std::pow(xhi / xlo, rng.uniform());
-        const auto g = glo * std::pow(ghi / glo, rng.uniform());
-        const auto b = b_hi * std::pow(1e-4, rng.uniform());   // log-uniform over four decades
-        const auto k = x * qed::iso_dir(rng);
-        const auto u = std::sqrt(g * g - 1.0) * qed::iso_dir(rng);
-        expect(qed::ssa::rate(k, u, b, 0.0) <= sh) << b_hi << " " << x << " " << g << " " << b;
-      }
-    }
-    // the single-field bound is the range bound collapsed to one field
-    expect(qed::ssa::bound(1e-3, 1e-3, 0.0, 1e-3, 3.0, 30.0) == qed::ssa::bound(1e-3, 0.0, 1e-3, 3.0, 30.0));
-  };
 };
 
 }  // namespace

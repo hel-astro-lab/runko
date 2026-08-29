@@ -35,6 +35,8 @@ private:
   std::vector<Pop> pops_;             // ph, e-, e+
   Sampler sampler_;                   // the Monte Carlo state of this tile
   double B0_ { 0.0 };                 // reference field in code units; 0: the uniform field of the box
+  thrust::device_vector<float> babs_;   // |B| per cell, for the tile's median field
+  thrust::device_vector<double> bsum_;  // summed B vector, for the tile's mean direction
 
   /// the containers, layouts and extent of this tile as the sampler takes them
   [[nodiscard]] TileView view();

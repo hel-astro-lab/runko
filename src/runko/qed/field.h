@@ -7,7 +7,9 @@
 // with b_eff = B_eff/B_Q the field it feels in units of the critical field: for the local
 // field the Lorentz invariant sqrt(|E + beta x B|^2 - (beta.E)^2) of the interpolated E, B at
 // the particle, scaled from code units by bscale = b_0/B_0 (b_0 the quantum parameter of the
-// reference field B_0); for the field-free box a single uniform value.
+// reference field B_0); for the field-free box a single uniform value. Self-absorption, whose
+// envelope needs one field per tile, takes the tile's median |B| along the lepton's pitch
+// angle to the tile's mean field (within 10-20 % of the local-field opacity in turbulence).
 
 #include "runko/pic/tile.h"
 #include "runko/qed/interactions/qed_kinematics.h"
@@ -23,6 +25,8 @@ struct [[nodiscard]] FieldView {
   bool uniform;   // no lattice: every particle sees b0
   double b0;      // the uniform quantum parameter (the box's b_perp)
   double bscale;  // quantum parameter per unit of code field, b_0/B_0
+  double b_tile;  // the tile's median |B| in units of B_Q (b0 when uniform); bounds b_ssa
+  Vec3 bhat;      // direction of the tile's mean B (z when uniform)
   Interp at;      // E, B at a global position
 
   /// the field a particle of velocity beta (a photon: its direction) feels, in units of B_Q
@@ -35,6 +39,13 @@ struct [[nodiscard]] FieldView {
     const auto f  = E + toolbox::cross(beta, B);          // the force field in the particle's frame
     const auto be = toolbox::dot(beta, E);
     return bscale * sstd::sqrt(sstd::max(toolbox::dot(f, f) - be * be, 0.0));
+  }
+
+  /// the field a lepton moving along the unit vector n absorbs in: the tile field across its
+  /// pitch angle; the uniform box keeps every lepton perpendicular
+  [[nodiscard]] constexpr double b_ssa(const Vec3& n) const
+  {
+    return uniform ? b0 : b_tile * toolbox::norm(toolbox::cross(n, bhat));
   }
 };
 
