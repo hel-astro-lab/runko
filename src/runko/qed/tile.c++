@@ -125,24 +125,9 @@ FieldView
 {
   const auto b0 = sampler_.box.b_perp();
   if(B0_ <= 0.0 or b0 <= 0.0) {
-    return FieldView { .uniform = true, .b0 = b0, .bscale = 0.0, .b_min = b0, .b_max = b0, .at = this->EB_linear_1st_interpolator() };
+    return FieldView { .uniform = true, .b0 = b0, .bscale = 0.0, .at = this->EB_linear_1st_interpolator() };
   }
-  // the largest field a particle can feel this lap bounds the absorption envelope:
-  // b_eff <= bscale (|E| + |B|) at the strongest cell
-  const auto bscale = b0 / B0_;
-  const auto [Emds, Bmds, Jmds] = this->yee_lattice_.view_EBJ_on_device();
-  auto fmax = thrust::device_vector<float>(1, 0.0f);
-  const auto fmax_p = thrust::raw_pointer_cast(fmax.data());
-  tyvi::mdgrid_work {}
-    .for_each_index(Emds, [=](const auto idx) {
-      const auto e = sstd::sqrt(Emds[idx][0] * Emds[idx][0] + Emds[idx][1] * Emds[idx][1] + Emds[idx][2] * Emds[idx][2]);
-      const auto b = sstd::sqrt(Bmds[idx][0] * Bmds[idx][0] + Bmds[idx][1] * Bmds[idx][1] + Bmds[idx][2] * Bmds[idx][2]);
-      sstd::atomic_max(fmax_p, e + b);
-    })
-    .wait();
-  const auto b_max = bscale * static_cast<double>(fmax[0]);
-  std::ignore = Jmds;
-  return FieldView { .uniform = false, .b0 = b0, .bscale = bscale, .b_min = 0.0, .b_max = b_max, .at = this->EB_linear_1st_interpolator() };
+  return FieldView { .uniform = false, .b0 = b0, .bscale = b0 / B0_, .at = this->EB_linear_1st_interpolator() };
 }
 
 template<std::size_t D>

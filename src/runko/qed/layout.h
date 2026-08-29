@@ -38,6 +38,8 @@ struct [[nodiscard]] LayoutView {
   float* wmax;          // per key: the bounds the envelopes read
   float* emin;          // per key: lowest energy held
   float* emax;          // per key: highest energy held
+  float* bmin;          // per key: range of the field (b_eff) its leptons feel, set by the sampler
+  float* bmax;          //          every step; the absorption envelope spans it
   int nbin;             // energy bins per cell
   int ncell_edge;       // reaction sub-cells per tile edge
   int ncell;            // reaction sub-cells of the tile
@@ -105,6 +107,7 @@ class [[nodiscard]] Pop {
   thrust::device_vector<runko::index_t> b_, cap_, fill_, prod_;
   // ---- per key: the weight and energy bounds the envelopes read
   thrust::device_vector<float> wmax_, emin_, emax_;
+  thrust::device_vector<float> bmin_, bmax_;   // per key: field range, refreshed by the sampler
   // ---- scratch of a layout, per slot (key, sort permutation, target slot) and per key + 1
   // (key starts); the high-water mark is kept between epochs
   thrust::device_vector<runko::index_t> keys_, ord_, cnt_, slots_;

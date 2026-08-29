@@ -23,8 +23,6 @@ struct [[nodiscard]] FieldView {
   bool uniform;   // no lattice: every particle sees b0
   double b0;      // the uniform quantum parameter (the box's b_perp)
   double bscale;  // quantum parameter per unit of code field, b_0/B_0
-  double b_min;   // range of b_eff over the tile in this epoch (the SSA envelope spans it)
-  double b_max;
   Interp at;      // E, B at a global position
 
   /// the field a particle of velocity beta (a photon: its direction) feels, in units of B_Q

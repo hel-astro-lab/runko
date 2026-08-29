@@ -185,6 +185,7 @@ private:
   // side tables, per (cell, bin) of the incident (1) and the partner (2) side
   thrust::device_vector<runko::index_t> base1_, cnt1_, base2_, cnt2_;  // first slot and fill of the two sub-ranges
   thrust::device_vector<float> wmax1_, emin1_, emax1_, wmax2_, emin2_, emax2_;  // bounds over the sub-ranges
+  thrust::device_vector<float> bmin1_, bmax1_, bmin2_, bmax2_;                  // field range of the sub-ranges
   // lanes (one per envelope event) and events (one per accepted lane)
   thrust::device_vector<runko::index_t> lane_i_, lane_j_, acc_;  // the two slots of a lane; the accepted lanes
   thrust::device_vector<double> lane_f_;                         // accumulation factor of a lane

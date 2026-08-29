@@ -214,6 +214,8 @@ void
   wmax_.assign(nk, 0.0f);
   emin_.assign(nk, inf);
   emax_.assign(nk, 0.0f);
+  bmin_.assign(nk, inf);   // the field range is set by the sampler before the channels run
+  bmax_.assign(nk, 0.0f);
   laid_ = true;  // the tables are valid for the current container
   this->touch_all(con);
   w.wait();
@@ -264,6 +266,8 @@ LayoutView
                       .wmax       = thrust::raw_pointer_cast(wmax_.data()),
                       .emin       = thrust::raw_pointer_cast(emin_.data()),
                       .emax       = thrust::raw_pointer_cast(emax_.data()),
+                      .bmin       = thrust::raw_pointer_cast(bmin_.data()),
+                      .bmax       = thrust::raw_pointer_cast(bmax_.data()),
                       .nbin       = par_.nbin,
                       .ncell_edge = par_.ncell_edge,
                       .ncell      = ncell,
