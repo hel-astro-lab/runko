@@ -77,7 +77,7 @@ struct [[nodiscard]] Rng {
   constexpr double normal()
   {
     const auto r   = sstd::sqrt(-2.0 * sstd::log(uniform()));  // Rayleigh radius
-    const auto phi = 6.283185307179586 * uniform();            // uniform angle
+    const auto phi = sstd::TWOPI * uniform();            // uniform angle
     return r * sstd::cos(phi);
   }
 };

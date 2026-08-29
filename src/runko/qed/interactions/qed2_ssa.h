@@ -86,7 +86,7 @@ constexpr double
   // argument of the synchrotron functions
   const auto nu   = sstd::clamp(2.0 * chi_gam / (3.0 * chi_e * (chi_e - chi_gam)), 1e-100, 1e30);
   // sqrt(3)/(2 pi) chi_gamma/chi_e
-  const auto pref = (1.7320508075688772 / 6.283185307179586) * (chi_gam / chi_e);
+  const auto pref = (sstd::SQRT3 / sstd::TWOPI) * (chi_gam / chi_e);
   return pref * (int_K53(nu) + 1.5 * chi_gam * nu * K23(nu));
 }
 
@@ -121,7 +121,7 @@ constexpr double
   } else {
     diff = h_syn(gam + x, chi_gam, b_perp) - h_syn(gam, chi_gam, b_perp);
   }
-  return (3.141592653589793 / (8.0 * ALPHA)) * diff / (us * gam * x * x * x);
+  return (sstd::PI / (8.0 * ALPHA)) * diff / (us * gam * x * x * x);
 }
 
 /// Bound on rate over photons above x_lo and leptons in [g_lo, g_hi], by direct maximization:

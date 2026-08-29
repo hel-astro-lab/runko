@@ -119,7 +119,7 @@ constexpr Vec3
   const auto sf  = sstd::sqrt(sstd::max(1.0 - cfix * cfix, 0.0));  // sine to the fixed direction
   const auto omf = sf * t.i + cfix * t.k;         // the fixed direction in the triad
   const auto e1  = (-cfix) * t.i + sf * t.k;      // perpendicular to it, in the (i, k) plane
-  const auto psi = 6.283185307179586 * rng.uniform();  // azimuth about the fixed direction
+  const auto psi = sstd::TWOPI * rng.uniform();  // azimuth about the fixed direction
   const auto sw  = sstd::sqrt(sstd::max(1.0 - w * w, 0.0));  // sine of the drawn angle
   return w * omf + (sw * sstd::cos(psi)) * e1 + (sw * sstd::sin(psi)) * t.j;
 }
@@ -130,7 +130,7 @@ constexpr Vec3
   iso_dir(runko::Rng& rng)
 {
   const auto cz = -1.0 + 2.0 * rng.uniform();     // cos(theta), uniform on the sphere
-  const auto ph = 6.283185307179586 * rng.uniform();  // azimuth
+  const auto ph = sstd::TWOPI * rng.uniform();  // azimuth
   const auto sz = sstd::sqrt(1.0 - cz * cz);      // sin(theta)
   return Vec3(sz * sstd::cos(ph), sz * sstd::sin(ph), cz);
 }

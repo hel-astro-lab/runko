@@ -38,8 +38,8 @@ constexpr double
                           sstd::exp(-(chi_e + 0.847336033) * (chi_e + 0.847336033) / 0.0584260036);
   const auto l  = sstd::log(chi_e) + 7.9555351;
   const auto g2 = 1.0 + 3.26342394 * chi_e * sstd::exp(-l * l / 19.18831074);
-  return (5.0 / (2.0 * 1.7320508075688772)) *
-         (1.0 - sstd::exp(-1.46 * (2.0 * 1.7320508075688772 / 5.0) * sstd::pow(chi_e, -1.0 / 3.0))) *
+  return (5.0 / (2.0 * sstd::SQRT3)) *
+         (1.0 - sstd::exp(-1.46 * (2.0 * sstd::SQRT3 / 5.0) * sstd::pow(chi_e, -1.0 / 3.0))) *
          g1 * g2;
 }
 

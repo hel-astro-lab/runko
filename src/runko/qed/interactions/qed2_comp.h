@@ -103,7 +103,7 @@ constexpr Products
     if((1.0 / (tt * tt) + 1.0 + (mu * mu - 1.0) / tt) / 2.0 > rng.uniform()) { break; }
   }
   const auto x1R = xR / (1.0 + xR * (1.0 - mu));           // scattered energy in the rest frame
-  const auto phi = 6.283185307179586 * rng.uniform();
+  const auto phi = sstd::TWOPI * rng.uniform();
   const auto sz  = sstd::sqrt(sstd::max(1.0 - mu * mu, 0.0));  // sin(theta_R)
   // scattered direction, rest frame
   const auto om1R = (sz * sstd::sin(phi)) * t.i + (sz * sstd::cos(phi)) * t.j + mu * t.k;

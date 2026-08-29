@@ -6,6 +6,7 @@
 #include <atomic>
 #include <cmath>
 #include <type_traits>
+#include <numbers>
 
 #include "tyvi/backend.h"
 
@@ -15,6 +16,10 @@
 #endif
 
 namespace sstd {
+
+inline constexpr double PI    = std::numbers::pi;
+inline constexpr double TWOPI = 2.0 * std::numbers::pi;
+inline constexpr double SQRT3 = std::numbers::sqrt3;
 
 // =====================================================================
 // raw_ref — identity on CPU, thrust::raw_reference_cast on HIP
