@@ -183,11 +183,10 @@ struct PView {
   }
 };
 
-// the view of a container and its layout, refreshed after every resize
+// the view of a container alone: what the sources, the sinks and the pair sum read
 PView
-  make_view(pic::ParticleContainer& con, Pop& pop)
+  make_view(pic::ParticleContainer& con)
 {
-  pop.follow_container(con);
   return PView { .pos      = con.pos_mds(),
                  .vel      = con.vel_mds(),
                  .ids      = con.ids_mds(),
@@ -195,7 +194,17 @@ PView
                  .weighted = con.has_particle_weights(),
                  .w0       = static_cast<float>(con.weight()),
                  .mass     = static_cast<float>(con.args().mass),
-                 .lay      = pop.view() };
+                 .lay      = {} };
+}
+
+// the view of a container and its layout, refreshed after every resize
+PView
+  make_view(pic::ParticleContainer& con, Pop& pop)
+{
+  pop.follow_container(con);
+  auto v = make_view(con);
+  v.lay  = pop.view();
+  return v;
 }
 
 /// the rate of the pair (p1, p2); absorption takes the partner's field across its pitch angle
@@ -1597,7 +1606,7 @@ double
   // sum w 2 sigma-hat F over the live leptons of both species
   for(auto s = 1uz; s <= 2uz; ++s) {
     auto& con     = *t.con[s];
-    const auto v  = PView { con.pos_mds(), con.vel_mds(), con.ids_mds(), con.wgt_mds(), con.has_particle_weights(), static_cast<float>(con.weight()), static_cast<float>(con.args().mass), {} };
+    const auto v  = make_view(con);
     const auto n  = con.size();
     const auto i0 = thrust::counting_iterator<I>(0);
     out += thrust::transform_reduce(
@@ -1626,8 +1635,8 @@ double
     const auto i2  = static_cast<std::size_t>(ch.t2);
     auto& c1       = *t.con[i1];
     auto& c2       = *t.con[i2];
-    const auto v1 = PView { c1.pos_mds(), c1.vel_mds(), c1.ids_mds(), c1.wgt_mds(), c1.has_particle_weights(), static_cast<float>(c1.weight()), static_cast<float>(c1.args().mass), {} };
-    const auto v2 = PView { c2.pos_mds(), c2.vel_mds(), c2.ids_mds(), c2.wgt_mds(), c2.has_particle_weights(), static_cast<float>(c2.weight()), static_cast<float>(c2.args().mass), {} };
+    const auto v1 = make_view(c1);
+    const auto v2 = make_view(c2);
     const auto n1 = c1.size(), n2 = c2.size();
     const auto r0 = thrust::counting_iterator<I>(0);
     // one lane per incident slot, looping over every partner slot
