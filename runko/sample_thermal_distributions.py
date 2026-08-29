@@ -38,6 +38,36 @@ def sample_juttner_synge_sobol_method(size: int,
     return np.concatenate(candidates)[:size]
 
 
+def sample_juttner_synge_rejection_method(size: int,
+                                          theta: float,
+                                          gen = np.random.default_rng()):
+    """
+    Generates `size` amount of floats distributed
+    according to Juttner-Synge (Zenitani 2015 eq. 2),
+    with `theta = kT / (mc^2)` using the rejection method
+    of Zenitani (2015, Sect. II B), whose acceptance stays
+    of order one at low temperature where the Sobol method's
+    vanishes.
+
+    Random numbers are generated with the given generator.
+    """
+
+    candidates = []
+    total_num_of_candidates = 0
+
+    while total_num_of_candidates < size:
+        N = 2 * (size - total_num_of_candidates) + 10
+        x1 = gen.random(size=N)
+        x2 = gen.random(size=N)
+
+        xi = -1.5 * np.log(x1)                       # kinetic energy over theta, from a Gamma(3/2) proposal
+        accept = x2**2 < 0.151 * (1 + theta * xi)**2 * xi * (2 + theta * xi) * x1
+        candidates.append(np.sqrt(theta * xi * (2 + theta * xi))[accept])
+        total_num_of_candidates += len(candidates[-1])
+
+    return np.concatenate(candidates)[:size]
+
+
 def sample_maxwellian_box_muller_method(size: int,
                                         theta: float,
                                         gen = np.random.default_rng()):
@@ -97,8 +127,8 @@ def sample_boosted_juttner_synge(size: int,
     if theta > 0.2:
         u = sample_juttner_synge_sobol_method(size, theta, gen)
     else:
-        # Use Box-Muller for non-relativistic limit.
-        u = sample_maxwellian_box_muller_method(size, theta, gen)
+        # the Sobol acceptance falls as K_2(1/theta): the rejection method takes over
+        u = sample_juttner_synge_rejection_method(size, theta, gen)
 
     X1 = gen.random(size=size)
     X2 = gen.random(size=size)
