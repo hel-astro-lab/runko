@@ -294,15 +294,15 @@ Pop::Totals
   const auto weighted = con.has_particle_weights();
   const auto w0       = static_cast<double>(con.weight());
   const auto m        = con.args().mass;
-  using V5            = toolbox::VecD<double, 6>;  // N, W, E, Px, Py, Pz of one slot
+  using V6            = toolbox::VecD<double, 6>;  // N, W, E, Px, Py, Pz of one slot
   const auto ord0     = thrust::counting_iterator<I>(0);
   // the six sums a live slot contributes, zero for a dead one
   const auto f        = [=](const I i) {
-    if(ids_mds[i][] == runko::dead_prtc_id) { return V5 {}; }
+    if(ids_mds[i][] == runko::dead_prtc_id) { return V6 {}; }
     const double vx = vel_mds[i][0], vy = vel_mds[i][1], vz = vel_mds[i][2];
     const auto e    = sstd::sqrt(m * m + vx * vx + vy * vy + vz * vz);
     const auto wg   = weighted ? static_cast<double>(wgt_mds[i][]) : w0;
-    return V5(1.0, wg, wg * e, wg * vx, wg * vy, wg * vz);
+    return V6(1.0, wg, wg * e, wg * vx, wg * vy, wg * vz);
   };
   const auto w = tyvi::mdgrid_work {};
   // summed over the container
@@ -310,8 +310,8 @@ Pop::Totals
     w.on_this(),
     thrust::make_transform_iterator(ord0, f),
     thrust::make_transform_iterator(ord0 + static_cast<std::ptrdiff_t>(con.size()), f),
-    V5 {},
-    [](const V5& a, const V5& b) { return a + b; });
+    V6 {},
+    [](const V6& a, const V6& b) { return a + b; });
   return Totals { t[0], t[1], t[2], { t[3], t[4], t[5] } };
 }
 

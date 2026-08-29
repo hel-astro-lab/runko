@@ -49,8 +49,6 @@ struct [[nodiscard]] LayoutView {
   std::array<float, 3> mins;  // tile extent, for the reaction cell of a position
   std::array<float, 3> maxs;  // (positions are in the tile's own coordinates)
 
-  [[nodiscard]] constexpr int ncells() const { return ncell; }
-
   /// reaction cell of a position
   [[nodiscard]] constexpr int cell_of(const float x, const float y, const float z) const
   {
@@ -114,9 +112,6 @@ public:
   Pop(bool keyed, double mass);
 
   [[nodiscard]] bool laid() const { return laid_; }
-  [[nodiscard]] int nkeys() const { return nkeys_; }
-  [[nodiscard]] bool keyed() const { return keyed_; }
-  [[nodiscard]] double mass() const { return mass_; }
   void invalidate() { laid_ = false; }
 
   /// group the live LPs by key, reserve slack behind each group, build the tables

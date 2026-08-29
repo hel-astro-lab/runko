@@ -131,9 +131,7 @@ FieldView
   }
   // the tile field of self-absorption: the median |B| over the cells and the mean direction
   const auto bscale = b0 / B0_;
-  const auto [Emds, Bmds, Jmds] = this->yee_lattice_.view_EBJ_on_device();
-  std::ignore = Emds;
-  std::ignore = Jmds;
+  const auto Bmds = std::get<1>(this->yee_lattice_.view_EBJ_on_device());
   const auto n1 = Bmds.extent(1), n2 = Bmds.extent(2);
   babs_.resize(Bmds.extent(0) * n1 * n2);
   bsum_.assign(3, 0.0);
