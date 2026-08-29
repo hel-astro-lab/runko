@@ -25,24 +25,32 @@ Tile<D>::Tile(
   pic::Tile<D>(tile_grid_idx, conf),
   sampler_ { Box {}, Params {}, {} }
 {
-  // ---- the roles of the species, from their charge and mass
+  // ---- the roles of the species, from their mass and charge: a massless species holds the
+  // photons, a species of unit mass the leptons (electrons by a negative charge, positrons by a
+  // positive one), and heavier species (protons, ions) take no part in the reactions
   auto found = std::array { false, false, false };
   for(auto i = 0uz; i < this->number_of_species(); ++i) {
     const auto a = this->particles(i).args();
     if(a.mass == 0.0) {
+      if(found[0]) { throw std::runtime_error { "qed::Tile: more than one massless species." }; }
       sp_[0]   = i;
       found[0] = true;
-    } else if(a.charge < 0.0) {
-      sp_[1]   = i;
-      found[1] = true;
-    } else if(a.charge > 0.0) {
-      sp_[2]   = i;
-      found[2] = true;
+    } else if(a.mass == 1.0 and a.charge != 0.0) {
+      const auto r = a.charge < 0.0 ? 1uz : 2uz;
+      if(found[r]) { throw std::runtime_error { "qed::Tile: more than one lepton species of a charge sign." }; }
+      sp_[r]   = i;
+      found[r] = true;
+    } else if(a.mass > 1.0) {
+      continue;  // proton or ion: not a QED species
+    } else {
+      throw std::runtime_error {
+        std::format("qed::Tile: species {} with mass {} and charge {} is neither a photon (m = 0), a lepton (m = 1, q != 0) nor an ion (m > 1).", i, a.mass, a.charge)
+      };
     }
   }
   if(not(found[0] and found[1] and found[2])) {
     throw std::runtime_error {
-      "qed::Tile needs a massless species (photons), a negative and a positive lepton species."
+      "qed::Tile needs a massless species (photons) and lepton species (m = 1) of both charge signs."
     };
   }
   pops_.reserve(3);

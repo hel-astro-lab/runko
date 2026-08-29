@@ -16,9 +16,10 @@ particle count stays adaptive.
 Species and weights
 -------------------
 
-A ``qed::Tile`` is a ``pic::Tile`` whose species play three roles found from their charge and
-mass: a massless species (``m = 0``) holds the photons, a negative one (``q < 0, m = 1``) the
-electrons and a positive one the positrons::
+A ``qed::Tile`` is a ``pic::Tile`` whose species play three roles found from their mass and
+charge: a massless species (``m = 0``) holds the photons, a species of unit mass the leptons —
+electrons by a negative charge, positrons by a positive one — and any heavier species
+(``m > 1``: protons, ions) takes no part in the reactions::
 
     q0: -1
     m0: 1

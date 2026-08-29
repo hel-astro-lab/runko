@@ -14,19 +14,28 @@ SMIN = 4
 WL = 1e-3
 
 
-def make_tile(positron_first=False):
+def make_tile(positron_first=False, proton=False, bad_mass=None):
     config = runko.Configuration(None)
     config.n_tiles = [1, 1, 1]
     config.n_cells_per_tile = [NC, NC, NC]
     config.cfl = CFL
     config.field_propagator = "fdtd2"
-    if positron_first:
+    if proton:
+        # an ion species first: it must be skipped, not mistaken for a lepton
+        config.q0, config.m0 = 1, 1836
+        config.q1, config.m1, config.w1 = 1, 1, WL
+        config.q2, config.m2, config.w2 = -1, 1, WL
+        config.q3, config.m3 = 0, 0
+    elif positron_first:
         config.q0, config.m0, config.w0 = 1, 1, WL
         config.q1, config.m1, config.w1 = -1, 1, WL
+        config.q2, config.m2 = 0, 0
     else:
         config.q0, config.m0, config.w0 = -1, 1, WL
         config.q1, config.m1, config.w1 = 1, 1, WL
-    config.q2, config.m2 = 0, 0
+        config.q2, config.m2 = 0, 0
+    if bad_mass is not None:
+        config.q0, config.m0 = -1, bad_mass
     config.particle_pusher = "boris"
     config.field_interpolator = "linear_1st"
     config.current_depositer = "zigzag_1st"
@@ -119,6 +128,14 @@ class qed_layout(unittest.TestCase):
             self.assertEqual(tile.species("e-"), 1 if pf else 0)
             self.assertEqual(tile.species("e+"), 0 if pf else 1)
             self.assertFalse(tile.laid())
+        # a proton species (m > 1) is skipped, whatever its charge and position in the list
+        config, tile = make_tile(proton=True)
+        self.assertEqual(tile.species("ph"), 3)
+        self.assertEqual(tile.species("e+"), 1)
+        self.assertEqual(tile.species("e-"), 2)
+        # a charged species of fractional mass is neither a lepton nor an ion
+        with self.assertRaises(RuntimeError):
+            make_tile(bad_mass=0.5)
 
     def test_layout_tables(self):
         config, tile = make_tile()
