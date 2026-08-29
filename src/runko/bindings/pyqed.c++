@@ -227,7 +227,15 @@ void
     .def("inject_pairs_plaw", &qed::Tile<3>::inject_pairs_plaw, py::arg("ell"), py::arg("p"), py::arg("gmin"), py::arg("gmax"))
     .def("inject_photons", &qed::Tile<3>::inject_photons, py::arg("ell"), py::arg("theta"), py::arg("w"), py::arg("planck") = true)
     .def("heat_diffusive", &qed::Tile<3>::heat_diffusive, py::arg("ell"))
-    .def("escape_photons", &qed::Tile<3>::escape_photons)
+    .def("escape_photons", &qed::Tile<3>::escape_photons, py::arg("tau_T") = -1.0, py::arg("dt_esc") = -1.0)
+    .def(
+      "escaped_mu_spectrum",
+      [](const qed::Tile<3>& t) {
+        // (log x bins, mu bins) as a (NESC, NMU) array of x ell_x sums
+        const auto h = t.escaped_mu_spectrum();
+        auto a       = to_ndarray(h);
+        return a.reshape({ static_cast<py::ssize_t>(qed::Sampler::NESC), static_cast<py::ssize_t>(qed::Sampler::NMU) });
+      })
     .def("reset_budget", &qed::Tile<3>::reset_budget)
     .def("tau_ssa", &qed::Tile<3>::tau_ssa, py::arg("x"))
     .def(

@@ -95,6 +95,35 @@ class qed_openbox(unittest.TestCase):
             self.check(f"creation/integral ell={ell:.1f}", 1.0, cre_m / max(cre_pred, 1e-30), 0.10)
             self.check(f"annihilation/MJ ell={ell:.1f}", 1.0, ann_m / max(ann_pred, 1e-30), 0.10)
 
+    def test_escape_external_depth(self):
+        """the driver may give the slab's depth and step: the same numbers as the tile's own give the
+        same escape, and the direction histogram sums to the spectrum"""
+        dt = 5e-3
+        rng = np.random.default_rng(21)
+        tiles = [make(11, dt), make(11, dt)]
+        for t in tiles:
+            init_pairs(t, 4000, 1000, 0.1, 1.0, np.random.default_rng(21))
+            t.sort_particles()
+        tau, N2 = tiles[0].tau_T(), 1 / dt
+        tiles[0].escape_photons()
+        tiles[1].escape_photons(tau, dt)
+        b0, b1 = tiles[0].budget(), tiles[1].budget()
+        self.assertGreater(b0["esc_W"], 0.0)
+        self.assertEqual(b0["esc_W"], b1["esc_W"])
+        self.assertEqual(b0["esc_E"], b1["esc_E"])
+        edges, h = tiles[0].escaped_spectrum()
+        hmu = tiles[0].escaped_mu_spectrum()
+        self.assertEqual(hmu.shape, (len(h), 32))
+        np.testing.assert_allclose(hmu.sum(1), h, rtol=1e-12)
+        self.assertAlmostEqual(h.sum(), b0["esc_E"], delta=1e-9 * b0["esc_E"])
+        # a smaller step in crossings escapes proportionally fewer
+        t = make(11, dt); init_pairs(t, 4000, 1000, 0.1, 1.0, np.random.default_rng(21)); t.sort_particles()
+        t.escape_photons(tau, dt / 4)
+        self.assertLess(t.budget()["esc_W"], 0.5 * b0["esc_W"])
+        t.reset_budget()
+        self.assertEqual(t.budget()["esc_W"], 0.0)
+        self.assertEqual(t.escaped_mu_spectrum().sum(), 0.0)
+
     # ================================================================== test 7: adaptivity
     def test7_adaptivity(self):
         steps, dt = 300, 5e-3

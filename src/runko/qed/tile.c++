@@ -345,10 +345,10 @@ void
 
 template<std::size_t D>
 void
-  Tile<D>::escape_photons()
+  Tile<D>::escape_photons(const double tau_T, const double dt_esc)
 {
   auto t = view();
-  sampler_.escape_photons(t);
+  sampler_.escape_photons(t, tau_T, dt_esc);
 }
 
 template<std::size_t D>

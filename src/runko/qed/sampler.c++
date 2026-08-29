@@ -1557,19 +1557,24 @@ void
 }
 
 void
-  Sampler::escape_photons(TileView& t)
+  Sampler::escape_photons(TileView& t, const double tau_ext, const double dt_ext)
 {
   Ctx c { .t = &t, .v = {}, .old_size = {}, .ncell = 0, .nb = par.nbin };
   c.refresh_all();
-  const auto tau_T = Pop::totals(*t.con[1]).W + Pop::totals(*t.con[2]).W;   // the pair depth the escape sees
-  if(esc_hist_.size() != static_cast<std::size_t>(NESC)) { esc_hist_.assign(NESC, 0.0); }
+  // the pair depth the escape sees: the whole slab's, given by the driver, or this tile's own
+  const auto tau_T  = tau_ext >= 0.0 ? tau_ext : Pop::totals(*t.con[1]).W + Pop::totals(*t.con[2]).W;
+  const auto dt_esc = dt_ext > 0.0 ? dt_ext : box.dt;   // the step in crossings of that slab
+  if(esc_hist_.size() != static_cast<std::size_t>(NESC)) {
+    esc_hist_.assign(NESC, 0.0);
+    esc_mu_hist_.assign(static_cast<std::size_t>(NESC) * NMU, 0.0);
+  }
   thrust::fill(dbudget_.begin(), dbudget_.end(), 0.0);
   const auto db   = thrust::raw_pointer_cast(dbudget_.data());   // escaped energy and weight
   const auto hist = thrust::raw_pointer_cast(esc_hist_.data());  // escaping x ell_x per log bin
+  const auto hmu  = thrust::raw_pointer_cast(esc_mu_hist_.data());   // and per (log bin, direction)
   const auto v    = c.v[0];
   const auto n    = t.con[0]->size();
   const auto key  = runko::rng_key(par.seed, istep_, 0, 305);
-  const auto bx   = box;
   const auto llo  = std::log(ESC_LO), dl = (std::log(ESC_HI) - std::log(ESC_LO)) / NESC;   // the log bins
   const auto w    = tyvi::mdgrid_work {};
   const auto i0   = thrust::counting_iterator<I>(0);
@@ -1578,19 +1583,31 @@ void
     if(not v.alive(i)) { return; }
     auto rng     = runko::Rng { key, i };
     const auto x = v.e(i);
-    if(not(rng.uniform() < bx.p_esc(x, tau_T))) { return; }
+    if(not(rng.uniform() < Box::p_esc(x, tau_T, dt_esc))) { return; }
     const auto wg = v.w(i);
     v.kill(i);
     sstd::atomic_add(&db[b_E], x * wg);
     sstd::atomic_add(&db[b_W], wg);
     const auto b = sstd::clamp(static_cast<int>(sstd::floor((sstd::log(x) - llo) / dl)), 0, NESC - 1);   // its spectral bin
     sstd::atomic_add(&hist[b], x * wg);
+    const auto mu = static_cast<double>(v.vel[i][2]) / x;   // escape direction, cosine to z
+    const auto m  = sstd::clamp(static_cast<int>(sstd::floor((mu + 1.0) * 0.5 * NMU)), 0, NMU - 1);
+    sstd::atomic_add(&hmu[b * NMU + m], x * wg);
   });
   w.wait();
   // the escaped energy and weight
   thrust::host_vector<double> h = dbudget_;
   budget.esc_E += h[b_E];
   budget.esc_W += h[b_W];
+}
+
+// host copy of the escaping spectrum per direction, zeros before the first escape
+std::vector<double>
+  Sampler::escaped_mu_spectrum() const
+{
+  if(esc_mu_hist_.empty()) { return std::vector<double>(static_cast<std::size_t>(NESC) * NMU, 0.0); }
+  thrust::host_vector<double> h = esc_mu_hist_;
+  return std::vector<double>(h.begin(), h.end());
 }
 
 // host copy of the escaping spectrum, zeros before the first escape
@@ -1608,6 +1625,7 @@ void
 {
   budget = Budget {};
   thrust::fill(esc_hist_.begin(), esc_hist_.end(), 0.0);
+  thrust::fill(esc_mu_hist_.begin(), esc_mu_hist_.end(), 0.0);
 }
 
 double

@@ -248,6 +248,7 @@ public:
   };
   Budget budget;
   static constexpr int NESC = 100;     // log bins of the escaping spectrum over [1e-8, 1e2]
+  static constexpr int NMU  = 32;      // linear bins of the escape direction mu = k_z/x over [-1, 1]
   static constexpr double ESC_LO = 1e-8, ESC_HI = 1e2;
 
   /// pairs at the power ell per step: dN/dgamma ~ gamma^-p on [gmin, gmax], each lepton isotropic
@@ -257,15 +258,19 @@ public:
   /// stochastic heating of the leptons at the power ell per step: momentum diffusion with D = D_0 p^2
   void heat_diffusive(TileView& t, double ell);
   /// remove photons with the slab escape probability at the current pair depth
-  void escape_photons(TileView& t);
+  /// tau_T < 0: this tile's own pair depth; dt_esc < 0: the tile is the slab (box.dt)
+  void escape_photons(TileView& t, double tau_T = -1.0, double dt_esc = -1.0);
   /// x ell_x of the escaped photons per log bin, summed since the budget was reset
   [[nodiscard]] std::vector<double> escaped_spectrum() const;
+  /// x ell_x of the escaped photons per (log x, mu) bin, NESC x NMU row-major, since the reset
+  [[nodiscard]] std::vector<double> escaped_mu_spectrum() const;
   void reset_budget();
   /// self-absorption depth across the box of a photon of energy x against the current leptons
   [[nodiscard]] double tau_ssa(const TileView& t, double x) const;
 
 private:
-  thrust::device_vector<double> esc_hist_;  // x ell_x of the escaped photons per log bin
+  thrust::device_vector<double> esc_hist_;      // NESC: x ell_x per log bin
+  thrust::device_vector<double> esc_mu_hist_;   // NESC x NMU: the same per escape direction  // x ell_x of the escaped photons per log bin
   thrust::device_vector<double> dbudget_;   // energy and weight accumulated by one source or sink
 };
 

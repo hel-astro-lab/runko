@@ -39,13 +39,19 @@ struct [[nodiscard]] Box {
   /// the compactness a power of dE per step corresponds to
   [[nodiscard]] constexpr double ell_of(const double dE_) const { return dE_ / dt; }
 
-  /// escape probability per step of a photon of energy x through the slab, at pair depth tau_T
-  [[nodiscard]] constexpr double p_esc(const double x, const double tau_T) const
+  /// escape probability per step of a photon of energy x through a slab of pair depth tau_T,
+  /// the step being dt_esc light crossings of that slab
+  [[nodiscard]] static constexpr double p_esc(const double x, const double tau_T, const double dt_esc)
   {
     // t_esc = (H/c)(1 + tau_T f(x) sigma_KN), where f accounts for the forward scattering of
     // energetic photons and drops to zero above x = 1
     const auto f = x <= 0.1 ? 1.0 : (x < 1.0 ? (1.0 - x) / 0.9 : 0.0);  // forward-scattering factor
-    return dt / (1.0 + tau_T * f * comp::sigma_kn(x));  // one step over the escape time
+    return dt_esc / (1.0 + tau_T * f * comp::sigma_kn(x));  // one step over the escape time
+  }
+  /// the same with this tile as the slab
+  [[nodiscard]] constexpr double p_esc(const double x, const double tau_T) const
+  {
+    return p_esc(x, tau_T, dt);
   }
 };
 

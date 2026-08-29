@@ -106,10 +106,13 @@ public:
   void inject_pairs_plaw(double ell, double p, double gmin, double gmax);  // pairs, dN/dgamma ~ gamma^-p
   void inject_photons(double ell, double theta, double w, bool planck);    // Wien or Planck photons
   void heat_diffusive(double ell);                                        // momentum diffusion of the leptons
-  void escape_photons();                                                  // slab escape at the current depth
+  /// slab escape: at this tile's own depth and step, or at the depth tau_T and the step dt_esc
+  /// (in crossings of the slab) the driver gives for the whole box
+  void escape_photons(double tau_T = -1.0, double dt_esc = -1.0);
   [[nodiscard]] const Sampler::Budget& budget() const { return sampler_.budget; }
   void reset_budget() { sampler_.reset_budget(); }
   [[nodiscard]] std::vector<double> escaped_spectrum() const { return sampler_.escaped_spectrum(); }
+  [[nodiscard]] std::vector<double> escaped_mu_spectrum() const { return sampler_.escaped_mu_spectrum(); }
   [[nodiscard]] double tau_ssa(double x);  // self-absorption depth of a photon of energy x
 };
 
