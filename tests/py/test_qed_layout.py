@@ -182,6 +182,67 @@ class qed_layout(unittest.TestCase):
         check_layout(self, tile, "ph", (0.0, 0.0, 0.0), (NC, NC, NC))
         self.assertEqual(tile.totals("ph")["N"], n0 + 50)
 
+    def test_arrivals_keep_the_layout(self):
+        """photons crossing from the neighbour tile are appended as tail (key -1) without
+        invalidating the layout; the next sort keys them"""
+        import tempfile
+        config = runko.Configuration(None)
+        config.tile_partitioning = "catepillar_track"
+        config.catepillar_track_length = 1
+        config.n_laps = 1
+        config.n_tiles = [2, 1, 1]
+        config.n_cells_per_tile = [NC, NC, NC]
+        config.cfl = 0.45
+        config.field_propagator = "fdtd2"
+        config.q0, config.m0, config.w0 = -1, 1, WL
+        config.q1, config.m1, config.w1 = 1, 1, WL
+        config.q2, config.m2 = 0, 0
+        config.particle_pusher = "boris"
+        config.field_interpolator = "linear_1st"
+        config.current_depositer = "zigzag_1st"
+        config.qed_H_lamC = 2.33e17
+        config.qed_nbin, config.qed_n_reaction_cells, config.qed_nsort = NBIN, NRC, 10
+        config.qed_slack, config.qed_smin, config.qed_seed = SLACK, SMIN, 4
+        config.io_outdir = tempfile.mkdtemp(prefix="runko-qed-arrivals-")
+        tile_grid = runko.TileGrid(config)
+        rng = np.random.default_rng(9)
+        n_cross, n_stay = 300, 500
+        tiles = {}
+        for idx in tile_grid.local_tile_indices():
+            tile = runko.qed.threeD.Tile(idx, config)
+            zero = lambda x, y, z: (0, 0, 0)
+            tile.set_EBJ(zero, zero, zero)
+            if idx == (0, 0, 0):
+                # photons at the +x edge flying +x cross in one push; the rest stay
+                cross = [runko.pic.threeD.ParticleState(pos=(NC - 0.2, 1 + (NC - 2) * rng.random(), 1 + (NC - 2) * rng.random()),
+                                                       vel=(1.0, 0, 0), wgt=w) for w in rng.uniform(0.1, 5.0, n_cross) * WL]
+                stay = [runko.pic.threeD.ParticleState(pos=(1 + (NC - 3) * rng.random(), 1 + (NC - 2) * rng.random(), 1 + (NC - 2) * rng.random()),
+                                                      vel=tuple(rng.normal(size=3)), wgt=w) for w in rng.uniform(0.1, 5.0, n_stay) * WL]
+                tile.inject(2, cross + stay)
+            else:
+                tile.inject(2, [runko.pic.threeD.ParticleState(pos=(NC + 1 + (NC - 3) * rng.random(), 1 + (NC - 2) * rng.random(), 1 + (NC - 2) * rng.random()),
+                                                               vel=tuple(rng.normal(size=3)), wgt=w) for w in rng.uniform(0.1, 5.0, n_stay) * WL])
+            tile_grid.add_tile(tile, idx)
+            tiles[idx] = tile
+        simulation = tile_grid.configure_simulation(config)
+        for tile in simulation.local_tiles():
+            tile.sort_particles()
+        def lap(x):
+            x.prtcl_push()
+            x.prtcl_pack_outgoing()
+            x.comm_external(runko.tools.comm_mode.pic_particle)
+            x.comm_local(runko.tools.comm_mode.pic_particle)
+        simulation.for_each_lap(lap)
+        t1 = tiles[(1, 0, 0)]
+        self.assertTrue(t1.laid(), "arrivals must not invalidate the layout")
+        keys = np.asarray(t1.get_slot_keys("ph"))
+        self.assertEqual(len(keys), n_stay + n_cross)
+        self.assertEqual(np.count_nonzero(keys < 0), n_cross, "arrivals are tail")
+        self.assertEqual(t1.totals("ph")["N"], n_stay + n_cross)
+        self.assertEqual(tiles[(0, 0, 0)].totals("ph")["N"], n_stay)
+        t1.sort_particles()
+        check_layout(self, t1, "ph", (NC, 0.0, 0.0), (2 * NC, NC, NC))
+
     def test_empty_species(self):
         config, tile = make_tile()
         rng = np.random.default_rng(8)

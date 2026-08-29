@@ -76,8 +76,13 @@ public:
   /// Whether every species holds a valid layout.
   [[nodiscard]] bool laid() const;
 
-  /// Particles arrived from other tiles: the layout is stale.
-  void local_communication_postlude(const int) override;
+  /// Particles arrived from other tiles land in the tail of the layout, inert until the next
+  /// sort, so the layout stays valid.
+  void append_arrivals(
+    std::size_t ptype,
+    const std::vector<std::span<const runko::ParticleState<value_type>>>& spans,
+    std::array<value_type, 3> mins,
+    std::array<value_type, 3> maxs) override;
 
   /// tile extent as the layout needs it
   [[nodiscard]] std::array<value_type, 3> layout_mins() const;

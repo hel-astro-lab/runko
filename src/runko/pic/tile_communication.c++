@@ -97,6 +97,17 @@ void
 
 template<std::size_t D>
 void
+  Tile<D>::append_arrivals(
+    const std::size_t ptype,
+    const std::vector<std::span<const runko::ParticleState<value_type>>>& spans,
+    const std::array<value_type, 3> mins,
+    const std::array<value_type, 3> maxs)
+{
+  particle_buffs_.at(ptype).append(spans, mins, maxs);
+}
+
+template<std::size_t D>
+void
   Tile<D>::local_communication_postlude(const int mode)
 {
   using runko::comm_mode;
@@ -104,7 +115,8 @@ void
 
   for(const auto& [ptype, spans]: this->incoming_subregion_particles_) {
     using T = pic::ParticleContainer::value_type;
-    particle_buffs_.at(ptype).append(
+    this->append_arrivals(
+      ptype,
       spans,
       this->template get_global_coordinate_mins<T>(),
       this->template get_global_coordinate_maxs<T>());

@@ -214,12 +214,50 @@ bool
 
 template<std::size_t D>
 void
-  Tile<D>::local_communication_postlude(const int mode)
+  Tile<D>::append_arrivals(
+    const std::size_t ptype,
+    const std::vector<std::span<const runko::ParticleState<value_type>>>& spans,
+    const std::array<value_type, 3> mins,
+    const std::array<value_type, 3> maxs)
 {
-  pic::Tile<D>::local_communication_postlude(mode);
-  // arrivals were appended outside the layout: every species needs a new one
-  if(static_cast<runko::comm_mode>(mode) == runko::comm_mode::pic_particle) {
-    for(auto& p: pops_) { p.invalidate(); }
+  // pic's append writes after the last alive slot, which may be inside the last key's slack
+  // and would mis-key the arrival; here the container grows and the arrivals fill the new
+  // tail slots, keyed -1 until the next layout
+  auto& con = this->particles(ptype);
+  auto n    = 0uz;
+  for(const auto& sp: spans) { n += sp.size(); }
+  if(n == 0) { return; }
+  const auto old = static_cast<runko::index_t>(con.size());
+  con.grow(n);
+  const auto pos_mds  = con.pos_mds();
+  const auto vel_mds  = con.vel_mds();
+  const auto ids_mds  = con.ids_mds();
+  const auto wgt_mds  = con.wgt_mds();
+  const auto weighted = con.has_particle_weights();
+  const auto w        = tyvi::mdgrid_work {};
+  const auto L        = std::array { maxs[0] - mins[0], maxs[1] - mins[1], maxs[2] - mins[2] };
+  auto offset         = old;
+  for(const auto& sp: spans) {
+    const auto p  = sp.data();
+    const auto m  = sp.size();
+    const auto i0 = thrust::counting_iterator<runko::index_t>(0);
+    // one lane per arrival: its state into the tail slot, the position wrapped into the box
+    thrust::for_each(w.on_this(), i0, i0 + static_cast<std::ptrdiff_t>(m), [=](const runko::index_t i) {
+      const auto st = p[i];
+      const auto j  = offset + i;
+      for(auto q = 0uz; q < 3uz; ++q) {
+        pos_mds[j][q] = (st.pos[q] < 0 ? maxs[q] : mins[q]) + std::fmod(st.pos[q], L[q]);
+        vel_mds[j][q] = st.vel[q];
+      }
+      ids_mds[j][] = st.id;
+      if(weighted) { wgt_mds[j][] = st.wgt; }
+    });
+    offset += static_cast<runko::index_t>(m);
+  }
+  w.wait();
+  // the tail keys of the grown slots
+  for(auto s = 0uz; s < 3uz; ++s) {
+    if(sp_[s] == ptype) { pops_[s].follow_container(con); }
   }
 }
 

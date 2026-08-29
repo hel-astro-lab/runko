@@ -206,6 +206,17 @@ public:
 
   void local_communication_postlude(const int) override;
 
+protected:
+  /// Store the particles that arrived from the neighbours (global positions, wrapped into
+  /// [mins, maxs)); the default appends after the last alive slot.
+  virtual void append_arrivals(
+    std::size_t ptype,
+    const std::vector<std::span<const runko::ParticleState<value_type>>>& spans,
+    std::array<value_type, 3> mins,
+    std::array<value_type, 3> maxs);
+
+public:
+
   /// Get particles from haloregion of the other with comm_mode::pic_particle.
   ///
   /// Forward other communication modes to emf::Tile.
