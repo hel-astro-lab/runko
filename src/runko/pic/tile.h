@@ -159,7 +159,7 @@ public:
   void deposit_current();
 
   /// Sorts the particles in order to reduce cache misses.
-  void sort_particles();
+  virtual void sort_particles();
 
   /// Register a reflector wall on this tile.
   void register_reflector_wall(pic::reflector_wall wall);

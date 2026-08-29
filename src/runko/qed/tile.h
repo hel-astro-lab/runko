@@ -77,7 +77,7 @@ public:
   [[nodiscard]] std::size_t step() const { return sampler_.step(); }
 
   /// The padded reaction layout of every species: the sort of this tile.
-  void sort_particles();
+  void sort_particles() override;
 
   /// One step of the QED Monte Carlo.
   void interact();
