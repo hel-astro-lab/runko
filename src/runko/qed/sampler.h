@@ -33,6 +33,7 @@
 
 #include "runko/pic/particle.h"
 #include "runko/qed/box.h"
+#include "runko/qed/field.h"
 #include "runko/qed/interactions/qed1_syn.h"
 #include "runko/qed/layout.h"
 #include "thrust/device_vector.h"
@@ -151,6 +152,7 @@ struct [[nodiscard]] Staged {
 
 /// What the sampler needs of the tile for one step.
 struct [[nodiscard]] TileView {
+  FieldView field;                              // the field the channels see
   std::array<pic::ParticleContainer*, 3> con;  // ph, e-, e+
   std::array<Pop*, 3> pop;                     // their layouts
   std::array<float, 3> mins, maxs;             // tile extent

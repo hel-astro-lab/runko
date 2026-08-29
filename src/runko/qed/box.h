@@ -20,6 +20,7 @@ inline constexpr double LAMC_CM = 3.8615926796e-11;  // reduced Compton waveleng
 
 struct [[nodiscard]] Box {
   double H_lamC;  // tile edge in Compton wavelengths, H/lamC
+  double H_box_lamC;  // box edge, on which the magnetic compactness is defined (the tile edge in a 0-D box)
   double dt;      // time step in light crossings of the tile, c Delta t/H
   double w_lep;   // weight of every lepton LP, in Thomson depths
   double ell_B;   // magnetic compactness sigma_T H U_B/(m_e c^2); > 0 opens the field channels
@@ -29,7 +30,7 @@ struct [[nodiscard]] Box {
   [[nodiscard]] constexpr double N1() const { return 1.0 / (ALPHA * dt * H_lamC); }
   [[nodiscard]] constexpr double b_perp() const
   {
-    return ell_B > 0.0 ? b_from_ellB(ell_B, H_lamC) : 0.0;
+    return ell_B > 0.0 ? b_from_ellB(ell_B, H_box_lamC) : 0.0;
   }
   [[nodiscard]] constexpr double H_cm() const { return H_lamC * LAMC_CM; }
 

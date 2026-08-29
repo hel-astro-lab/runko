@@ -97,20 +97,21 @@ struct ChGG {
 // bounded by a scan of the rate over the lepton bin at the photon bin's floor
 struct ChSSA {
   Species t2;                                          // the lepton species, e- or e+
-  double b_perp, x_min;                                // field B_perp/B_Q and the band floor
+  double b_lo, b_hi, x_min;                            // field range of the epoch (B/B_Q) and the band floor
   static constexpr Species t1   = Species::ph;
   static constexpr Kind kind    = Kind::absorb;
   static constexpr Sel sel1     = Sel::both;
   static constexpr Sel sel2     = Sel::cell;
   static constexpr double c_l   = 1.0;
   static constexpr bool has_dgm = true;
-  constexpr double rate(const Vec3& k, const Vec3& u) const
+  /// the rate at the absorbing lepton's own field
+  constexpr double rate(const Vec3& k, const Vec3& u, const double b) const
   {
-    return ssa::rate(k, u, b_perp, x_min);
+    return ssa::rate(k, u, b, x_min);
   }
   constexpr double bound(double lo1, double /*hi1*/, double lo2, double hi2) const
   {
-    return ssa::bound(b_perp, x_min, lo1, lo2, hi2);
+    return ssa::bound(b_lo, b_hi, x_min, lo1, lo2, hi2);
   }
   constexpr double dgmax(double x, double) const { return ssa::dgmax(x, 0.0); }
 };
@@ -206,6 +207,20 @@ struct SideView {
     return v < c0 ? base0[cb] + v : base1[cb] + v - c0;
   }
 };
+
+/// the rate of the pair (p1, p2); a field channel reads the partner's field at its position
+template<typename Ch, typename V>
+[[nodiscard]]
+constexpr double
+  pair_rate(const Ch& ch, const FieldView& fv, const V& v2, const runko::index_t j, const Vec3& p1, const Vec3& p2)
+{
+  if constexpr(Ch::kind == Kind::absorb) {
+    const auto gam = sstd::sqrt(1.0 + toolbox::dot(p2, p2));
+    return ch.rate(p1, p2, fv.b_eff(v2.pos[j][0], v2.pos[j][1], v2.pos[j][2], p2 / gam));
+  } else {
+    return ch.rate(p1, p2);
+  }
+}
 
 /// offset inside a range of N slots cut into M strata of a slot drawn uniformly from stratum p
 [[nodiscard]]
@@ -462,7 +477,7 @@ void
     const auto j = static_cast<std::size_t>(rng.integer(i));
     std::swap(order[i - 1], order[j]);
   }
-  const auto b = box.b_perp();
+  const auto& fv = t.field;   // the field range of the epoch bounds the absorption envelope
   // dispatch each channel to the kernels of its record type
   for(const auto l: order) {
     switch(static_cast<Channel>(l)) {
@@ -470,8 +485,8 @@ void
       case Channel::compton_p: twobody(c, ChCompton { Species::ep }, l); break;
       case Channel::pairann: twobody(c, ChAnn {}, l); break;
       case Channel::photann: twobody(c, ChGG {}, l); break;
-      case Channel::ssa_m: twobody(c, ChSSA { Species::em, b, box.x_min }, l); break;
-      case Channel::ssa_p: twobody(c, ChSSA { Species::ep, b, box.x_min }, l); break;
+      case Channel::ssa_m: twobody(c, ChSSA { Species::em, fv.b_min, fv.b_max, box.x_min }, l); break;
+      case Channel::ssa_p: twobody(c, ChSSA { Species::ep, fv.b_min, fv.b_max, box.x_min }, l); break;
       default: onebody(c, static_cast<Channel>(l), l); break;
     }
   }
@@ -784,6 +799,7 @@ void
   const auto li = thrust::raw_pointer_cast(lane_i_.data()), lj = thrust::raw_pointer_cast(lane_j_.data());  // incident and partner slot per lane
   const auto lf = thrust::raw_pointer_cast(lane_f_.data());                                          // accumulation factor per lane
   const auto v1 = c.v[i1], v2 = c.v[i2];   // views of the incident and partner species
+  const auto fv = c.t->field;              // the field at the partner, for the absorption rate
   const auto kappa = par.kappa;
   const auto lane0 = thrust::counting_iterator<I>(0);
   // one lane per envelope event: draw the pair, test the weight factor, then the rate
@@ -827,7 +843,7 @@ void
     if(not(u < wf)) { return; }
     sstd::atomic_add(&ds[d_wpass], 1.0);
     const auto p1v = v1.u(i), p2v = v2.u(j);
-    const auto rate = ch.rate(p1v, p2v);
+    const auto rate = pair_rate(ch, fv, v2, j, p1v, p2v);
     auto weff = sstd::max(wi, wj);                        // effective weight of the merged pair
     if constexpr(Ch::has_dgm) {
       if(kappa > 0.0) {
@@ -1186,7 +1202,7 @@ void
   const auto v    = c.v[is];
   const auto n    = c.t->con[is]->size();                 // one lane per slot
   if(n == 0) { return; }
-  const auto b    = box.b_perp();
+  const auto fv   = c.t->field;                           // the field at every particle
   const auto N1   = box.N1();
   const auto x_min = box.x_min;
   if(not emit) {
@@ -1236,9 +1252,10 @@ void
       auto rngA     = runko::Rng { keyA, i };
       auto rngC     = runko::Rng { keyC, i };
       const auto u  = v.u(i);
+      const auto gam = sstd::sqrt(1.0 + toolbox::dot(u, u));
+      const auto b   = fv.b_eff(v.pos[i][0], v.pos[i][1], v.pos[i][2], u / gam);   // the lepton's field
       const auto lam = syn::rate(u, b, x_min, false) / N1;   // emissions per step above the floor
       if(lam <= 0.0) { return; }
-      const auto gam = sstd::sqrt(1.0 + toolbox::dot(u, u));
       const auto xm  = syn::xmean(gam * b, gam, false, x_min);   // mean photon energy above the floor
       const auto z   = sstd::max(rngA.uniform(), 1e-300);
       const auto slow = lam <= 1.0;                              // resolved: below one emission per step
@@ -1298,6 +1315,7 @@ void
       }
       auto rngA      = runko::Rng { keyA, i };
       const auto k   = v.u(i);
+      const auto b   = fv.b_eff(v.pos[i][0], v.pos[i][1], v.pos[i][2], k / sstd::max(toolbox::norm(k), 1e-300));   // the photon's field
       const auto lam = bw::rate(k, b) / N1;   // conversions per step
       const auto z   = sstd::max(rngA.uniform(), 1e-300);
       if(lam > 0.0 and -sstd::log(z) < lam) { lacc[i] = 1; }
@@ -1334,7 +1352,9 @@ void
     thrust::for_each(w.on_this(), e0, e0 + static_cast<std::ptrdiff_t>(na), [=](const I e) {
       const auto i = acc[e];
       auto rngC    = runko::Rng { keyC, i };
-      const auto P = bw::sample(v.u(i), b, rngC);
+      const auto k = v.u(i);
+      const auto b = fv.b_eff(v.pos[i][0], v.pos[i][1], v.pos[i][2], k / sstd::max(toolbox::norm(k), 1e-300));
+      const auto P = bw::sample(k, b, rngC);
       if(n3[e] > 0) {
         // the pair at the photon's position, on top of each other: no charge density is added
         stage(P.um, i, wl, n3[e], 1, 0);
@@ -1596,11 +1616,11 @@ double
   // With weight in units of depth, the absorptions per crossing of a photon are the sum over the
   // leptons of their weight times 2 sigma-hat F: the depth of the box in this channel, the analogue
   // of tau_T. Its unit crossing marks x_SSA.
-  const auto b = box.b_perp();
-  if(b <= 0.0) { return 0.0; }
-  const auto w = tyvi::mdgrid_work {};
-  auto out     = 0.0;
-  const auto k = Vec3(x, 0.0, 0.0);   // the rate depends on x and gamma only
+  if(box.b_perp() <= 0.0) { return 0.0; }
+  const auto fv = t.field;             // each lepton absorbs in its own field
+  const auto w  = tyvi::mdgrid_work {};
+  auto out      = 0.0;
+  const auto k  = Vec3(x, 0.0, 0.0);   // the rate depends on x, gamma and the field only
   // sum w 2 sigma-hat F over the live leptons of both species
   for(auto s = 1uz; s <= 2uz; ++s) {
     auto& con     = *t.con[s];
@@ -1609,7 +1629,13 @@ double
     const auto i0 = thrust::counting_iterator<I>(0);
     out += thrust::transform_reduce(
       w.on_this(), i0, i0 + static_cast<std::ptrdiff_t>(n),
-      [=](const I i) { return v.alive(i) ? v.w(i) * 2.0 * ssa::rate(k, v.u(i), b, 0.0) : 0.0; },
+      [=](const I i) {
+        if(not v.alive(i)) { return 0.0; }
+        const auto u   = v.u(i);
+        const auto gam = sstd::sqrt(1.0 + toolbox::dot(u, u));
+        const auto b   = fv.b_eff(v.pos[i][0], v.pos[i][1], v.pos[i][2], u / gam);
+        return v.w(i) * 2.0 * ssa::rate(k, u, b, 0.0);
+      },
       0.0, thrust::plus<double> {});
   }
   return out;
@@ -1621,6 +1647,7 @@ double
 {
   const auto w  = tyvi::mdgrid_work {};
   const auto N2 = box.N2();
+  const auto fv = t.field;   // the partner's field, for the absorption rate
   // the brute-force sum over every (incident, partner) pair of the channel's record type
   auto run      = [&](const auto& ch) {
     const auto i1  = static_cast<std::size_t>(std::remove_cvref_t<decltype(ch)>::t1);
@@ -1642,7 +1669,7 @@ double
         for(I j = 0; j < n2; ++j) {
           if(not v2.alive(j)) { continue; }
           const auto wj = v2.w(j);
-          s += sstd::max(wi, wj) * (weight ? sstd::min(wi, wj) : 1.0) * 2.0 * ch.rate(p1, v2.u(j));
+          s += sstd::max(wi, wj) * (weight ? sstd::min(wi, wj) : 1.0) * 2.0 * pair_rate(ch, fv, v2, j, p1, v2.u(j));
         }
         return s;
       },
@@ -1650,15 +1677,14 @@ double
     if(i1 == i2) { tot *= 0.5; }  // each unordered pair once
     return tot / N2;
   };
-  const auto b = box.b_perp();
   // dispatch on the channel's record type
   switch(which) {
     case Channel::compton_m: return run(ChCompton { Species::em });
     case Channel::compton_p: return run(ChCompton { Species::ep });
     case Channel::pairann: return run(ChAnn {});
     case Channel::photann: return run(ChGG {});
-    case Channel::ssa_m: return run(ChSSA { Species::em, b, box.x_min });
-    case Channel::ssa_p: return run(ChSSA { Species::ep, b, box.x_min });
+    case Channel::ssa_m: return run(ChSSA { Species::em, fv.b_min, fv.b_max, box.x_min });
+    case Channel::ssa_p: return run(ChSSA { Species::ep, fv.b_min, fv.b_max, box.x_min });
     default: throw std::runtime_error { "pair_sum: not a two-body channel" };
   }
 }

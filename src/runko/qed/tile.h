@@ -34,9 +34,12 @@ private:
   std::array<std::size_t, 3> sp_ {};  // container index of ph, e-, e+
   std::vector<Pop> pops_;             // ph, e-, e+
   Sampler sampler_;                   // the Monte Carlo state of this tile
+  double B0_ { 0.0 };                 // reference field in code units; 0: the uniform field of the box
 
   /// the containers, layouts and extent of this tile as the sampler takes them
   [[nodiscard]] TileView view();
+  /// the field the channels see this lap: uniform, or the lattice scaled to the critical field
+  [[nodiscard]] FieldView field_view();
 
 public:
   /// Construct from the config. On top of the pic::Tile keys:

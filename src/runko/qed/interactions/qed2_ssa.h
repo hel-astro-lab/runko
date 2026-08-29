@@ -124,40 +124,68 @@ constexpr double
   return (3.141592653589793 / (8.0 * ALPHA)) * diff / (us * gam * x * x * x);
 }
 
-/// Bound on rate over photons above x_lo and leptons in [g_lo, g_hi], by direct maximization:
-/// the rate falls with x, so the bound sits at the floor and only gamma is scanned, on a
-/// geometric grid with the peak gamma^2 = 0.4435 x/b_perp of the kernel and its neighbours.
+/// Bound on rate over photons above x_lo, leptons in [g_lo, g_hi] and fields in [b_lo, b_hi],
+/// by direct maximization: the rate falls with x, so the bound sits at the floor; gamma is
+/// scanned on a geometric grid with the kernel's peak gamma^2 = 0.4435 x/b and its neighbours,
+/// and at every gamma the field on a geometric grid around the peak field b = 0.4435 x/gamma^2
+/// plus the top of the range -- in b the rate is a unimodal classical part plus a rising
+/// quantum part, so it may peak inside the range or at its top.
 [[nodiscard]]
 constexpr double
-  shmax(const double b_perp, const double x_lo, double g_lo, double g_hi)
+  shmax(const double b_lo, const double b_hi, const double x_lo, double g_lo, double g_hi)
 {
-  g_lo           = sstd::max(g_lo, GMIN);
-  g_hi           = sstd::max(g_hi, g_lo);
-  const auto gpk = sstd::sqrt(0.4435 * x_lo / b_perp);    // gamma of the kernel's peak at the floor
-  const auto k   = Vec3(x_lo, 0.0, 0.0);                  // a photon at the floor
-  auto r         = 0.0;                                   // running maximum of the rate
-  const auto at  = [&](const double g) {                  // the rate at gamma, head-on
+  g_lo          = sstd::max(g_lo, GMIN);
+  g_hi          = sstd::max(g_hi, g_lo);
+  const auto k  = Vec3(x_lo, 0.0, 0.0);   // the rate depends on x and gamma only
+  auto r        = 0.0;                    // the running maximum
+  const auto at = [&](const double g, const double b) {
+    if(b <= 0.0) { return; }
     const auto u = Vec3(sstd::sqrt(g * g - 1.0), 0.0, 0.0);
-    r            = sstd::max(r, rate(k, u, b_perp, 0.0));
+    r            = sstd::max(r, rate(k, u, b, 0.0));
   };
+  // the fields to try at one gamma: a single field, or the grid around the peak plus the top
+  const auto scan_b = [&](const double g) {
+    if(b_hi <= b_lo) {
+      at(g, b_hi);
+      return;
+    }
+    const auto bpk = 0.4435 * x_lo / (g * g);
+    for(auto j = 0; j < 7; ++j) { at(g, sstd::clamp(bpk * sstd::pow(4.0, (j - 3.0) / 3.0), b_lo, b_hi)); }
+    at(g, b_hi);
+  };
+  const auto gpk   = sstd::sqrt(0.4435 * x_lo / b_hi);   // the peak gamma at the largest field
   constexpr auto n = 16;
-  // geometric scan of the gamma range, then the peak and its neighbours
-  for(auto i = 0; i < n; ++i) {
-    at(g_lo * sstd::pow(g_hi / g_lo, static_cast<double>(i) / (n - 1)));
-  }
-  at(sstd::clamp(gpk / 1.15, g_lo, g_hi));
-  at(sstd::clamp(gpk, g_lo, g_hi));
-  at(sstd::clamp(gpk * 1.15, g_lo, g_hi));
+  for(auto i = 0; i < n; ++i) { scan_b(g_lo * sstd::pow(g_hi / g_lo, static_cast<double>(i) / (n - 1))); }
+  scan_b(sstd::clamp(gpk / 1.15, g_lo, g_hi));
+  scan_b(sstd::clamp(gpk, g_lo, g_hi));
+  scan_b(sstd::clamp(gpk * 1.15, g_lo, g_hi));
   return 1.05 * r;  // margin over the grid maximum
 }
 
-/// Bound over a bin pair from the bin edges; 0 for an empty or sub-threshold bin.
+/// The bound at a single field.
+[[nodiscard]]
+constexpr double
+  shmax(const double b_perp, const double x_lo, const double g_lo, const double g_hi)
+{
+  return shmax(b_perp, b_perp, x_lo, g_lo, g_hi);
+}
+
+/// Bound over a bin pair from the bin edges and the field range of the epoch; 0 for an empty
+/// or sub-threshold bin.
+[[nodiscard]]
+constexpr double
+  bound(const double b_lo, const double b_hi, const double x_min, const double xlo, const double glo, const double ghi)
+{
+  if(not(xlo < 1e300) or not(glo < 1e300) or not(ghi >= GMIN) or b_hi <= 0.0) { return 0.0; }
+  return shmax(b_lo, b_hi, sstd::max(xlo, x_min), glo, ghi);
+}
+
+/// The bound at a single field.
 [[nodiscard]]
 constexpr double
   bound(const double b_perp, const double x_min, const double xlo, const double glo, const double ghi)
 {
-  if(not(xlo < 1e300) or not(glo < 1e300) or not(ghi >= GMIN)) { return 0.0; }
-  return shmax(b_perp, sstd::max(xlo, x_min), glo, ghi);
+  return bound(b_perp, b_perp, x_min, xlo, glo, ghi);
 }
 
 /// photon k, lepton u -> the single product u', with gamma' = gamma + x: the lepton keeps its

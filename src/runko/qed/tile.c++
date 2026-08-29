@@ -67,8 +67,11 @@ Tile<D>::Tile(
     throw std::runtime_error { "qed::Tile needs a cubic tile (n_cells_per_tile equal)." };
   }
   const auto cfl = conf.get_or_throw<double>("cfl");  // c dt/dx: the step in cells
-  const auto box = Box { .H_lamC = conf.get_or_throw<double>("qed_H_lamC"),
-                         .dt     = cfl / static_cast<double>(cells[0]),
+  const auto tiles  = conf.get_or_throw<std::vector<std::ptrdiff_t>>("n_tiles");
+  const auto H_tile = conf.get_or_throw<double>("qed_H_lamC");
+  const auto box = Box { .H_lamC     = H_tile,
+                         .H_box_lamC = H_tile * static_cast<double>(tiles[0]),   // the compactness is defined on the box
+                         .dt         = cfl / static_cast<double>(cells[0]),
                          .w_lep  = this->particles(sp_[1]).weight(),
                          .ell_B  = conf.get<double>("qed_ell_B").value_or(0.0),
                          .x_min  = conf.get<double>("qed_x_min").value_or(0.0) };
@@ -113,13 +116,41 @@ Tile<D>::Tile(
     }
   }
   sampler_ = Sampler { box, par, channels };
+  B0_      = conf.get<double>("qed_B0").value_or(0.0);   // set by a PIC driver: the field of ell_B in code units
+}
+
+template<std::size_t D>
+FieldView
+  Tile<D>::field_view()
+{
+  const auto b0 = sampler_.box.b_perp();
+  if(B0_ <= 0.0 or b0 <= 0.0) {
+    return FieldView { .uniform = true, .b0 = b0, .bscale = 0.0, .b_min = b0, .b_max = b0, .at = this->EB_linear_1st_interpolator() };
+  }
+  // the largest field a particle can feel this lap bounds the absorption envelope:
+  // b_eff <= bscale (|E| + |B|) at the strongest cell
+  const auto bscale = b0 / B0_;
+  const auto [Emds, Bmds, Jmds] = this->yee_lattice_.view_EBJ_on_device();
+  auto fmax = thrust::device_vector<float>(1, 0.0f);
+  const auto fmax_p = thrust::raw_pointer_cast(fmax.data());
+  tyvi::mdgrid_work {}
+    .for_each_index(Emds, [=](const auto idx) {
+      const auto e = sstd::sqrt(Emds[idx][0] * Emds[idx][0] + Emds[idx][1] * Emds[idx][1] + Emds[idx][2] * Emds[idx][2]);
+      const auto b = sstd::sqrt(Bmds[idx][0] * Bmds[idx][0] + Bmds[idx][1] * Bmds[idx][1] + Bmds[idx][2] * Bmds[idx][2]);
+      sstd::atomic_max(fmax_p, e + b);
+    })
+    .wait();
+  const auto b_max = bscale * static_cast<double>(fmax[0]);
+  std::ignore = Jmds;
+  return FieldView { .uniform = false, .b0 = b0, .bscale = bscale, .b_min = 0.0, .b_max = b_max, .at = this->EB_linear_1st_interpolator() };
 }
 
 template<std::size_t D>
 TileView
   Tile<D>::view()
 {
-  auto t = TileView { .con      = { &this->particles(sp_[0]), &this->particles(sp_[1]), &this->particles(sp_[2]) },
+  auto t = TileView { .field    = field_view(),
+                      .con      = { &this->particles(sp_[0]), &this->particles(sp_[1]), &this->particles(sp_[2]) },
                       .pop      = { &pops_[0], &pops_[1], &pops_[2] },
                       .mins     = layout_mins(),
                       .maxs     = layout_maxs(),
