@@ -23,12 +23,13 @@ Tile<D>::Tile(
   corgi::Tile<D>(),
   emf::Tile<D>(tile_grid_idx, conf),
   pic::Tile<D>(tile_grid_idx, conf),
-  sampler_ { Box {}, Params {}, {} }
+  sampler_ { Box {}, Params {}, {} }  // replaced once the box and the knobs are read
 {
   // ---- the roles of the species, from their mass and charge: a massless species holds the
   // photons, a species of unit mass the leptons (electrons by a negative charge, positrons by a
   // positive one), and heavier species (protons, ions) take no part in the reactions
-  auto found = std::array { false, false, false };
+  auto found = std::array { false, false, false };  // photons, electrons, positrons seen
+  // every species of the pic tile is assigned a role or skipped
   for(auto i = 0uz; i < this->number_of_species(); ++i) {
     const auto a = this->particles(i).args();
     if(a.mass == 0.0) {
@@ -53,6 +54,7 @@ Tile<D>::Tile(
       "qed::Tile needs a massless species (photons) and lepton species (m = 1) of both charge signs."
     };
   }
+  // one layout per role: photons keyed by the sub-range bit, leptons by cell and bin only
   pops_.reserve(3);
   pops_.emplace_back(true, 0.0);
   pops_.emplace_back(false, this->particles(sp_[1]).args().mass);
@@ -60,10 +62,11 @@ Tile<D>::Tile(
 
   // ---- the box: tile edge in Compton wavelengths, step in light crossings
   const auto cells = conf.get_or_throw<std::vector<std::ptrdiff_t>>("n_cells_per_tile");
+  // the weight unit W_0 = H^2/sigma_T assumes V = H^3
   if(cells[0] != cells[1] or cells[1] != cells[2]) {
     throw std::runtime_error { "qed::Tile needs a cubic tile (n_cells_per_tile equal)." };
   }
-  const auto cfl = conf.get_or_throw<double>("cfl");
+  const auto cfl = conf.get_or_throw<double>("cfl");  // c dt/dx: the step in cells
   const auto box = Box { .H_lamC = conf.get_or_throw<double>("qed_H_lamC"),
                          .dt     = cfl / static_cast<double>(cells[0]),
                          .w_lep  = this->particles(sp_[1]).weight(),
@@ -73,7 +76,7 @@ Tile<D>::Tile(
     throw std::runtime_error { "qed::Tile: electron and positron weights must agree." };
   }
 
-  // ---- the sampler
+  // ---- the sampler: every knob from the config, with its default
   const auto geti = [&](const char* key, const int def) {
     return static_cast<int>(conf.get<std::ptrdiff_t>(key).value_or(def));
   };
@@ -93,6 +96,7 @@ Tile<D>::Tile(
   if(par.nbin < 1 or par.ncell_edge < 1 or par.nsort < 1 or par.smin < 1) {
     throw std::runtime_error { "qed::Tile: nbin, n_reaction_cells, nsort and smin must be >= 1." };
   }
+  // the channels to run: a list, a comma-separated string, or absent (all the field allows)
   auto channels = std::vector<std::string> {};
   if(const auto cs = conf.get<std::vector<std::string>>("qed_channels")) {
     channels = cs.value();
@@ -159,6 +163,7 @@ void
   constexpr auto block = 1uz << 20uz;
   for(auto s = 0uz; s < 3uz; ++s) { t.id_base[s] = this->reserve_ids(sp_[s], block); }
   sampler_.step(t);
+  // the block must have covered every product; more would have made duplicate ids
   for(auto s = 0uz; s < 3uz; ++s) {
     if(t.ids_used[s] > block) {
       throw std::runtime_error { "qed::Tile::interact: more than 2^20 products of one species in a step." };
@@ -181,6 +186,7 @@ void
   Tile<D>::local_communication_postlude(const int mode)
 {
   pic::Tile<D>::local_communication_postlude(mode);
+  // arrivals were appended outside the layout: every species needs a new one
   if(static_cast<runko::comm_mode>(mode) == runko::comm_mode::pic_particle) {
     for(auto& p: pops_) { p.invalidate(); }
   }
@@ -200,8 +206,9 @@ void
   con            = pic::ParticleContainer { con.args() };  // empty, same species
   auto rng       = runko::Rng { runko::rng_key(sampler_.par.seed, sampler_.step(), 7, 0), 0 };
   auto states    = std::vector<runko::ParticleState<double>>(u.size());
-  const auto lo  = this->mins;
+  const auto lo  = this->mins;  // tile extent, for the random positions
   const auto hi  = this->maxs;
+  // one state per LP: a uniform position in the tile, the given momentum and weight
   for(auto i = 0uz; i < u.size(); ++i) {
     states[i] = runko::ParticleState<double> {
       .pos = { lo[0] + (hi[0] - lo[0]) * rng.uniform(),
@@ -212,8 +219,8 @@ void
       .wgt = w[i]
     };
   }
-  this->inject(species(s), std::move(states));
-  pop(s).invalidate();
+  this->inject(species(s), std::move(states));  // the pic path: ids assigned, appended
+  pop(s).invalidate();                           // laid out again at the next step
 }
 
 template<std::size_t D>
@@ -222,6 +229,7 @@ void
 {
   auto& con    = this->particles(species(s));
   const auto n = con.size();
+  // the momenta flattened to the device
   auto h       = thrust::host_vector<float>(3 * u.size());
   for(auto i = 0uz; i < u.size(); ++i) {
     for(auto q = 0uz; q < 3uz; ++q) { h[3 * i + q] = static_cast<float>(u[i][q]); }
@@ -243,6 +251,7 @@ void
     },
     runko::index_t { 0 },
     thrust::plus<runko::index_t> {});
+  // one momentum per live LP, no more, no less
   const auto nalive = static_cast<std::size_t>(thrust::count_if(
     w.on_this(), i0, i0 + static_cast<std::ptrdiff_t>(n), [=](const runko::index_t i) {
       return ids_mds[i][] != runko::dead_prtc_id;
@@ -252,12 +261,13 @@ void
   }
   const auto rk = thrust::raw_pointer_cast(rank.data());
   const auto dp = thrust::raw_pointer_cast(d.data());
+  // one lane per slot: a live slot takes the momentum of its rank
   thrust::for_each(w.on_this(), i0, i0 + static_cast<std::ptrdiff_t>(n), [=](const runko::index_t i) {
     if(ids_mds[i][] == runko::dead_prtc_id) { return; }
     for(auto q = 0uz; q < 3uz; ++q) { vel_mds[i][q] = dp[3 * rk[i] + q]; }
   });
   w.wait();
-  pop(s).touch_all(con);
+  pop(s).touch_all(con);  // the new energies may lie outside the bounds of their keys
 }
 
 template<std::size_t D>
@@ -265,6 +275,7 @@ double
   Tile<D>::pair_sum(const std::string& channel, const bool weight)
 {
   auto t = view();
+  // the channel by name
   for(auto i = 0uz; i < N_CHANNELS; ++i) {
     if(channel == channel_name(static_cast<Channel>(i))) {
       return sampler_.pair_sum(static_cast<Channel>(i), t, weight);
@@ -278,6 +289,7 @@ void
   Tile<D>::inject_pairs_plaw(const double ell, const double p, const double gmin, const double gmax)
 {
   auto t = view();
+  // ids for the injected LPs, a block per species as in interact()
   for(auto s = 0uz; s < 3uz; ++s) { t.id_base[s] = this->reserve_ids(sp_[s], 1uz << 20uz); }
   sampler_.inject_pairs_plaw(t, ell, p, gmin, gmax);
 }
@@ -287,6 +299,7 @@ void
   Tile<D>::inject_photons(const double ell, const double theta, const double w, const bool planck)
 {
   auto t = view();
+  // ids for the injected LPs, a block per species as in interact()
   for(auto s = 0uz; s < 3uz; ++s) { t.id_base[s] = this->reserve_ids(sp_[s], 1uz << 20uz); }
   sampler_.inject_photons(t, ell, theta, w, planck);
 }

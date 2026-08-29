@@ -39,9 +39,10 @@ constexpr std::uint64_t
 
 /// The stream of one lane: uniform, normal and integer draws numbered by a counter.
 struct [[nodiscard]] Rng {
-  std::uint64_t key;
-  std::uint64_t ctr;
+  std::uint64_t key;  // the stream of the launch (seed, step, sub-step, kernel)
+  std::uint64_t ctr;  // the next draw of this lane
 
+  // counter space of one lane
   static constexpr std::uint64_t draws_per_lane = std::uint64_t { 1 } << 24;
 
   constexpr Rng(const std::uint64_t stream_key, const std::uint64_t lane) :
@@ -53,8 +54,8 @@ struct [[nodiscard]] Rng {
   [[nodiscard]]
   constexpr std::uint64_t next()
   {
-    const auto x = mix64(ctr++ + key);
-    return mix64(x ^ ((key << 32) | (key >> 32)));
+    const auto x = mix64(ctr++ + key);                  // first mix of counter and key
+    return mix64(x ^ ((key << 32) | (key >> 32)));      // second mix against the rotated key
   }
 
   /// Uniform on the open interval (0, 1): 53 random bits plus a half-ulp offset, never 0 or 1.
@@ -75,8 +76,8 @@ struct [[nodiscard]] Rng {
   [[nodiscard]]
   constexpr double normal()
   {
-    const auto r   = sstd::sqrt(-2.0 * sstd::log(uniform()));
-    const auto phi = 6.283185307179586 * uniform();
+    const auto r   = sstd::sqrt(-2.0 * sstd::log(uniform()));  // Rayleigh radius
+    const auto phi = 6.283185307179586 * uniform();            // uniform angle
     return r * sstd::cos(phi);
   }
 };

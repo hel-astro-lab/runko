@@ -20,6 +20,7 @@
 namespace {
 namespace py = pybind11;
 
+/// a host vector as a 1-D numpy array (one copy)
 template<typename T>
 auto
   to_ndarray(const std::vector<T>& vec)
@@ -31,6 +32,7 @@ auto
   return mda;
 }
 
+/// the species role of its python name
 qed::Species
   species_of(const std::string& name)
 {
@@ -50,10 +52,12 @@ void
   bind_physics(py::module& m)
 {
   using qed::Vec3;
+  // ---- constants and thresholds
   m.attr("ALPHA")    = qed::ALPHA;
   m.attr("BQ_G")     = qed::BQ_G;
   m.attr("SYN_GMIN") = qed::syn::GMIN;
   m.attr("BW_XMIN")  = qed::bw::XMIN;
+  // ---- two-body: cross sections and rates of (incident, partner) momenta
   m.def("b_from_ellB", py::vectorize([](const double ell_B, const double H) { return qed::b_from_ellB(ell_B, H); }));
   m.def("sigma_kn", py::vectorize([](const double x) { return qed::comp::sigma_kn(x); }));
   m.def(
@@ -79,6 +83,7 @@ void
   m.def("ssa_bound", py::vectorize([](double b, double x_min, double xlo, double glo, double ghi) {
           return qed::ssa::bound(b, x_min, xlo, glo, ghi);
         }));
+  // ---- synchrotron: spectral function, rate, cumulative and its inverse, moments
   m.def("G_syn", py::vectorize([](double ce, double cg) { return qed::ssa::G_syn(ce, cg); }));
   m.def("T_syn", py::vectorize([](double chi) { return qed::syn::T(chi); }));
   m.def("g_syn", py::vectorize([](double chi) { return qed::syn::g(chi); }));
@@ -91,12 +96,14 @@ void
   m.def("rate_syn", py::vectorize([](double ux, double uy, double uz, double b, double x_min, bool kinetic) {
           return qed::syn::rate(Vec3(ux, uy, uz), b, x_min, kinetic);
         }));
+  // ---- Breit-Wheeler: rate, cumulative and its inverse
   m.def("T_bw", py::vectorize([](double chi) { return qed::bw::T(chi); }));
   m.def("P_bw", py::vectorize([](double chi, double r) { return qed::bw::P(chi, r); }));
   m.def("r_bw", py::vectorize([](double z, double chi) { return qed::bw::r_of(z, chi); }));
   m.def("rate_bw", py::vectorize([](double kx, double ky, double kz, double b) {
           return qed::bw::rate(Vec3(kx, ky, kz), b);
         }));
+  // ---- the one-body bookkeeping of the sampler: accumulation factor and cooling law
   m.def("facc_syn", py::vectorize([](double gam, double xm, double acc, double kappa) {
           return qed::facc_syn(gam, xm, acc, kappa);
         }));
@@ -113,6 +120,7 @@ void
   py::module m_ph = m_sub.def_submodule("physics", "the QED process functions, vectorized");
   bind_physics(m_ph);
 
+  // ---- the virtual (halo) tile: the pic one, registered so that the grid can build it
   py::class_<
     qed::VirtualTile<3>,
     pic::VirtualTile<3>,
@@ -125,6 +133,7 @@ void
       }))
     .def_static("canonical_type", []() { return py::type::of<qed::Tile<3>>(); });
 
+  // ---- the qed tile: the sampler step, its layout, its populations and its diagnostics
   py::class_<
     qed::Tile<3>,
     pic::Tile<3>,
@@ -139,6 +148,7 @@ void
       py::init([](const std::array<std::size_t, 3> tile_grid_idx, const py::handle& h) {
         return qed::Tile<3>(tile_grid_idx, toolbox::ConfigParser(h));
       }))
+    // layout: the padded sort, its state, the species roles and the box clocks
     .def("sort_particles", &qed::Tile<3>::sort_particles)
     .def("laid", &qed::Tile<3>::laid)
     .def("step", &qed::Tile<3>::step)
@@ -160,6 +170,7 @@ void
         d["b_perp"] = b.b_perp();
         return d;
       })
+    // population IO (host round trips): replace, inspect the layout tables and keys
     .def(
       "set_particles",
       [](
@@ -188,6 +199,7 @@ void
         d["dl"]   = tb.dl;
         return d;
       })
+    // diagnostics: totals, pair depth, the sampler step and its counters
     .def(
       "totals",
       [](const qed::Tile<3>& t, const std::string& s) {
@@ -211,6 +223,7 @@ void
       },
       py::arg("channel"),
       py::arg("weight") = false)
+    // the open box: sources, the sink, its budgets and the escaping spectrum
     .def("inject_pairs_plaw", &qed::Tile<3>::inject_pairs_plaw, py::arg("ell"), py::arg("p"), py::arg("gmin"), py::arg("gmax"))
     .def("inject_photons", &qed::Tile<3>::inject_photons, py::arg("ell"), py::arg("theta"), py::arg("w"), py::arg("planck") = true)
     .def("heat_diffusive", &qed::Tile<3>::heat_diffusive, py::arg("ell"))
@@ -240,6 +253,7 @@ void
         }
         return py::make_tuple(to_ndarray(edges), to_ndarray(h));
       })
+    // in-place momentum reset of the live LPs (thermostats of the tests)
     .def(
       "reset_momenta",
       [](qed::Tile<3>& t, const std::string& s, const std::vector<std::array<double, 3>>& u) {

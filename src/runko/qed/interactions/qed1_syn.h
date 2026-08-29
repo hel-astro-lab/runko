@@ -20,8 +20,10 @@ namespace qed::syn {
 inline constexpr double GMIN   = 3.0;          // lepton threshold of the channel
 inline constexpr double ZCLIP  = 5e-4;         // deviate clipped off both ends before inversion
 inline constexpr double CHI_HI = 1e2;          // top of the range the spectrum shape was fitted on
-inline constexpr double RMIN   = 1e-9;         // floor on the quartic's first square root as a divisor
-inline constexpr double FMIN   = 10 * ZCLIP;   // thinnest tail above a floor the sampler can draw from
+// floor on the quartic's first square root as a divisor
+inline constexpr double RMIN   = 1e-9;
+// thinnest tail above a floor the sampler can draw from
+inline constexpr double FMIN   = 10 * ZCLIP;
 inline constexpr double TINY   = 1e-300;
 
 /// Auxiliary function T_S(chi_e) of the emission rate, tending to 5/(2 sqrt 3) as chi_e -> 0.
@@ -31,7 +33,7 @@ constexpr double
 {
   // The photon-number integral of the emission spectrum: the rate function is (chi_e/gamma) T_S.
   // Accurate to 0.5 % from chi_e = 1e-4 to 1e2; the floor keeps the logarithm finite at zero field.
-  chi_e         = sstd::max(chi_e, 1e-12);
+  chi_e         = sstd::max(chi_e, 1e-12);       // zero field floored, not a window
   const auto g1 = 1.0 - 403289.4214570542 * chi_e *
                           sstd::exp(-(chi_e + 0.847336033) * (chi_e + 0.847336033) / 0.0584260036);
   const auto l  = sstd::log(chi_e) + 7.9555351;
@@ -60,8 +62,9 @@ constexpr Shape
 {
   // Downwards the fit extrapolates (the approximant stays a probability to chi_e = 1e-8);
   // upwards the shape is frozen at CHI_HI, the better extrapolation by a wide margin.
-  const auto x  = sstd::clamp(chi_e, 1e-12, CHI_HI);
+  const auto x  = sstd::clamp(chi_e, 1e-12, CHI_HI);  // the floor is zero-field, not a window
   const auto lx = sstd::log(x);
+  // the three Pade parameters: amplitude a, denominator coefficient b, exponent n
   const auto a =
     ((1.0 + 0.1648 * sstd::exp(-2.279 * (x - 1.2024) * (x - 1.2024))) * 5.37351138 *
        sstd::pow(x, -0.07620857) / (1.0 + 1.74094714 * sstd::pow(x, 1.29054535)) +
@@ -92,8 +95,8 @@ constexpr double
   // A Pade form in v = 1 - r^(1/3), anchored at p(0) = 0 by c = a - b - 1 and at p(1) = 1
   // by every term vanishing at r = 1.
   const auto [a, b, n] = shape(chi_e);
-  const auto c         = a - b - 1.0;
-  const auto v         = 1.0 - sstd::cbrt(r);
+  const auto c         = a - b - 1.0;              // anchors p(0) = 0
+  const auto v         = 1.0 - sstd::cbrt(r);      // the Pade variable
   return 1.0 - a * sstd::pow(v, 4.0 * n) /
                  (1.0 + b * sstd::pow(v, 2.0 * n) + c * sstd::pow(v, 3.0 * n));
 }
@@ -109,28 +112,34 @@ constexpr double
   z                    = sstd::clamp(z, ZCLIP, 1.0 - ZCLIP);
   const auto [a, b, n] = shape(chi_e);
   const auto c         = a - b - 1.0;
+  // the quartic a u^4 + B u^2 + C u + D = 0 with z cleared from the denominator ...
   const auto B         = -b * (1.0 - z);
   const auto C         = -c * (1.0 - z);
   const auto D         = z - 1.0;
+  // ... depressed to u^4 + K u^2 + M u + N = 0 ...
   const auto K         = B / a - 3.0 * C * C / (8.0 * a * a);
   const auto M         = C * C * C / (8.0 * a * a * a) - B * C / (2.0 * a * a);
   const auto N = D / a + B * C * C / (16.0 * a * a * a) - 3.0 * C * C * C * C / (256.0 * a * a * a * a);
+  // ... whose resolvent cubic y^3 + p y + q = 0 Cardano solves
   const auto p   = -(12.0 * N + K * K) / 12.0;
   const auto q   = (-2.0 * K * K * K - 36.0 * K * N + 108.0 * (K * N - M * M / 4.0)) / 216.0;
-  const auto dis = sstd::sqrt(sstd::max(q * q / 4.0 + p * p * p / 27.0, 0.0));
+  const auto dis = sstd::sqrt(sstd::max(q * q / 4.0 + p * p * p / 27.0, 0.0));  // discriminant
+  // a real root of the resolvent
   const auto y   = sstd::cbrt(-q / 2.0 + dis) + sstd::cbrt(-q / 2.0 - dis) + K / 6.0;
+  // the quartic's roots from the resolvent: the sign of hi picks the real positive branch
   const auto root = sstd::sqrt(sstd::max(2.0 * y - K, 0.0));
-  const auto rs   = sstd::max(root, RMIN);
+  const auto rs   = sstd::max(root, RMIN);        // as a divisor only
   const auto hi   = -2.0 * y - K - 2.0 * M / rs;
   const auto u    = hi >= 0.0
                       ? (root + sstd::sqrt(sstd::max(hi, 0.0))) / 2.0
                       : (-root + sstd::sqrt(sstd::max(-2.0 * y - K + 2.0 * M / rs, 0.0))) / 2.0;
   const auto us   = sstd::max(u, TINY);
-  const auto x    = u - C / (4.0 * a);
+  const auto x    = u - C / (4.0 * a);             // undo the depression shift: x = (1 - r^(1/3))^n
   // Classical corner: soft emission with the deviate close to one, where C/(4a) is minute
   // beside u; expanding (u - C/4a)^(1/n) about u keeps the digits that forming x would cancel.
   const auto e    = C / (4.0 * a * n);
   const auto un   = sstd::pow(us, 1.0 / n);
+  // second-order expansion of x^(1/n)
   const auto xser = un - un * e / us - e * e * (n - 1.0) * un / (us * us) / 2.0;
   const auto xn = (z < 0.998 or chi_e >= 0.1) ? sstd::pow(sstd::max(x, 0.0), 1.0 / n) : xser;
   const auto r  = x < 0.0 ? 1.0 : (1.0 - xn) * (1.0 - xn) * (1.0 - xn);  // negative x: round-off
@@ -177,13 +186,15 @@ constexpr double
   // int_{r_min}^1 r dP = r_min (1 - P0) + int_{r_min}^1 (1 - P) dr, Simpson in ln r from a
   // few decades below the photon energy scale r ~ chi_e; the sliver below the first node is
   // added in closed form.
-  chi_e           = sstd::max(chi_e, 1e-12);
-  const auto P0   = P(chi_e, r_min);
+  chi_e           = sstd::max(chi_e, 1e-12);       // zero field floored, as in shape()
+  const auto P0   = P(chi_e, r_min);               // cumulative at the floor
+  // first node, below the spectrum's scale
   auto r_lo       = sstd::max(r_min, 1e-7 * sstd::min(chi_e, 1.0));
   r_lo            = sstd::min(r_lo, 1.0 - 1e-12);
-  constexpr int n = 96;
+  constexpr int n = 96;                            // Simpson intervals in ln r
   const auto lr0  = sstd::log(r_lo);
   auto sum        = 0.0;
+  // Simpson sum of (1 - P) r over ln r from r_lo to 1
   for(auto i = 0; i <= n; ++i) {
     const auto r = sstd::exp(lr0 * (1.0 - static_cast<double>(i) / n));
     const auto w = (i == 0 or i == n) ? 1.0 : (i % 2 == 1 ? 4.0 : 2.0);
@@ -217,14 +228,16 @@ constexpr Products
   // direction while its energy drops by the photon energy, rescaled on the mass shell -- the
   // exact inverse of the self-absorption product. The floor restricts the deviate to the part
   // of the cumulative above it, at no rejection.
-  const auto gam   = sstd::sqrt(1.0 + toolbox::dot(u, u));
-  const auto us    = sstd::sqrt(sstd::max(gam * gam - 1.0, TINY));
-  const auto om    = u / us;
+  const auto gam   = sstd::sqrt(1.0 + toolbox::dot(u, u));  // Lorentz factor of the emitter
+  const auto us    = sstd::sqrt(sstd::max(gam * gam - 1.0, TINY));  // its momentum, to be rescaled
+  const auto om    = u / us;                       // emission direction, along the momentum
   const auto chi_e = gam * b_perp;
+  // cumulative at the floor, 0 without one
   const auto P0    = P(chi_e, r_floor(x_min, gam, kinetic));
+  // fraction drawn above the floor
   const auto r     = r_of(P0 + (1.0 - P0) * rng.uniform(), chi_e);
-  const auto x     = (kinetic ? gam - 1.0 : gam) * r;
-  const auto gam1  = sstd::max(gam - x, 1.0);
+  const auto x     = (kinetic ? gam - 1.0 : gam) * r;  // photon energy
+  const auto gam1  = sstd::max(gam - x, 1.0);      // lepton energy after the emission
   return Products { x * om, om * sstd::sqrt(sstd::max(gam1 * gam1 - 1.0, 0.0)) };
 }
 

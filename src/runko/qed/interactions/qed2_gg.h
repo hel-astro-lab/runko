@@ -42,7 +42,7 @@ constexpr double
   bound(const double x1lo, const double x1hi, const double x2lo, const double x2hi)
 {
   const auto q  = 2.0 * x1hi * x2hi;                        // largest invariant, head-on
-  const auto sh = sigma_gg(q) * q / 2.0 / (x1lo * x2lo);
+  const auto sh = sigma_gg(q) * q / 2.0 / (x1lo * x2lo);    // over the smallest x1 x2
   return sh == sh and sh < 1e300 ? sstd::min(sh, SHMAX) : 0.0;
 }
 
@@ -57,21 +57,25 @@ constexpr Products
 {
   // Crossing-symmetric counterpart of the annihilation sampler: in the CM the two leptons
   // leave back to back with energy gamma_cm and momentum gamma_cm beta_cm.
-  const auto x1   = toolbox::norm(k1);
-  const auto x2   = toolbox::norm(k2);
+  // ---- the photon pair in the laboratory and its CM frame
+  const auto x1   = toolbox::norm(k1);                      // energy of photon 1
+  const auto x2   = toolbox::norm(k2);                      // energy of photon 2
   const auto s0   = x1 + x2;                                // total energy
   const auto svec = k1 + k2;                                // total momentum
-  const auto s    = toolbox::norm(svec);
+  const auto s    = toolbox::norm(svec);                    // its magnitude
   const auto q    = x1 * x2 - toolbox::dot(k1, k2);         // 2 gamma_cm^2
   const auto bc   = svec / (-s0);                           // minus the CM velocity
-  const auto gcm  = sstd::sqrt(q / 2.0);
-  const auto vcm  = sstd::sqrt(sstd::max(1.0 - 1.0 / (gcm * gcm), 0.0));
+  const auto gcm  = sstd::sqrt(q / 2.0);                    // CM Lorentz factor of each lepton
+  const auto vcm  = sstd::sqrt(sstd::max(1.0 - 1.0 / (gcm * gcm), 0.0));  // beta_cm
   const auto om1  = k1 / x1;                                // direction of photon 1
   const auto deg  = s < 1e-10;                              // head-on and equal: no boost axis
   const auto kvec = deg ? om1 : bc / sstd::max(toolbox::norm(bc), 1e-300);
+  // photon-1 cosine to the axis
   const auto cz1  = deg ? 1.0 : sstd::clamp((x2 - x1) / sstd::max(s, 1e-300), -1.0, 1.0);
+  // azimuth from the (axis, photon 1) plane
   const auto t    = perp_basis(kvec, om1);
   const auto omr  = cm_direction(cz1, gcm, vcm, t, rng, ntry);  // lepton direction in the CM
+  // the two leptons, back to back in the CM frame, transformed to the laboratory
   const auto A    = boost(bc, gcm, (gcm * vcm) * omr);
   const auto B    = boost(bc, gcm, (-gcm * vcm) * omr);
   return Products { A.p, B.p };

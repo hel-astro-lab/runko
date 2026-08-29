@@ -33,8 +33,9 @@ public:
 private:
   std::array<std::size_t, 3> sp_ {};  // container index of ph, e-, e+
   std::vector<Pop> pops_;             // ph, e-, e+
-  Sampler sampler_;
+  Sampler sampler_;                   // the Monte Carlo state of this tile
 
+  /// the containers, layouts and extent of this tile as the sampler takes them
   [[nodiscard]] TileView view();
 
 public:
@@ -88,24 +89,25 @@ public:
     const std::vector<double>& w);
   /// Redraw the momenta of the live LPs of a species in place (slot order), keeping the layout.
   void reset_momenta(Species s, const std::vector<std::array<double, 3>>& u);
-  [[nodiscard]] std::vector<std::int32_t> get_slot_keys(Species s);
-  [[nodiscard]] Pop::Tables get_tables(Species s);
-  [[nodiscard]] Pop::Totals totals(Species s) const;
-  [[nodiscard]] double tau_T() const;
+  [[nodiscard]] std::vector<std::int32_t> get_slot_keys(Species s);  // key of every live LP
+  [[nodiscard]] Pop::Tables get_tables(Species s);                   // the per-key tables
+  [[nodiscard]] Pop::Totals totals(Species s) const;                 // N, W, E, P of a species
+  [[nodiscard]] double tau_T() const;                                // pair depth: the lepton weight
+  /// exact expectation of a channel in one step (events, or the weight they move)
   [[nodiscard]] double pair_sum(const std::string& channel, bool weight);
   [[nodiscard]] std::map<std::string, double> counts() const { return sampler_.counts(); }
   [[nodiscard]] std::map<std::string, double> moved() const { return sampler_.moved(); }
   [[nodiscard]] std::string report() const { return sampler_.report(); }
 
-  // ---- the open box
-  void inject_pairs_plaw(double ell, double p, double gmin, double gmax);
-  void inject_photons(double ell, double theta, double w, bool planck);
-  void heat_diffusive(double ell);
-  void escape_photons();
+  // ---- the open box: sources and sinks, each accumulating into the budget
+  void inject_pairs_plaw(double ell, double p, double gmin, double gmax);  // pairs, dN/dgamma ~ gamma^-p
+  void inject_photons(double ell, double theta, double w, bool planck);    // Wien or Planck photons
+  void heat_diffusive(double ell);                                        // momentum diffusion of the leptons
+  void escape_photons();                                                  // slab escape at the current depth
   [[nodiscard]] const Sampler::Budget& budget() const { return sampler_.budget; }
   void reset_budget() { sampler_.reset_budget(); }
   [[nodiscard]] std::vector<double> escaped_spectrum() const { return sampler_.escaped_spectrum(); }
-  [[nodiscard]] double tau_ssa(double x);
+  [[nodiscard]] double tau_ssa(double x);  // self-absorption depth of a photon of energy x
 };
 
 }  // namespace qed

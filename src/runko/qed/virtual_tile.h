@@ -17,6 +17,7 @@ class VirtualTile : virtual public pic::VirtualTile<D> {
 public:
   static_assert(D == 3);
 
+  /// the pic virtual tile built from the same config
   explicit VirtualTile(
     const std::array<std::size_t, 3> tile_indices,
     const toolbox::ConfigParser& config) :

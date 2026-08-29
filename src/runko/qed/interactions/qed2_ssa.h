@@ -41,13 +41,14 @@ inline constexpr double XREL = 1e-3;  // x/gamma below which the rate takes its 
 constexpr double
   F_syn(const double nu)
 {
-  constexpr auto F1 = 2.1495282415344787;  // pi 2^(5/3)/(sqrt 3 Gamma(1/3))
-  constexpr auto F2 = 1.2533141373155003;  // sqrt(pi/2)
-  const auto x3     = sstd::cbrt(nu);
+  // pi 2^(5/3)/(sqrt 3 Gamma(1/3)): F -> F1 nu^(1/3) at nu << 1
+  constexpr auto F1 = 2.1495282415344787;
+  constexpr auto F2 = 1.2533141373155003;  // sqrt(pi/2): F -> F2 e^-nu nu^(1/2) at nu >> 1
+  const auto x3     = sstd::cbrt(nu);      // nu^(1/3)
   const auto H1     = -0.97947838884478688 * nu - 0.83333239129525072 * sstd::sqrt(nu) +
-                      0.15541796026816246 * x3;
+                      0.15541796026816246 * x3;  // exp(H1) bridges away from the soft asymptote
   const auto H2 = -4.69247165562628882e-2 * nu - 0.70055018056462881 * sstd::sqrt(nu) +
-                  1.03876297841949544e-2 * x3;
+                  1.03876297841949544e-2 * x3;  // 1 - exp(H2) bridges into the hard one
   return F1 * x3 * sstd::exp(H1) + F2 * sstd::exp(-nu) * sstd::sqrt(nu) * (1.0 - sstd::exp(H2));
 }
 
@@ -58,6 +59,7 @@ constexpr double
   // K_2/3 itself; G(nu) = nu K_2/3(nu)
   constexpr auto A1c = 0.5 * 1.3541179394264004;  // Gamma(2/3)/2, times (nu/2)^(-2/3)
   constexpr auto A2c = 1.2533141373155003;        // sqrt(pi/2), times nu^(-1/2) e^-nu
+  // nu^(1/2), nu^(1/3), nu^(1/4)
   const auto x2 = sstd::sqrt(nu), x3 = sstd::cbrt(nu), x4 = sstd::sqrt(x2);
   const auto H1 = -1.0010216415582440 * nu + 0.88350305221249859 * x2 -
                   3.6240174463901829 * x3 + 0.57393980442916881 * x4;
@@ -81,7 +83,9 @@ constexpr double
   G_syn(const double chi_e, const double chi_gam)
 {
   if(not(chi_gam < chi_e)) { return 0.0; }  // a photon cannot carry more than the lepton has
+  // argument of the synchrotron functions
   const auto nu   = sstd::clamp(2.0 * chi_gam / (3.0 * chi_e * (chi_e - chi_gam)), 1e-100, 1e30);
+  // sqrt(3)/(2 pi) chi_gamma/chi_e
   const auto pref = (1.7320508075688772 / 6.283185307179586) * (chi_gam / chi_e);
   return pref * (int_K53(nu) + 1.5 * chi_gam * nu * K23(nu));
 }
@@ -108,9 +112,9 @@ constexpr double
   const auto x   = toolbox::norm(k);
   const auto gam = sstd::sqrt(1.0 + toolbox::dot(u, u));
   if(gam < GMIN or x < x_min or x <= 0.0) { return 0.0; }
-  const auto chi_gam = x * b_perp;
-  const auto us      = sstd::sqrt(sstd::max(gam * gam - 1.0, 1e-300));
-  double diff;
+  const auto chi_gam = x * b_perp;                         // the same for both states of the lepton
+  const auto us      = sstd::sqrt(sstd::max(gam * gam - 1.0, 1e-300));  // lepton momentum
+  double diff;                                             // h(gamma + x) - h(gamma)
   if(x < XREL * gam) {
     const auto d = 1e-6 * gam;
     diff = x * (h_syn(gam + d, chi_gam, b_perp) - h_syn(gam - d, chi_gam, b_perp)) / (2.0 * d);
@@ -129,14 +133,15 @@ constexpr double
 {
   g_lo           = sstd::max(g_lo, GMIN);
   g_hi           = sstd::max(g_hi, g_lo);
-  const auto gpk = sstd::sqrt(0.4435 * x_lo / b_perp);
-  const auto k   = Vec3(x_lo, 0.0, 0.0);
-  auto r         = 0.0;
-  const auto at  = [&](const double g) {
+  const auto gpk = sstd::sqrt(0.4435 * x_lo / b_perp);    // gamma of the kernel's peak at the floor
+  const auto k   = Vec3(x_lo, 0.0, 0.0);                  // a photon at the floor
+  auto r         = 0.0;                                   // running maximum of the rate
+  const auto at  = [&](const double g) {                  // the rate at gamma, head-on
     const auto u = Vec3(sstd::sqrt(g * g - 1.0), 0.0, 0.0);
     r            = sstd::max(r, rate(k, u, b_perp, 0.0));
   };
   constexpr auto n = 16;
+  // geometric scan of the gamma range, then the peak and its neighbours
   for(auto i = 0; i < n; ++i) {
     at(g_lo * sstd::pow(g_hi / g_lo, static_cast<double>(i) / (n - 1)));
   }
@@ -162,9 +167,9 @@ constexpr double
 constexpr Vec3
   sample(const Vec3& k, const Vec3& u)
 {
-  const auto x   = toolbox::norm(k);
-  const auto gam = sstd::sqrt(1.0 + toolbox::dot(u, u));
-  const auto us  = sstd::sqrt(sstd::max(gam * gam - 1.0, 1e-300));
+  const auto x   = toolbox::norm(k);                      // photon energy, all absorbed
+  const auto gam = sstd::sqrt(1.0 + toolbox::dot(u, u));  // Lorentz factor of the absorbing lepton
+  const auto us  = sstd::sqrt(sstd::max(gam * gam - 1.0, 1e-300));  // its momentum, to be rescaled
   return u * (sstd::sqrt((gam + x) * (gam + x) - 1.0) / us);
 }
 

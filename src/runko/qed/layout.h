@@ -36,18 +36,18 @@ struct [[nodiscard]] LayoutView {
   I* fill;              // per key: live + appended
   I* prod;              // per key: products appended in the epoch, fitted or not
   float* wmax;          // per key: the bounds the envelopes read
-  float* emin;
-  float* emax;
-  int nbin;
-  int ncell_edge;
-  int ncell;
-  int nkeys;
-  bool keyed;
-  float mass;
+  float* emin;          // per key: lowest energy held
+  float* emax;          // per key: highest energy held
+  int nbin;             // energy bins per cell
+  int ncell_edge;       // reaction sub-cells per tile edge
+  int ncell;            // reaction sub-cells of the tile
+  int nkeys;            // keys of the layout
+  bool keyed;           // photons: the key carries the sub-range bit
+  float mass;           // rest mass of the species
   double llo;           // log of the lowest kinetic energy of the epoch
   double dl;            // log width of an energy bin
   std::array<float, 3> mins;  // tile extent, for the reaction cell of a position
-  std::array<float, 3> maxs;
+  std::array<float, 3> maxs;  // (positions are in the tile's own coordinates)
 
   [[nodiscard]] constexpr int ncells() const { return ncell; }
 
@@ -69,6 +69,7 @@ struct [[nodiscard]] LayoutView {
     return sstd::clamp(static_cast<int>(sstd::floor((sstd::log(v) - llo) / dl)), 0, nbin - 1);
   }
 
+  /// key of a (cell, bin) pair, and of the photon bit
   [[nodiscard]] constexpr int key_of(const int cell, const int ebin, const int bit) const
   {
     const auto k = cell * nbin + ebin;
@@ -89,18 +90,23 @@ struct [[nodiscard]] LayoutView {
 class [[nodiscard]] Pop {
   // The layout of one species; the container itself belongs to the tile, which passes it to
   // every call, so that a tile may be copied or moved without a pointer going stale.
-  bool keyed_;
-  float mass_;
-  LayoutParams par_ {};
-  std::array<float, 3> mins_ {}, maxs_ {};
-  double llo_ { 0.0 }, dl_ { 1.0 };
-  int nkeys_ { 0 };
-  bool laid_ { false };
+  // ---- what the species is and what the current epoch fixed
+  bool keyed_;                              // photons carry the sub-range bit
+  float mass_;                              // rest mass: 0 photons, 1 leptons
+  LayoutParams par_ {};                     // bins, cells and slack rule of the epoch
+  std::array<float, 3> mins_ {}, maxs_ {};  // tile extent
+  double llo_ { 0.0 }, dl_ { 1.0 };         // log bin edges: lowest edge and bin width
+  int nkeys_ { 0 };                         // keys of the layout
+  bool laid_ { false };                     // tables valid for the current container
 
+  // ---- per slot: key of every slot, -1 in the tail
   thrust::device_vector<std::int32_t> skey_;
+  // ---- per key: first slot, slots, live + appended, products appended in the epoch
   thrust::device_vector<runko::index_t> b_, cap_, fill_, prod_;
+  // ---- per key: the weight and energy bounds the envelopes read
   thrust::device_vector<float> wmax_, emin_, emax_;
-  // scratch
+  // ---- scratch of a layout, per slot (key, sort permutation, target slot) and per key + 1
+  // (key starts); the high-water mark is kept between epochs
   thrust::device_vector<runko::index_t> keys_, ord_, cnt_, slots_;
 
 
@@ -132,17 +138,17 @@ public:
 
   /// number of live LPs and their summed weight, energy and momentum
   struct Totals {
-    double N, W, E;
-    std::array<double, 3> P;
+    double N, W, E;           // live LPs, their weight and energy
+    std::array<double, 3> P;  // their momentum
   };
   [[nodiscard]] static Totals totals(const pic::ParticleContainer& con);
 
   // ---- host copies for IO and tests
   [[nodiscard]] std::vector<std::int32_t> get_slot_keys(const pic::ParticleContainer& con);
   struct Tables {
-    std::vector<runko::index_t> b, cap, fill, prod;
-    std::vector<float> wmax, emin, emax;
-    double llo, dl;
+    std::vector<runko::index_t> b, cap, fill, prod;  // per key, as on the device
+    std::vector<float> wmax, emin, emax;             // per key
+    double llo, dl;                                  // log bin edges
   };
   [[nodiscard]] Tables get_tables();
 };

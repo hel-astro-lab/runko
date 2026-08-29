@@ -21,9 +21,9 @@ constexpr double
 {
   // Tends to 1 in the Thomson limit and falls as 1/x_R once the recoil matters. The closed
   // form cancels to 0/0 as x_R -> 0, so small arguments take its series instead.
-  xR = sstd::max(xR, 1e-12);
-  if(xR < 1e-2) { return 1.0 - 2.0 * xR + 5.2 * xR * xR - 13.3 * xR * xR * xR; }
-  const auto l = sstd::log1p(2.0 * xR);
+  xR = sstd::max(xR, 1e-12);                        // guard the 1/x_R^2 of the closed form
+  if(xR < 1e-2) { return 1.0 - 2.0 * xR + 5.2 * xR * xR - 13.3 * xR * xR * xR; }  // series
+  const auto l = sstd::log1p(2.0 * xR);             // ln(1 + 2 x_R) of the closed form
   return 0.375 / (xR * xR) *
          (4.0 + (xR - 2.0 - 2.0 / xR) * l +
           2.0 * xR * xR * (1.0 + xR) / ((1.0 + 2.0 * xR) * (1.0 + 2.0 * xR)));
@@ -49,8 +49,9 @@ constexpr double
   // The rate is monotone in the rest-frame energy over a product of the two energies, so
   // its bound over a bin pair is the largest rest-frame energy the bins can reach over the
   // smallest energy product: no search, no table.
+  // largest x_R: head-on at the top corner
   const auto y  = xhi * (ghi + sstd::sqrt(sstd::max(ghi * ghi - 1.0, 0.0)));
-  const auto sh = sigma_kn(y) * y / 2.0 / (xlo * glo);
+  const auto sh = sigma_kn(y) * y / 2.0 / (xlo * glo);  // sigma_KN x_R/2 over the smallest x gamma
   return sh == sh and sh < 1e300 ? sstd::min(sh, SHMAX) : 0.0;  // NaN/inf: empty bin
 }
 
@@ -91,8 +92,9 @@ constexpr Products
   const auto t   = perp_basis(omR, ref);                   // incoming photon as polar axis
   const auto a   = sstd::max(xR, 1e-300);
   const auto lnT = sstd::log1p(2.0 * a);                   // log of the largest ratio 1 + 2 x_R
-  auto mu        = 1.0;
+  auto mu        = 1.0;                                    // cos theta in the rest frame
   ntry           = 0;
+  // rejection loop: t from 1/t on [1, 1 + 2 x_R], accept with t f(t)/2
   while(ntry < TRIP_CAP) {
     ++ntry;
     const auto tm1 = sstd::expm1(rng.uniform() * lnT);     // t - 1, exact for a soft photon
@@ -102,7 +104,8 @@ constexpr Products
   }
   const auto x1R = xR / (1.0 + xR * (1.0 - mu));           // scattered energy in the rest frame
   const auto phi = 6.283185307179586 * rng.uniform();
-  const auto sz  = sstd::sqrt(sstd::max(1.0 - mu * mu, 0.0));
+  const auto sz  = sstd::sqrt(sstd::max(1.0 - mu * mu, 0.0));  // sin(theta_R)
+  // scattered direction, rest frame
   const auto om1R = (sz * sstd::sin(phi)) * t.i + (sz * sstd::cos(phi)) * t.j + mu * t.k;
   const auto L   = boost((-1.0) * b0, x1R, x1R * om1R);    // back in the laboratory
   return Products { L.p, u + k - L.p };                    // lepton recoil from conservation

@@ -95,19 +95,20 @@ struct [[nodiscard]] ChannelStats {
   double wmoved { 0 };    // weight moved, sum f s
   double facc { 0 };      // sum of accumulation factors of accepted events
   double wem { 0 };       // emitted weight (one-body emission)
-  double clamped { 0 };
-  double overlap { 0 };
+  double clamped { 0 };   // events a conversion channel dropped to keep its strata distinct
+  double overlap { 0 };   // incident lanes beyond the slot count of their bin (capped sub-cycling)
   double trials { 0 };    // rejection proposals
-  double trials_n { 0 };
+  double trials_n { 0 };  // events the proposals were counted over
   double shbar_num { 0 }, shbar_den { 0 };  // <sigmahat> of the envelope
-  int nsub_max_seen { 1 };
-  double nsub_steps { 0 };
+  int nsub_max_seen { 1 };  // largest sub-cycle count of a step
+  double nsub_steps { 0 };  // steps that needed more than one sub-cycle
 };
 
 struct [[nodiscard]] Stats {
-  std::size_t steps { 0 };
-  double cell_lanes { 0 };
-  std::array<ChannelStats, N_CHANNELS> ch {};
+  std::size_t steps { 0 };                       // steps taken
+  double cell_lanes { 0 };                       // (cell, bin, bin) lanes of the envelope kernels
+  std::array<ChannelStats, N_CHANNELS> ch {};    // per channel
+  // per species (index 0 carries the totals): products placed in slack / in the tail, slots, live LPs
   std::array<double, 3> slackprod {}, tailprod {}, slots {}, live {};
 };
 
@@ -139,20 +140,20 @@ constexpr double
 
 /// A staged product: momentum, position, weight per copy, copy count, destination, species.
 struct [[nodiscard]] Staged {
-  float u[3];
-  float pos[3];
-  float w;
-  std::int32_t n_r;
-  std::int32_t cell;
+  float u[3];            // momentum
+  float pos[3];          // position (the parent's)
+  float w;               // weight of each copy
+  std::int32_t n_r;      // copies to place
+  std::int32_t cell;     // reaction cell
   std::int32_t species;  // 0 ph, 1 e-, 2 e+
-  std::int32_t bit;
+  std::int32_t bit;      // photon sub-range bit
 };
 
 /// What the sampler needs of the tile for one step.
 struct [[nodiscard]] TileView {
   std::array<pic::ParticleContainer*, 3> con;  // ph, e-, e+
-  std::array<Pop*, 3> pop;
-  std::array<float, 3> mins, maxs;
+  std::array<Pop*, 3> pop;                     // their layouts
+  std::array<float, 3> mins, maxs;             // tile extent
   std::array<runko::prtc_id_type, 3> id_base;   // first free id of every species
   std::array<std::size_t, 3> ids_used;          // returned: ids consumed by the step
 };
@@ -160,10 +161,10 @@ struct [[nodiscard]] TileView {
 /// The sampler state of a tile: scratch buffers, carries and counters that persist over steps.
 class [[nodiscard]] Sampler {
 public:
-  Box box;
-  Params par;
-  std::array<bool, N_CHANNELS> enabled {};
-  Stats stats;
+  Box box;                                   // physical normalization
+  Params par;                                // the knobs
+  std::array<bool, N_CHANNELS> enabled {};   // channels to run
+  Stats stats;                               // counters of the run
 
 private:
   // per-cell running remainders of the systematic rounding, one array per decision site
@@ -172,36 +173,44 @@ private:
   thrust::device_vector<Staged> staged_;
   thrust::device_vector<std::int32_t> counters_;  // staged count, tail counters, id counters
   thrust::device_vector<double> dstat_;           // per-pass statistics accumulated on the device
-  // per-slot marks of the react kernels
-  thrust::device_vector<float> dgam_;
-  thrust::device_vector<std::uint8_t> touched_;
-  // envelope tables of a pass
-  thrust::device_vector<double> Lam_, sh_, wm_, rowsum_, colsum_;
-  thrust::device_vector<std::int32_t> M_, off1_, off2_, M1_, M2_, sh1_, sh2_, kk_;
-  thrust::device_vector<runko::index_t> Mstart_;
-  // side tables
-  thrust::device_vector<runko::index_t> base1_, cnt1_, base2_, cnt2_;
-  thrust::device_vector<float> wmax1_, emin1_, emax1_, wmax2_, emin2_, emax2_;
-  // lanes and events
-  thrust::device_vector<runko::index_t> lane_i_, lane_j_, acc_;
-  thrust::device_vector<double> lane_f_;
-  thrust::device_vector<std::uint8_t> lane_acc_;
-  thrust::device_vector<double> ev_q1_, ev_q2_, ev_q3_, ev_cs_;
-  thrust::device_vector<std::int32_t> ev_n1_, ev_n2_, ev_n3_, ev_cell_;
-  thrust::device_vector<runko::index_t> ev_perm_;
+  // per-slot marks of the react kernels, over the partner species of a pass
+  thrust::device_vector<float> dgam_;            // energy the absorptions gave a lepton
+  thrust::device_vector<std::uint8_t> touched_;  // slot kicked or fed: its bounds are rewidened
+  // envelope tables of a pass, per (cell, bin, bin) pair unless noted
+  thrust::device_vector<double> Lam_, sh_, wm_, rowsum_, colsum_;  // envelope, rate bound, weight bound; sums per (cell, bin)
+  thrust::device_vector<std::int32_t> M_, off1_, off2_, M1_, M2_, sh1_, sh2_, kk_;  // events, strata bases, per-bin sums and shifts, stratum offsets
+  thrust::device_vector<runko::index_t> Mstart_;  // first lane of every pair (exclusive scan of M_)
+  // side tables, per (cell, bin) of the incident (1) and the partner (2) side
+  thrust::device_vector<runko::index_t> base1_, cnt1_, base2_, cnt2_;  // first slot and fill of the two sub-ranges
+  thrust::device_vector<float> wmax1_, emin1_, emax1_, wmax2_, emin2_, emax2_;  // bounds over the sub-ranges
+  // lanes (one per envelope event) and events (one per accepted lane)
+  thrust::device_vector<runko::index_t> lane_i_, lane_j_, acc_;  // the two slots of a lane; the accepted lanes
+  thrust::device_vector<double> lane_f_;                         // accumulation factor of a lane
+  thrust::device_vector<std::uint8_t> lane_acc_;                 // lane accepted
+  thrust::device_vector<double> ev_q1_, ev_q2_, ev_q3_, ev_cs_;  // decision probabilities (update/kick/lepton count) and their scan
+  thrust::device_vector<std::int32_t> ev_n1_, ev_n2_, ev_n3_, ev_cell_;  // the rounded decisions and the cell
+  thrust::device_vector<runko::index_t> ev_perm_;                // cell-sorted order of unsorted events
   thrust::device_vector<float> ev_p_;  // product momenta, 6 per event
-  std::uint64_t istep_ { 0 };
+  std::uint64_t istep_ { 0 };          // steps taken: the time index of the random streams
 
-  struct Ctx;
+  struct Ctx;  // the containers, layouts and device views of one step
+  /// a two-body channel: envelope, sub-cycling, then one pass per sub-step
   template<typename Ch>
   void twobody(Ctx& c, const Ch& ch, int l);
+  /// one pass of a two-body channel: count, thin, react, place
   template<typename Ch>
   void pass(Ctx& c, const Ch& ch, int l, int r, int nsub);
+  /// a one-body channel: one lane per slot
   void onebody(Ctx& c, Channel which, int l);
+  /// the staged products into the slack of their keys or the tail
   void place(Ctx& c, std::uint64_t key);
+  /// the summed absorbed energies onto the leptons, along their momenta
   void apply_dgam(Ctx& c, Species s);
+  /// rewiden the bounds of the keys of the kicked slots
   void touch_marked(Ctx& c, Species s);
+  /// the carry array of a decision site, created on first use
   thrust::device_vector<double>& carry(const std::string& site, int ncell);
+  /// systematic rounding of the probabilities q of cell-ordered events into counts out
   void select(
     const std::string& site,
     int ncell,
@@ -254,8 +263,8 @@ public:
   [[nodiscard]] double tau_ssa(const TileView& t, double x) const;
 
 private:
-  thrust::device_vector<double> esc_hist_;
-  thrust::device_vector<double> dbudget_;
+  thrust::device_vector<double> esc_hist_;  // x ell_x of the escaped photons per log bin
+  thrust::device_vector<double> dbudget_;   // energy and weight accumulated by one source or sink
 };
 
 }  // namespace qed

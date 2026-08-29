@@ -49,8 +49,9 @@ constexpr double
   bound(const double g1lo, const double g1hi, const double g2lo, const double g2hi)
 {
   const auto q = g1hi * g2hi + sstd::sqrt(sstd::max(g1hi * g1hi - 1.0, 0.0)) *
+                                 // largest q_e: head-on at the top corner
                                  sstd::sqrt(sstd::max(g2hi * g2hi - 1.0, 0.0));
-  const auto sh = (3.0 / 32.0) * bracket(q) / (g1lo * g2lo);
+  const auto sh = (3.0 / 32.0) * bracket(q) / (g1lo * g2lo);  // over the smallest g- g+
   return sh == sh and sh < 1e300 ? sstd::min(sh, SHMAX) : 0.0;
 }
 
@@ -65,13 +66,14 @@ constexpr Products
 {
   // In the CM frame the two photons leave back to back with energy gamma_cm each, so only
   // one direction is drawn; the pair kinematics fix everything else.
-  const auto gm   = sstd::sqrt(1.0 + toolbox::dot(um, um));
-  const auto gp   = sstd::sqrt(1.0 + toolbox::dot(up, up));
+  // ---- the pair in the laboratory and its CM frame
+  const auto gm   = sstd::sqrt(1.0 + toolbox::dot(um, um));  // electron Lorentz factor
+  const auto gp   = sstd::sqrt(1.0 + toolbox::dot(up, up));  // positron Lorentz factor
   const auto s0   = gm + gp;                                // total energy
   const auto svec = um + up;                                // total momentum
   const auto q    = gp * gm - toolbox::dot(up, um) + 1.0;   // q_e + 1 = 2 gamma_cm^2
   const auto bc   = svec / (-s0);                           // minus the CM velocity
-  const auto vc   = toolbox::norm(bc);
+  const auto vc   = toolbox::norm(bc);                      // its magnitude beta_c
   const auto gcm  = sstd::sqrt(q / 2.0);                    // CM Lorentz factor
   const auto vcm  = sstd::sqrt(sstd::max(1.0 - 1.0 / (gcm * gcm), 0.0));
   const auto nm   = toolbox::norm(um);
@@ -82,8 +84,10 @@ constexpr Products
   const auto kvec = deg ? omm : bc / sstd::max(vc, 1e-300);
   auto y = deg ? 1.0 : (gp - gm) / ((gp + gm) * sstd::max(vc, 1e-300) * sstd::max(vcm, 1e-300));
   y      = sstd::clamp(y, -1.0, 1.0);  // cosine between the electron's CM direction and the axis
+  // azimuth from the (axis, electron) plane
   const auto t   = perp_basis(kvec, omm);
   const auto omr = cm_direction(y, gcm, vcm, t, rng, ntry);  // photon direction in the CM
+  // the two photons, back to back in the CM frame, transformed to the laboratory
   const auto A   = boost(bc, gcm, gcm * omr);
   const auto B   = boost(bc, gcm, (-gcm) * omr);
   return Products { A.p, B.p };

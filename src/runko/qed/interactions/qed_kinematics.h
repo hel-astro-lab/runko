@@ -36,6 +36,7 @@ constexpr Triad
   if(nj < 1e-10) {
     // ref parallel to kvec leaves the plane undefined; any perpendicular direction serves,
     // and the Cartesian axis kvec leans on least is guaranteed not to be parallel to it.
+    // pick the Cartesian axis with the smallest component of kvec
     auto alt      = Vec3(0.0, 0.0, 0.0);
     const auto ax = sstd::abs(kvec[0]);
     const auto ay = sstd::abs(kvec[1]);
@@ -66,6 +67,7 @@ struct [[nodiscard]] FourVec {
 constexpr FourVec
   boost(const Vec3& beta, const double p0, const Vec3& p)
 {
+  // ---- boost quantities
   const auto b2  = toolbox::dot(beta, beta);           // beta^2
   const auto g   = 1.0 / sstd::sqrt(1.0 - b2);         // Lorentz factor of the boost
   const auto u   = g * beta;                           // four-velocity gamma beta
@@ -94,29 +96,31 @@ constexpr Vec3
   // as F = (gcm^2 + 1) S - 1 - S^2/2. Proposing w from S itself -- p(w) ~ 1/(1 - vcm^2 w^2),
   // inverse cumulative w = tanh[(2u-1) artanh vcm]/vcm -- and thinning with F/(C S), C the
   // maximum of F/S over the reachable S in [2/gcm^2, 2], accepts 0.83 to 1 at every gcm.
-  const auto g2  = gcm * gcm;
-  const auto fov = [g2](const double S) { return (g2 + 1.0) - 1.0 / S - S / 2.0; };
+  // ---- the bound C of F/S over the reachable S: its ends and, if inside, its peak
+  const auto g2  = gcm * gcm;                         // gamma_cm^2
+  const auto fov = [g2](const double S) { return (g2 + 1.0) - 1.0 / S - S / 2.0; };  // F/S
   auto C         = sstd::max(fov(2.0 / g2), fov(2.0));
   const auto s2  = 1.4142135623730951;            // F/S peaks at S = sqrt 2
   if(2.0 / g2 <= s2) { C = sstd::max(C, fov(s2)); }
-  const auto at   = sstd::atanh(sstd::min(vcm, 1.0 - 1e-16));
+  const auto at   = sstd::atanh(sstd::min(vcm, 1.0 - 1e-16));  // artanh(beta_cm) of the proposal
   const auto slow = vcm < 1e-8;                   // pair at rest in the CM: flat in w
   auto w          = 0.0;
   ntry            = 0;
+  // rejection loop: propose w from 1/(1 - vcm^2 w^2), accept with F/(C S)
   while(ntry < TRIP_CAP) {
     ++ntry;
     const auto u1 = rng.uniform();
     w = slow ? 2.0 * u1 - 1.0 : sstd::tanh((2.0 * u1 - 1.0) * at) / sstd::max(vcm, 1e-300);
-    const auto S = 2.0 / (g2 * (1.0 - vcm * vcm * w * w));
+    const auto S = 2.0 / (g2 * (1.0 - vcm * vcm * w * w));  // the invariant of the proposal
     if(fov(S) / C > rng.uniform()) { break; }    // = F/(C S), in [0, 1]
   }
   // w is the cosine to the fixed direction, whose azimuth about it is uniform because F
   // depends on nothing else; (e1, t.j, omf) is an orthonormal triad built on that direction.
-  const auto sf  = sstd::sqrt(sstd::max(1.0 - cfix * cfix, 0.0));
-  const auto omf = sf * t.i + cfix * t.k;
-  const auto e1  = (-cfix) * t.i + sf * t.k;
-  const auto psi = 6.283185307179586 * rng.uniform();
-  const auto sw  = sstd::sqrt(sstd::max(1.0 - w * w, 0.0));
+  const auto sf  = sstd::sqrt(sstd::max(1.0 - cfix * cfix, 0.0));  // sine to the fixed direction
+  const auto omf = sf * t.i + cfix * t.k;         // the fixed direction in the triad
+  const auto e1  = (-cfix) * t.i + sf * t.k;      // perpendicular to it, in the (i, k) plane
+  const auto psi = 6.283185307179586 * rng.uniform();  // azimuth about the fixed direction
+  const auto sw  = sstd::sqrt(sstd::max(1.0 - w * w, 0.0));  // sine of the drawn angle
   return w * omf + (sw * sstd::cos(psi)) * e1 + (sw * sstd::sin(psi)) * t.j;
 }
 
@@ -125,9 +129,9 @@ constexpr Vec3
 constexpr Vec3
   iso_dir(runko::Rng& rng)
 {
-  const auto cz = -1.0 + 2.0 * rng.uniform();
-  const auto ph = 6.283185307179586 * rng.uniform();
-  const auto sz = sstd::sqrt(1.0 - cz * cz);
+  const auto cz = -1.0 + 2.0 * rng.uniform();     // cos(theta), uniform on the sphere
+  const auto ph = 6.283185307179586 * rng.uniform();  // azimuth
+  const auto sz = sstd::sqrt(1.0 - cz * cz);      // sin(theta)
   return Vec3(sz * sstd::cos(ph), sz * sstd::sin(ph), cz);
 }
 

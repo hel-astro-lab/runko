@@ -102,20 +102,25 @@ if __name__ == "__main__":
 
     def record(lap):
         for tile in simulation.local_tiles():
+            # the state of the tile and its cumulative counters
             tt = {s: tile.totals(s) for s in ("ph", "e-", "e+")}
             bud = tile.budget(); cn = tile.counts(); mv = tile.moved()
             tau = tt["e-"]["W"] + tt["e+"]["W"]
+            # the pair depth, the photon and lepton energies and weights, the LP counts
             rec["t"].append(lap * dt); rec["tau"].append(tau)
             rec["Wg"].append(tt["ph"]["W"]); rec["Eg"].append(tt["ph"]["E"]); rec["Epm"].append(tt["e-"]["E"] + tt["e+"]["E"])
             rec["gbar"].append((tt["e-"]["E"] + tt["e+"]["E"]) / max(tau, 1e-300))
             rec["N"].append([tt[s]["N"] for s in ("ph", "e-", "e+")])
+            # rates since the previous record: escaping and injected power, injected depth
             span = rec_every * dt
             rec["ell_esc"].append((bud["esc_E"] - prev["esc_E"]) / span if lap else 0.0)
             rec["ell_in"].append((bud["inj_E"] + bud["heat_E"] - prev["inj_E"]) / span if lap else 0.0)
             rec["dtau_inj"].append((bud["inj_W"] - prev["inj_W"]) / span if lap else 0.0)
+            # events and moved weight per channel since the previous record
             rec["counts"].append({k: cn[k] - (prev["counts"][k] if prev["counts"] else 0.0) for k in cn})
             rec["moved"].append({k: mv[k] - (prev["moved"][k] if prev["moved"] else 0.0) for k in mv})
             prev.update(counts=cn, moved=mv, esc_E=bud["esc_E"], inj_E=bud["inj_E"] + bud["heat_E"], inj_W=bud["inj_W"])
+            # lepton momenta over the last quarter, for the late distribution
             if lap >= nlate:
                 vx, vy, vz = (np.asarray(a) for a in tile.get_velocities(tile.species("e-")))
                 lep_p.append(np.sqrt(vx * vx + vy * vy + vz * vz)); lep_w.append(np.asarray(tile.get_weights(tile.species("e-"))))
@@ -152,11 +157,13 @@ if __name__ == "__main__":
     # --------------------------------------------------
     # The steady state: energy balance, pair balance, spectral landmarks; saved for the plots
     tile = next(iter(simulation.local_tiles()))
-    nl = conf.n_laps - nlate
+    nl = conf.n_laps - nlate                 # laps of the last quarter
+    # the escaping power and spectrum x ell_x per ln x, averaged over the last quarter
     bud = tile.budget()
     ell_esc = bud["esc_E"] / nl / dt
     edges, h = tile.escaped_spectrum(); cx = np.sqrt(edges[1:] * edges[:-1])
     ellx = h / nl / dt / np.diff(np.log(edges))
+    # records as arrays; channel rates and the pair budget per crossing
     for k in ("t", "tau", "Wg", "Eg", "Epm", "N", "ell_esc", "ell_in", "gbar", "dtau_inj"):
         rec[k] = np.array(rec[k])
     names = list(rec["counts"][0])
@@ -165,20 +172,25 @@ if __name__ == "__main__":
     dtau_ann = 2 * np.array([m.get("pairann", 0.0) for m in rec["moved"]]) / (rec_every * dt)
     late = rec["t"] >= rec["t"][-1] * 0.75
     tau = float(rec["tau"][late].mean())
+    # spectral landmarks: the peak, the soft turnover, the slope of the Comptonized band
     x_peak = cx[np.argmax(ellx)]
     soft = cx < 1e-3
     x_ssa = cx[soft][np.argmax(ellx[soft])] if soft.any() and ellx[soft].max() > 0 else np.nan
     band = (cx > 1e-3) & (cx < 1e-1) & (ellx > 0)
     slope = np.polyfit(np.log(cx[band]), np.log(ellx[band]), 1)[0] if band.sum() > 3 else np.nan
+    # the late lepton distribution and its mean energy
     lp = np.concatenate(lep_p); lw = np.concatenate(lep_w)
     gbar = float(np.average(np.sqrt(1 + lp * lp), weights=lw))
+    # the energy of unit self-absorption depth against the final leptons
     x_grid = np.geomspace(1e-7, 1e-2, 11)
     tss = np.array([tile.tau_ssa(x) for x in [conf.qed_x_min] + list(x_grid)])
     lt = np.log(np.maximum(tss[1:], 1e-300))
     x_unit = np.exp(np.interp(0.0, lt[::-1], np.log(x_grid)[::-1])) if lt.max() > 0 > lt.min() else np.nan
+    # the photons inside the box at the end
     vx, vy, vz = (np.asarray(a) for a in tile.get_velocities(tile.species("ph")))
     ph_x = np.sqrt(vx * vx + vy * vy + vz * vz); ph_w = np.asarray(tile.get_weights(tile.species("ph")))
     inj, cre, ann = float(rec["dtau_inj"][late].mean()), float(dtau_cre[late].mean()), float(dtau_ann[late].mean())
+    # the summary, the kernel report and the records for the plots
     if runko.on_main_rank():
         logger.info(f"{conf.n_laps} laps = {conf.n_cross:g} crossings in {time.time()-t_start:.0f}s; late average over the last quarter:")
         logger.info(f"   tau_T = {tau:.3f}; ell_esc = {ell_esc:.3f} against ell_inj = {ell_inj:g} (ratio {ell_esc/ell_inj:.3f}); "
