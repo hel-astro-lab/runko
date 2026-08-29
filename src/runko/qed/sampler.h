@@ -133,9 +133,10 @@ constexpr double
   gamma_cooled(const double gam, const double lam, const double xm, const double b, const double N1)
 {
   const auto chi  = gam * b;
-  const auto full = (2.0 / 3.0) * chi * chi * syn::g(chi) / N1;
+  const auto g    = syn::g(chi);
+  const auto full = (2.0 / 3.0) * chi * chi * g / N1;
   const auto Phi  = full > 0.0 ? lam * xm / sstd::max(full, 1e-300) : 0.0;
-  return gam / (1.0 + (2.0 / 3.0) * gam * b * b * syn::g(chi) * Phi / N1);
+  return gam / (1.0 + (2.0 / 3.0) * gam * b * b * g * Phi / N1);
 }
 
 
