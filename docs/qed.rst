@@ -43,8 +43,16 @@ weight, and time in light crossings of the tile, `\mathrm{d}t = \mathrm{cfl}/N_\
 The tile edge in Compton wavelengths, ``qed_H_lamC``, fixes the one-body clock
 `\mathcal{N}_1 = (\lambda_C/H)/(\alpha\,\mathrm{d}t)`; the two-body clock is
 `\mathcal{N}_2 = 1/\mathrm{d}t`. The magnetic field enters as the magnetic compactness
-``qed_ell_B`` and the floor of the synchrotron band as ``qed_x_min``; without a field the
-one-body channels and self-absorption are off.
+``qed_ell_B`` of the box edge and the floor of the synchrotron band as ``qed_x_min``; without a
+field the one-body channels and self-absorption are off. In a 0-D box the field is uniform and
+perpendicular to every particle. Inside PIC the channels read the tile's own lattice: with
+``qed_B0``, the code-unit field strength that ``qed_ell_B`` stands for, the quantum parameter of a
+particle is the invariant of the field interpolated at its position,
+`\chi = \gamma\, (b_0/B_0)\, |(\mathbf{E} + \boldsymbol{\beta}\times\mathbf{B})^2 -
+(\boldsymbol{\beta}\cdot\mathbf{E})^2|^{1/2}` (for a photon `\gamma \to x` and
+`\boldsymbol{\beta}` its direction), so that emission, magnetic pair production and
+self-absorption follow the local field; the absorption envelope of an energy bin spans the range
+of the field its leptons feel.
 
 Configuration
 -------------
@@ -56,6 +64,7 @@ key                          meaning                                            
 ===========================  ==========================================================  =========
 ``qed_H_lamC``               tile edge in Compton wavelengths                            required
 ``qed_ell_B``                magnetic compactness `\sigma_\mathrm{T} H U_B/(m_e c^2)`     0
+``qed_B0``                   the field of ``qed_ell_B`` in code units; 0: uniform field     0
 ``qed_x_min``                floor of the synchrotron band                               0
 ``qed_channels``             list of channels to run, e.g. ``["compton-", "pairann"]``   all
 ``qed_nbin``                 energy bins per reaction cell and species                   16
@@ -89,9 +98,34 @@ until the next sort.
 
 In a lap the driver calls ``x.prtcl_interact()`` for the reactions and, for an open box,
 ``x.grid_heat_diffusive(ell)``, ``x.grid_inject_pairs_plaw(ell, p, gmin, gmax)``,
-``x.grid_inject_photons(ell, theta, w)`` and ``x.grid_escape_photons()``; the tile keeps the
-budgets (``budget()``), the escaping spectrum (``escaped_spectrum()``), the channel counts
-(``counts()``, ``moved()``) and a kernel report (``report()``).
+``x.grid_inject_photons(ell, theta, w)`` and ``x.grid_escape_photons(tau_T, dt)`` — the slab
+escape against the pair depth ``tau_T`` and the step ``dt`` in crossings of the slab, by default
+the tile's own; the tile keeps the budgets (``budget()``), the escaping spectrum
+(``escaped_spectrum()``) and its angular distribution (``escaped_mu_spectrum()``), the channel
+counts (``counts()``, ``moved()``) and a kernel report (``report()``).
+
+Inside PIC
+----------
+
+A ``qed::Tile`` takes the place of the ``pic::Tile`` in an otherwise ordinary PIC lap. The
+reactions run first, when every particle is inside its tile (the last thing that moved them was
+the exchange of the previous lap), so that the products, born at their parents' positions, take
+the push and the exchange of the lap like any particle; the layout replaces ``prtcl_sort``::
+
+    x.prtcl_interact()
+    x.grid_escape_photons(tau_box, dt_box)    # tau_box: the lepton weight of all ranks / n_t^2
+    x.grid_push_half_b(); comm B
+    x.prtcl_push(); x.prtcl_pack_outgoing(); comm particles
+    x.prtcl_deposit_current(); comm and filter J
+    x.grid_push_half_b(); comm B
+    x.grid_push_e(); x.grid_deposit_antenna_current(); x.grid_add_current(); comm E
+
+Particles arriving from other tiles are appended to the tail of the layout, inert until the
+next sort, so the layout survives the exchange. Photons move at `c` along their momentum,
+deposit no current and carry their weight through the exchange; the particle snapshots carry
+it as a 13th field ``wgt`` and the spectra are weighted by it. With `n_t` tiles per edge the
+weight unit is that of the tile, so the depth of the box is `\sum w / n_t^2` and
+``qed_ell_B`` is defined on the box edge with ``qed_H_lamC`` the tile edge.
 
 Example
 -------
@@ -100,6 +134,14 @@ Example
 in a magnetized slab make every photon themselves and photons escape; ``qed.py --conf corona.ini``
 runs it and ``plot_corona.py`` / ``plot_weights.py`` draw the pair and energy budgets, the channel
 rates, the escaping and internal spectra, the lepton distribution and the photon weights.
+``qed-pic.py --conf corona-pic.ini`` is the same corona inside the PIC loop: a periodic box of
+`2^3` tiles over any number of ranks, energized by the Langevin antenna of
+``projects/pic-turbulence`` alone, the channels acting on the turbulent local field and photons
+escaping against the global depth. ``qed_diagnostics.py`` reduces the depth, energies, counts and
+histograms of all ranks to ``qed_<lap>.npz`` and ``qed_timeseries.npz`` next to the field,
+particle and spectra snapshots; ``plot_qed_panel.py`` draws the diagnostic grid of a record with
+the time series and the antenna-versus-escape energy balance, ``plot_qed_fields.py`` the field
+and density slices, ``plot_qed_spectra.py`` the weighted spectra over time.
 
 Tests
 -----
@@ -108,4 +150,6 @@ Tests
 are the analytic tests of the sampler: the closed-box equilibrium, Wien relaxation and Kompaneets
 moments, inverse-Compton cooling, annihilation rates and lines, the photon–photon rate equation,
 first-step exactness against the pair sum, self-absorption, synchrotron and Breit–Wheeler rates
-and bookkeeping, pair balance with escape, weight invariance, and a short corona.
+and bookkeeping, pair balance with escape, weight invariance, a short corona, the layout across
+arrivals and the channels following a lattice field; ``tests/py-multirank/test_qed_simulation.py``
+runs the module over four ranks with photons crossing tiles.
