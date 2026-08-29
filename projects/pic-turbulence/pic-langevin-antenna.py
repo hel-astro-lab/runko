@@ -32,7 +32,7 @@ if __name__ == "__main__":
 
     conf = runko.Configuration(args.conf)
 
-    conf.n_laps = int(10 * conf.NxMesh * conf.Nx / conf.cfl)
+    conf.n_laps = int(10 * conf.n_cells_per_tile[0] * conf.n_tiles[0] / conf.cfl)
 
     # --------------------------------------------------
     # Problem specific configuration
@@ -111,7 +111,7 @@ if __name__ == "__main__":
         logger.info(f"{'--- [io] ---':}")
         logger.info(f"  {'outdir':<{W}}= {conf.io_outdir}")
         logger.info(f"  {'resolved outdir':<{W}}= {resolve_outdir(conf)}")
-        logger.info(f"  {'prefix / postfix':<{W}}= {conf.io_outidr_prefix} / {conf.io_outidr_postfix}")
+        logger.info(f"  {'prefix / postfix':<{W}}= {conf.io_outdir_prefix} / {conf.io_outdir_postfix}")
         logger.info(f"  {'output_interval':<{W}}= {conf.io_output_interval}")
 
         logger.info(f"{'--- [grid] ---':}")
