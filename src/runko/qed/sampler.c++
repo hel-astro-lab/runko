@@ -277,6 +277,20 @@ constexpr double
   }
 }
 
+/// a staged record of one product at a given position and cell
+[[nodiscard]]
+constexpr Staged
+  staged_at(const Vec3& u, const float* pos, const double w, const int n_r, const int cell, const int species, const int bit)
+{
+  return Staged { .u       = { static_cast<float>(u[0]), static_cast<float>(u[1]), static_cast<float>(u[2]) },
+                  .pos     = { pos[0], pos[1], pos[2] },
+                  .w       = static_cast<float>(w),
+                  .n_r     = n_r,
+                  .cell    = cell,
+                  .species = species,
+                  .bit     = bit };
+}
+
 // slots of the per-pass statistics accumulated on the device (dstat_): lanes on a dead slot,
 // lanes past the weight stage, moved weight, summed accumulation factor, rejection proposals
 // and their count, clamped events, overlapping lanes, emitted weight
@@ -968,13 +982,7 @@ void
   // append one product record to the staging buffer
   const auto stage = [=](const Vec3& p, const float* pos, const double w_each, const int n_r, const int cell, const int species, const int bit) {
     const auto k = static_cast<std::size_t>(sstd::atomic_fetch_add(&cnt[c_staged], std::int32_t { 1 }));
-    stg[k]       = Staged { .u       = { static_cast<float>(p[0]), static_cast<float>(p[1]), static_cast<float>(p[2]) },
-                            .pos     = { pos[0], pos[1], pos[2] },
-                            .w       = static_cast<float>(w_each),
-                            .n_r     = n_r,
-                            .cell    = cell,
-                            .species = species,
-                            .bit     = bit };
+    stg[k]       = staged_at(p, pos, w_each, n_r, cell, species, bit);
   };
   // one lane per accepted event: apply the decisions to the parents, stage the products
   thrust::for_each(w.on_this(), ev0, ev0 + static_cast<std::ptrdiff_t>(na), [=](const I e) {
@@ -1201,13 +1209,8 @@ void
   // append one product record at the parent's position and cell
   const auto stage = [=](const Vec3& p, const I i, const double w_each, const int n_r, const int species, const int bit) {
     const auto k = static_cast<std::size_t>(sstd::atomic_fetch_add(&cnt[c_staged], std::int32_t { 1 }));
-    stg[k]       = Staged { .u       = { static_cast<float>(p[0]), static_cast<float>(p[1]), static_cast<float>(p[2]) },
-                            .pos     = { v.pos[i][0], v.pos[i][1], v.pos[i][2] },
-                            .w       = static_cast<float>(w_each),
-                            .n_r     = n_r,
-                            .cell    = v.lay.cell_of(v.pos[i][0], v.pos[i][1], v.pos[i][2]),
-                            .species = species,
-                            .bit     = bit };
+    const float pos[3] = { v.pos[i][0], v.pos[i][1], v.pos[i][2] };
+    stg[k]       = staged_at(p, pos, w_each, n_r, v.lay.cell_of(pos[0], pos[1], pos[2]), species, bit);
   };
   const auto s0 = thrust::counting_iterator<I>(0);
   if(emit) {
@@ -1341,20 +1344,6 @@ void
 
 // ---------------------------------------------------------------- sources and sinks
 namespace {
-
-/// a staged record of one product at a given position and cell
-[[nodiscard]]
-constexpr Staged
-  staged_at(const Vec3& u, const float* pos, const double w, const int n_r, const int cell, const int species, const int bit)
-{
-  return Staged { .u       = { static_cast<float>(u[0]), static_cast<float>(u[1]), static_cast<float>(u[2]) },
-                  .pos     = { pos[0], pos[1], pos[2] },
-                  .w       = static_cast<float>(w),
-                  .n_r     = n_r,
-                  .cell    = cell,
-                  .species = species,
-                  .bit     = bit };
-}
 
 // slots of the per-call budget accumulated on the device (dbudget_): energy and weight
 enum BStat : int { b_E = 0, b_W, b_count };
