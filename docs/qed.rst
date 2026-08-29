@@ -50,9 +50,11 @@ perpendicular to every particle. Inside PIC the channels read the tile's own lat
 particle is the invariant of the field interpolated at its position,
 `\chi = \gamma\, (b_0/B_0)\, |(\mathbf{E} + \boldsymbol{\beta}\times\mathbf{B})^2 -
 (\boldsymbol{\beta}\cdot\mathbf{E})^2|^{1/2}` (for a photon `\gamma \to x` and
-`\boldsymbol{\beta}` its direction), so that emission, magnetic pair production and
-self-absorption follow the local field; the absorption envelope of an energy bin spans the range
-of the field its leptons feel.
+`\boldsymbol{\beta}` its direction), so that emission and magnetic pair production follow the
+local field. Self-absorption, whose envelope needs one field per tile, takes the tile's median
+`|B|` along the lepton's pitch angle to the tile's mean field — within 10–20 % of the
+local-field opacity in developed turbulence, where an external `B_0` is off by 3–10× because
+the absorption of the cool tail is exponential in the field.
 
 Configuration
 -------------
