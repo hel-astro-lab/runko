@@ -449,5 +449,31 @@ class TestMpiioParticlesWriter(unittest.TestCase):
                         f"No file with lap=3 in {files}")
 
 
+class TestMpiioParticlesSampling(unittest.TestCase):
+    """the sample strides over the alive particles only"""
+
+    def setUp(self):
+        self.outdir = tempfile.mkdtemp()
+
+    def tearDown(self):
+        shutil.rmtree(self.outdir)
+
+    def test_dead_particles_not_sampled(self):
+        config = make_pic_config(outdir=self.outdir, nspecies=2)
+        config.prealloc_per_species = 500   # dead slots ahead of the live ones
+        tile_grid = runko.TileGrid(config)
+        for idx in tile_grid.local_tile_indices():
+            tile = runko.pic.threeD.Tile(idx, config)
+            zero = lambda x, y, z: (0, 0, 0)
+            tile.set_EBJ(zero, zero, zero)
+            tile.inject(0, [runko.pic.threeD.ParticleState(pos=(1.0 + 0.1 * i, 2.0, 3.0), vel=(0.5, 0, 0)) for i in range(30)])
+            tile_grid.add_tile(tile, idx)
+        tile_grid.configure_simulation(config)
+        hdr, fields = prtcl_write_and_read(tile_grid, self.outdir, 1000, species=0)
+        self.assertEqual(hdr["n_prtcls"], 30)
+        np.testing.assert_allclose(fields["ux"], 0.5, atol=1e-6)
+
+
+
 if __name__ == "__main__":
     unittest.main()

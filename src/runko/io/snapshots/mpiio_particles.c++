@@ -6,6 +6,9 @@
 #include "runko/io/snapshots/mpiio_particles.h"
 #include "runko/io/snapshots/mpiio_header.h"
 #include "runko/pic/tile.h"
+#include "thrust/copy.h"
+#include "thrust/device_vector.h"
+#include "thrust/iterator/counting_iterator.h"
 #include "tyvi/mdgrid.h"
 
 #include <algorithm>
@@ -117,7 +120,8 @@ bool mpiio::ParticlesWriter<3>::prepare_(corgi::Grid<3>& grid, int lap)
     if (!pic_tile) continue;
     if (sp >= pic_tile->number_of_species()) continue;
 
-    const auto count = static_cast<int64_t>(pic_tile->number_of_particles(sp));
+    // alive particles only: the containers keep dead slots
+    const auto count = static_cast<int64_t>(pic_tile->particles(sp).number_alive());
     tiles_.push_back({ cid, count, 1, 0 });
     local_total += count;
   }
@@ -197,30 +201,19 @@ bool mpiio::ParticlesWriter<3>::write_payload_(MPI_File fh, corgi::Grid<3>& grid
       const auto n_s      = static_cast<std::size_t>(t.sampled);
       const auto stride_t = static_cast<std::size_t>(t.stride);
 
-      // Gather sampled local positions and ids for field interpolation
-      auto sampled_pos = runko::VecList<float>(n_s);
-      auto sampled_ids = runko::ScalarList<runko::prtc_id_type>(n_s);
+      // the alive slots of the container, in slot order: the sample strides over these
+      const auto src_ids_mds = container.ids_mds();
+      auto alive = thrust::device_vector<runko::index_t>(container.size());
       {
-        const auto sp_mds  = sampled_pos.mds();
-        const auto sp_ids_mds  = sampled_ids.mds();
-        const auto src_pos = container.pos_mds();
-        const auto src_ids_mds  = container.ids_mds();
-
-        tyvi::mdgrid_work {}
-          .for_each_index(sampled_pos, [=](const auto idx) {
-            const auto si = static_cast<std::size_t>(idx[0] * stride_t);
-            sp_mds[idx][0] = src_pos[si][0];
-            sp_mds[idx][1] = src_pos[si][1];
-            sp_mds[idx][2] = src_pos[si][2];
-            sp_ids_mds[idx][] = src_ids_mds[si][];
-          })
-          .wait();
+        const auto w   = tyvi::mdgrid_work {};
+        const auto i0  = thrust::counting_iterator<runko::index_t>(0);
+        const auto end = thrust::copy_if(
+          w.on_this(), i0, i0 + container.ssize(), alive.begin(),
+          [=](const runko::index_t i) { return src_ids_mds[i][] != runko::dead_prtc_id; });
+        alive.resize(static_cast<std::size_t>(end - alive.begin()));
+        w.wait();
       }
-
-      // Interpolate E, B at sampled positions
-      // const auto EB_interp = tile.interpolate_fields_at(sampled_ids, sampled_pos);
-      // const auto& E_interp = EB_interp.E;
-      // const auto& B_interp = EB_interp.B;
+      const auto alive_p = thrust::raw_pointer_cast(alive.data());
 
       // Pack all 12 fields into prtcl_buf_
       using vt = pic::ParticleContainer::value_type;
@@ -235,7 +228,7 @@ bool mpiio::ParticlesWriter<3>::write_payload_(MPI_File fh, corgi::Grid<3>& grid
 
       tyvi::mdgrid_work {}
         .for_each_index(dst_sub, [=](const auto idx) {
-          const auto si = static_cast<std::size_t>(idx[0] * stride_t);
+          const auto si = static_cast<std::size_t>(alive_p[idx[0] * stride_t]);  // an alive slot
 
           dst_sub[idx][0]  = src_pos[si][0];        // x (stored global)
           dst_sub[idx][1]  = src_pos[si][1];        // y

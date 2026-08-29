@@ -75,6 +75,18 @@ std::ptrdiff_t
   return static_cast<std::ptrdiff_t>(this->size());
 }
 
+std::size_t
+  ParticleContainer::number_alive() const
+{
+  const auto ids_mds = this->ids_.mds();
+  const auto i0      = thrust::counting_iterator<runko::index_t>(0);
+  const auto w       = tyvi::mdgrid_work {};
+  return static_cast<std::size_t>(thrust::count_if(
+    w.on_this(), i0, i0 + this->ssize(), [=](const runko::index_t i) {
+      return ids_mds[i][] != runko::dead_prtc_id;
+    }));
+}
+
 
 ParticleContainerArgs
   ParticleContainer::args() const

@@ -153,6 +153,9 @@ public:
   /// Returns the number of particles dead or alive.
   std::size_t size() const;
 
+  /// Returns the number of alive particles.
+  std::size_t number_alive() const;
+
   /// Returns the number of particles dead or alive.
   std::ptrdiff_t ssize() const;
 
