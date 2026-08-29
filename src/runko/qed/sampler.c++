@@ -704,7 +704,6 @@ void
   const auto M1 = thrust::raw_pointer_cast(M1_.data()), M2 = thrust::raw_pointer_cast(M2_.data());      // events per incident bin, per partner bin
   const auto sh1 = thrust::raw_pointer_cast(sh1_.data()), sh2 = thrust::raw_pointer_cast(sh2_.data());  // cyclic shift of each range
   const auto cb0 = thrust::counting_iterator<int>(0);
-  const auto convert = Ch::kind == Kind::convert;
   // one lane per incident (cell, bin a): the counts M[a, b] by cumulative rounding, row clamp
   thrust::for_each(w.on_this(), cb0, cb0 + ncb, [=](const int ca) {
     auto rng  = runko::Rng { keyA, static_cast<std::uint64_t>(ca) };
@@ -717,7 +716,7 @@ void
       M[g]         = static_cast<std::int32_t>(F - Fp);
       Fp           = F;
     }
-    if(convert) {
+    if constexpr(Ch::kind == Kind::convert) {
       // hold the events of the row below its slot count: a backstop the sub-cycling makes rare
       auto ex = 0;
       for(auto bb = 0; bb < nb; ++bb) { ex += M[ca * nb + bb]; }
@@ -735,7 +734,7 @@ void
   // one lane per partner (cell, bin b): column clamp, strata bases along a, the partner shift
   thrust::for_each(w.on_this(), cb0, cb0 + ncb, [=](const int cb) {
     const auto cc = cb / nb, bb = cb % nb;
-    if(convert) {
+    if constexpr(Ch::kind == Kind::convert) {
       // hold the events of the column below the partner bin's slot count
       auto ex = 0;
       for(auto a = 0; a < nb; ++a) { ex += M[(cc * nb + a) * nb + bb]; }
@@ -771,7 +770,7 @@ void
     }
     M1[ca]  = sum;
     sh1[ca] = static_cast<std::int32_t>(rng.uniform() * static_cast<double>(sstd::max(s1.N(ca), I { 1 })));
-    if(not convert) {
+    if constexpr(Ch::kind != Kind::convert) {
       // additive channels beyond the sub-step cap: lanes past the slot count overlap
       sstd::atomic_add(&ds[d_overlap], static_cast<double>(sstd::max(sum - static_cast<int>(s1.N(ca)), 0)));
     }
@@ -813,7 +812,7 @@ void
     const auto p1 = static_cast<std::uint64_t>(off1[g]) + e;        // incident stratum
     const auto vv1 = (static_cast<I>(sh1[cb1]) + stratum(p1, static_cast<std::uint64_t>(M1[cb1]), n1, rng)) % n1;  // virtual index on side 1
     I vv2;                                                          // virtual index on side 2
-    if(convert) {
+    if constexpr(Ch::kind == Kind::convert) {
       // a consumed partner: distinct strata, offset within the pair to decorrelate from p1
       const auto p2 = static_cast<std::uint64_t>(off2[g]) + (e + static_cast<std::uint64_t>(kk[g])) % Mg;
       vv2 = (static_cast<I>(sh2[cb2]) + stratum(p2, static_cast<std::uint64_t>(M2[cb2]), n2, rng)) % n2;
