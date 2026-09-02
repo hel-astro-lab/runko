@@ -183,8 +183,8 @@ def label_lines(lines, xvals, fontsize=6, color=None, rotate=True, **kwargs):
                 **kwargs)
 
 
-def save_figure(fig, outdir, name):
+def save_figure(fig, outdir, name, ext="pdf"):
     """Write the figure into the simulation directory it was made from."""
-    outfile = f"{outdir}/{name}.pdf" if outdir else f"{name}.pdf"
+    outfile = f"{outdir}/{name}.{ext}" if outdir else f"{name}.{ext}"
     fig.savefig(outfile)
     print(f"saved {outfile}")
