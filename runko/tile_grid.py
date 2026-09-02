@@ -201,7 +201,7 @@ class TileGrid:
         io_config = dict(stride=stride,
                          outdir=resolve_outdir(config),
                          nspecies=nspecies,
-                         n_prtcls=config.n_sampled_prtcls if config.n_sampled_prtcls else 0,
+                         n_prtcls=config.io_n_sampled_prtcls if config.io_n_sampled_prtcls else 0,
                          laps_in_timer_statistics=getattr(config, 'io_n_laps_in_timer_stats', None),
                          spectra_nbins=getattr(config, 'io_n_spectra_bins', 200),
                          spectra_umin=getattr(config, 'io_spectra_umin', 1e-4),
