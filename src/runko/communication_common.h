@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include "runko/tools/vector.h"
 #include "tyvi/mdspan.h"
 
 #include <algorithm>
@@ -162,6 +163,14 @@ struct [[nodiscard]] grid_neighbor {
       using J        = std::ranges::range_difference_t<decltype(inverse_mapping)>;
       const auto dir = inverse_mapping[static_cast<J>(index)];
       return grid_neighbor((dir[I] - 1)...);
+    }(std::make_index_sequence<rank>());
+  }
+
+  template<typename T>
+  constexpr toolbox::VecD<T, rank> to_vec() const
+  {
+    return [&]<std::size_t... I>(std::index_sequence<I...>) {
+      return toolbox::VecD<T, rank>(static_cast<T>(direction[I])...);
     }(std::make_index_sequence<rank>());
   }
 };
