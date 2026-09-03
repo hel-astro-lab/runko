@@ -1,4 +1,3 @@
-#include "corgi/corgi.h"
 #include "pybind11/numpy.h"
 #include "pybind11/pybind11.h"
 #include "pybind11/stl.h"
@@ -67,7 +66,7 @@ void
   [[maybe_unused]] runko::RuntimeActivator _;
 
   try {
-    tyvi::this_thread::sync_wait(ta::eval<runko::symbol>(body, runko::build_stdenv()));
+    tyvi::this_thread::sync_wait(ta::eval<runko::symbol>(body, runko::build_std_env()));
   } catch(const std::exception &e) {
     std::println("Evaluation exception in empty_context_eval: {}", e.what());
   }
@@ -81,7 +80,8 @@ void
   [[maybe_unused]] runko::RuntimeActivator _;
 
   try {
-    tyvi::this_thread::sync_wait(ta::eval<runko::symbol>(body, runko::sim_env(sim)));
+    tyvi::this_thread::sync_wait(
+      ta::eval<runko::symbol>(body, runko::build_sim_env(sim)));
   } catch(const std::exception &e) {
     std::println("Evaluation exception in simulation_context_eval: {}", e.what());
   }

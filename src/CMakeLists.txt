@@ -10,6 +10,7 @@ set (TOOLS_FILES
      ./runko/communication_common.c++
      ./runko/runtime.c++
      ./runko/actions/env.c++
+     ./runko/actions/sim_env.c++
      )
 
 set (EMF_FILES

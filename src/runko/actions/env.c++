@@ -4,8 +4,8 @@
 #include "runko/actions/env.h"
 
 #include "tyvi/actions_list.h"
+#include "tyvi/execution.h"
 
-#include <pika/execution.hpp>
 #include <print>
 #include <ranges>
 #include <string>
@@ -22,7 +22,7 @@ namespace rv = std::views;
 
 [[nodiscard]]
 tyvi::actions::sexpr
-  build_stdenv()
+  build_std_env()
 {
 
   auto print = [](const ta::sexpr &args) -> ta::sexpr_sender {

@@ -4,6 +4,7 @@
 #pragma once
 
 #include "tyvi/actions_ast.h"
+#include "runko/simulation_context.h"
 
 namespace runko {
 
@@ -18,6 +19,9 @@ enum class symbol : std::uint8_t {
 };
 
 [[nodiscard]]
-tyvi::actions::sexpr build_stdenv();
+tyvi::actions::sexpr build_std_env();
+
+[[nodiscard]]
+tyvi::actions::sexpr build_sim_env(simulation_context&);
 
 }  // namespace runko
