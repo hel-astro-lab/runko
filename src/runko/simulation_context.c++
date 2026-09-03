@@ -39,20 +39,6 @@ struct emf_comm_buffs {
   hollow_grid_J J;
 };
 
-auto
-  args_to_sim_n_comm_mode(const ta::sexpr& args)
-{
-  const auto arg_list = std::get<ta::cons>(args);
-  const auto arg0     = std::get<ta::atom>(arg_list.car());
-  const auto arg_tail = std::get<ta::cons>(arg_list.cdr());
-  const auto arg1     = std::get<ta::atom>(arg_tail.car());
-
-  return std::tuple {
-    ta::atom_cast<std::reference_wrapper<simulation_context>>(arg0).value(),
-    ta::atom_cast<runko::comm_mode>(arg1).value()
-  };
-}
-
 template<std::size_t rank>
 auto
   moore_neigh_dirs()
