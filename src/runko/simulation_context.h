@@ -76,10 +76,11 @@ private:
 
 
 struct simulation_context {
-  /// FIXME: make all view_tiles usage const correct
   std::ranges::view auto view_tiles();
+
   template<typename... Ts>
   std::ranges::view auto view_tiles();
+
   template<typename... Ts>
   std::ranges::view auto view_tiles() const;
 
@@ -161,11 +162,11 @@ void
 
   const auto n_tiles = toolbox::get_extent_list(sim.config, "n_tiles", rank);
 
-  for(const auto& [id, index]: sim.view_tiles<index_type>()) {
+  for(const auto& [id, index]: sim.view_tiles<const index_type>()) {
     index_to_id[index] = id;
   }
 
-  for(const auto& [_, index]: sim.view_tiles<index_type, local_tile_tag>()) {
+  for(const auto& [_, index]: sim.view_tiles<const index_type, local_tile_tag>()) {
     for(const auto& x: moore_neighs(index)) { std::ignore = required.insert(x); }
   }
 
@@ -178,7 +179,7 @@ void
     sim.tiles.emplace<index_type>(id, x);
   }
 
-  for(const auto& [id, index]: sim.view_tiles<index_type, local_tile_tag>()) {
+  for(const auto& [id, index]: sim.view_tiles<const index_type, local_tile_tag>()) {
     auto& neighbors =
       sim.tiles.emplace_or_replace<runko::cartesian_neighbors<rank>>(id);
     for(const auto& [x, dir]: moore_neighs_n_dirs(index)) {
@@ -224,11 +225,12 @@ void
   auto my_local_indices = std::vector<index_type> {};
   auto my_virt_indices  = std::vector<index_type> {};
 
-  for(const auto& [_, index]: sim.view_tiles<index_type, local_tile_tag>()) {
+  for(const auto& [_, index]: sim.view_tiles<const index_type, local_tile_tag>()) {
     my_local_indices.push_back(index);
   }
 
-  for(const auto& [_, index, __]: sim.view_tiles<index_type, virtual_tile_tag>()) {
+  for(const auto& [_, index, __]:
+      sim.view_tiles<const index_type, virtual_tile_tag>()) {
     my_virt_indices.push_back(index);
   }
 
@@ -362,14 +364,15 @@ void
     }
   }
 
-  for(auto&& [_, idx, virt]: sim.view_tiles<index_type, virtual_tile_tag>()) {
+  for(auto&& [_, idx, virt]: sim.view_tiles<const index_type, virtual_tile_tag>()) {
     virt.source_info = comm_info_type {
       .rank = local_index_to_rank.at(wrap_cartesian_index<rank>(idx, n_tiles)),
       .tag  = cartesian_index_to_mpi_tag<rank>(n_tiles, idx)
     };
   }
 
-  for(auto&& [_, idx, boundary]: sim.view_tiles<index_type, boundary_tile_tag>()) {
+  for(auto&& [_, idx, boundary]:
+      sim.view_tiles<const index_type, boundary_tile_tag>()) {
     boundary.dest_infos.clear();
 
     for(const auto& [virt_idx, virt_rank]: virt_index_to_rank) {

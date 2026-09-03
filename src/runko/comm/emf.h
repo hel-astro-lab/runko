@@ -99,9 +99,11 @@ auto
   return te::just() | te::continues_on(te::thread_pool_scheduler {}) | te::then([sim] {
            const auto w = tyvi::mdgrid_work {};
 
-           for(const auto& [id, comm_buffs, yee, _]:
-               sim.get()
-                 .view_tiles<emf_comm_buffs, emf::YeeLattice, boundary_tile_tag>()) {
+           for(auto&& [_, comm_buffs, yee, __]: sim.get()
+                                                  .view_tiles<
+                                                    emf_comm_buffs,
+                                                    const emf::YeeLattice,
+                                                    const boundary_tile_tag>()) {
              comm_buffs.B.set_from_mds(w, yee.nonhalo_submds(yee.mds_B()));
            }
 
@@ -120,7 +122,8 @@ auto
     te::just() | te::let_value([sim] {
       auto senders = std::vector<te::unique_any_sender<>> {};
       for(auto&& [_, idx, virt, comm_buffs]:
-          sim.get().view_tiles<index_type, virtual_tile_tag, emf_comm_buffs>()) {
+          sim.get()
+            .view_tiles<const index_type, const virtual_tile_tag, emf_comm_buffs>()) {
 
         const auto span = comm_buffs.B.span();
 
@@ -149,7 +152,8 @@ auto
     te::just() | te::let_value([sim] {
       auto senders = std::vector<te::unique_any_sender<>> {};
       for(auto&& [_, idx, boundary, comm_buffs]:
-          sim.get().view_tiles<index_type, boundary_tile_tag, emf_comm_buffs>()) {
+          sim.get()
+            .view_tiles<const index_type, const boundary_tile_tag, emf_comm_buffs>()) {
 
         const auto span = comm_buffs.B.span();
 
