@@ -43,23 +43,9 @@ auto
   ensure_constructed_emf_comm_buffs(
     const std::reference_wrapper<simulation_context> sim)
 {
-  // FIXME: refactor n_tiles parsing to own function
-  const auto n_cells =
-    sim.get().config.get_or_throw<std::vector<std::ptrdiff_t>>("n_cells_per_tile");
-  if(n_cells.size() != 3) {
-    throw std::runtime_error { std::format(
-      "ensure_constructed_virt_emf_buffs only supports rank-3 grids but was "
-      "given rank {} n_cells_per_tiles",
-      n_cells.size()) };
-  }
 
-  for(const auto x: n_cells) {
-    if(x <= 0) {
-      throw std::runtime_error { std::format(
-        "n_cells_per_tile is expected to only contain positive integers ({} found)",
-        x) };
-    }
-  }
+  const auto n_cells =
+    toolbox::get_extent_list(sim.get().config, "n_cells_per_tile", 3);
 
   const auto extents_wout_halo = std::array { static_cast<std::size_t>(n_cells[0]),
                                               static_cast<std::size_t>(n_cells[1]),

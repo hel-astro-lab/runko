@@ -66,5 +66,13 @@ public:
   }
 };
 
+/// Gets given parameter from the config parses.
+///
+/// Throws if any of the numbers are non-positive
+/// or if the list is not of expected_length.
+std::vector<std::ptrdiff_t> get_extent_list(
+  const toolbox::ConfigParser&,
+  const std::string&,
+  std::size_t expected_length);
 
 }  // namespace toolbox
