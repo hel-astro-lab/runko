@@ -8,6 +8,9 @@
 
 # cpp kernel bindings defined in bindings/
 from runko_cpp_bindings import *
+from .tiles import InitTile
+
+emf.threeD.Tile = InitTile
 
 # Helper scripts to initialize the simulation 
 from .configuration import Configuration

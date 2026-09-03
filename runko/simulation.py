@@ -4,12 +4,9 @@
 from .method_wrapper import MethodWrapper
 from .runko_logging import runko_logger, on_main_rank
 from .runko_timer import Timer, timer_statistics
-
-from runko_cpp_bindings.tools import _virtual_tile_sync_handshake_mode, comm_mode
-from runko_cpp_bindings.emf.threeD import MpiioFieldsWriter as FieldsWriter, _write_average_B_energy_density, _write_average_E_energy_density
-from runko_cpp_bindings.emf.threeD import MpiioParticlesWriter as ParticlesWriter
-from runko_cpp_bindings.emf.threeD import MpiioSpectraWriter as SpectraWriter
-from runko_cpp_bindings.pic.threeD import _write_average_kinetic_energy
+from .configuration import Configuration
+from .tiles import ProxyTile
+import runko_cpp_bindings.actions as actions
 
 import json
 import logging
@@ -35,7 +32,7 @@ class Simulation:
 
     _im_not_user = 42
 
-    def __init__(self, tile_grid, prevent_user_init: int, **kwargs):
+    def __init__(self, initial_tiles, prevent_user_init: int, **kwargs):
         """
         Construct runko simulation from tile grid.
 
@@ -46,7 +43,12 @@ class Simulation:
         if prevent_user_init != Simulation._im_not_user:
             raise RuntimeError("Don't instantiate this class directly!")
 
-        self._tile_grid = tile_grid
+        self._config = kwargs["config"]
+        self._runtime_instance = actions.RuntimeInstance()
+        self._simulation_context = actions.SimulationContext(self._config)
+
+        self._simulation_context.add_init_tiles(initial_tiles)
+
         self._lap = 0
 
         self._last_lap = kwargs['Nt']
@@ -151,8 +153,7 @@ class Simulation:
         Return iterable which goes through all virtual tiles in current rank.
         """
 
-        for vtile_id in self._tile_grid._corgi_grid.get_virtual_tiles():
-            yield self._tile_grid._corgi_grid.get_tile(vtile_id)
+        raise NotImplementedError()
 
 
     def local_tiles(self):
@@ -160,8 +161,8 @@ class Simulation:
         Return iterable which goes through all local tiles in current rank.
         """
 
-        for tile_id in self._tile_grid._corgi_grid.get_local_tiles():
-            yield self._tile_grid._corgi_grid.get_tile(tile_id)
+        ids = self._simulation_context.get_local_tile_ids()
+        return [ProxyTile(x, self._simulation_context) for x in ids]
 
 
     def _boundary_tiles(self):
@@ -169,8 +170,7 @@ class Simulation:
         Return iterable which goes through all boundary tiles in current rank.
         """
 
-        for tile_id in self._tile_grid._corgi_grid.get_boundary_tiles():
-            yield self._tile_grid._corgi_grid.get_tile(tile_id)
+        raise NotImplementedError()
 
 
     @property
@@ -244,81 +244,45 @@ class Simulation:
                 if method in method_mapper:
                     method = method_mapper[method]
 
-                for tile in self.local_tiles():
-                    getattr(tile, method)()
+                raise NotImplementedError("prtcl_ actions")
 
             elif method.startswith("grid_"):
-
-                for tile in self.local_tiles():
-                    getattr(tile, method[5:])(*vargs)
+                raise NotImplementedError("grid_ actions")
 
             elif method.startswith("io_"):
                 match method[3:]:
                     case "emf_snapshot":
-                        self._ensure_constructed_emf_writer()
-                        self._emf_writer.write(self._tile_grid._corgi_grid, self.lap)
+                        raise NotImplementedError()
                     case "prtcl_snapshot":
-                        self._ensure_constructed_prtcl_writers()
-                        for writer in self._prtcl_writers.values():
-                            writer.write(self._tile_grid._corgi_grid, self.lap)
+                        raise NotImplementedError()
                     case "average_kinetic_energy":
-                        _write_average_kinetic_energy(self.lap, self._io_config["kinetic_energy_path"], self._tile_grid._corgi_grid)
+                        raise NotImplementedError()
                     case "average_B_energy_density":
-                        _write_average_B_energy_density(self.lap,
-                                                        self._io_config["average_B_energy_density_path"],
-                                                        self._tile_grid._corgi_grid)
+                        raise NotImplementedError()
                     case "average_E_energy_density":
-                        _write_average_E_energy_density(self.lap,
-                                                        self._io_config["average_E_energy_density_path"],
-                                                        self._tile_grid._corgi_grid)
+                        raise NotImplementedError()
                     case "spectra_snapshot":
-                        self._ensure_constructed_spectra_writer()
-                        self._spectra_writer.write(self._tile_grid._corgi_grid, self.lap)
+                        raise NotImplementedError()
                     case "ram_usage":
-                        self._write_ram_usage()
+                        raise NotImplementedError()
                     case _:
                         raise AttributeError(f"{method} is not supported IO type.")
 
             elif method.startswith("comm_"):
-                comm_modes = [*vargs]
+                if method == "comm_external":
+                    symbol = actions.comm_external
+                elif method == "comm_local":
+                    symbol = actions.comm_local
+                else:
+                    raise RuntimeError(f"Unregonized communication: {method}")
 
-                for mode in comm_modes:
-                    if type(mode) != comm_mode:
-                        msg = "Communications only accept runko.comm_mode arguments.\n"
-                        msg += f"Received {mode} of type {type(mode)}."
-                        raise TypeError(msg)
-
-                    match method[5:]:
-                        case "local":
-                            self._tile_grid._corgi_grid.local_communication(mode.value)
-
-                        case "external":
-                            handshake_mode = _virtual_tile_sync_handshake_mode(mode)
-
-                            if handshake_mode:
-                                self._logger.debug("Starting a handshake.")
-                                self._tile_grid._corgi_grid.recv_data(handshake_mode)
-                                self._tile_grid._corgi_grid.send_data(handshake_mode)
-                                x = wait_measurement(
-                                    label="comm_external: handshake wait",
-                                    begin=time.time(),
-                                    end=None)
-                                self._tile_grid._corgi_grid.wait_data(handshake_mode)
-                                x.end = time.time()
-                                self._wait_measurements[-1].append(x)
-
-                            self._logger.debug("Starting virtual tile sync.")
-                            self._tile_grid._corgi_grid.recv_data(mode.value)
-                            self._tile_grid._corgi_grid.send_data(mode.value)
-                            x = wait_measurement(
-                                label="comm_external: data wait",
-                                begin=time.time(),
-                                end=None)
-                            self._tile_grid._corgi_grid.wait_data(mode.value)
-                            x.end = time.time()
-                            self._wait_measurements[-1].append(x)
-                        case _:
-                            raise AttributeError(f"{method} is not supported communication type.")
+                modes = (*vargs,)
+                if len(modes) != 1:
+                    raise RuntimeError(f"Currently only one comm_mode at the same time is supported.")
+                prg = (symbol, actions.current_context) + modes
+                print(prg)
+                self._simulation_context.eval(prg)
+                print("done")
             else:
                 raise RuntimeError(f"{method} is not supported!")
 

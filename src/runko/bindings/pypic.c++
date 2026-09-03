@@ -82,60 +82,6 @@ void
     .def_readwrite("betawall", &RW::betawall)
     .def_readwrite("gammawall", &RW::gammawall);
 
-  // 3d virtual tile specialization
-  py::class_<
-    pic::VirtualTile<3>,
-    emf::VirtualTile<3>,
-    corgi::Tile<3>,
-    std::shared_ptr<pic::VirtualTile<3>>>(m_3d, "VirtualTile")
-    .def(
-      py::init([](const std::array<std::size_t, 3> tile_grid_idx, const py::handle& h) {
-        return pic::VirtualTile<3>(tile_grid_idx, toolbox::ConfigParser(h));
-      }))
-    .def_static("canonical_type", []() { return py::type::of<pic::Tile<3>>(); });
-
-  // 3d pic tile
-  py::class_<pic::Tile<3>, emf::Tile<3>, corgi::Tile<3>, std::shared_ptr<pic::Tile<3>>>(
-    m_3d,
-    "Tile")
-    .def_static("canonical_type", []() { return py::type::of<pic::Tile<3>>(); })
-    .def_static(
-      "virtual_tile_specialization",
-      []() { return py::type::of<pic::VirtualTile<3>>(); })
-    .def(
-      py::init([](const std::array<std::size_t, 3> tile_grid_idx, const py::handle& h) {
-        return pic::Tile<3>(tile_grid_idx, toolbox::ConfigParser(h));
-      }))
-    .def(
-      "get_positions",
-      [](pic::Tile<3>& tile, const std::size_t p) {
-        const auto [x, y, z] = tile.get_positions(p);
-        return std::tuple { to_ndarray(x), to_ndarray(y), to_ndarray(z) };
-      })
-    .def(
-      "get_velocities",
-      [](pic::Tile<3>& tile, const std::size_t p) {
-        const auto [x, y, z] = tile.get_velocities(p);
-        return std::tuple { to_ndarray(x), to_ndarray(y), to_ndarray(z) };
-      })
-    .def(
-      "get_ids",
-      [](pic::Tile<3>& tile, const std::size_t p) {
-        return to_ndarray(tile.get_ids(p));
-      })
-    .def("pack_outgoing_particles", &pic::Tile<3>::pack_outgoing_particles)
-    .def("inject_to_each_cell", &pic::Tile<3>::inject_to_each_cell)
-    .def("inject", &pic::Tile<3>::inject)
-    .def("batch_inject_to_cells", &pic::Tile<3>::batch_inject_to_cells)
-    .def("push_particles", &pic::Tile<3>::push_particles)
-    .def("deposit_current", &pic::Tile<3>::deposit_current)
-    .def("sort_particles", &pic::Tile<3>::sort_particles)
-    .def("register_reflector_wall", &pic::Tile<3>::register_reflector_wall)
-    .def("reflect_particles", &pic::Tile<3>::reflect_particles)
-    .def("advance_reflector_walls", &pic::Tile<3>::advance_reflector_walls)
-    .def("batch_inject_in_x_stripe", &pic::Tile<3>::batch_inject_in_x_stripe);
-
-
   m_3d.def("_write_average_kinetic_energy", &pic::write_average_kinetic_energy);
 }
 
