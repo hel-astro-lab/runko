@@ -4,6 +4,7 @@
 #pragma once
 
 #include "runko/tools/vector.h"
+#include "tyvi/actions_ast.h"
 #include "tyvi/mdspan.h"
 
 #include <algorithm>
@@ -11,6 +12,7 @@
 #include <concepts>
 #include <cstddef>
 #include <format>
+#include <functional>
 #include <optional>
 #include <print>
 #include <source_location>
@@ -223,5 +225,12 @@ constexpr T
   }
   return static_cast<T>(n);
 }
+
+
+struct simulation_context;
+
+/// Parses the 0th and 1st arguments as a rf<simulation_context> and runko::comm_mode.
+std::tuple<std::reference_wrapper<simulation_context>, runko::comm_mode>
+  args_to_sim_n_comm_mode(const tyvi::actions::sexpr& args);
 
 }  // namespace runko

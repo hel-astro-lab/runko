@@ -7,6 +7,7 @@ set (TOOLS_FILES
      ./runko/tools/config_parser.c++
      ./runko/tools/system.c++
      ./runko/simulation_context.c++
+     ./runko/communication_common.c++
      ./runko/runtime.c++
      ./runko/actions/env.c++
      )
