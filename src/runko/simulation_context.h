@@ -54,6 +54,16 @@ struct virtual_tile_tag {
 template<std::size_t rank>
 using cartesian_index = toolbox::VecD<std::ptrdiff_t, rank>;
 
+/// View over indices in Moore neighborhood around given index.
+template<std::size_t rank>
+std::ranges::view auto moore_neighs(const cartesian_index<rank>&);
+
+/// Similar to moore_neighs but adds direction to each index.
+///
+/// value_type is std::tuple<cartesian_index<rank>, grid_neighbor<rank>>.
+template<std::size_t rank>
+std::ranges::view auto moore_neighs_n_dirs(const cartesian_index<rank>&);
+
 template<std::size_t rank>
 struct cartesian_neighbors {
   void set(const runko::grid_neighbor<rank>&, entt::registry::entity_type);
@@ -175,20 +185,8 @@ void
     index_to_id[index] = id;
   }
 
-  // FIXME: dedublicate this
-  auto neighboring_indices = [&](const index_type idx) {
-    using neigh_type = runko::grid_neighbor<rank>;
-
-    return rv::iota(0uz, std::pow(3uz, rank)) | rv::transform([&](const auto n) {
-             auto x = idx + neigh_type::from_index(n).template to_vec<std::ptrdiff_t>();
-             return x;
-           }) |
-           rv::filter([&](const auto& x) { return x != idx; });
-  };
-
-
   for(const auto& [_, index]: sim.view_tiles<index_type, local_tile_tag>()) {
-    for(const auto& x: neighboring_indices(index)) { std::ignore = required.insert(x); }
+    for(const auto& x: moore_neighs(index)) { std::ignore = required.insert(x); }
   }
 
   auto to_be_constructed =
@@ -200,25 +198,10 @@ void
     sim.tiles.emplace<index_type>(id, x);
   }
 
-  // FIXME: dedublicate this
-  auto neighboring_indices_n_dir = [](const index_type idx) {
-    using neigh_type = runko::grid_neighbor<rank>;
-
-    return rv::iota(0uz, std::pow(3uz, rank)) | rv::transform([=](const auto n) {
-             const auto dir  = neigh_type::from_index(n);
-             const auto dirv = dir.template to_vec<std::ptrdiff_t>();
-             return std::tuple { idx + dirv, dir };
-           }) |
-           rv::filter([&](const auto& x) {
-             return std::get<1>(x) != grid_neighbor_origo<rank>;
-           });
-  };
-
-
   for(const auto& [id, index]: sim.view_tiles<index_type, local_tile_tag>()) {
     auto& neighbors =
       sim.tiles.emplace_or_replace<runko::cartesian_neighbors<rank>>(id);
-    for(const auto& [x, dir]: neighboring_indices_n_dir(index)) {
+    for(const auto& [x, dir]: moore_neighs_n_dirs(index)) {
       const auto neigh_id = index_to_id.at(x);
       neighbors.set(dir, neigh_id);
 
@@ -491,6 +474,35 @@ int
   }
 
   return tag;
+}
+
+template<std::size_t rank>
+std::ranges::view auto
+  moore_neighs(const cartesian_index<rank>& idx)
+{
+  namespace rv     = std::views;
+  using neigh_type = runko::grid_neighbor<rank>;
+
+  return rv::iota(0uz, std::pow(3uz, rank)) | rv::transform([idx](const auto n) {
+           return idx + neigh_type::from_index(n).template to_vec<std::ptrdiff_t>();
+         }) |
+         rv::filter([idx](const auto& x) { return x != idx; });
+}
+
+template<std::size_t rank>
+std::ranges::view auto
+  moore_neighs_n_dirs(const cartesian_index<rank>& idx)
+{
+  namespace rv     = std::views;
+  using neigh_type = runko::grid_neighbor<rank>;
+
+  return rv::iota(0uz, std::pow(3uz, rank)) | rv::transform([idx](const auto n) {
+           const auto dir  = neigh_type::from_index(n);
+           const auto vdir = dir.template to_vec<std::ptrdiff_t>();
+           return std::tuple { idx + vdir, dir };
+         }) |
+         rv::filter(
+           [](const auto& x) { return std::get<1>(x) != grid_neighbor_origo<rank>; });
 }
 
 }  // namespace runko
