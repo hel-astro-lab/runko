@@ -116,9 +116,6 @@ int cartesian_index_to_mpi_tag(
   const std::vector<std::ptrdiff_t>& n_tiles,
   const cartesian_index<rank>&);
 
-auto sim_env(simulation_context&) -> tyvi::actions::sexpr;
-
-
 // Implementation:
 
 template<std::size_t rank>
