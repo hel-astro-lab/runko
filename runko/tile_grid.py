@@ -5,7 +5,6 @@ import itertools
 import pickle
 import logging
 import pathlib
-from mpi4py import MPI
 import pycorgi.threeD as pycorgi
 from .simulation import Simulation
 from .runko_logging import runko_logger, on_main_rank
@@ -15,7 +14,7 @@ from .auto_outdir import resolve_outdir
 
 class TileGrid:
     """
-    Represents the grid of runko tiles.
+    Represents the 3D grid of runko tiles.
     Stores tiles in current locality and global information about all tiles.
 
     Initially tiles are distributed to different localities based on `tile_partitioning`.
@@ -27,53 +26,55 @@ class TileGrid:
     def __init__(self, conf):
 
         required_vars = ["n_tiles",
-                         "n_cells_per_tile",
                          "tile_partitioning"]
 
         for var in required_vars:
             if getattr(conf, var) is None:
                 raise RuntimeError(f"Can not construct TileGrid without: {var}")
 
+        self._initial_tiles = []
+
         self._Nx, self._Ny, self._Nz = conf.n_tiles
         self._NxMesh, self._NyMesh, self._NzMesh = conf.n_cells_per_tile
-        self._xmin, self._ymin, self._zmin = (0, 0, 0)
 
         valid_tile_partitions = ["hilbert_curve", "catepillar_track"]
 
         if conf.tile_partitioning not in valid_tile_partitions:
             raise RuntimeError(f"invalid `tile_partitioning`: {conf.tile_partitioning}")
 
-        if conf.tile_partitioning == "catepillar_track":
-            if conf.catepillar_track_length is None:
-                msg = "Catepillar track requested, but no `catepillar_track_length` given!"
-                raise RuntimeError(msg)
+        self._local_indices = []
 
+        from mpi4py import MPI
+        self._my_rank = MPI.COMM_WORLD.Get_rank()
+        self._world_size = MPI.COMM_WORLD.Get_size()
 
-        self._corgi_grid = pycorgi.Grid(self._Nx, self._Ny, self._Nz)
-
-        xmax = self._xmin + self._Nx * self._NxMesh
-        ymax = self._ymin + self._Ny * self._NyMesh
-        zmax = self._zmin + self._Nz * self._NzMesh
-
-        self._corgi_grid.set_grid_lims(self._xmin,
-                                       xmax,
-                                       self._ymin,
-                                       ymax,
-                                       self._zmin,
-                                       zmax)
-
-        legacy_conf = type("", (), dict(oneD=False,
-                                        twoD=False,
-                                        threeD=True,
-                                        mpi_task_mode=False))
-
+        total_n_tiles = self._Nx * self._Ny * self._Nz
         if conf.tile_partitioning == "hilbert_curve":
-            balance_mpi(self._corgi_grid, legacy_conf, do_print=False)
+            raise NotImplementedError()
         elif conf.tile_partitioning == "catepillar_track":
-            load_catepillar_track_mpi(self._corgi_grid,
-                                              conf.catepillar_track_length,
-                                              legacy_conf,
-                                              do_print=False)
+            tiles_per_rank = [total_n_tiles // self._world_size] * self._world_size
+
+            # Add left over tiles evenly between the ranks.
+            i = 0
+            while sum(tiles_per_rank) != total_n_tiles:
+                tiles_per_rank[i] += 1
+                i = (i + 1) % self._world_size
+
+            rank_in_progress = 0
+            count_for_rank_in_progress = 0
+            for i in range(self._Nx):
+                for j in range(self._Ny):
+                    for k in range(self._Nz):
+                        if rank_in_progress == self._my_rank:
+                            self._local_indices.append((i, j, k))
+                        count_for_rank_in_progress += 1
+                        if count_for_rank_in_progress == tiles_per_rank[rank_in_progress]:
+                            rank_in_progress += 1
+                            count_for_rank_in_progress = 0
+
+            # Sanity check:
+            if rank_in_progress != self._world_size or count_for_rank_in_progress != 0:
+                raise RuntimeError(f"Internal logic error in constructing catepillar_track.")
         else:
             raise RuntimeError("Due to previous checking this should not happend.")
 
@@ -86,15 +87,7 @@ class TileGrid:
         Adds tile to given tile grid index.
         """
 
-        i, j, k = tile_grid_idx
-        my_rank, ijk_rank = self._corgi_grid.rank(), self._corgi_grid.get_mpi_grid(i, j, k)
-        if my_rank != ijk_rank:
-            msg = f"rank {my_rank}: Trying to add tile to {idx} which belongs to different MPI rank."
-            raise RuntimeError(msg)
-
-        self._corgi_grid.add_tile(tile, tile_grid_idx)
-
-        self._logger.debug(f"Added tile {tile} at {tile_grid_idx}.")
+        self._initial_tiles.append(tile)
 
 
     def initialized_from_restart_file(self) -> bool:
@@ -112,13 +105,7 @@ class TileGrid:
         corresponding to a local tile locations.
         """
 
-        index_space = itertools.product(range(self._corgi_grid.get_Nx()),
-                                        range(self._corgi_grid.get_Ny()),
-                                        range(self._corgi_grid.get_Nz()))
-
-        for i, j, k in index_space:
-            if self._corgi_grid.rank() == self._corgi_grid.get_mpi_grid(i, j, k):
-                yield (i, j, k)
+        return self._local_indices
 
 
     def configure_simulation(self, config) -> Simulation:
@@ -132,70 +119,17 @@ class TileGrid:
             if getattr(config, var) is None:
                 raise RuntimeError(f"Can not configure simulation without: {var}")
 
-        self._corgi_grid.analyze_boundaries()
-        self._corgi_grid.send_tiles()
-        self._corgi_grid.recv_tiles()
-        MPI.COMM_WORLD.barrier()
-
-        for vtile_id in self._corgi_grid.get_virtual_tiles():
-            vtile = self._corgi_grid.get_tile(vtile_id)
-
-            # If virtual tile is not from pycorgi,
-            # assume that it is already initialized.
-            if 'pycorgi' not in type(vtile).__module__:
-                continue
-
-            tile_type_candidate = None
-
-            for i, j, k in vtile.nhood():
-                nhood_tile = self._corgi_grid.get_tile(i, j, k)
-
-                if not nhood_tile:
-                    continue
-
-                try:
-                    nhood_tile_type = type(nhood_tile).canonical_type()
-                except:
-                    nhood_tile_type = type(nhood_tile)
-
-                # Treat tiles from pycorgi as non-initialized.
-                if 'pycorgi' not in nhood_tile_type.__module__ :
-
-                    if tile_type_candidate and tile_type_candidate != nhood_tile_type:
-                        msg = "Can not deduce virtual tile type.\n"
-                        msg += f"It is next to {tile_type_candidate} and {nhood_tile_type}."
-                        raise RuntimeError(msg)
-
-                    tile_type_candidate = nhood_tile_type
-
-            indices = vtile.index
-            new_tile = None
-            try:
-                # Try to create a virtual tile specialization of the tile.
-                new_tile = tile_type_candidate.virtual_tile_specialization()(indices, config)
-            except TypeError:
-                # There is no virtual tile specialization for the tile.
-                new_tile = tile_type_candidate(indices, config)
-            except Exception as e:
-                raise e
-
-            self._corgi_grid.add_tile(new_tile, indices)
-            new_tile.load_metainfo(vtile.communication)
-
-            vtile_msg = f"Constructed virtual tile at {vtile.index} "
-            vtile_msg += f"with deduced type {tile_type_candidate}."
-            self._logger.debug(vtile_msg)
-
         if config.verbose:
             self._logger.info(f"simulation configured with: {config.__dict__}")
 
         # Count particle species from config (q0/m0, q1/m1, ...)
         nspecies = 0
-        for i in range(6):
+        for i in range(1000):
             if getattr(config, f"q{i}") is not None and getattr(config, f"m{i}") is not None:
                 nspecies += 1
             else:
                 break
+
 
         stride = 1 if not config.io_grid_stride else config.io_grid_stride
         io_config = dict(stride=stride,
@@ -212,7 +146,7 @@ class TileGrid:
 
         if on_main_rank():
             pickled_conf_path = pathlib.Path(f"{io_config['outdir']}/config.pkl")
-            config.ranks = MPI.COMM_WORLD.size
+            config.ranks = self._world_size
             with open(pickled_conf_path, "wb") as f:
                 pickle.dump(config, f)
 
@@ -220,8 +154,9 @@ class TileGrid:
                 import shutil
                 shutil.copy2(config._config_path, io_config["outdir"])
 
-        return Simulation(self,
+        return Simulation(self._initial_tiles,
                           Simulation._im_not_user,
+                          config=config,
                           Nt=config.n_laps,
                           io_config=io_config,
                           verbose=config.verbose)

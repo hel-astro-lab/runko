@@ -6,7 +6,8 @@ set (TOOLS_FILES
      ./runko/bindings/pyactions.c++
      ./runko/tools/config_parser.c++
      ./runko/tools/system.c++
-     ./runko/simulation.c++
+     ./runko/simulation_context.c++
+     ./runko/runtime.c++
      ./runko/actions/env.c++
      )
 

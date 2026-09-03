@@ -7,7 +7,15 @@
 
 namespace runko {
 
-enum class symbol : std::uint8_t { print, println, version, mt_showcase };
+enum class symbol : std::uint8_t {
+  print,
+  println,
+  version,
+  mt_showcase,
+  comm_local,
+  comm_external,
+  current_context
+};
 
 [[nodiscard]]
 tyvi::actions::sexpr build_stdenv();
