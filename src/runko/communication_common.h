@@ -175,6 +175,12 @@ struct [[nodiscard]] grid_neighbor {
   }
 };
 
+
+template<std::size_t rank>
+constexpr auto grid_neighbor_origo = []<std::size_t... I>(std::index_sequence<I...>) {
+  return grid_neighbor<rank>((I * 0)...);
+}(std::make_index_sequence<rank>());
+
 static_assert(
   grid_neighbor<2>(-1, -1) ==
   grid_neighbor<2>::from_index(grid_neighbor<2>(-1, -1).neighbor_index()));
@@ -188,7 +194,7 @@ static_assert(
   grid_neighbor<2>(0, -1) ==
   grid_neighbor<2>::from_index(grid_neighbor<2>(0, -1).neighbor_index()));
 static_assert(
-  grid_neighbor<2>(0, 0) ==
+  grid_neighbor_origo<2> ==
   grid_neighbor<2>::from_index(grid_neighbor<2>(0, 0).neighbor_index()));
 static_assert(
   grid_neighbor<2>(0, 1) ==
