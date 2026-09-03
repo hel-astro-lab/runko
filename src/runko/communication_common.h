@@ -15,6 +15,7 @@
 #include <functional>
 #include <optional>
 #include <print>
+#include <ranges>
 #include <source_location>
 #include <stdexcept>
 #include <string_view>
@@ -211,6 +212,17 @@ static_assert(
   grid_neighbor<2>(1, 1) ==
   grid_neighbor<2>::from_index(grid_neighbor<2>(1, 1).neighbor_index()));
 
+template<std::size_t rank>
+std::ranges::view auto
+  moore_neigh_dirs()
+{
+  namespace rv     = std::views;
+  using neigh_type = runko::grid_neighbor<rank>;
+
+  return rv::iota(0uz, std::pow(3uz, rank)) |
+         rv::transform([](const auto n) { return neigh_type::from_index(n); }) |
+         rv::filter([](const auto& x) { return x != grid_neighbor_origo<rank>; });
+}
 
 /// Throws if n is not in range of type T.
 template<std::integral T>

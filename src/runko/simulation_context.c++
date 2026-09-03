@@ -39,16 +39,6 @@ struct emf_comm_buffs {
   hollow_grid_J J;
 };
 
-template<std::size_t rank>
-auto
-  moore_neigh_dirs()
-{
-  using neigh_type = runko::grid_neighbor<rank>;
-  return rv::iota(0uz, std::pow(3uz, rank)) |
-         rv::transform([&](const auto n) { return neigh_type::from_index(n); }) |
-         rv::filter([](const auto& x) { return x != grid_neighbor_origo<rank>; });
-}
-
 auto
   ensure_constructed_emf_comm_buffs(
     const std::reference_wrapper<simulation_context> sim)
