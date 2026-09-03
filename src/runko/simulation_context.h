@@ -162,24 +162,7 @@ void
   namespace rn = std::ranges;
   namespace rv = std::views;
 
-  // FIXME: refactor n_tiles parsing to own function
-  const auto n_tiles = sim.config.get_or_throw<std::vector<std::ptrdiff_t>>("n_tiles");
-
-  if(n_tiles.size() != rank) {
-    throw std::runtime_error { std::format(
-      "set_cartesian_neighbors<{}> requires n_tiles to be of length {} and not {}.",
-      rank,
-      rank,
-      n_tiles.size()) };
-  }
-
-  for(const auto x: n_tiles) {
-    if(x <= 0) {
-      throw std::runtime_error { std::format(
-        "n_tiles is expected to only contain positive integers ({} found)",
-        x) };
-    }
-  }
+  const auto n_tiles = toolbox::get_extent_list(sim.config, "n_tiles", rank);
 
   for(const auto& [id, index]: sim.view_tiles<index_type>()) {
     index_to_id[index] = id;
@@ -238,24 +221,8 @@ void
   namespace rn = std::ranges;
   namespace rv = std::views;
 
-  // FIXME: refactor n_tiles parsing to own function
-  const auto n_tiles = sim.config.get_or_throw<std::vector<std::ptrdiff_t>>("n_tiles");
 
-  if(n_tiles.size() != rank) {
-    throw std::runtime_error { std::format(
-      "set_cartesian_neighbors<{}> requires n_tiles to be of length {} and not {}.",
-      rank,
-      rank,
-      n_tiles.size()) };
-  }
-
-  for(const auto x: n_tiles) {
-    if(x <= 0) {
-      throw std::runtime_error { std::format(
-        "n_tiles is expected to only contain positive integers ({} found)",
-        x) };
-    }
-  }
+  const auto n_tiles = toolbox::get_extent_list(sim.config, "n_tiles", rank);
 
   auto my_local_indices = std::vector<index_type> {};
   auto my_virt_indices  = std::vector<index_type> {};
