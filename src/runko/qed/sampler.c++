@@ -304,6 +304,8 @@ constexpr Staged
 // lanes past the weight stage, moved weight, summed accumulation factor, rejection proposals
 // and their count, clamped events, emitted weight
 enum DStat : int { d_virt = 0, d_wpass, d_wmoved, d_facc, d_trials, d_trials_n, d_clamped, d_wem, d_count };
+// states of a thinning lane: the counts come from these, not from contended atomics
+enum LaneState : std::uint8_t { L_WFAIL = 0, L_ACC = 1, L_VIRT = 2, L_WPASS = 3 };
 // slots of the device counters (counters_): staged records, tail slots taken per species,
 // products placed in slack and in the tail, ids consumed per species
 enum Counter : int { c_staged = 0, c_tail0, c_tail1, c_tail2, c_slack, c_tailn, c_id0, c_id1, c_id2, c_count };
@@ -835,11 +837,10 @@ void
     li[lane] = i;
     lj[lane] = j;
     lf[lane] = 1.0;
-    lacc[lane] = 0;
+    lacc[lane] = L_WFAIL;
     // a dead slot, or one dropped from its key by a kick: nothing to react
-    const auto virt = not(v1.alive(i) and v2.alive(j)) or v1.lay.skey[i] < 0 or v2.lay.skey[j] < 0;
-    if(virt) {
-      sstd::atomic_add(&ds[d_virt], 1.0);
+    if(not(v1.alive(i) and v2.alive(j)) or v1.lay.skey[i] < 0 or v2.lay.skey[j] < 0) {
+      lacc[lane] = L_VIRT;
       return;
     }
     // Two acceptance stages against one uniform: the weight factor first, at the largest value
@@ -850,7 +851,7 @@ void
     const auto wm = wmp[g];                               // weight bound of the bin pair
     const auto wf = sstd::min(sstd::max(wi, wj) / wm, 1.0);   // weight-stage threshold
     if(not(u < wf)) { return; }
-    sstd::atomic_add(&ds[d_wpass], 1.0);
+    lacc[lane] = L_WPASS;
     const auto p1v = v1.u(i), p2v = v2.u(j);
     const auto rate = pair_rate(ch, fv, p1v, p2v);
     auto weff = sstd::max(wi, wj);                        // effective weight of the merged pair
@@ -863,19 +864,19 @@ void
         lf[lane]       = sstd::max(wi, wj) / weff;
       }
     }
-    if(u < (weff / wm) * rate / sh[g]) { lacc[lane] = 1; }   // rate stage against the bound
+    if(u < (weff / wm) * rate / sh[g]) { lacc[lane] = L_ACC; }   // rate stage against the bound
   });
-  // compact the accepted lanes into acc_
+  // compact the accepted lanes into acc_; the lane states carry the counts
   acc_.resize(Mtot);
   const auto acc_end = thrust::copy_if(
-    w.on_this(), lane0, lane0 + static_cast<std::ptrdiff_t>(Mtot), acc_.begin(), [=](const I lane) { return lacc[lane] != 0; });
+    w.on_this(), lane0, lane0 + static_cast<std::ptrdiff_t>(Mtot), acc_.begin(), [=](const I lane) { return lacc[lane] == L_ACC; });
   const auto na = static_cast<std::size_t>(acc_end - acc_.begin());   // accepted events
   st.acc += static_cast<double>(na);
+  st.virt += static_cast<double>(thrust::count(w.on_this(), lane_acc_.begin(), lane_acc_.end(), L_VIRT));
+  st.wpass += static_cast<double>(na) + static_cast<double>(thrust::count(w.on_this(), lane_acc_.begin(), lane_acc_.end(), L_WPASS));
   {
-    // read back the lane statistics of the pass
+    // read back the clamp count of the pass
     thrust::host_vector<double> h = dstat_;
-    st.virt += h[d_virt];
-    st.wpass += h[d_wpass];
     st.clamped += h[d_clamped];
   }
   if(na == 0) {
