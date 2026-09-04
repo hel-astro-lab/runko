@@ -14,6 +14,20 @@
 namespace runko {
 
 RuntimeInstance::RuntimeInstance()
+
+{
+  [[maybe_unused]]
+  static auto weak_ptr = [&] {
+    this->impl_ = std::make_shared<RuntimeInstance::impl>();
+    return std::weak_ptr { this->impl_ };
+  }();
+
+  if(not this->impl_) {
+    this->impl_ = std::shared_ptr<RuntimeInstance::impl> { weak_ptr };
+  }
+}
+
+RuntimeInstance::impl::impl()
 {
   int mpi_flag;
   if(MPI_Initialized(&mpi_flag) != MPI_SUCCESS) {
@@ -40,7 +54,7 @@ RuntimeInstance::RuntimeInstance()
   pika::suspend();
 }
 
-RuntimeInstance::~RuntimeInstance()
+RuntimeInstance::impl::~impl()
 {
   if(pika::is_runtime_initialized()) {
     // For some reason we have to resume before finalizing pika.
