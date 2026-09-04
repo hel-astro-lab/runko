@@ -546,12 +546,14 @@ void
           case Sel::bit1: k0 = 2 * cb + 1; break;
           case Sel::both: k0 = 2 * cb; k1 = 2 * cb + 1; break;
         }
+        // fill records demand and exceeds cap when a key overflowed: only the fitted slots
+        // are proposable (past cap lives the next key, or the tail)
         b0[cb] = lay.b[k0];
-        c0[cb] = lay.fill[k0];
+        c0[cb] = sstd::min(lay.fill[k0], lay.cap[k0]);
         auto wmx = lay.wmax[k0], emn = lay.emin[k0], emx = lay.emax[k0];
         if(k1 >= 0) {
           b0[ncb + cb] = lay.b[k1];
-          c0[ncb + cb] = lay.fill[k1];
+          c0[ncb + cb] = sstd::min(lay.fill[k1], lay.cap[k1]);
           wmx = sstd::max(wmx, lay.wmax[k1]);
           emn = sstd::min(emn, lay.emin[k1]);
           emx = sstd::max(emx, lay.emax[k1]);
