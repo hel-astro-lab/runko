@@ -300,10 +300,10 @@ constexpr Staged
                   .bit     = bit };
 }
 
-// slots of the per-pass statistics accumulated on the device (dstat_): lanes on a dead slot,
-// lanes past the weight stage, moved weight, summed accumulation factor, rejection proposals
-// and their count, clamped events, emitted weight
-enum DStat : int { d_virt = 0, d_wpass, d_wmoved, d_facc, d_trials, d_trials_n, d_clamped, d_wem, d_count };
+// slots of the per-channel statistics accumulated on the device (dstat_, cumulative over the
+// run, read by the accessors): one-body dead lanes and fired events, moved weight, summed
+// accumulation factor, rejection proposals and their count, clamped events, emitted weight
+enum DStat : int { d_virt = 0, d_fired, d_wmoved, d_facc, d_trials, d_trials_n, d_clamped, d_wem, d_count };
 // states of a thinning lane: the counts come from these, not from contended atomics
 enum LaneState : std::uint8_t { L_WFAIL = 0, L_ACC = 1, L_VIRT = 2, L_WPASS = 3 };
 // slots of the device counters (counters_): staged records, tail slots taken per species,
@@ -360,7 +360,7 @@ Sampler::Sampler(const Box& b, const Params& p, const std::vector<std::string>& 
   }
   // the small device accumulators every pass zeroes and reads back
   counters_.assign(c_count, 0);
-  dstat_.assign(d_count, 0.0);
+  dstat_.assign(N_CHANNELS * static_cast<std::size_t>(d_count), 0.0);   // per channel, cumulative over the run
   dbudget_.assign(2, 0.0);
 }
 
@@ -702,8 +702,7 @@ void
   const auto keyA  = runko::rng_key(par.seed, step, static_cast<std::uint64_t>(r), static_cast<std::uint64_t>(1 + 4 * l));  // cell kernels: counts, shifts
   const auto keyB  = runko::rng_key(par.seed, step, static_cast<std::uint64_t>(r), static_cast<std::uint64_t>(2 + 4 * l));  // thinning kernel: strata, acceptance
   const auto keyC  = runko::rng_key(par.seed, step, static_cast<std::uint64_t>(r), static_cast<std::uint64_t>(3 + 4 * l));  // react kernels: products, copies
-  thrust::fill(dstat_.begin(), dstat_.end(), 0.0);
-  const auto ds = thrust::raw_pointer_cast(dstat_.data());   // the DStat accumulators
+  const auto ds = thrust::raw_pointer_cast(dstat_.data()) + static_cast<std::size_t>(l) * d_count;   // this channel's DStat accumulators
   const auto Lam = thrust::raw_pointer_cast(Lam_.data()), sh = thrust::raw_pointer_cast(sh_.data());  // envelope and rate bound per bin pair
   const auto wmp = thrust::raw_pointer_cast(wm_.data());                                              // weight bound per bin pair
 
@@ -874,11 +873,6 @@ void
   st.acc += static_cast<double>(na);
   st.virt += static_cast<double>(thrust::count(w.on_this(), lane_acc_.begin(), lane_acc_.end(), L_VIRT));
   st.wpass += static_cast<double>(na) + static_cast<double>(thrust::count(w.on_this(), lane_acc_.begin(), lane_acc_.end(), L_WPASS));
-  {
-    // read back the clamp count of the pass
-    thrust::host_vector<double> h = dstat_;
-    st.clamped += h[d_clamped];
-  }
   if(na == 0) {
     w.wait();
     return;
@@ -901,7 +895,6 @@ void
   const auto ecell = thrust::raw_pointer_cast(ev_cell_.data());                                      // reaction cell of every event
   const auto ep = thrust::raw_pointer_cast(ev_p_.data());                                            // the two product momenta, 6 floats per event
   const auto wl = box.w_lep;
-  thrust::fill(dstat_.begin(), dstat_.end(), 0.0);
   const auto ev0 = thrust::counting_iterator<I>(0);
   // one lane per accepted event: sample the products, set the decision probabilities
   thrust::for_each(w.on_this(), ev0, ev0 + static_cast<std::ptrdiff_t>(na), [=](const I e) {
@@ -960,15 +953,7 @@ void
     sstd::atomic_add(&ds[d_trials], static_cast<double>(ntry));
     sstd::atomic_add(&ds[d_trials_n], 1.0);
   });
-  w.wait();
-  {
-    // read back the event statistics
-    thrust::host_vector<double> h = dstat_;
-    st.wmoved += h[d_wmoved];
-    st.facc += h[d_facc];
-    st.trials += h[d_trials];
-    st.trials_n += h[d_trials_n];
-  }
+  // (the decisions and the second react half follow on the same queue: no wait)
 
   // ---- the decisions, by the systematic rounding of every cell
   const auto tag1 = std::to_string(static_cast<int>(Ch::t1)), tag2 = std::to_string(static_cast<int>(ch.t2));   // carry sites are per species
@@ -1215,8 +1200,7 @@ void
   const auto keyA = runko::rng_key(par.seed, istep_, 0, static_cast<std::uint64_t>(100 + 2 * l));   // firing
   const auto keyC = runko::rng_key(par.seed, istep_, 0, static_cast<std::uint64_t>(101 + 2 * l));   // products, copies
   st.M += static_cast<double>(n);
-  thrust::fill(dstat_.begin(), dstat_.end(), 0.0);
-  const auto ds = thrust::raw_pointer_cast(dstat_.data());
+  const auto ds = thrust::raw_pointer_cast(dstat_.data()) + static_cast<std::size_t>(l) * d_count;   // this channel's DStat accumulators
   staged_.resize(2 * n);                                    // at most two products per slot
   const auto stg = thrust::raw_pointer_cast(staged_.data());
   const auto cnt = thrust::raw_pointer_cast(counters_.data());
@@ -1279,20 +1263,14 @@ void
         v.set_u(i, u * (sstd::sqrt(sstd::max(g1 * g1 - 1.0, 0.0)) / sstd::sqrt(sstd::max(gam * gam - 1.0, 1e-300))));
       }
       v.touch(i);
-      sstd::atomic_add(&ds[d_wpass], 1.0);  // fired
+      sstd::atomic_add(&ds[d_fired], 1.0);  // fired
       sstd::atomic_add(&ds[d_wem], wem);
       sstd::atomic_add(&ds[d_facc], f);
       // the photon LP, split or rouletted by the resolution function
       const auto cp = copies(f_res(x, a_res, x_ref), wem, rngC, n_cap);
       if(cp.n_r >= 1) { stage(P.k, i, cp.w_each, cp.n_r, 0, static_cast<int>(rngC.uniform() < 0.5)); }
     });
-    w.wait();
-    // read back the emission statistics
-    thrust::host_vector<double> h = dstat_;
-    st.virt += h[d_virt];
-    st.acc += h[d_wpass];
-    st.wem += h[d_wem];
-    st.facc += h[d_facc];
+    w.wait();   // place() reads the staged count on the host
   } else {
     // magnetic pair production: fire, then the pair at the lepton weight, rounded systematically
     ev_q3_.resize(n);          // pairs to create per fired photon, w/w_lep
@@ -1318,10 +1296,6 @@ void
     const auto acc_end = thrust::copy_if(
       w.on_this(), s0, s0 + static_cast<std::ptrdiff_t>(n), acc_.begin(), [=](const I i) { return lacc[i] != 0; });
     const auto na = static_cast<std::size_t>(acc_end - acc_.begin());   // fired photons
-    {
-      thrust::host_vector<double> h = dstat_;
-      st.virt += h[d_virt];
-    }
     st.acc += static_cast<double>(na);
     if(na == 0) {
       w.wait();
@@ -1684,13 +1658,32 @@ double
   }
 }
 
+// a channel's statistics: the host-accumulated half plus the device slice (each field is
+// written by one side only, so the sum is exact; d_fired is the one-body accepted count)
+ChannelStats
+  Sampler::channel_snap(const std::size_t l, const thrust::host_vector<double>& h) const
+{
+  auto s       = stats.ch[l];
+  const auto d = h.data() + l * static_cast<std::size_t>(d_count);
+  s.virt += d[d_virt];
+  s.acc += d[d_fired];
+  s.wmoved += d[d_wmoved];
+  s.facc += d[d_facc];
+  s.trials += d[d_trials];
+  s.trials_n += d[d_trials_n];
+  s.clamped += d[d_clamped];
+  s.wem += d[d_wem];
+  return s;
+}
+
 // accepted events per enabled channel, cumulative
 std::map<std::string, double>
   Sampler::counts() const
 {
+  const thrust::host_vector<double> h = dstat_;
   std::map<std::string, double> m;
   for(auto i = 0uz; i < N_CHANNELS; ++i) {
-    if(enabled[i]) { m[NAMES[i]] = stats.ch[i].acc; }
+    if(enabled[i]) { m[NAMES[i]] = channel_snap(i, h).acc; }
   }
   return m;
 }
@@ -1699,9 +1692,10 @@ std::map<std::string, double>
 std::map<std::string, double>
   Sampler::moved() const
 {
+  const thrust::host_vector<double> h = dstat_;
   std::map<std::string, double> m;
   for(auto i = 0uz; i < N_CHANNELS; ++i) {
-    if(enabled[i]) { m[NAMES[i]] = stats.ch[i].wmoved; }
+    if(enabled[i]) { m[NAMES[i]] = channel_snap(i, h).wmoved; }
   }
   return m;
 }
@@ -1715,9 +1709,10 @@ std::string
   o << std::format("   slots / live LPs       : ph={:.0f}/{:.0f}, e-={:.0f}/{:.0f}, e+={:.0f}/{:.0f}\n", stats.slots[0] / ns, stats.live[0] / ns, stats.slots[1] / ns, stats.live[1] / ns, stats.slots[2] / ns, stats.live[2] / ns);
   o << std::format("   cell-kernel lanes      : {:.0f}\n", stats.cell_lanes / ns);
   // one line per enabled channel
+  const thrust::host_vector<double> h = dstat_;
   for(auto i = 0uz; i < N_CHANNELS; ++i) {
     if(not enabled[i]) { continue; }
-    const auto& s = stats.ch[i];
+    const auto s = channel_snap(i, h);
     if(is_twobody(static_cast<Channel>(i))) {
       o << std::format("   {:9s}: lanes {:.1f}, virtual {:.1f}%, weight-stage {:.3f}, accepted {:.2f}, <sigmahat> {:.4f}, <f> {:.2f}, nsub {} ({} steps), clamped {:.0f}, trials {:.2f}\n",
         NAMES[i], s.M / ns, 100.0 * s.virt / std::max(1.0, s.M), s.wpass / std::max(1.0, s.M - s.virt), s.acc / ns,

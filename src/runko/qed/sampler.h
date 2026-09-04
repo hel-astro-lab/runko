@@ -37,6 +37,7 @@
 #include "runko/qed/interactions/qed1_syn.h"
 #include "runko/qed/layout.h"
 #include "thrust/device_vector.h"
+#include "thrust/host_vector.h"
 
 #include <array>
 #include <cstdint>
@@ -193,7 +194,7 @@ private:
   // staged products of one channel pass
   thrust::device_vector<Staged> staged_;
   thrust::device_vector<std::int32_t> counters_;  // staged count, tail counters, id counters
-  thrust::device_vector<double> dstat_;           // per-pass statistics accumulated on the device
+  thrust::device_vector<double> dstat_;           // per-channel statistics accumulated on the device over the run
   // per-slot marks of the react kernels, over the partner species of a pass
   thrust::device_vector<float> dgam_;            // energy the absorptions gave a lepton
   thrust::device_vector<std::uint8_t> touched_;  // slot kicked or fed: its bounds are rewidened
@@ -232,6 +233,8 @@ private:
   void touch_marked(Ctx& c, Species s);
   /// the carry array of a decision site, created on first use
   thrust::device_vector<double>& carry(const std::string& site, int ncell);
+  /// a channel's statistics: the host half plus the device slice of a read-back copy
+  [[nodiscard]] ChannelStats channel_snap(std::size_t l, const thrust::host_vector<double>& h) const;
   /// systematic rounding of the probabilities q of the events into counts out, on the
   /// caller's queue (stream-ordered with the caller's kernels); sorted: the events come
   /// cell-ordered, which the two-body lanes are by construction
