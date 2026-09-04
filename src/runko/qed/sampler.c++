@@ -300,9 +300,9 @@ constexpr Staged
 }
 
 // slots of the per-channel statistics accumulated on the device (dstat_, cumulative over the
-// run, read by the accessors): one-body dead lanes and fired events, moved weight, summed
-// accumulation factor, rejection proposals and their count, clamped events, emitted weight
-enum DStat : int { d_virt = 0, d_fired, d_wmoved, d_facc, d_trials, d_trials_n, d_clamped, d_wem, d_count };
+// run, read by the accessors): one-body fired events, their summed accumulation factor and
+// emitted weight, clamped events, the envelope-weighted rate bound and its weight
+enum DStat : int { d_fired = 0, d_facc, d_wem, d_clamped, d_shnum, d_shden, d_count };
 // states of a thinning lane: the counts come from these, not from contended atomics
 enum LaneState : std::uint8_t { L_WFAIL = 0, L_ACC = 1, L_VIRT = 2, L_WPASS = 3 };
 // slots of the device counters (counters_): staged records, tail slots taken per species,
@@ -526,6 +526,7 @@ void
   const auto ncb   = ncell * nb;                          // (cell, bin) groups
   const auto npair = ncb * nb;                            // (cell, bin a, bin b) pairs
   auto& st         = stats.ch[static_cast<std::size_t>(l)];
+  const auto ds    = thrust::raw_pointer_cast(dstat_.data()) + static_cast<std::size_t>(l) * d_count;   // this channel's DStat accumulators
   const auto w     = tyvi::mdgrid_work {};
   c.refresh_all();
 
@@ -608,7 +609,7 @@ void
       const auto n1  = static_cast<double>(s1.N(ca));
       const auto lo1 = static_cast<double>(s1.emin[ca]), hi1 = static_cast<double>(s1.emax[ca]);
       const auto w1  = static_cast<double>(s1.wmax[ca]);
-      auto sum       = 0.0;
+      auto sum = 0.0, sum_sh = 0.0;   // the row's envelope, and the envelope-weighted rate bound
       for(auto bb = 0; bb < nb; ++bb) {
         const auto cb  = cc * nb + bb;
         const auto g   = ca * nb + bb;
@@ -633,8 +634,12 @@ void
         sh[g]  = shv;
         wmp[g] = wmv;
         sum += L;
+        sum_sh += L * shv;
       }
       rowsum[ca] = sum;
+      // the envelope-weighted mean of the rate bound, a measure of the bins' tightness
+      sstd::atomic_add(&ds[d_shnum], sum_sh);
+      sstd::atomic_add(&ds[d_shden], sum);
     });
   // one lane per partner (cell, bin b): the envelope summed over the incident bins
   thrust::for_each(
@@ -645,12 +650,7 @@ void
       colsum[cb] = sum;
     });
   stats.cell_lanes += npair;
-  // the envelope-weighted mean of the rate bound, a measure of the bins' tightness
   const auto g0 = thrust::counting_iterator<int>(0);
-  st.shbar_num += thrust::transform_reduce(
-    w.on_this(), g0, g0 + npair, [=](const int g) { return Lam[g] * sh[g]; }, 0.0, thrust::plus<double> {});
-  st.shbar_den += thrust::transform_reduce(
-    w.on_this(), g0, g0 + npair, [=](const int g) { return Lam[g]; }, 0.0, thrust::plus<double> {});
 
   // Distinct strata need at most as many events per bin as the bin has slots, on both sides;
   // where the envelope exceeds that the channel is split into sub-steps of a larger N_2. The
@@ -869,8 +869,15 @@ void
     w.on_this(), lane0, lane0 + static_cast<std::ptrdiff_t>(Mtot), acc_.begin(), [=](const I lane) { return lacc[lane] == L_ACC; });
   const auto na = static_cast<std::size_t>(acc_end - acc_.begin());   // accepted events
   st.acc += static_cast<double>(na);
-  st.virt += static_cast<double>(thrust::count(w.on_this(), lane_acc_.begin(), lane_acc_.end(), L_VIRT));
-  st.wpass += static_cast<double>(na) + static_cast<double>(thrust::count(w.on_this(), lane_acc_.begin(), lane_acc_.end(), L_WPASS));
+  // the dead lanes and the lanes past the weight stage, one reduction
+  using V2         = toolbox::VecD<double, 2>;
+  const auto vsum  = [](const V2& a, const V2& b) { return a + b; };
+  const auto lanes = thrust::transform_reduce(
+    w.on_this(), lane0, lane0 + static_cast<std::ptrdiff_t>(Mtot),
+    [=](const I lane) { return V2(lacc[lane] == L_VIRT ? 1.0 : 0.0, lacc[lane] == L_WPASS ? 1.0 : 0.0); },
+    V2 {}, vsum);
+  st.virt += lanes[0];
+  st.wpass += static_cast<double>(na) + lanes[1];
   if(na == 0) {
     w.wait();
     return;
@@ -884,6 +891,7 @@ void
   ev_n2_.resize(na);
   ev_n3_.resize(na);
   ev_cell_.resize(na);
+  ev_fs_.resize(na);
   ev_p_.resize(6 * na);
   const auto acc = thrust::raw_pointer_cast(acc_.data());                                            // lane of every accepted event
   const auto q1 = thrust::raw_pointer_cast(ev_q1_.data()), q2 = thrust::raw_pointer_cast(ev_q2_.data());  // update/removal probability of parent 1, of parent 2
@@ -892,6 +900,7 @@ void
   const auto n3p = thrust::raw_pointer_cast(ev_n3_.data());
   const auto ecell = thrust::raw_pointer_cast(ev_cell_.data());                                      // reaction cell of every event
   const auto ep = thrust::raw_pointer_cast(ev_p_.data());                                            // the two product momenta, 6 floats per event
+  const auto efs = thrust::raw_pointer_cast(ev_fs_.data());                                          // weight moved per event
   const auto wl = box.w_lep;
   const auto ev0 = thrust::counting_iterator<I>(0);
   // one lane per accepted event: sample the products, set the decision probabilities
@@ -905,9 +914,8 @@ void
     const auto p1v = v1.u(i), p2v = v2.u(j);
     const auto wi = v1.w(i), wj = v2.w(j);
     const auto s  = sstd::min(wi, wj);  // the weight one event transfers
-    sstd::atomic_add(&ds[d_wmoved], f * s);
-    sstd::atomic_add(&ds[d_facc], f);
-    auto ntry = 0;        // proposals of the rejection sampler
+    efs[e]        = f * s;              // moved: f events of s at once
+    auto ntry = 0;        // proposals of the rejection sampler, which the tests count
     Vec3 pa, pb;          // the two products: (k1, kick), (f x, -), (k0, k1) or (e-, e+)
     if constexpr(Ch::kind == Kind::scatter) {
       // Compton: the photon takes the scattered state with the weight f s; the lepton takes f
@@ -948,8 +956,6 @@ void
       ep[6 * e + k]     = static_cast<float>(pa[k]);
       ep[6 * e + 3 + k] = static_cast<float>(pb[k]);
     }
-    sstd::atomic_add(&ds[d_trials], static_cast<double>(ntry));
-    sstd::atomic_add(&ds[d_trials_n], 1.0);
   });
   // (the decisions and the second react half follow on the same queue: no wait)
 
@@ -1045,6 +1051,11 @@ void
     }
   });
   w.wait();
+  // the weight the pass moved and the accumulation factors of its events, one reduction
+  const auto sums = thrust::transform_reduce(
+    w.on_this(), ev0, ev0 + static_cast<std::ptrdiff_t>(na), [=](const I e) { return V2(efs[e], lf[acc[e]]); }, V2 {}, vsum);
+  st.wmoved += sums[0];
+  st.facc += sums[1];
   // ---- the kicked leptons take their summed changes, then the products are placed
   if constexpr(Ch::kind == Kind::absorb) { apply_dgam(c, ch.t2); }
   if constexpr(Ch::kind == Kind::scatter) { touch_marked(c, ch.t2); }
@@ -1220,10 +1231,7 @@ void
     // function then thins the soft emission by the roulette of copies().
     // one lane per lepton slot: fire, cool, emit one photon LP
     thrust::for_each(w.on_this(), s0, s0 + static_cast<std::ptrdiff_t>(n), [=](const I i) {
-      if(not v.alive(i)) {
-        sstd::atomic_add(&ds[d_virt], 1.0);
-        return;
-      }
+      if(not v.alive(i)) { return; }
       auto rngA     = runko::Rng { keyA, i };
       auto rngC     = runko::Rng { keyC, i };
       const auto u  = v.u(i);
@@ -1278,10 +1286,7 @@ void
     const auto lacc = thrust::raw_pointer_cast(lane_acc_.data());
     // one lane per photon slot: fire on the conversion rate
     thrust::for_each(w.on_this(), s0, s0 + static_cast<std::ptrdiff_t>(n), [=](const I i) {
-      if(not v.alive(i)) {
-        sstd::atomic_add(&ds[d_virt], 1.0);
-        return;
-      }
+      if(not v.alive(i)) { return; }
       auto rngA      = runko::Rng { keyA, i };
       const auto k   = v.u(i);
       const auto b   = fv.b_eff(v.pos[i][0], v.pos[i][1], v.pos[i][2], k / sstd::max(toolbox::norm(k), 1e-300));   // the photon's field
@@ -1663,14 +1668,12 @@ ChannelStats
 {
   auto s       = stats.ch[l];
   const auto d = h.data() + l * static_cast<std::size_t>(d_count);
-  s.virt += d[d_virt];
   s.acc += d[d_fired];
-  s.wmoved += d[d_wmoved];
   s.facc += d[d_facc];
-  s.trials += d[d_trials];
-  s.trials_n += d[d_trials_n];
-  s.clamped += d[d_clamped];
   s.wem += d[d_wem];
+  s.clamped += d[d_clamped];
+  s.shbar_num += d[d_shnum];
+  s.shbar_den += d[d_shden];
   return s;
 }
 
@@ -1712,13 +1715,15 @@ std::string
     if(not enabled[i]) { continue; }
     const auto s = channel_snap(i, h);
     if(is_twobody(static_cast<Channel>(i))) {
-      o << std::format("   {:9s}: lanes {:.1f}, virtual {:.1f}%, weight-stage {:.3f}, accepted {:.2f}, <sigmahat> {:.4f}, <f> {:.2f}, nsub {} ({} steps), clamped {:.0f}, trials {:.2f}\n",
+      o << std::format("   {:9s}: lanes {:.1f}, virtual {:.1f}%, weight-stage {:.3f}, accepted {:.2f}, <sigmahat> {:.4f}, <f> {:.2f}, nsub {} ({} steps), clamped {:.0f}\n",
         NAMES[i], s.M / ns, 100.0 * s.virt / std::max(1.0, s.M), s.wpass / std::max(1.0, s.M - s.virt), s.acc / ns,
-        s.shbar_num / std::max(1e-30, s.shbar_den), s.facc / std::max(1.0, s.acc), s.nsub_max_seen, s.nsub_steps,
-        s.clamped, s.trials / std::max(1.0, s.trials_n));
+        s.shbar_num / std::max(1e-30, s.shbar_den), s.facc / std::max(1.0, s.acc), s.nsub_max_seen, s.nsub_steps, s.clamped);
     } else {
+      // one lane per slot: the dead ones are the slots less the live LPs of the channel's species
+      const auto is   = static_cast<Channel>(i) == Channel::syn_m ? 1uz : static_cast<Channel>(i) == Channel::syn_p ? 2uz : 0uz;
+      const auto dead = 100.0 * (1.0 - stats.live[is] / std::max(stats.slots[is], 1.0));
       o << std::format("   {:9s}: lanes {:.0f}, events {:.2f} (dead {:.1f}%), emitted weight/step {:.3g}, <f> {:.2f}\n",
-        NAMES[i], s.M / ns, s.acc / ns, 100.0 * s.virt / std::max(1.0, s.M), s.wem / ns, s.facc / std::max(1.0, s.acc));
+        NAMES[i], s.M / ns, s.acc / ns, dead, s.wem / ns, s.facc / std::max(1.0, s.acc));
     }
   }
   o << std::format("   products slack / tail  : {:.2f}/{:.2f}\n", stats.slackprod / ns, stats.tailprod / ns);

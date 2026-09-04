@@ -90,16 +90,14 @@ inline constexpr auto N_CHANNELS = static_cast<std::size_t>(Channel::count);
 
 /// Per-channel counters of a run.
 struct [[nodiscard]] ChannelStats {
-  double M { 0 };         // envelope lanes
-  double virt { 0 };      // lanes on a dead slot
+  double M { 0 };         // envelope lanes (two-body), slots (one-body)
+  double virt { 0 };      // two-body lanes on a dead slot
   double wpass { 0 };     // lanes past the weight stage
   double acc { 0 };       // accepted events
   double wmoved { 0 };    // weight moved, sum f s
   double facc { 0 };      // sum of accumulation factors of accepted events
   double wem { 0 };       // emitted weight (one-body emission)
   double clamped { 0 };   // events dropped to keep the strata of a bin distinct
-  double trials { 0 };    // rejection proposals
-  double trials_n { 0 };  // events the proposals were counted over
   double shbar_num { 0 }, shbar_den { 0 };  // <sigmahat> of the envelope
   int nsub_max_seen { 1 };  // largest sub-cycle count of a step
   double nsub_steps { 0 };  // steps that needed more than one sub-cycle
@@ -210,6 +208,7 @@ private:
   thrust::device_vector<double> lane_f_;                         // accumulation factor of a lane
   thrust::device_vector<std::uint8_t> lane_acc_;                 // lane accepted
   thrust::device_vector<double> ev_q1_, ev_q2_, ev_q3_, ev_cs_;  // decision probabilities (update/kick/lepton count) and their scan
+  thrust::device_vector<double> ev_fs_;                          // weight moved per event, f s
   thrust::device_vector<std::int32_t> ev_n1_, ev_n2_, ev_n3_, ev_cell_;  // the rounded decisions and the cell
   thrust::device_vector<runko::index_t> ev_perm_;                // cell-sorted order of unsorted events
   thrust::device_vector<std::int32_t> ev_keys_;                  // their cells, sorted alongside
