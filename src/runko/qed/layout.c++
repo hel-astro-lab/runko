@@ -217,8 +217,8 @@ void
   emin_.assign(nk, inf);
   emax_.assign(nk, 0.0f);
   laid_ = true;  // the tables are valid for the current container
+  w.wait();      // touch_all reads skey_ on its own stream: the writers must be done
   this->touch_all(con);
-  w.wait();
 }
 
 void
