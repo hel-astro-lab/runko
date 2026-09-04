@@ -281,8 +281,11 @@ LayoutView
 void
   Pop::follow_container(const pic::ParticleContainer& con)
 {
-  // slots grown onto the container since the layout are tail, key -1
+  // slots grown onto the container since the layout are tail, key -1; a container that
+  // shrank was truncated behind the layout's back (pic's append drops the trailing dead
+  // slots, i.e. the last key's slack): the tables no longer describe it
   const auto n = con.size();
+  if(n < skey_.size()) { laid_ = false; }
   if(skey_.size() < n) { skey_.resize(n, std::int32_t { -1 }); }
 }
 

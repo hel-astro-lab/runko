@@ -454,13 +454,21 @@ void
   }
 }
 
+// a layout when any species lost its tables (a source on a fresh or reset tile), or on the
+// epoch beat of the caller
+void
+  Sampler::lay_if_needed(TileView& t, const bool epoch)
+{
+  auto need = epoch;
+  for(auto s = 0uz; s < 3uz; ++s) { need = need or not t.pop[s]->laid(); }
+  if(need) { this->layout(t); }
+}
+
 void
   Sampler::step(TileView& t)
 {
   // ---- a new epoch every nsort steps, or as soon as a layout went stale
-  auto need = istep_ % static_cast<std::uint64_t>(par.nsort) == 0;
-  for(auto s = 0uz; s < 3uz; ++s) { need = need or not t.pop[s]->laid(); }
-  if(need) { this->layout(t); }
+  this->lay_if_needed(t, istep_ % static_cast<std::uint64_t>(par.nsort) == 0);
 
   // ---- the context of the step and its slot/live statistics
   Ctx c { t, par.nbin };
@@ -1358,6 +1366,7 @@ enum BStat : int { b_E = 0, b_W, b_count };
 void
   Sampler::inject_pairs_plaw(TileView& t, const double ell, const double p, const double gmin, const double gmax)
 {
+  this->lay_if_needed(t);
   // The number of pairs follows from the energy the compactness injects and the mean energy of the
   // spectrum, rounded stochastically; the two charges draw their energies independently.
   double gm;   // mean gamma of the power law
@@ -1416,6 +1425,7 @@ void
 void
   Sampler::inject_photons(TileView& t, const double ell, const double theta, const double wph, const bool planck)
 {
+  this->lay_if_needed(t);
   const auto xmean = (planck ? 2.701 : 3.0) * theta;       // mean photon energy of the spectrum
   const auto nph   = box.dE(ell) / (xmean * wph);          // photons per step at the weight wph
   auto rng0        = runko::Rng { runko::rng_key(par.seed, istep_, 0, 302), 0 };
@@ -1467,6 +1477,7 @@ void
 void
   Sampler::heat_diffusive(TileView& t, const double ell)
 {
+  this->lay_if_needed(t);
   // The Ito kick of the isotropic Fokker-Planck operator (1/p^2) d/dp [p^2 D dn/dp], taken on the
   // momentum vector so that it also scatters the direction. Its expected energy gain per lepton is
   // D_0 p^2 (4 gamma^2 + 1)/gamma^3, and D_0 is chosen every step so that the summed gain is exactly
@@ -1521,6 +1532,7 @@ void
 void
   Sampler::escape_photons(TileView& t, const double tau_ext, const double dt_ext)
 {
+  this->lay_if_needed(t);
   Ctx c { t, par.nbin };
   // the pair depth the escape sees: the whole slab's, given by the driver, or this tile's own
   const auto tau_T  = tau_ext >= 0.0 ? tau_ext : Pop::totals(*t.con[1]).W + Pop::totals(*t.con[2]).W;

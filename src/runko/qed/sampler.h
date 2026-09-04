@@ -249,6 +249,10 @@ public:
   /// The layout of every species (the epoch of the sampler).
   void layout(TileView& t);
 
+  /// Lay out when a species has no valid tables (or on the caller's epoch beat): the sources
+  /// and sinks touch the tables, so they call this first.
+  void lay_if_needed(TileView& t, bool epoch = false);
+
   /// One step of every enabled channel, in a random order; lays out where needed.
   void step(TileView& t);
 
