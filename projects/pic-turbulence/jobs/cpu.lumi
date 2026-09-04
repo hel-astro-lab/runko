@@ -1,0 +1,22 @@
+#!/bin/bash -l
+#SBATCH --job-name=dec2
+#SBATCH --account=project_462001358   # billing account
+#SBATCH --output=%J.out               # <slurm job id>.out
+#SBATCH --error=%J.err                # <slurm job id.err
+#SBATCH --partition=standard          # cpu partition
+#SBATCH --nodes=1                     # 128 AMD Milan per node
+#SBATCH --ntasks-per-node=8
+#SBATCH --cpus-per-task=1
+#SBATCH --mem-per-cpu=1750M
+#SBATCH --time=0-03:00:00       # Run time (d-hh:mm:ss)
+
+
+# Load correct modules here
+source /pfs/lustrep3/scratch/project_462001358/$USER/runko-modules-c.sh
+source /pfs/lustrep3/scratch/project_462001358/$USER/venvs/runko-c/bin/activate
+
+export OMP_NUM_THREADS=1
+
+cd $RUNKODIR/projects/pic-turbulence/
+
+srun --label python pic.py --conf turb_decay.ini
