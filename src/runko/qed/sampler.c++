@@ -776,17 +776,15 @@ void
       sstd::atomic_add(&ds[d_overlap], static_cast<double>(sstd::max(sum - static_cast<int>(s1.N(ca)), 0)));
     }
   });
-  // first lane of every bin pair, and the lane total of the pass
+  // first lane of every bin pair from the running sum of the counts; the last entry is the
+  // lane total of the pass, read on the host once the count kernels and the scan are done
   Mstart_.resize(static_cast<std::size_t>(npair) + 1);
-  thrust::exclusive_scan(w.on_this(), M_.begin(), M_.end(), Mstart_.begin(), I { 0 });
-  const auto Mtot = static_cast<std::size_t>(Mstart_[static_cast<std::size_t>(npair) - 1]) +
-                    static_cast<std::size_t>(M_[static_cast<std::size_t>(npair) - 1]);
-  Mstart_[static_cast<std::size_t>(npair)] = static_cast<I>(Mtot);
+  Mstart_[0] = I { 0 };
+  thrust::inclusive_scan(w.on_this(), M_.begin(), M_.end(), Mstart_.begin() + 1);
+  w.wait();
+  const auto Mtot = static_cast<std::size_t>(Mstart_[static_cast<std::size_t>(npair)]);
   st.M += static_cast<double>(Mtot);
-  if(Mtot == 0) {
-    w.wait();
-    return;
-  }
+  if(Mtot == 0) { return; }
 
   // ---- thinning kernel: one lane per envelope event
   lane_acc_.resize(Mtot);
