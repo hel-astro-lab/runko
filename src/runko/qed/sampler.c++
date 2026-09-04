@@ -385,6 +385,8 @@ thrust::device_vector<double>&
 // random walk. Events come cell-sorted, so the running sum is a segmented scan.
 void
   Sampler::select(
+    const tyvi::mdgrid_work& w,
+    const bool sorted,
     const std::string& site,
     const int ncell,
     const std::size_t n,
@@ -395,9 +397,6 @@ void
   if(n == 0) { return; }
   auto& car        = carry(site, ncell);
   const auto car_p = thrust::raw_pointer_cast(car.data());   // remainder per cell
-  const auto w     = tyvi::mdgrid_work {};
-  const auto sorted =
-    thrust::is_sorted(w.on_this(), cell, cell + static_cast<std::ptrdiff_t>(n));
   ev_cs_.resize(n);
   const auto cs = thrust::raw_pointer_cast(ev_cs_.data());     // running sum of q within the cell
   const auto ord0 = thrust::counting_iterator<I>(0);
@@ -437,7 +436,6 @@ void
   thrust::for_each(w.on_this(), ord0, ord0 + static_cast<std::ptrdiff_t>(n), [=](const I i) {
     sstd::atomic_add(&car_p[cell[i]], q[i] - static_cast<double>(out[i]));
   });
-  w.wait();
 }
 
 // ---------------------------------------------------------------- the step
@@ -976,15 +974,15 @@ void
   // scatter: update the photon, kick the lepton; absorb: remove the photon, kick the lepton;
   // convert: remove both, and for photon-photon also count the lepton pairs
   if constexpr(Ch::kind == Kind::scatter) {
-    select("sc" + tag1, ncell, na, ecell, q1, n1p);
-    select("kk" + tag2, ncell, na, ecell, q2, n2p);
+    select(w, true, "sc" + tag1, ncell, na, ecell, q1, n1p);
+    select(w, true, "kk" + tag2, ncell, na, ecell, q2, n2p);
   } else if constexpr(Ch::kind == Kind::absorb) {
-    select("rm" + tag1, ncell, na, ecell, q1, n1p);
-    select("kk" + tag2, ncell, na, ecell, q2, n2p);
+    select(w, true, "rm" + tag1, ncell, na, ecell, q1, n1p);
+    select(w, true, "kk" + tag2, ncell, na, ecell, q2, n2p);
   } else {
-    select("rm" + tag1, ncell, na, ecell, q1, n1p);
-    select("rm" + tag2, ncell, na, ecell, q2, n2p);
-    if constexpr(Ch::t2 == Species::ph) { select("lep", ncell, na, ecell, q3, n3p); }
+    select(w, true, "rm" + tag1, ncell, na, ecell, q1, n1p);
+    select(w, true, "rm" + tag2, ncell, na, ecell, q2, n2p);
+    if constexpr(Ch::t2 == Species::ph) { select(w, true, "lep", ncell, na, ecell, q3, n3p); }
   }
 
   // ---- react kernel, second half: parents updated in place, products staged
@@ -1341,7 +1339,7 @@ void
     });
     w.wait();
     // the counts by the systematic rounding of every cell
-    select("lep", c.ncell, na, ecell, q3, n3);
+    select(w, false, "lep", c.ncell, na, ecell, q3, n3);
     // one lane per fired photon: draw the pair, stage its copies, remove the photon
     thrust::for_each(w.on_this(), e0, e0 + static_cast<std::ptrdiff_t>(na), [=](const I e) {
       const auto i = acc[e];

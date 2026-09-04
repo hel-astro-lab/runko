@@ -232,8 +232,12 @@ private:
   void touch_marked(Ctx& c, Species s);
   /// the carry array of a decision site, created on first use
   thrust::device_vector<double>& carry(const std::string& site, int ncell);
-  /// systematic rounding of the probabilities q of cell-ordered events into counts out
+  /// systematic rounding of the probabilities q of the events into counts out, on the
+  /// caller's queue (stream-ordered with the caller's kernels); sorted: the events come
+  /// cell-ordered, which the two-body lanes are by construction
   void select(
+    const tyvi::mdgrid_work& w,
+    bool sorted,
     const std::string& site,
     int ncell,
     std::size_t n,
