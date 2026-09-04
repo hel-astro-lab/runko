@@ -20,6 +20,16 @@
 
 namespace qed {
 
+/// energy of a momentum in the container's own precision: |k| for photons, gamma for leptons.
+/// The one function the layout, the kernels and the placement bin by, so that a slot's bin is
+/// the same wherever it is computed.
+[[nodiscard]]
+constexpr float
+  energy_of(const float mass, const float vx, const float vy, const float vz)
+{
+  return sstd::sqrt(mass * mass + vx * vx + vy * vy + vz * vz);
+}
+
 struct [[nodiscard]] LayoutParams {
   int nbin;         // energy bins per cell and species
   int ncell_edge;   // reaction sub-cells per tile edge

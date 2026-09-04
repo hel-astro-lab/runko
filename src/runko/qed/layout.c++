@@ -55,11 +55,8 @@ void
   const auto pos_mds = con.pos_mds();
   const auto m       = mass_;  // rest mass of the species: 0 for photons
 
-  // energy of slot i: |k| for photons, gamma for leptons
-  const auto energy = [=](const I i) {
-    const auto vx = vel_mds[i][0], vy = vel_mds[i][1], vz = vel_mds[i][2];
-    return sstd::sqrt(m * m + vx * vx + vy * vy + vz * vz);
-  };
+  // energy of slot i
+  const auto energy = [=](const I i) { return energy_of(m, vel_mds[i][0], vel_mds[i][1], vel_mds[i][2]); };
   // a slot holds a live LP unless its id is the dead marker
   const auto alive = [=](const I i) { return ids_mds[i][] != runko::dead_prtc_id; };
 
@@ -242,8 +239,7 @@ void
         if(ids_mds[idx][] == runko::dead_prtc_id) { return; }
         const auto k = v.skey[idx[0]];
         if(k < 0) { return; }  // tail slot: no key yet
-        const auto vx = vel_mds[idx][0], vy = vel_mds[idx][1], vz = vel_mds[idx][2];
-        const auto e  = sstd::sqrt(m * m + vx * vx + vy * vy + vz * vz);
+        const auto e  = energy_of(m, vel_mds[idx][0], vel_mds[idx][1], vel_mds[idx][2]);
         const auto wg = weighted ? wgt_mds[idx][] : w0;  // its weight
         sstd::atomic_max(&v.wmax[k], wg);
         sstd::atomic_max(&v.emax[k], e);

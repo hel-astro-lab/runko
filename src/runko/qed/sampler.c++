@@ -147,8 +147,7 @@ struct PView {
   }
   [[nodiscard]] constexpr double e(const I i) const
   {
-    const auto v = u(i);
-    return sstd::sqrt(static_cast<double>(mass) * mass + toolbox::dot(v, v));
+    return static_cast<double>(energy_of(mass, vel[i][0], vel[i][1], vel[i][2]));
   }
   // write back a momentum or a weight; kill frees the slot
   constexpr void set_u(const I i, const Vec3& v) const
@@ -1142,8 +1141,7 @@ void
     const auto s   = static_cast<std::size_t>(rec.species);
     const auto pv  = v[s];
     const auto lay = pv.lay;
-    const auto e   = sstd::sqrt(static_cast<double>(pv.mass) * pv.mass + static_cast<double>(rec.u[0]) * rec.u[0] +
-                              static_cast<double>(rec.u[1]) * rec.u[1] + static_cast<double>(rec.u[2]) * rec.u[2]);
+    const auto e   = energy_of(pv.mass, rec.u[0], rec.u[1], rec.u[2]);
     const auto kk  = lay.key_of(rec.cell, lay.bin_of(e), rec.bit);  // the product's own key
     for(auto n = 0; n < rec.n_r; ++n) {
       const auto f = sstd::atomic_fetch_add(&lay.fill[kk], I { 1 });   // rank behind the key's fill
@@ -1153,8 +1151,8 @@ void
         // a product outside the bounds of its key must widen them, or the envelopes of the
         // channels still to come this step would no longer be upper bounds
         sstd::atomic_max(&lay.wmax[kk], rec.w);
-        sstd::atomic_max(&lay.emax[kk], static_cast<float>(e));
-        sstd::atomic_min(&lay.emin[kk], static_cast<float>(e));
+        sstd::atomic_max(&lay.emax[kk], e);
+        sstd::atomic_min(&lay.emin[kk], e);
         sstd::atomic_add(&cnt[c_slack], std::int32_t { 1 });
       } else {
         const auto t = sstd::atomic_fetch_add(&cnt[c_tail0 + rec.species], std::int32_t { 1 });
