@@ -1216,7 +1216,7 @@ void
   const auto keyC = runko::rng_key(par.seed, istep_, 0, static_cast<std::uint64_t>(101 + 2 * l));   // products, copies
   st.M += static_cast<double>(n);
   const auto ds = thrust::raw_pointer_cast(dstat_.data()) + static_cast<std::size_t>(l) * d_count;   // this channel's DStat accumulators
-  staged_.resize(2 * n);                                    // at most two products per slot
+  staged_.resize(emit ? n : 2 * n);                         // one photon per lepton; a pair per photon
   const auto stg = thrust::raw_pointer_cast(staged_.data());
   const auto cnt = thrust::raw_pointer_cast(counters_.data());
   thrust::fill(counters_.begin(), counters_.begin() + 1, 0);
