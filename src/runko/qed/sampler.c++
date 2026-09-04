@@ -980,9 +980,11 @@ void
   const auto stg = thrust::raw_pointer_cast(staged_.data());
   const auto cnt = thrust::raw_pointer_cast(counters_.data());   // the Counter accumulators
   thrust::fill(counters_.begin(), counters_.begin() + 1, 0);
-  touched_.assign(c.t->con[i2]->size(), std::uint8_t { 0 });   // partner slots kicked this pass
-  const auto touched = thrust::raw_pointer_cast(touched_.data());
-  if constexpr(Ch::kind == Kind::absorb) { dgam_.assign(c.t->con[i2]->size(), 0.0f); }   // absorbed energy per partner slot
+  // the absorbed energy per partner slot is zero between passes (apply_dgam clears what it
+  // reads), so only a grown container needs new zeros
+  if constexpr(Ch::kind == Kind::absorb) {
+    if(dgam_.size() < c.t->con[i2]->size()) { dgam_.resize(c.t->con[i2]->size(), 0.0f); }
+  }
   const auto dgam = thrust::raw_pointer_cast(dgam_.data());
   const auto a_res = par.a_res, x_ref = par.x_ref;
   const auto n_cap = par.n_cap;
@@ -1019,13 +1021,11 @@ void
       if(n2p[e] > 0) {
         // the lepton's kick, summed with those of the other lanes that hit it
         for(auto k = 0uz; k < 3uz; ++k) { sstd::atomic_add(&v2.vel[j][k], static_cast<float>(pb[k])); }
-        touched[j] = 1;
       }
     } else if constexpr(Ch::kind == Kind::absorb) {
       if(n2p[e] > 0) {
         // the absorbed energy, summed per lepton and applied after the kernel
         sstd::atomic_add(&dgam[j], static_cast<float>(pa[0]));
-        touched[j] = 1;
       }
       if(n1p[e] > 0) { v1.kill(i); }
     } else if constexpr(Ch::t2 == Species::ep) {
@@ -1057,49 +1057,53 @@ void
   st.wmoved += sums[0];
   st.facc += sums[1];
   // ---- the kicked leptons take their summed changes, then the products are placed
-  if constexpr(Ch::kind == Kind::absorb) { apply_dgam(c, ch.t2); }
-  if constexpr(Ch::kind == Kind::scatter) { touch_marked(c, ch.t2); }
+  if constexpr(Ch::kind == Kind::absorb) { apply_dgam(c, ch.t2, na); }
+  if constexpr(Ch::kind == Kind::scatter) { touch_kicked(c, ch.t2, na); }
   this->place(c);
 }
 
 // the lepton takes the summed energy of its absorptions along its direction of motion
 void
-  Sampler::apply_dgam(Ctx& c, const Species s)
+  Sampler::apply_dgam(Ctx& c, const Species s, const std::size_t na)
 {
-  const auto is = static_cast<std::size_t>(s);
-  const auto v  = c.v[is];
+  const auto v    = c.v[static_cast<std::size_t>(s)];
   const auto dgam = thrust::raw_pointer_cast(dgam_.data());
-  const auto touched = thrust::raw_pointer_cast(touched_.data());
-  // one lane per slot: rescale |u| to the energy after the absorptions, on the mass shell
-  tyvi::mdgrid_work {}
-    .for_each_index(v.ids, [=](const auto idx) {
-      const auto i = static_cast<I>(idx[0]);
-      if(touched[i] == 0 or not v.alive(i)) { return; }
-      const auto dg = static_cast<double>(dgam[i]);
-      if(dg <= 0.0) { return; }
-      const auto u0 = v.u(i);
-      const auto g0 = sstd::sqrt(1.0 + toolbox::dot(u0, u0));
-      const auto g1 = g0 + dg;
-      v.set_u(i, u0 * (sstd::sqrt(g1 * g1 - 1.0) / sstd::sqrt(sstd::max(g0 * g0 - 1.0, 1e-300))));
-      v.touch(i);
-    })
-    .wait();
+  const auto acc  = thrust::raw_pointer_cast(acc_.data());
+  const auto lj   = thrust::raw_pointer_cast(lane_j_.data());
+  const auto w    = tyvi::mdgrid_work {};
+  const auto e0   = thrust::counting_iterator<I>(0);
+  // one lane per accepted event: the first to reach its partner takes the partner's sum and
+  // leaves zero behind, so a lepton fed by several events is rescaled once (all sums are in:
+  // the react kernel is done) and the array is clean for the next pass
+  thrust::for_each(w.on_this(), e0, e0 + static_cast<std::ptrdiff_t>(na), [=](const I e) {
+    const auto i  = lj[acc[e]];
+    const auto dg = static_cast<double>(sstd::atomic_exchange(&dgam[i], 0.0f));
+    if(dg <= 0.0 or not v.alive(i)) { return; }
+    // rescale |u| to the energy after the absorptions, on the mass shell
+    const auto u0 = v.u(i);
+    const auto g0 = sstd::sqrt(1.0 + toolbox::dot(u0, u0));
+    const auto g1 = g0 + dg;
+    v.set_u(i, u0 * (sstd::sqrt(g1 * g1 - 1.0) / sstd::sqrt(sstd::max(g0 * g0 - 1.0, 1e-300))));
+    v.touch(i);
+  });
+  w.wait();
 }
 
-// widen the key bounds of the slots the kicks moved, once all kicks are in
+// widen the key bounds of the kicked leptons, once all kicks are in
 void
-  Sampler::touch_marked(Ctx& c, const Species s)
+  Sampler::touch_kicked(Ctx& c, const Species s, const std::size_t na)
 {
-  const auto is = static_cast<std::size_t>(s);
-  const auto v  = c.v[is];
-  const auto touched = thrust::raw_pointer_cast(touched_.data());
-  // one lane per slot
-  tyvi::mdgrid_work {}
-    .for_each_index(v.ids, [=](const auto idx) {
-      const auto i = static_cast<I>(idx[0]);
-      if(touched[i] != 0 and v.alive(i)) { v.touch(i); }
-    })
-    .wait();
+  const auto v   = c.v[static_cast<std::size_t>(s)];
+  const auto acc = thrust::raw_pointer_cast(acc_.data());
+  const auto lj  = thrust::raw_pointer_cast(lane_j_.data());
+  const auto w   = tyvi::mdgrid_work {};
+  const auto e0  = thrust::counting_iterator<I>(0);
+  // one lane per accepted event; a lepton hit by several is touched several times, each the same
+  thrust::for_each(w.on_this(), e0, e0 + static_cast<std::ptrdiff_t>(na), [=](const I e) {
+    const auto i = lj[acc[e]];
+    if(v.alive(i)) { v.touch(i); }
+  });
+  w.wait();
 }
 
 // ---------------------------------------------------------------- products: slack of their key, overflow to the tail

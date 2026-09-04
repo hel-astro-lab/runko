@@ -193,9 +193,8 @@ private:
   thrust::device_vector<Staged> staged_;
   thrust::device_vector<std::int32_t> counters_;  // staged count, tail counters, id counters
   thrust::device_vector<double> dstat_;           // per-channel statistics accumulated on the device over the run
-  // per-slot marks of the react kernels, over the partner species of a pass
-  thrust::device_vector<float> dgam_;            // energy the absorptions gave a lepton
-  thrust::device_vector<std::uint8_t> touched_;  // slot kicked or fed: its bounds are rewidened
+  // the energy the absorptions of a pass gave each partner slot; zero between passes
+  thrust::device_vector<float> dgam_;
   // envelope tables of a pass, per (cell, bin, bin) pair unless noted
   thrust::device_vector<double> Lam_, sh_, wm_, rowsum_, colsum_;  // envelope, rate bound, weight bound; sums per (cell, bin)
   thrust::device_vector<std::int32_t> M_, off1_, off2_, M1_, M2_, sh1_, sh2_, kk_;  // events, strata bases, per-bin sums and shifts, stratum offsets
@@ -226,10 +225,10 @@ private:
   void onebody(Ctx& c, Channel which, int l);
   /// the staged products into the slack of their keys or the tail
   void place(Ctx& c);
-  /// the summed absorbed energies onto the leptons, along their momenta
-  void apply_dgam(Ctx& c, Species s);
-  /// rewiden the bounds of the keys of the kicked slots
-  void touch_marked(Ctx& c, Species s);
+  /// the summed absorbed energies onto the fed leptons, along their momenta, over the na events
+  void apply_dgam(Ctx& c, Species s, std::size_t na);
+  /// rewiden the bounds of the keys of the kicked leptons, over the na events
+  void touch_kicked(Ctx& c, Species s, std::size_t na);
   /// the carry array of a decision site, created on first use
   thrust::device_vector<double>& carry(const std::string& site, int ncell);
   /// a channel's statistics: the host half plus the device slice of a read-back copy
