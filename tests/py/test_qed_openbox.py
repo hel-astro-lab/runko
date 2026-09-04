@@ -116,8 +116,9 @@ class qed_openbox(CheckMixin, unittest.TestCase):
         for k in (3, 10):
             self.check(f"weight invariance E_gamma k={k}", 1.0, curves[k][late].mean() / ref, 0.05)
         # (b) resolution function: N_LP/W relaxes to x^a once the roulette has thinned the soft end
-        # and the copies have populated the hard one
-        a, xref, steps_b = 0.3, 1e-2, 1500
+        # and the copies have populated the hard one; the slope overshoots in a transient that
+        # lasts ~2000 steps, so it is measured late
+        a, xref, steps_b = 0.3, 1e-2, 3000
         bins = np.logspace(-2, 1.3, 25); cx = np.sqrt(bins[1:] * bins[:-1])
         rng = np.random.default_rng(1)
         t = make_tile(1, dt, a_res=a, x_ref=xref)
