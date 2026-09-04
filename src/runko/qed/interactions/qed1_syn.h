@@ -4,7 +4,8 @@
 #pragma once
 
 // Quantum synchrotron emission, lepton -> lepton + photon: the photon emission rate in the
-// local field, the closed-form inversion of the emission spectrum, and the product sampler.
+// local field, the closed-form inversion of the emission spectrum, the mean photon energy above
+// a floor in closed form, and the product sampler.
 // rate() is the rate function r(chi, eps) of a one-body channel, the dimensionless factor
 // multiplying alpha c/lamC; one-body channels carry no majorant. The field enters through
 // b_perp = B_perp/B_Q with chi_e = gamma b_perp; the photon leaves along the lepton momentum
@@ -14,6 +15,8 @@
 // cumulative of r is a Pade approximant whose inversion is a quartic. Units: m_e c^2, m_e c.
 
 #include "runko/qed/interactions/qed_kinematics.h"
+
+#include <array>
 
 namespace qed::syn {
 
@@ -51,11 +54,30 @@ constexpr double
   return x_min / (kinetic ? gam - 1.0 : gam);
 }
 
+/// The three Pade parameters (a, b, n) of the cumulative probability and the three of its mean's
+/// effective point (l0, linf, kappa, see rmean), at a capped chi_e.
 struct [[nodiscard]] Shape {
-  double a, b, n;
+  double a, b, n, l0, linf, kappa;
 };
 
-/// The three Pade parameters of the cumulative probability, at a capped chi_e.
+// The effective point of the mean above a floor: its three parameters as elementary functions of
+// chi_e, a cubic in s = (ln chi_e - S_MID)/S_HALF plus one logistic step, fitted on
+// 1e-12 <= chi_e <= 10 and held above, where the shape's own fit is at its frozen end.
+inline constexpr double S_MID = -12.66422, S_HALF = 14.9668;
+inline constexpr std::array<double, 7> L0 = { 4.749836e-01, 5.957273e-02, 2.173267e-02, 1.045624e-02, 2.865377e-01, 5.673384e-01, 1.583990e+00 };
+inline constexpr std::array<double, 7> LINF = { 8.268931e-01, -1.466373e-02, -1.051902e-02, -8.028332e-03, 8.251289e-02, 6.572695e-02, 7.165592e-01 };
+inline constexpr std::array<double, 7> LNKAPPA = { -9.414223e-01, 3.268251e-01, 6.384624e-02, 2.694743e-02, 2.905601e+00, 2.529502e+00, 2.155030e+00 };
+inline constexpr double P_STRETCH = 1.060691e+00;   // the stretching exponent of the point's relaxation
+
+/// c0 + c1 s + c2 s^2 + c3 s^3 + E/(1 + exp(-(t - t_s)/w_s)) at t = ln chi_e
+[[nodiscard]]
+constexpr double
+  curve(const std::array<double, 7>& q, const double t)
+{
+  const auto s = (t - S_MID) / S_HALF;
+  return q[0] + q[1] * s + q[2] * s * s + q[3] * s * s * s + q[4] / (1.0 + sstd::exp(-(t - q[5]) / q[6]));
+}
+
 [[nodiscard]]
 constexpr Shape
   shape(const double chi_e)
@@ -84,7 +106,8 @@ constexpr Shape
   const auto n = 0.25 + 0.926739 * sstd::pow(x, -0.34531647) /
                           (1.0 + 1.26885704 * sstd::pow(x, 0.34531647) +
                            0.30839327 * sstd::pow(x, 1.74193071));
-  return Shape { a, b, n };
+  const auto t = sstd::log(x);
+  return Shape { a, b, n, curve(L0, t), curve(LINF, t), sstd::exp(curve(LNKAPPA, t)) };
 }
 
 /// Cumulative probability that an emitted photon takes at most the fraction r of chi_e, from
@@ -116,7 +139,7 @@ constexpr double
   // of the depressed quartic; the sign of hi picks the branch that stays real and positive.
   // The first square root also divides: RMIN floors that divisor alone.
   z                    = sstd::clamp(z, ZCLIP, 1.0 - ZCLIP);
-  const auto [a, b, n] = s;
+  const auto a = s.a, b = s.b, n = s.n;
   const auto c         = a - b - 1.0;
   // the quartic a u^4 + B u^2 + C u + D = 0 with z cleared from the denominator ...
   const auto B         = -b * (1.0 - z);
@@ -189,33 +212,39 @@ constexpr double
                    -2.0 / 3.0);
 }
 
-/// Mean fraction <chi_gamma>/chi_e that one drawn photon carries, among the photons above r_min.
+/// Mean fraction <chi_gamma>/chi_e that one drawn photon carries, among the photons above r_min:
+/// the first moment of the cumulative the sampler draws from, above the floor, in closed form.
 [[nodiscard]]
 constexpr double
-  rmean(double chi_e, const double r_min)
+  rmean(const Shape& s, const double r_min)
 {
-  // The mean of what the sampler draws, from the tail integral of its own cumulative:
-  // int_{r_min}^1 r dP = r_min (1 - P0) + int_{r_min}^1 (1 - P) dr, Simpson in ln r from a
-  // few decades below the photon energy scale r ~ chi_e; the sliver below the first node is
-  // added in closed form.
-  chi_e           = sstd::max(chi_e, 1e-12);       // zero field floored, as in shape()
-  const auto s    = shape(chi_e);                  // one shape for every node
-  const auto P0   = P(s, r_min);                   // cumulative at the floor
-  // first node, below the spectrum's scale
-  auto r_lo       = sstd::max(r_min, 1e-7 * sstd::min(chi_e, 1.0));
-  r_lo            = sstd::min(r_lo, 1.0 - 1e-12);
-  constexpr int n = 96;                            // Simpson intervals in ln r
-  const auto lr0  = sstd::log(r_lo);
-  auto sum        = 0.0;
-  // Simpson sum of (1 - P) r over ln r from r_lo to 1
-  for(auto i = 0; i <= n; ++i) {
-    const auto r = sstd::exp(lr0 * (1.0 - static_cast<double>(i) / n));
-    const auto w = (i == 0 or i == n) ? 1.0 : (i % 2 == 1 ? 4.0 : 2.0);
-    sum += w * (1.0 - P(s, r)) * r;
-  }
-  const auto h    = -lr0 / n;
-  const auto tail = h / 3.0 * sum + (r_lo - r_min) * (1.0 - P(s, r_lo));
-  return r_min + tail / sstd::max(1.0 - P0, TINY);
+  // The tail integral of the cumulative gives the mean, <r> = r_min + int_{r_min}^1 (1 - P) dr /
+  // (1 - P0). For the numerator a u^4 alone the integral is the incomplete beta function of
+  // v = 1 - r^(1/3): with rho = r_min^(1/3) and m = 4n it is, exactly,
+  //     Delta_1 = 3 (1 - rho) [2 + 2 rho (m+1) + rho^2 (m+1)(m+2)] / ((m+1)(m+2)(m+3)).
+  // The denominator D(u) = 1 + b u^2 + c u^3 multiplies that by D(u_m) times the harmonic mean of
+  // D over the tail, which one effective point lambda u_m of the tail carries: the point relaxes
+  // from l0 with no floor to linf deep in the tail as exp(-kappa z^p) in the tail exponent
+  // z = -4 ln u_m of the cumulative. Within 0.3 % of the moment for chi_e <= 1e-2, 0.5 % to 1,
+  // 0.8 % to 10 and 2 % extrapolated to 100, over every floor that leaves the channel open. It is
+  // the drawn mean, not the exact spectrum's, that the merged-emission multiplicity must divide by.
+  const auto c   = s.a - s.b - 1.0;
+  const auto m   = 4.0 * s.n;
+  const auto rho = sstd::cbrt(r_min);
+  const auto v   = sstd::max(1.0 - rho, TINY);                      // v_m = 1 - r_min^(1/3)
+  const auto d1  = 3.0 * v * (2.0 + 2.0 * rho * (m + 1.0) + rho * rho * (m + 1.0) * (m + 2.0)) /
+                  ((m + 1.0) * (m + 2.0) * (m + 3.0));
+  const auto z   = -m * sstd::log(v);                               // the tail exponent at the floor
+  const auto u   = sstd::exp(-z / 4.0);                             // u_m = v_m^n
+  const auto lam = s.linf - (s.linf - s.l0) * sstd::exp(-s.kappa * sstd::pow(z, P_STRETCH));
+  const auto D   = [&](const double t) { return 1.0 + s.b * t * t + c * t * t * t; };
+  return r_min + d1 * D(u) / D(lam * u);
+}
+[[nodiscard]]
+constexpr double
+  rmean(const double chi_e, const double r_min)
+{
+  return rmean(shape(chi_e), r_min);
 }
 
 /// Mean energy of a drawn photon above the floor: the scale of the multiplicity of a merged emission.

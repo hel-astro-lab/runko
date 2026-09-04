@@ -46,15 +46,46 @@ const suite<"one-body and self-absorption physics"> _ = [] {
     expect(close(qed::syn::r_of(0.7, 1.0), 0.1302365994192557, 1e-8));
     expect(close(qed::syn::r_of(0.999, 0.05), 0.28903472579233747, 1e-8));
     expect(close(qed::syn::r_of(0.999, 5.0), 0.9858025878137909, 1e-8));
-    expect(close(qed::syn::rmean(1e-3, 0.0), 0.0004917154718963857, 1e-9));
-    expect(close(qed::syn::rmean(0.1, 0.0), 0.033024347835116485, 1e-9));
-    expect(close(qed::syn::rmean(1.0, 0.0), 0.11903114639260932, 1e-9));
-    expect(close(qed::syn::rmean(1e-3, 1e-4), 0.0009146899346814296, 1e-9));
-    expect(close(qed::syn::rmean(0.1, 0.01), 0.06494536225354355, 1e-9));
+    expect(close(qed::syn::rmean(1e-3, 0.0), 0.0004915576082575523, 1e-9));
+    expect(close(qed::syn::rmean(0.1, 0.0), 0.03293233949215805, 1e-9));
+    expect(close(qed::syn::rmean(1.0, 0.0), 0.1190278525361551, 1e-9));
+    expect(close(qed::syn::rmean(1e-3, 1e-4), 0.0009150840279317343, 1e-9));
+    expect(close(qed::syn::rmean(0.1, 0.01), 0.0648880516895646, 1e-9));
     const auto u = Vec3(3.0, 1.0, -2.0);
     expect(close(qed::syn::rate(u, 1e-3, 0.0, false), 0.0014452134186639385, 1e-10));
     expect(close(qed::syn::rate(u, 1e-3, 1e-3, false), 0.0008376097799749066, 1e-10));
     expect(qed::syn::rate(Vec3(2.0, 0.0, 0.0), 1e-3, 0.0, false) == 0.0);  // gamma < 3
+  };
+
+  "the closed-form mean above a floor follows the moment of the cumulative"_test = [] {
+    // the reference: the tail integral of the cumulative by Simpson's rule in ln r from a few
+    // decades below the spectrum's scale, the sliver below the first node in closed form
+    const auto ref = [](const double chi, const double rmin) {
+      const auto s    = qed::syn::shape(chi);
+      const auto P0   = qed::syn::P(s, rmin);
+      auto r_lo       = std::max(rmin, 1e-7 * std::min(chi, 1.0));
+      r_lo            = std::min(r_lo, 1.0 - 1e-12);
+      constexpr int n = 4096;
+      const auto lr0  = std::log(r_lo);
+      auto sum        = 0.0;
+      for(auto i = 0; i <= n; ++i) {
+        const auto r = std::exp(lr0 * (1.0 - static_cast<double>(i) / n));
+        const auto w = (i == 0 or i == n) ? 1.0 : (i % 2 == 1 ? 4.0 : 2.0);
+        sum += w * (1.0 - qed::syn::P(s, r)) * r;
+      }
+      const auto h = -lr0 / n;
+      return rmin + (h / 3.0 * sum + (r_lo - rmin) * (1.0 - qed::syn::P(s, r_lo))) / (1.0 - P0);
+    };
+    // over the fitted range and every floor that leaves the channel open (1 - P0 >= FMIN)
+    for(const auto chi: { 1e-8, 1e-6, 1e-4, 1e-3, 1e-2, 0.1, 1.0, 10.0 }) {
+      const auto s   = qed::syn::shape(chi);
+      const auto tol = chi <= 1e-2 ? 3e-3 : (chi <= 1.0 ? 5e-3 : 8e-3);
+      for(auto z = 0.0; z <= 9.0; z += 0.5) {
+        const auto rmin = std::pow(1.0 - std::exp(-z / (4.0 * s.n)), 3.0);   // the floor of tail exponent z
+        if(qed::syn::frac(chi, rmin) <= 0.0) { continue; }                    // closed
+        expect(close(qed::syn::rmean(s, rmin), ref(chi, rmin), tol)) << "chi " << chi << " z " << z;
+      }
+    }
   };
 
   "synchrotron inversion round-trips and the sampler conserves energy"_test = [] {
