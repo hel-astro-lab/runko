@@ -101,6 +101,7 @@ Tile<D>::Tile(
   if(par.nbin < 1 or par.ncell_edge < 1 or par.nsort < 1 or par.smin < 1) {
     throw std::runtime_error { "qed::Tile: nbin, n_reaction_cells, nsort and smin must be >= 1." };
   }
+
   // the channels to run: a list, a comma-separated string, or absent (all the field allows)
   auto channels = std::vector<std::string> {};
   if(const auto cs = conf.get<std::vector<std::string>>("qed_channels")) {
@@ -222,6 +223,12 @@ template<std::size_t D>
 void
   Tile<D>::interact()
 {
+  // the reaction cell of an LP is fixed at the layout, and any push between layouts moves LPs
+  // across cells; widened bounds cannot repair a stale cell key (energies they can: the step
+  // re-widens every bound on non-layout laps)
+  if(sampler_.par.ncell_edge > 1 and sampler_.par.nsort > 1) {
+    throw std::runtime_error { "qed::Tile::interact: qed_n_reaction_cells > 1 needs qed_nsort = 1 (a cell key cannot survive a push)." };
+  }
   if(sampler_.box.b_perp() > 0.0) {
     if(B0_ > 0.0) {
       summarize_field();   // the lattice moved since the last lap

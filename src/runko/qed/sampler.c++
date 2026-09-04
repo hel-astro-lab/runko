@@ -468,7 +468,13 @@ void
   Sampler::step(TileView& t)
 {
   // ---- a new epoch every nsort steps, or as soon as a layout went stale
-  this->lay_if_needed(t, istep_ % static_cast<std::uint64_t>(par.nsort) == 0);
+  const auto epoch = istep_ % static_cast<std::uint64_t>(par.nsort) == 0;
+  this->lay_if_needed(t, epoch);
+  if(not epoch) {
+    // whatever moved the particles since the last step (the PIC push) did not widen the key
+    // bounds; one sweep keeps every envelope a majorant (a no-op when nothing moved untouched)
+    for(auto s = 0uz; s < 3uz; ++s) { t.pop[s]->touch_all(*t.con[s]); }
+  }
 
   // ---- the context of the step and its slot/live statistics
   Ctx c { t, par.nbin };
