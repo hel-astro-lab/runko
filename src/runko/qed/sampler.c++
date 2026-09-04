@@ -364,19 +364,18 @@ Sampler::Sampler(const Box& b, const Params& p, const std::vector<std::string>& 
 
 // the per-cell remainders of one decision site, created on first use
 thrust::device_vector<double>&
-  Sampler::carry(const std::string& site, const int ncell)
+  Sampler::carry(const Decision d, const Species s, const int ncell)
 {
-  auto it = carry_.find(site);
-  if(it == carry_.end()) {
+  const auto site = 3 * static_cast<std::size_t>(d) + static_cast<std::size_t>(s);
+  auto& car       = carry_[site];
+  if(car.empty()) {
     // seeded from the stream of the site, so that a run is reproducible
     auto h   = thrust::host_vector<double>(static_cast<std::size_t>(ncell));
-    auto key = std::uint64_t { 0 };
-    for(const auto ch: site) { key = runko::mix64(key ^ static_cast<std::uint64_t>(ch)); }
-    auto rng = runko::Rng { runko::rng_key(par.seed, 0, 0, key), 0 };
+    auto rng = runko::Rng { runko::rng_key(par.seed, 0, 0, 400 + site), 0 };
     for(auto& x: h) { x = rng.uniform(); }
-    it = carry_.emplace(site, thrust::device_vector<double>(h)).first;
+    car = h;
   }
-  return it->second;
+  return car;
 }
 
 // Every per-event decision -- a copy count, an update, a removal -- is taken against a running
@@ -389,7 +388,8 @@ void
   Sampler::select(
     const tyvi::mdgrid_work& w,
     bool sorted,
-    const std::string& site,
+    const Decision d,
+    const Species s,
     const int ncell,
     const std::size_t n,
     const std::int32_t* cell,
@@ -397,7 +397,7 @@ void
     std::int32_t* out)
 {
   if(n == 0) { return; }
-  auto& car        = carry(site, ncell);
+  auto& car        = carry(d, s, ncell);
   const auto car_p = thrust::raw_pointer_cast(car.data());   // remainder per cell
   // the running sums: one buffer for every select of a pass, all of the pass's event count, so
   // that no resize reallocates under a select still in flight on the queue
@@ -959,19 +959,18 @@ void
   // (the decisions and the second react half follow on the same queue: no wait)
 
   // ---- the decisions, by the systematic rounding of every cell
-  const auto tag1 = std::to_string(static_cast<int>(Ch::t1)), tag2 = std::to_string(static_cast<int>(ch.t2));   // carry sites are per species
   // scatter: update the photon, kick the lepton; absorb: remove the photon, kick the lepton;
   // convert: remove both, and for photon-photon also count the lepton pairs
   if constexpr(Ch::kind == Kind::scatter) {
-    select(w, true, "sc" + tag1, ncell, na, ecell, q1, n1p);
-    select(w, true, "kk" + tag2, ncell, na, ecell, q2, n2p);
+    select(w, true, Decision::update, Ch::t1, ncell, na, ecell, q1, n1p);
+    select(w, true, Decision::kick, ch.t2, ncell, na, ecell, q2, n2p);
   } else if constexpr(Ch::kind == Kind::absorb) {
-    select(w, true, "rm" + tag1, ncell, na, ecell, q1, n1p);
-    select(w, true, "kk" + tag2, ncell, na, ecell, q2, n2p);
+    select(w, true, Decision::remove, Ch::t1, ncell, na, ecell, q1, n1p);
+    select(w, true, Decision::kick, ch.t2, ncell, na, ecell, q2, n2p);
   } else {
-    select(w, true, "rm" + tag1, ncell, na, ecell, q1, n1p);
-    select(w, true, "rm" + tag2, ncell, na, ecell, q2, n2p);
-    if constexpr(Ch::t2 == Species::ph) { select(w, true, "lep", ncell, na, ecell, q3, n3p); }
+    select(w, true, Decision::remove, Ch::t1, ncell, na, ecell, q1, n1p);
+    select(w, true, Decision::remove, ch.t2, ncell, na, ecell, q2, n2p);
+    if constexpr(Ch::t2 == Species::ph) { select(w, true, Decision::pairs, Species::ph, ncell, na, ecell, q3, n3p); }
   }
 
   // ---- react kernel, second half: parents updated in place, products staged
@@ -1319,7 +1318,7 @@ void
     });
     w.wait();
     // the counts by the systematic rounding of every cell
-    select(w, false, "lep", c.ncell, na, ecell, q3, n3);
+    select(w, false, Decision::pairs, Species::ph, c.ncell, na, ecell, q3, n3);
     // one lane per fired photon: draw the pair, stage its copies, remove the photon
     thrust::for_each(w.on_this(), e0, e0 + static_cast<std::ptrdiff_t>(na), [=](const I e) {
       const auto i = acc[e];

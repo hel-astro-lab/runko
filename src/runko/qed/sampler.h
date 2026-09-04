@@ -187,8 +187,10 @@ public:
   Stats stats;                               // counters of the run
 
 private:
-  // per-cell running remainders of the systematic rounding, one array per decision site
-  std::map<std::string, thrust::device_vector<double>> carry_;
+  /// the decisions taken by systematic rounding: a parent updated, kicked or removed, pairs made
+  enum class Decision : int { update = 0, kick, remove, pairs, count };
+  // per-cell running remainders of the rounding, one array per (decision, species) site
+  std::array<thrust::device_vector<double>, 3 * static_cast<std::size_t>(Decision::count)> carry_;
   // staged products of one channel pass
   thrust::device_vector<Staged> staged_;
   thrust::device_vector<std::int32_t> counters_;  // staged count, tail counters, id counters
@@ -230,7 +232,7 @@ private:
   /// rewiden the bounds of the keys of the kicked leptons, over the na events
   void touch_kicked(Ctx& c, Species s, std::size_t na);
   /// the carry array of a decision site, created on first use
-  thrust::device_vector<double>& carry(const std::string& site, int ncell);
+  thrust::device_vector<double>& carry(Decision d, Species s, int ncell);
   /// a channel's statistics: the host half plus the device slice of a read-back copy
   [[nodiscard]] ChannelStats channel_snap(std::size_t l, const thrust::host_vector<double>& h) const;
   /// systematic rounding of the probabilities q of the events into counts out, on the
@@ -239,7 +241,8 @@ private:
   void select(
     const tyvi::mdgrid_work& w,
     bool sorted,
-    const std::string& site,
+    Decision d,
+    Species s,
     int ncell,
     std::size_t n,
     const std::int32_t* cell,
