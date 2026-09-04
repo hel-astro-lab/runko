@@ -74,11 +74,7 @@ struct [[nodiscard]] LayoutView {
     return keyed ? 2 * k + bit : k;
   }
 
-  /// cell and bin of a key
-  [[nodiscard]] constexpr int cell_of_key(const int k) const
-  {
-    return (keyed ? k / 2 : k) / nbin;
-  }
+  /// bin of a key
   [[nodiscard]] constexpr int bin_of_key(const int k) const
   {
     return (keyed ? k / 2 : k) % nbin;

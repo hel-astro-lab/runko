@@ -69,8 +69,6 @@ public:
   ~Tile() = default;
 
   [[nodiscard]] const Box& box() const { return sampler_.box; }
-  [[nodiscard]] const Params& params() const { return sampler_.par; }
-  [[nodiscard]] const Sampler& sampler() const { return sampler_; }
   [[nodiscard]] std::size_t species(const Species s) const
   {
     return sp_[static_cast<std::size_t>(s)];
