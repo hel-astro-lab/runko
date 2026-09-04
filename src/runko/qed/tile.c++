@@ -234,7 +234,10 @@ void
   }
   if(sampler_.box.b_perp() > 0.0) {
     if(B0_ > 0.0) {
-      summarize_field();   // the lattice moved since the last lap
+      // the lattice moved since the last lap; only self-absorption reads its summary
+      const auto ssa = sampler_.enabled[static_cast<std::size_t>(Channel::ssa_m)] or
+                       sampler_.enabled[static_cast<std::size_t>(Channel::ssa_p)];
+      if(ssa) { summarize_field(); }
     } else if(lattice_has_field()) {
       throw std::runtime_error {
         "qed::Tile::interact: the lattice carries a field but qed_B0 is not set; the channels would see the uniform field of ell_B alone."
