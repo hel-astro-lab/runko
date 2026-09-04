@@ -383,11 +383,13 @@ thrust::device_vector<double>&
 // Every per-event decision -- a copy count, an update, a removal -- is taken against a running
 // remainder of its cell rather than an independent uniform: the marginal probability of each
 // event is unchanged, and the summed error of a cell is bounded by one instead of growing as a
-// random walk. Events come cell-sorted, so the running sum is a segmented scan.
+// random walk. Events come cell-sorted, so the running sum is a segmented scan, and the counts
+// of a cell telescope to floor(base + sum) - floor(base): the cell's new remainder is the
+// fractional part of base + sum, written by its last event.
 void
   Sampler::select(
     const tyvi::mdgrid_work& w,
-    const bool sorted,
+    bool sorted,
     const std::string& site,
     const int ncell,
     const std::size_t n,
@@ -398,44 +400,41 @@ void
   if(n == 0) { return; }
   auto& car        = carry(site, ncell);
   const auto car_p = thrust::raw_pointer_cast(car.data());   // remainder per cell
-  ev_cs_.resize(n);
-  const auto cs = thrust::raw_pointer_cast(ev_cs_.data());     // running sum of q within the cell
+  // the running sums: one buffer for every select of a pass, all of the pass's event count, so
+  // that no resize reallocates under a select still in flight on the queue
+  if(ev_cs_.size() < n) { ev_cs_.resize(n); }
+  const auto cs   = thrust::raw_pointer_cast(ev_cs_.data());
   const auto ord0 = thrust::counting_iterator<I>(0);
-  // the base of a cell is read by every event of the cell and updated by all of them, so the
-  // update is a second pass: reading and adding in one kernel would race
-  if(sorted) {
-    // running sum of the probabilities within each cell
-    thrust::inclusive_scan_by_key(
-      w.on_this(), cell, cell + static_cast<std::ptrdiff_t>(n), q, cs);
-    // one lane per event: its count from the remainder and the running sum
-    thrust::for_each(w.on_this(), ord0, ord0 + static_cast<std::ptrdiff_t>(n), [=](const I i) {
-      const auto base = car_p[cell[i]];
-      const auto m    = sstd::floor(base + cs[i]) - sstd::floor(base + cs[i] - q[i]);
-      out[i]          = static_cast<std::int32_t>(m);
-    });
-  } else {
-    // the tail of a species is not cell-ordered: sort a permutation by cell first
+  const auto nn   = static_cast<std::ptrdiff_t>(n);
+  sorted          = sorted or ncell == 1;   // one cell: every order is cell-sorted
+  // the events in cell order: perm (the identity when sorted) and their cells along it
+  const I* perm            = nullptr;
+  const std::int32_t* keys = cell;
+  if(not sorted) {
     ev_perm_.resize(n);
     ev_keys_.resize(n);
-    thrust::copy(w.on_this(), cell, cell + static_cast<std::ptrdiff_t>(n), ev_keys_.begin());
-    thrust::copy(w.on_this(), ord0, ord0 + static_cast<std::ptrdiff_t>(n), ev_perm_.begin());
+    thrust::copy(w.on_this(), cell, cell + nn, ev_keys_.begin());
+    thrust::copy(w.on_this(), ord0, ord0 + nn, ev_perm_.begin());
     thrust::stable_sort_by_key(w.on_this(), ev_keys_.begin(), ev_keys_.end(), ev_perm_.begin());
-    const auto perm  = thrust::raw_pointer_cast(ev_perm_.data());   // event of sorted position i
-    const auto keys_p = thrust::raw_pointer_cast(ev_keys_.data());   // its cell
-    const auto qs    = thrust::make_transform_iterator(ord0, [=](const I i) { return q[perm[i]]; });
-    // running sum in sorted order, then the counts written back to the events' own order
-    thrust::inclusive_scan_by_key(
-      w.on_this(), keys_p, keys_p + static_cast<std::ptrdiff_t>(n), qs, cs);
-    thrust::for_each(w.on_this(), ord0, ord0 + static_cast<std::ptrdiff_t>(n), [=](const I i) {
-      const auto j    = perm[i];
-      const auto base = car_p[keys_p[i]];
-      const auto m    = sstd::floor(base + cs[i]) - sstd::floor(base + cs[i] - q[j]);
-      out[j]          = static_cast<std::int32_t>(m);
-    });
+    perm = thrust::raw_pointer_cast(ev_perm_.data());
+    keys = thrust::raw_pointer_cast(ev_keys_.data());
   }
-  // one lane per event: the cell's remainder advances by what was asked minus what was given
-  thrust::for_each(w.on_this(), ord0, ord0 + static_cast<std::ptrdiff_t>(n), [=](const I i) {
-    sstd::atomic_add(&car_p[cell[i]], q[i] - static_cast<double>(out[i]));
+  const auto at = [=](const I i) { return perm ? perm[i] : i; };   // event at sorted position i
+  const auto qs = thrust::make_transform_iterator(ord0, [=](const I i) { return q[at(i)]; });
+  // running sum of the probabilities within each cell
+  thrust::inclusive_scan_by_key(w.on_this(), keys, keys + nn, qs, cs);
+  // one lane per event: its count from the remainder and the running sum
+  thrust::for_each(w.on_this(), ord0, ord0 + nn, [=](const I i) {
+    const auto j    = at(i);
+    const auto base = car_p[keys[i]];
+    out[j] = static_cast<std::int32_t>(sstd::floor(base + cs[i]) - sstd::floor(base + cs[i] - q[j]));
+  });
+  // one lane per event, the last of its cell: the remainder advances (a second pass, since every
+  // event of the cell reads the base above)
+  thrust::for_each(w.on_this(), ord0, ord0 + nn, [=](const I i) {
+    if(static_cast<std::size_t>(i) + 1 < n and keys[i + 1] == keys[i]) { return; }
+    const auto x   = car_p[keys[i]] + cs[i];
+    car_p[keys[i]] = x - sstd::floor(x);
   });
 }
 
