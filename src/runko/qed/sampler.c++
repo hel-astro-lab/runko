@@ -302,8 +302,8 @@ constexpr Staged
 
 // slots of the per-pass statistics accumulated on the device (dstat_): lanes on a dead slot,
 // lanes past the weight stage, moved weight, summed accumulation factor, rejection proposals
-// and their count, clamped events, overlapping lanes, emitted weight
-enum DStat : int { d_virt = 0, d_wpass, d_wmoved, d_facc, d_trials, d_trials_n, d_clamped, d_overlap, d_wem, d_count };
+// and their count, clamped events, emitted weight
+enum DStat : int { d_virt = 0, d_wpass, d_wmoved, d_facc, d_trials, d_trials_n, d_clamped, d_wem, d_count };
 // slots of the device counters (counters_): staged records, tail slots taken per species,
 // products placed in slack and in the tail, ids consumed per species
 enum Counter : int { c_staged = 0, c_tail0, c_tail1, c_tail2, c_slack, c_tailn, c_id0, c_id1, c_id2, c_count };
@@ -642,8 +642,8 @@ void
 
   // Distinct strata need at most as many events per bin as the bin has slots, on both sides;
   // where the envelope exceeds that the channel is split into sub-steps of a larger N_2. The
-  // sub-steps of the additive channels are capped: beyond the cap the strata of a bin are let
-  // overlap, so that a few heavy LPs are proposed as often as their rate demands.
+  // sub-steps of the additive channels are capped: beyond the cap the row clamp drops the
+  // surplus events (an under-count the cap controls), so no two lanes ever hold one slot.
   // sub-steps from the incident side: events of a bin over its slots less one
   auto nsub = thrust::transform_reduce(
     w.on_this(), g0, g0 + ncb,
@@ -719,8 +719,9 @@ void
       M[g]         = static_cast<std::int32_t>(F - Fp);
       Fp           = F;
     }
-    if constexpr(Ch::kind == Kind::convert) {
-      // hold the events of the row below its slot count: a backstop the sub-cycling makes rare
+    {
+      // hold the events of the row below its slot count, so the strata stay distinct (a
+      // backstop the sub-cycling makes rare); the drops are counted as clamped
       auto ex = 0;
       for(auto bb = 0; bb < nb; ++bb) { ex += M[ca * nb + bb]; }
       ex -= static_cast<int>(s1.N(ca));
@@ -773,10 +774,6 @@ void
     }
     M1[ca]  = sum;
     sh1[ca] = static_cast<std::int32_t>(rng.uniform() * static_cast<double>(sstd::max(s1.N(ca), I { 1 })));
-    if constexpr(Ch::kind != Kind::convert) {
-      // additive channels beyond the sub-step cap: lanes past the slot count overlap
-      sstd::atomic_add(&ds[d_overlap], static_cast<double>(sstd::max(sum - static_cast<int>(s1.N(ca)), 0)));
-    }
   });
   // first lane of every bin pair from the running sum of the counts; the last entry is the
   // lane total of the pass, read on the host once the count kernels and the scan are done
@@ -868,7 +865,6 @@ void
     st.virt += h[d_virt];
     st.wpass += h[d_wpass];
     st.clamped += h[d_clamped];
-    st.overlap += h[d_overlap];
   }
   if(na == 0) {
     w.wait();
@@ -1706,10 +1702,10 @@ std::string
     if(not enabled[i]) { continue; }
     const auto& s = stats.ch[i];
     if(is_twobody(static_cast<Channel>(i))) {
-      o << std::format("   {:9s}: lanes {:.1f}, virtual {:.1f}%, weight-stage {:.3f}, accepted {:.2f}, <sigmahat> {:.4f}, <f> {:.2f}, nsub {} ({} steps), clamped {:.0f}, overlap {:.1f}%, trials {:.2f}\n",
+      o << std::format("   {:9s}: lanes {:.1f}, virtual {:.1f}%, weight-stage {:.3f}, accepted {:.2f}, <sigmahat> {:.4f}, <f> {:.2f}, nsub {} ({} steps), clamped {:.0f}, trials {:.2f}\n",
         NAMES[i], s.M / ns, 100.0 * s.virt / std::max(1.0, s.M), s.wpass / std::max(1.0, s.M - s.virt), s.acc / ns,
         s.shbar_num / std::max(1e-30, s.shbar_den), s.facc / std::max(1.0, s.acc), s.nsub_max_seen, s.nsub_steps,
-        s.clamped, 100.0 * s.overlap / std::max(1.0, s.M), s.trials / std::max(1.0, s.trials_n));
+        s.clamped, s.trials / std::max(1.0, s.trials_n));
     } else {
       o << std::format("   {:9s}: lanes {:.0f}, events {:.2f} (dead {:.1f}%), emitted weight/step {:.3g}, <f> {:.2f}\n",
         NAMES[i], s.M / ns, s.acc / ns, 100.0 * s.virt / std::max(1.0, s.M), s.wem / ns, s.facc / std::max(1.0, s.acc));

@@ -60,7 +60,7 @@ struct [[nodiscard]] Params {
   int nsort { 10 };         // steps between padded sorts
   int smin { 4 };           // floor on the slack slots of a key
   int n_cap { 32 };         // largest copy number of one reaction
-  int nsub_max { 8 };       // sub-steps a channel may take before its strata are let overlap
+  int nsub_max { 8 };       // sub-steps an additive channel may take before its rows are clamped
   double slack { 0.5 };     // slack slots per key, as a fraction of its live LPs
   double a_res { 0.7 };     // exponent of the photon resolution function
   double x_ref { 1e-5 };    // its anchor: one LP per unit weight there
@@ -96,8 +96,7 @@ struct [[nodiscard]] ChannelStats {
   double wmoved { 0 };    // weight moved, sum f s
   double facc { 0 };      // sum of accumulation factors of accepted events
   double wem { 0 };       // emitted weight (one-body emission)
-  double clamped { 0 };   // events a conversion channel dropped to keep its strata distinct
-  double overlap { 0 };   // incident lanes beyond the slot count of their bin (capped sub-cycling)
+  double clamped { 0 };   // events dropped to keep the strata of a bin distinct
   double trials { 0 };    // rejection proposals
   double trials_n { 0 };  // events the proposals were counted over
   double shbar_num { 0 }, shbar_den { 0 };  // <sigmahat> of the envelope
