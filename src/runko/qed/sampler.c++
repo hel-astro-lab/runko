@@ -1176,8 +1176,9 @@ void
     // ids consumed and placement statistics
     thrust::host_vector<std::int32_t> h = counters_;
     for(auto s = 0uz; s < 3uz; ++s) {
-      c.t->ids_used[s] += static_cast<std::size_t>(h[c_id0 + static_cast<int>(s)]);
-      c.t->id_base[s] += static_cast<runko::prtc_id_type>(h[c_id0 + static_cast<int>(s)]);
+      const auto used = h[static_cast<std::size_t>(c_id0) + s];
+      c.t->ids_used[s] += static_cast<std::size_t>(used);
+      c.t->id_base[s] += static_cast<runko::prtc_id_type>(used);
     }
     stats.slackprod += h[c_slack];
     stats.tailprod += h[c_tailn];

@@ -62,11 +62,11 @@ struct [[nodiscard]] LayoutView {
   /// reaction cell of a position
   [[nodiscard]] constexpr int cell_of(const float x, const float y, const float z) const
   {
-    const auto at = [&](const float v, const int i) {
+    const auto at = [&](const float v, const std::size_t i) {
       const auto f = (v - mins[i]) / (maxs[i] - mins[i]) * static_cast<float>(ncell_edge);
       return sstd::clamp(static_cast<int>(sstd::floor(f)), 0, ncell_edge - 1);
     };
-    return (at(x, 0) * ncell_edge + at(y, 1)) * ncell_edge + at(z, 2);
+    return (at(x, 0uz) * ncell_edge + at(y, 1uz)) * ncell_edge + at(z, 2uz);
   }
 
   /// energy bin of an LP of energy e: log-spaced in the kinetic energy of the epoch
