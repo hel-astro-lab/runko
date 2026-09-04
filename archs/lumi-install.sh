@@ -16,6 +16,12 @@ SCRATCH_ROOT="/pfs/lustrep3/scratch/${LUMI_PROJECT}/${USER}"
 
 #--------------------------------------------------
 
+# Refuse to be sourced: set -e would kill the calling shell.
+if [ "${BASH_SOURCE[0]}" != "${0}" ]; then
+    echo "error: run this script, do not source it: ./archs/lumi-install.sh {gpu|cpu}" >&2
+    return 1
+fi
+
 set -e
 
 usage() {
@@ -30,10 +36,15 @@ case "$BACKEND" in
 esac
 
 # The clone this script lives in; build dir name matches the preset name.
-RUNKO_PATH=$(cd "$(dirname "$0")/.." && pwd)
+RUNKO_PATH=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
 VENV="$SCRATCH_ROOT/venvs/$VENV_NAME"
 BUILD_DIR="$RUNKO_PATH/build/$PRESET"
 ROCTHRUST_PREFIX="$SCRATCH_ROOT/rocm-libraries/projects/rocthrust/rocthrust-install"
+
+if [ ! -f "$RUNKO_PATH/CMakePresets.json" ]; then
+    echo "error: $RUNKO_PATH is not a runko checkout" >&2
+    exit 1
+fi
 
 if [ "$RUNKO_PATH" != "$SCRATCH_ROOT/runko" ]; then
     echo "warning: repo is $RUNKO_PATH, not $SCRATCH_ROOT/runko" >&2
