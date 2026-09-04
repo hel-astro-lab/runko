@@ -315,7 +315,9 @@ void
     throw std::runtime_error { "qed::Tile::set_particles: u and w must have the same length." };
   }
   auto& con      = this->particles(species(s));
-  con            = pic::ParticleContainer { con.args() };  // empty, same species
+  auto args      = con.args();
+  args.N         = 0;   // args().N is the old size, and fresh slots carry no dead tag
+  con            = pic::ParticleContainer { args };  // empty, same species
   auto rng       = runko::Rng { runko::rng_key(sampler_.par.seed, sampler_.step(), 7, 0), 0 };
   auto states    = std::vector<runko::ParticleState<double>>(u.size());
   const auto lo  = this->mins;  // tile extent, for the random positions
