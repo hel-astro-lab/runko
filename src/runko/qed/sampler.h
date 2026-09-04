@@ -206,6 +206,7 @@ private:
   thrust::device_vector<float> wmax1_, emin1_, emax1_, wmax2_, emin2_, emax2_;  // bounds over the sub-ranges
   // lanes (one per envelope event) and events (one per accepted lane)
   thrust::device_vector<runko::index_t> lane_i_, lane_j_, acc_;  // the two slots of a lane; the accepted lanes
+  thrust::device_vector<std::int32_t> lane_g_;                   // the bin pair of a lane
   thrust::device_vector<double> lane_f_;                         // accumulation factor of a lane
   thrust::device_vector<std::uint8_t> lane_acc_;                 // lane accepted
   thrust::device_vector<double> ev_q1_, ev_q2_, ev_q3_, ev_cs_;  // decision probabilities (update/kick/lepton count) and their scan

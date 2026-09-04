@@ -800,7 +800,9 @@ void
   lane_i_.resize(Mtot);
   lane_j_.resize(Mtot);
   lane_f_.resize(Mtot);
+  lane_g_.resize(Mtot);
   const auto Mstart = thrust::raw_pointer_cast(Mstart_.data());
+  const auto lg     = thrust::raw_pointer_cast(lane_g_.data());                                      // bin pair per lane
   const auto lacc = thrust::raw_pointer_cast(lane_acc_.data());                                      // accepted flag per lane
   const auto li = thrust::raw_pointer_cast(lane_i_.data()), lj = thrust::raw_pointer_cast(lane_j_.data());  // incident and partner slot per lane
   const auto lf = thrust::raw_pointer_cast(lane_f_.data());                                          // accumulation factor per lane
@@ -832,6 +834,7 @@ void
     const auto i = s1.pick(cb1, vv1), j = s2.pick(cb2, vv2);   // the two slots
     li[lane] = i;
     lj[lane] = j;
+    lg[lane] = g;
     lf[lane] = 1.0;
     lacc[lane] = L_WFAIL;
     // a dead slot, or one dropped from its key by a kick: nothing to react
@@ -908,8 +911,7 @@ void
     const auto lane = acc[e];
     const auto i = li[lane], j = lj[lane];   // the two parents
     const auto f = lf[lane];                 // events merged into this one
-    const auto g = segment_of(Mstart, npair, lane);
-    ecell[e]     = g / (nb * nb);
+    ecell[e]     = lg[lane] / (nb * nb);     // the reaction cell of its bin pair
     const auto p1v = v1.u(i), p2v = v2.u(j);
     const auto wi = v1.w(i), wj = v2.w(j);
     const auto s  = sstd::min(wi, wj);  // the weight one event transfers
