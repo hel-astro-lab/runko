@@ -66,11 +66,12 @@ class qed_openbox(CheckMixin, unittest.TestCase):
     def test_escape_external_depth(self):
         """the driver may give the slab's depth and step: the same numbers as the tile's own give the
         same escape, and the direction histogram sums to the spectrum"""
-        dt = 5e-3
+        # ~80 escapes per call: enough for the quarter-step subset below to stay near a quarter
+        dt, nph = 5e-3, 40000
         rng = np.random.default_rng(21)
         tiles = [make_tile(11, dt), make_tile(11, dt)]
         for t in tiles:
-            init_pairs(t, 4000, 1000, 0.1, 1.0, np.random.default_rng(21))
+            init_pairs(t, nph, 1000, 0.1, 1.0, np.random.default_rng(21))
             t.sort_particles()
         tau, N2 = tiles[0].tau_T(), 1 / dt
         tiles[0].escape_photons()
@@ -85,7 +86,7 @@ class qed_openbox(CheckMixin, unittest.TestCase):
         np.testing.assert_allclose(hmu.sum(1), h, rtol=1e-12)
         self.assertAlmostEqual(h.sum(), b0["esc_E"], delta=1e-9 * b0["esc_E"])
         # a smaller step in crossings escapes proportionally fewer
-        t = make_tile(11, dt); init_pairs(t, 4000, 1000, 0.1, 1.0, np.random.default_rng(21)); t.sort_particles()
+        t = make_tile(11, dt); init_pairs(t, nph, 1000, 0.1, 1.0, np.random.default_rng(21)); t.sort_particles()
         t.escape_photons(tau, dt / 4)
         self.assertLess(t.budget()["esc_W"], 0.5 * b0["esc_W"])
         t.reset_budget()
