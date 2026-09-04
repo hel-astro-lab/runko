@@ -91,7 +91,7 @@ class [[nodiscard]] Pop {
   std::array<float, 3> mins_ {}, maxs_ {};  // tile extent
   double llo_ { 0.0 }, dl_ { 1.0 };         // log bin edges: lowest edge and bin width
   int nkeys_ { 0 };                         // keys of the layout
-  bool laid_ { false };                     // tables valid for the current container
+  bool laid_ { false };                     // tables built; valid while the container keeps their size
 
   // ---- per slot: key of every slot, -1 in the tail
   thrust::device_vector<std::int32_t> skey_;
@@ -107,7 +107,13 @@ class [[nodiscard]] Pop {
 public:
   Pop(bool keyed, double mass);
 
-  [[nodiscard]] bool laid() const { return laid_; }
+  /// whether the tables describe this container: built, and the container at the size they were
+  /// built or grown for (pic's append writes behind the last alive slot and truncates the trailing
+  /// slack, so any other size means the tables are stale)
+  [[nodiscard]] bool laid(const pic::ParticleContainer& con) const
+  {
+    return laid_ and skey_.size() == con.size();
+  }
   void invalidate() { laid_ = false; }
 
   /// group the live LPs by key, reserve slack behind each group, build the tables
@@ -121,8 +127,8 @@ public:
   /// the tables as the kernels read them (valid while laid)
   [[nodiscard]] LayoutView view();
 
-  /// keep the key array in step with a container that grew: new slots are tail (-1)
-  void follow_container(const pic::ParticleContainer& con);
+  /// the container grew from `old` slots (products placed, arrivals): the new slots are tail (-1)
+  void grown(const pic::ParticleContainer& con, std::size_t old);
 
   /// widen the bounds of every key by every live LP it holds
   void touch_all(pic::ParticleContainer& con);

@@ -252,8 +252,8 @@ template<std::size_t D>
 bool
   Tile<D>::laid() const
 {
-  for(const auto& p: pops_) {
-    if(not p.laid()) { return false; }
+  for(auto s = 0uz; s < 3uz; ++s) {
+    if(not pops_[s].laid(this->particles(sp_[s]))) { return false; }
   }
   return true;
 }
@@ -303,7 +303,7 @@ void
   w.wait();
   // the tail keys of the grown slots
   for(auto s = 0uz; s < 3uz; ++s) {
-    if(sp_[s] == ptype) { pops_[s].follow_container(con); }
+    if(sp_[s] == ptype) { pops_[s].grown(con, static_cast<std::size_t>(old)); }
   }
 }
 

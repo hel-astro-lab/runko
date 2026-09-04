@@ -174,11 +174,15 @@ class qed_layout(unittest.TestCase):
         populate(tile, rng)
         tile.sort_particles()
         n0 = tile.totals("ph")["N"]
-        # particles appended outside the layout are inert until the next sort
+        # particles appended by pic's path stale the tables; the next sort keys them
         tile.inject(tile.species("ph"), [runko.pic.threeD.ParticleState(pos=(1.0, 2.0, 3.0), vel=(0.5, 0, 0), wgt=1e-3)
                                           for _ in range(50)])
         self.assertEqual(tile.totals("ph")["N"], n0 + 50)
+        # pic's append writes behind the last alive slot, into the last key's slack: the tables
+        # no longer describe the container, and the next step lays it out again
+        self.assertFalse(tile.laid())
         tile.sort_particles()
+        self.assertTrue(tile.laid())
         check_layout(self, tile, "ph", (0.0, 0.0, 0.0), (NC, NC, NC))
         self.assertEqual(tile.totals("ph")["N"], n0 + 50)
 

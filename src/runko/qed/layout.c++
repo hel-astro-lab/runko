@@ -224,9 +224,8 @@ void
 void
   Pop::touch_all(pic::ParticleContainer& con)
 {
-  if(not laid_) { return; }  // no tables to widen; the next layout builds them
+  if(not this->laid(con)) { return; }  // no tables to widen; the next layout builds them
   // slots appended since the layout are tail (key -1) and widen nothing
-  this->follow_container(con);
   const auto ids_mds = con.ids_mds();
   const auto vel_mds = con.vel_mds();
   const auto wgt_mds = con.wgt_mds();
@@ -279,14 +278,11 @@ LayoutView
 }
 
 void
-  Pop::follow_container(const pic::ParticleContainer& con)
+  Pop::grown(const pic::ParticleContainer& con, const std::size_t old)
 {
-  // slots grown onto the container since the layout are tail, key -1; a container that
-  // shrank was truncated behind the layout's back (pic's append drops the trailing dead
-  // slots, i.e. the last key's slack): the tables no longer describe it
-  const auto n = con.size();
-  if(n < skey_.size()) { laid_ = false; }
-  if(skey_.size() < n) { skey_.resize(n, std::int32_t { -1 }); }
+  // a growth from any other size than the tables' means they were stale already
+  if(old != skey_.size()) { laid_ = false; }
+  if(laid_) { skey_.resize(con.size(), std::int32_t { -1 }); }
 }
 
 Pop::Totals
@@ -323,9 +319,9 @@ Pop::Totals
 std::vector<std::int32_t>
   Pop::get_slot_keys(const pic::ParticleContainer& con)
 {
-  this->follow_container(con);
   const auto n       = con.size();
   const auto ids_mds = con.ids_mds();
+  if(not this->laid(con)) { return std::vector<std::int32_t>(con.number_alive(), -1); }  // no keys
   // compact the keys of the alive slots on the device, then copy the short list to the host
   auto out           = thrust::device_vector<std::int32_t>(n);
   const auto w       = tyvi::mdgrid_work {};

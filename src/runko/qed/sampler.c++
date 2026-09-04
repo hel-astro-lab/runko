@@ -201,7 +201,6 @@ PView
 PView
   make_view(pic::ParticleContainer& con, Pop& pop)
 {
-  pop.follow_container(con);
   auto v = make_view(con);
   v.lay  = pop.view();
   return v;
@@ -460,7 +459,7 @@ void
   Sampler::lay_if_needed(TileView& t, const bool epoch)
 {
   auto need = epoch;
-  for(auto s = 0uz; s < 3uz; ++s) { need = need or not t.pop[s]->laid(); }
+  for(auto s = 0uz; s < 3uz; ++s) { need = need or not t.pop[s]->laid(*t.con[s]); }
   if(need) { this->layout(t); }
 }
 
@@ -1115,7 +1114,7 @@ void
     if(tot[s] > 0) {
       // grow once by the exact copy total; the layout follows with tail keys
       c.t->con[s]->grow(tot[s]);
-      c.t->pop[s]->follow_container(*c.t->con[s]);
+      c.t->pop[s]->grown(*c.t->con[s], static_cast<std::size_t>(tail_base[s]));
     }
   }
   c.refresh_all();   // the containers were resized
