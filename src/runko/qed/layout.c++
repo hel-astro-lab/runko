@@ -188,6 +188,8 @@ void
     slots_p[ord_p[j]]  = b_p[k] + (j - starts[k]);
   });
   // scatter the container into the padded layout; every other slot becomes dead slack
+  // (the wait: place() reads slots_ on its own streams, unordered against w)
+  w.wait();
   con.place(slots_, static_cast<std::size_t>(total));
 
   // ---- key of every slot, and the bounds of every key from what it holds
