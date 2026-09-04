@@ -98,6 +98,9 @@ Tile<D>::Tile(
   par.acc_syn    = conf.get<double>("qed_acc_syn").value_or(par.acc_syn);
   par.kappa      = conf.get<double>("qed_kappa_acc").value_or(par.kappa);
   par.seed       = static_cast<std::uint64_t>(conf.get<std::ptrdiff_t>("qed_seed").value_or(1));
+  // every tile draws its own streams: the seed folded with the grid index, so that no two tiles
+  // use one uniform for the same slot or lane (the streams are keyed by seed, step and lane only)
+  for(const auto i: tile_grid_idx) { par.seed = runko::mix64(par.seed ^ static_cast<std::uint64_t>(i)); }
   if(par.nbin < 1 or par.ncell_edge < 1 or par.nsort < 1 or par.smin < 1) {
     throw std::runtime_error { "qed::Tile: nbin, n_reaction_cells, nsort and smin must be >= 1." };
   }

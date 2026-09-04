@@ -14,9 +14,9 @@ SMIN = 4
 WL = 1e-3
 
 
-def make_tile(positron_first=False, proton=False, bad_mass=None):
+def make_tile(positron_first=False, proton=False, bad_mass=None, idx=(0, 0, 0)):
     config = runko.Configuration(None)
-    config.n_tiles = [1, 1, 1]
+    config.n_tiles = [2, 1, 1]
     config.n_cells_per_tile = [NC, NC, NC]
     config.cfl = CFL
     config.field_propagator = "fdtd2"
@@ -45,7 +45,7 @@ def make_tile(positron_first=False, proton=False, bad_mass=None):
     config.qed_slack = SLACK
     config.qed_smin = SMIN
     config.qed_seed = 3
-    tile = runko.qed.threeD.Tile((0, 0, 0), config)
+    tile = runko.qed.threeD.Tile(idx, config)
     zero = lambda x, y, z: (0, 0, 0)
     tile.set_EBJ(zero, zero, zero)
     return config, tile
@@ -242,6 +242,22 @@ class qed_layout(unittest.TestCase):
         self.assertEqual(tiles[(0, 0, 0)].totals("ph")["N"], n_stay)
         t1.sort_particles()
         check_layout(self, t1, "ph", (NC, 0.0, 0.0), (2 * NC, NC, NC))
+
+    def test_tiles_draw_their_own_streams(self):
+        """two tiles of one seed with the same population must not make the same random decisions:
+        the layout's photon bit is drawn per pre-layout slot, which the injection order fixes alike
+        in both tiles, so the bits agree only where the streams do"""
+        bits = []
+        for idx in ((0, 0, 0), (1, 0, 0)):
+            config, tile = make_tile(idx=idx)
+            populate(tile, np.random.default_rng(12))
+            tile.sort_particles()
+            ordinal = np.asarray(tile.get_ids(tile.species("ph"))) & ((1 << 40) - 1)
+            bits.append(dict(zip(ordinal, np.asarray(tile.get_slot_keys("ph")) % 2)))
+        common = sorted(set(bits[0]) & set(bits[1]))
+        self.assertEqual(len(common), 3000)
+        same = np.mean([bits[0][o] == bits[1][o] for o in common])
+        self.assertLess(same, 0.6, f"independent bits agree on half, these on {same:.3f}")
 
     def test_empty_species(self):
         config, tile = make_tile()
