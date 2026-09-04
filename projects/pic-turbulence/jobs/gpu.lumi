@@ -1,0 +1,39 @@
+#!/bin/bash -l
+#SBATCH --account=project_462001358   # billing account
+#SBATCH --output=%J.out               # <slurm job id>.out
+#SBATCH --error=%J.err                # <slurm job id.err
+#SBATCH --partition=standard-g        # gpu partition
+#SBATCH --job-name=driven        
+#SBATCH --nodes=1                     # increase to get more gpus
+#SBATCH --ntasks-per-node=8           # 8 GCD per node
+#SBATCH --gpus-per-node=8             # same
+#SBATCH --cpus-per-task=6             # available cpus, keep fixed
+#SBATCH --mem-per-cpu=8GB             # max host cpu memory
+#SBATCH --time=0-03:00:00             # Run time (d-hh:mm:ss)
+
+# Load correct modules and venv
+source /pfs/lustrep3/scratch/project_462001358/$USER/runko-modules-g.sh
+source /pfs/lustrep3/scratch/project_462001358/$USER/venvs/runko-g/bin/activate
+
+cd $RUNKODIR/projects/pic-turbulence/
+
+cat << EOF > select_gpu
+#!/bin/bash
+export ROCR_VISIBLE_DEVICES=\$SLURM_LOCALID
+
+exec \$*
+EOF
+
+chmod +x ./select_gpu
+
+CPU_BIND="mask_cpu:7e000000000000,7e00000000000000"
+CPU_BIND="${CPU_BIND},7e0000,7e000000"
+CPU_BIND="${CPU_BIND},7e,7e00"
+CPU_BIND="${CPU_BIND},7e00000000,7e0000000000"
+
+export OMP_NUM_THREADS=6
+export MPICH_GPU_SUPPORT_ENABLED=1
+
+srun --cpu-bind=${CPU_BIND} ./select_gpu python pic.py --conf turb_driven.ini
+
+rm -f ./select_gpu
