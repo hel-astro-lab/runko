@@ -214,12 +214,12 @@ void
   emin_.assign(nk, inf);
   emax_.assign(nk, 0.0f);
   laid_ = true;  // the tables are valid for the current container
-  w.wait();      // touch_all reads skey_ on its own stream: the writers must be done
-  this->touch_all(con);
+  this->touch_all(con, w);   // behind the key writers on the same queue
+  w.wait();
 }
 
 void
-  Pop::touch_all(pic::ParticleContainer& con)
+  Pop::touch_all(pic::ParticleContainer& con, const tyvi::mdgrid_work& w)
 {
   if(not this->laid(con)) { return; }  // no tables to widen; the next layout builds them
   // slots appended since the layout are tail (key -1) and widen nothing
@@ -232,20 +232,16 @@ void
   const auto m        = mass_;
   const auto v        = this->view();
   // one lane per slot: a live LP with a key widens the weight and energy bounds of that key
-  tyvi::mdgrid_work {}
-    .for_each_index(
-      ids_mds,
-      [=](const auto idx) {
-        if(ids_mds[idx][] == runko::dead_prtc_id) { return; }
-        const auto k = v.skey[idx[0]];
-        if(k < 0) { return; }  // tail slot: no key yet
-        const auto e  = energy_of(m, vel_mds[idx][0], vel_mds[idx][1], vel_mds[idx][2]);
-        const auto wg = weighted ? wgt_mds[idx][] : w0;  // its weight
-        sstd::atomic_max(&v.wmax[k], wg);
-        sstd::atomic_max(&v.emax[k], e);
-        sstd::atomic_min(&v.emin[k], e);
-      })
-    .wait();
+  w.for_each_index(ids_mds, [=](const auto idx) {
+    if(ids_mds[idx][] == runko::dead_prtc_id) { return; }
+    const auto k = v.skey[idx[0]];
+    if(k < 0) { return; }  // tail slot: no key yet
+    const auto e  = energy_of(m, vel_mds[idx][0], vel_mds[idx][1], vel_mds[idx][2]);
+    const auto wg = weighted ? wgt_mds[idx][] : w0;  // its weight
+    sstd::atomic_max(&v.wmax[k], wg);
+    sstd::atomic_max(&v.emax[k], e);
+    sstd::atomic_min(&v.emin[k], e);
+  });
 }
 
 LayoutView

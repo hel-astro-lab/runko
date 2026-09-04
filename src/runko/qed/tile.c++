@@ -379,8 +379,8 @@ void
     if(ids_mds[i][] == runko::dead_prtc_id) { return; }
     for(auto q = 0uz; q < 3uz; ++q) { vel_mds[i][q] = dp[3 * rk[i] + q]; }
   });
+  pop(s).touch_all(con, w);  // the new energies may lie outside the bounds of their keys
   w.wait();
-  pop(s).touch_all(con);  // the new energies may lie outside the bounds of their keys
 }
 
 template<std::size_t D>

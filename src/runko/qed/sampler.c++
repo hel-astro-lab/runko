@@ -470,7 +470,9 @@ void
   if(not epoch) {
     // whatever moved the particles since the last step (the PIC push) did not widen the key
     // bounds; one sweep keeps every envelope a majorant (a no-op when nothing moved untouched)
-    for(auto s = 0uz; s < 3uz; ++s) { t.pop[s]->touch_all(*t.con[s]); }
+    const auto w = tyvi::mdgrid_work {};
+    for(auto s = 0uz; s < 3uz; ++s) { t.pop[s]->touch_all(*t.con[s], w); }
+    w.wait();
   }
 
   // ---- the context of the step and its slot/live statistics

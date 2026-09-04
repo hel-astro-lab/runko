@@ -13,6 +13,7 @@
 #include "runko/pic/particle.h"
 #include "runko/tools/math.h"
 #include "thrust/device_vector.h"
+#include "tyvi/mdgrid.h"
 
 #include <array>
 #include <cstdint>
@@ -140,8 +141,9 @@ public:
   /// the container grew from `old` slots (products placed, arrivals): the new slots are tail (-1)
   void grown(const pic::ParticleContainer& con, std::size_t old);
 
-  /// widen the bounds of every key by every live LP it holds
-  void touch_all(pic::ParticleContainer& con);
+  /// widen the bounds of every key by every live LP it holds, on the caller's queue (the
+  /// caller waits)
+  void touch_all(pic::ParticleContainer& con, const tyvi::mdgrid_work& w);
 
   /// number of live LPs and their summed weight, energy and momentum
   struct Totals {
