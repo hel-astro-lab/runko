@@ -185,14 +185,28 @@ constexpr double
 /// tail is thinner than the clip the inversion applies (the channel is closed for that lepton).
 [[nodiscard]]
 constexpr double
-  frac(const double chi_e, const double r_min)
+  frac(const Shape& s, const double r_min)
 {
-  const auto f = 1.0 - P(chi_e, r_min);
+  const auto f = 1.0 - P(s, r_min);
   return f >= FMIN ? f : 0.0;
 }
+[[nodiscard]]
+constexpr double
+  frac(const double chi_e, const double r_min)
+{
+  return frac(shape(chi_e), r_min);
+}
 
-/// lepton u, field b_perp -> the one-body rate function (chi_e/gamma) T_S(chi_e), counting
-/// only the photons above the floor x_min.
+/// lepton of Lorentz factor gam at chi_e = gam b_perp, its shape s -> the one-body rate function
+/// (chi_e/gamma) T_S(chi_e), counting only the photons above the floor x_min.
+[[nodiscard]]
+constexpr double
+  rate(const Shape& s, const double chi_e, const double gam, const double x_min, const bool kinetic)
+{
+  if(gam < GMIN) { return 0.0; }
+  return (chi_e / gam) * T(chi_e) * frac(s, r_floor(x_min, gam, kinetic));
+}
+/// lepton u, field b_perp -> the same, the shape computed here
 [[nodiscard]]
 constexpr double
   rate(const Vec3& u, const double b_perp, const double x_min, const bool kinetic)
@@ -200,7 +214,7 @@ constexpr double
   const auto gam = sstd::sqrt(1.0 + toolbox::dot(u, u));
   if(gam < GMIN) { return 0.0; }
   const auto chi_e = gam * b_perp;
-  return (chi_e / gam) * T(chi_e) * frac(chi_e, r_floor(x_min, gam, kinetic));
+  return rate(shape(chi_e), chi_e, gam, x_min, kinetic);
 }
 
 /// Quantum correction of the radiated power, falling from g = 1 in the classical limit.
@@ -250,10 +264,16 @@ constexpr double
 /// Mean energy of a drawn photon above the floor: the scale of the multiplicity of a merged emission.
 [[nodiscard]]
 constexpr double
-  xmean(const double chi_e, const double gam, const bool kinetic, const double x_min)
+  xmean(const Shape& s, const double gam, const bool kinetic, const double x_min)
 {
   const auto scale = kinetic ? gam - 1.0 : gam;
-  return scale * rmean(chi_e, r_floor(x_min, gam, kinetic));
+  return scale * rmean(s, r_floor(x_min, gam, kinetic));
+}
+[[nodiscard]]
+constexpr double
+  xmean(const double chi_e, const double gam, const bool kinetic, const double x_min)
+{
+  return xmean(shape(chi_e), gam, kinetic, x_min);
 }
 
 struct [[nodiscard]] Products {
@@ -261,10 +281,11 @@ struct [[nodiscard]] Products {
   Vec3 u1;  // recoiled lepton
 };
 
-/// lepton u, field b_perp -> the emitted photon (above the floor x_min) and the recoiled lepton.
+/// lepton u at chi_e with its shape s -> the emitted photon (above the floor x_min) and the
+/// recoiled lepton.
 [[nodiscard]]
 constexpr Products
-  sample(const Vec3& u, const double b_perp, runko::Rng& rng, const bool kinetic, const double x_min)
+  sample(const Shape& s, const double chi_e, const Vec3& u, runko::Rng& rng, const bool kinetic, const double x_min)
 {
   // Collinear emission: the photon leaves along the lepton momentum and the lepton keeps its
   // direction while its energy drops by the photon energy, rescaled on the mass shell -- the
@@ -273,8 +294,6 @@ constexpr Products
   const auto gam   = sstd::sqrt(1.0 + toolbox::dot(u, u));  // Lorentz factor of the emitter
   const auto us    = sstd::sqrt(sstd::max(gam * gam - 1.0, TINY));  // its momentum, to be rescaled
   const auto om    = u / us;                       // emission direction, along the momentum
-  const auto chi_e = gam * b_perp;
-  const auto s     = shape(chi_e);
   // cumulative at the floor, 0 without one
   const auto P0    = P(s, r_floor(x_min, gam, kinetic));
   // fraction drawn above the floor
@@ -282,6 +301,14 @@ constexpr Products
   const auto x     = (kinetic ? gam - 1.0 : gam) * r;  // photon energy
   const auto gam1  = sstd::max(gam - x, 1.0);      // lepton energy after the emission
   return Products { x * om, om * sstd::sqrt(sstd::max(gam1 * gam1 - 1.0, 0.0)) };
+}
+/// lepton u, field b_perp -> the same, the shape computed here
+[[nodiscard]]
+constexpr Products
+  sample(const Vec3& u, const double b_perp, runko::Rng& rng, const bool kinetic, const double x_min)
+{
+  const auto chi_e = sstd::sqrt(1.0 + toolbox::dot(u, u)) * b_perp;
+  return sample(shape(chi_e), chi_e, u, rng, kinetic, x_min);
 }
 
 }  // namespace qed::syn

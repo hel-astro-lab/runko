@@ -1242,10 +1242,13 @@ void
       auto rngC     = runko::Rng { keyC, i };
       const auto u  = v.u(i);
       const auto gam = sstd::sqrt(1.0 + toolbox::dot(u, u));
-      const auto b   = fv.b_eff(v.pos[i][0], v.pos[i][1], v.pos[i][2], u / gam);   // the lepton's field
-      const auto lam = syn::rate(u, b, x_min, false) / N1;   // emissions per step above the floor
+      if(gam < syn::GMIN) { return; }                          // below the channel's threshold
+      const auto b     = fv.b_eff(v.pos[i][0], v.pos[i][1], v.pos[i][2], u / gam);   // the lepton's field
+      const auto chi_e = gam * b;
+      const auto s     = syn::shape(chi_e);                    // once: the rate, the mean and the sampler read it
+      const auto lam   = syn::rate(s, chi_e, gam, x_min, false) / N1;   // emissions per step above the floor
       if(lam <= 0.0) { return; }
-      const auto xm  = syn::xmean(gam * b, gam, false, x_min);   // mean photon energy above the floor
+      const auto xm    = syn::xmean(s, gam, false, x_min);     // mean photon energy above the floor
       const auto z   = sstd::max(rngA.uniform(), 1e-300);
       const auto slow = lam <= 1.0;                              // resolved: below one emission per step
       const auto f    = slow ? facc_syn(gam, xm, acc_syn, kappa) : 1.0;   // emissions merged into one LP
@@ -1262,7 +1265,7 @@ void
         return;
       }
       const auto mult = slow ? 1.0 : dgu / sstd::max(xm, 1e-300);   // emissions the LP stands for
-      const auto P    = syn::sample(u, b, rngC, false, x_min);      // the photon, from the pre-cooling state
+      const auto P    = syn::sample(s, chi_e, u, rngC, false, x_min);   // the photon, from the pre-cooling state
       const auto x    = toolbox::norm(P.k);
       // a resolved parent gives up exactly what its photon carries, clipped at the mass shell; an
       // unresolved one has already cooled, and its LP carries the merged loss of f steps
