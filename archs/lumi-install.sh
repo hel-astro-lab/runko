@@ -1,120 +1,177 @@
 #!/usr/bin/env bash
 
-# Runko installation script for on the LUMI supercomputer.
-# Comment out unnecessary sections as you see fit.
+# Runko installation script for LUMI. Automates runko_lumi_v4.md.
+#
+# Usage:  ./archs/lumi-install.sh gpu
+#         ./archs/lumi-install.sh cpu
+#
+# Run each from a fresh login shell: the two module stacks conflict.
+# Both backends compile on the login node; tests need an allocation.
+
+#--------------------------------------------------
+# Settings
+
+LUMI_PROJECT="project_462001358"
+SCRATCH_ROOT="/pfs/lustrep3/scratch/${LUMI_PROJECT}/${USER}"
+
+#--------------------------------------------------
+
+set -e
+
+usage() {
+    echo "usage: $0 {gpu|cpu}" >&2
+}
+
+BACKEND="${1:-}"
+case "$BACKEND" in
+    gpu) PRESET="lumi-gpu"; VENV_NAME="runko-g"; MODULES="runko-modules-g.sh" ;;
+    cpu) PRESET="lumi-cpu"; VENV_NAME="runko-c"; MODULES="runko-modules-c.sh" ;;
+    *)   usage; exit 1 ;;
+esac
+
+# The clone this script lives in; build dir name matches the preset name.
+RUNKO_PATH=$(cd "$(dirname "$0")/.." && pwd)
+VENV="$SCRATCH_ROOT/venvs/$VENV_NAME"
+BUILD_DIR="$RUNKO_PATH/build/$PRESET"
+ROCTHRUST_PREFIX="$SCRATCH_ROOT/rocm-libraries/projects/rocthrust/rocthrust-install"
+
+if [ "$RUNKO_PATH" != "$SCRATCH_ROOT/runko" ]; then
+    echo "warning: repo is $RUNKO_PATH, not $SCRATCH_ROOT/runko" >&2
+fi
 
 set -v
 
-# 1. Change current directory to the runko repository root
-cd "$(dirname "$0")"
-cd ../
+#--------------------------------------------------
+# Submodules
 
-RUNKO_PATH=$(pwd)
+git -C "$RUNKO_PATH" submodule update --init --recursive
 
-# 2. Initialize git submodules and download rocThrust headers.
-# rocThrust is needed for both GPU and CPU backends (tyvi uses thrust API).
-# GPU builds find rocthrust via the rocm module; CPU builds use a minimal
-# cmake config (cmake/rocthrust-cpu/) that points to these downloaded headers.
-git submodule update --init --recursive
+#--------------------------------------------------
+# Module stacks
 
-ROCM_LIBS_DIR="$RUNKO_PATH/external/tyvi/rocm-libraries"
-if [ ! -d "$ROCM_LIBS_DIR/projects/rocthrust/thrust" ]; then
-    cd "$RUNKO_PATH/external/tyvi"
-    git clone --no-checkout --depth=1 --filter=tree:0 https://github.com/ROCm/rocm-libraries.git
-    cd rocm-libraries
-    git sparse-checkout init --cone
-    git sparse-checkout set projects/rocthrust
-    git checkout develop
-    cd "$RUNKO_PATH"
+mkdir -p "$SCRATCH_ROOT/venvs"
+
+cat > "$SCRATCH_ROOT/runko-modules-g.sh" << 'EOF'
+module load LUMI/25.09
+module load partition/G
+module load PrgEnv-cray
+module load rocm/6.4.4
+module load craype-accel-amd-gfx90a
+module load cray-mpich/9.0.1
+module load craype-network-ofi
+module load buildtools
+module load cray-python
+module load lumi-CrayPath
+EOF
+
+cat > "$SCRATCH_ROOT/runko-modules-c.sh" << 'EOF'
+module load LUMI/25.09
+module load partition/C
+module load PrgEnv-cray
+module load cray-mpich/9.0.1
+module load craype-network-ofi
+module load buildtools
+module load cray-python
+module load lumi-CrayPath
+EOF
+
+# Lmod returns nonzero in ordinary situations.
+set +e
+source "$SCRATCH_ROOT/$MODULES"
+set -e
+
+#--------------------------------------------------
+# Virtual environment
+
+if [ ! -d "$VENV" ]; then
+    python -m venv "$VENV"
 fi
 
-# 3. Load standard prerequisite modules for runko:
-module load LUMI
-module load partition/G
-module load PrgEnv-cray
-module load rocm
-module load craype-accel-amd-gfx90a
-module load cray-mpich craype-network-ofi
-module load buildtools
+# RUNKODIR and SKBUILD_BUILD_DIR give each backend its own build directory.
+if ! grep -q "runko $BACKEND backend" "$VENV/bin/activate"; then
+    cat >> "$VENV/bin/activate" << EOF
 
+# runko $BACKEND backend
+export RUNKODIR=$RUNKO_PATH
+export SKBUILD_BUILD_DIR=\$RUNKODIR/build/$PRESET
+EOF
+    if [ "$BACKEND" = "cpu" ]; then
+        echo "export ROCTHRUST_INSTALL_PREFIX=$ROCTHRUST_PREFIX" >> "$VENV/bin/activate"
+    fi
+fi
 
-
-# 4. Create a Python virtual environment specially for runko,
-#    located within the runko repository:
-module load cray-python
-python -m venv runko-venv
-
-# 5. Load this runko virtual environment:
-source runko-venv/bin/activate
-
-# 6. Update the PYTHONPATH environment variable with required runko
-#    and corgi-related paths in order to make our venv runko-aware::
-P1="$RUNKO_PATH/"
-P2="$RUNKO_PATH/external/corgi/lib"
-export PYTHONPATH="$PYTHONPATH:$P1:$P2"
-
-# 7. Install necessary Python dependencies
-pip3 install scipy matplotlib numpy
-
-# 8. Build mpi4py against Cray MPICH (PrgEnv-cray).
-# --force-reinstall ensures the venv gets its own copy instead of using the
-# system cray-python mpi4py, which is built against GNU MPICH.
-MPI4PY_BUILD_MPICC="cc -shared" pip install --force-reinstall --no-cache-dir --no-binary=mpi4py mpi4py
-
-# 9. Build runko (on login node; no GPU needed for compilation):
-cmake --preset lumi-gpu-release
-cmake --build lumi-gpu-release -j18
-
-# 10. Patch the activate script with module loads, PYTHONPATH, and GTL preload
-#     so that "source runko-venv/bin/activate" sets up the full environment:
-
-# 11. Finally, we create a handy file which loads the runko virtual environment and
-# necessary modules whenever called with "source runko-venv/bin/activate":
-cat >> runko-venv/bin/activate << EOL
-# Tool to load runko modules
-# Usage: "source runko-venv/bin/activate"
-# Load standard prerequisite modules for runko:
-module load LUMI
-module load partition/G
-module load PrgEnv-cray
-module load rocm
-module load craype-accel-amd-gfx90a
-module load cray-mpich craype-network-ofi
-module load buildtools
-
-# module load cray-python # not necessary as we are using a python virtual environment already
-
-# GPU-aware MPI: preload GTL so it is available before mpi4py calls MPI_Init
-export LD_PRELOAD=\${CRAY_MPICH_ROOTDIR}/gtl/lib/libmpi_gtl_hsa.so
-
-export PYTHONPATH="\$PYTHONPATH:${P1}:${P2}"
-
-EOL
+source "$VENV/bin/activate"
 
 #--------------------------------------------------
-# 12. Building the CPU version (optional).
-#
-# The activate script loads craype-accel-amd-gfx90a and rocm for GPU builds.
-# For CPU builds, these must be unloaded first — otherwise the Cray CC wrapper
-# compiles everything as HIP/GPU code.
-#
-#   source runko-venv/bin/activate
-#   module unload craype-accel-amd-gfx90a rocm
-#   cmake --preset lumi-cpu-release
-#   cmake --build lumi-cpu-release -j18
-#
+# Dependencies
+
+pip install --upgrade pip
+
+# Link mpi4py against Cray MPICH; the PyPI wheel fails at MPI_Init.
+MPI4PY_BUILD_MPICC=cc python -m pip install --no-cache-dir --no-binary=mpi4py mpi4py --force-reinstall
+
+pip install pybind11 scikit-build-core numpy scipy matplotlib
 
 #--------------------------------------------------
-# 13. Run tests on a GPU compute node.
-#
-# The login node has no GPUs, so tests must be run on a compute node.
-# Get an interactive GPU allocation:
-#
-#   srun --account=<account> --partition=standard-g --gpus-per-node=1 --ntasks=1 --cpus-per-task=6 --mem=8G --time=00:30:00 --pty bash
-#
-# Then activate the environment and run tests:
-#
-#   source runko-venv/bin/activate
-#   python -m unittest discover -s tests/ -v
-#   cd lumi-gpu-release && ctest -V
-#
+# rocThrust, CPU backend only
+
+if [ "$BACKEND" = "cpu" ]; then
+    if [ ! -d "$ROCTHRUST_PREFIX/lib/cmake/rocthrust" ]; then
+        cd "$SCRATCH_ROOT"
+        if [ ! -d rocm-libraries ]; then
+            git clone --no-checkout --depth=1 --filter=tree:0 https://github.com/ROCm/rocm-libraries.git
+            cd rocm-libraries
+            git sparse-checkout init --cone
+            git sparse-checkout set projects/rocthrust
+            git checkout develop
+            cd "$SCRATCH_ROOT"
+        fi
+        cd rocm-libraries/projects/rocthrust
+        cmake -Bbuild -DTHRUST_DEVICE_SYSTEM=CPP -DLINK_HIP_DEVICE_LIBS=OFF -DCMAKE_INSTALL_PREFIX="$ROCTHRUST_PREFIX" .
+        make -C build install
+        cd "$SCRATCH_ROOT"
+    fi
+
+    # The lumi-cpu preset resolves rocthrust_DIR from here.
+    if [ ! -d "$ROCTHRUST_PREFIX/lib/cmake/rocthrust" ]; then
+        set +v
+        echo "error: rocThrust config missing at $ROCTHRUST_PREFIX/lib/cmake/rocthrust" >&2
+        exit 1
+    fi
+fi
+
+#--------------------------------------------------
+# Build and install runko
+
+pip install --no-build-isolation --no-deps -v -e "$RUNKO_PATH" \
+    --config-settings=cmake.args=--preset="$PRESET"
+
+#--------------------------------------------------
+# Next steps
+
+set +v
+
+if [ "$BACKEND" = "gpu" ]; then
+    cat << EOF
+
+Installed into $VENV; objects in $BUILD_DIR
+
+Login nodes have no GPU. Test on a compute node:
+
+  srun --account=$LUMI_PROJECT --partition=dev-g -G2 -c 32 --mem=64GB --time=00:30:00 --nodes=1 --pty bash
+  source $VENV/bin/activate
+  python -c 'import runko'
+  ctest --test-dir $BUILD_DIR -j4
+EOF
+else
+    python -c 'import runko'
+    cat << EOF
+
+Installed into $VENV; objects in $BUILD_DIR
+
+Multi-rank tests need an allocation:
+
+  srun --account=$LUMI_PROJECT --partition=small --ntasks=4 --cpus-per-task=1 --mem=16G --time=00:30:00 --pty bash
+  ctest --test-dir $BUILD_DIR -j4
+EOF
+fi

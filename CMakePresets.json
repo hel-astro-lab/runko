@@ -37,7 +37,7 @@
                 "tyvi_ENABLE_CPPCHECK": "OFF",
                 "CMAKE_CXX_COMPILER": "mpic++",
                 "tyvi_BACKEND": "cpu",
-                "rocthrust_DIR": "$env{ROCTHRUST_INSTALL_PREFIX}/lib/cmake/rocthrust",
+                "rocthrust_DIR": "${sourceDir}/cmake/rocthrust-cpu",
                 "CMAKE_CXX_FLAGS": "-O3 -march=native -mllvm -force-vector-width=4 -Wno-error=unused-command-line-argument -Wno-error=pass-failed -Wno-error=sign-conversion"
             }
         },
@@ -69,7 +69,7 @@
                 "CMAKE_CXX_COMPILER": "CC",
                 "tyvi_BACKEND": "cpu",
                 "rocthrust_DIR": "$env{ROCTHRUST_INSTALL_PREFIX}/lib/cmake/rocthrust",
-                "CMAKE_CXX_FLAGS": "-O3"
+                "CMAKE_CXX_FLAGS": "-O3 -Wno-error=pass-failed"
             }
         },
         {
