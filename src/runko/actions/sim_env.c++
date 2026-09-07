@@ -3,6 +3,7 @@
 
 #include "runko/actions/emf.h"
 #include "runko/actions/env.h"
+#include "runko/comm/cartesian_grid.h"
 #include "runko/comm/emf.h"
 #include "runko/communication_common.h"
 #include "tyvi/actions_ast.h"
@@ -53,11 +54,29 @@ tyvi::actions::sexpr
            });
   };
 
+  auto get_sim = [](const ta::sexpr& args) {
+    const auto arg_list = std::get<ta::cons>(args);
+    const auto arg0     = std::get<ta::atom>(arg_list.car());
+    return ta::atom_cast<std::reference_wrapper<simulation_context>>(arg0).value();
+  };
+
+  auto temp0 = [=](const ta::sexpr& args) -> ta::sexpr_sender {
+    runko::set_cartesian_neighbors<3>(get_sim(args).get());
+    return te::just(ta::null);
+  };
+
+  auto temp1 = [=](const ta::sexpr& args) -> ta::sexpr_sender {
+    runko::set_cartesian_comm_infos<3>(get_sim(args).get());
+    return te::just(ta::null);
+  };
+
   // Due to hipcc compiler bug, env not be non-const.
   // It would be better to have it be non-const and be moved into
   // std::visit(ta::list_append, ...) but this workaround propably
   // is not a performance killer even if we have to do some extra copies.
   const auto env = ta::list(
+    ta::cons(runko::symbol::set_cartesian_neighbors, ta::procedure { temp0 }),
+    ta::cons(runko::symbol::set_cartesian_comm_infos, ta::procedure { temp1 }),
     ta::cons(runko::symbol::set_EBJ, ta::procedure { &runko::set_EBJ }),
     ta::cons(runko::symbol::current_context, std::ref(sim)),
     ta::cons(runko::symbol::comm_local, ta::procedure { comm_local }),

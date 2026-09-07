@@ -5,6 +5,7 @@
 
 #include "pybind11/functional.h"
 #include "pybind11/pybind11.h"
+#include "runko/comm/cartesian_grid.h"
 #include "runko/coords.h"
 #include "runko/emf/common.h"
 #include "runko/emf/yee_lattice.h"
