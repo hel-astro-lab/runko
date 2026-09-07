@@ -7,6 +7,7 @@
 #include "runko/actions/emf.h"
 #include "runko/actions/env.h"
 #include "runko/communication_common.h"
+#include "runko/comm/cartesian_grid.h"
 #include "runko/emf/yee_lattice.h"
 #include "runko/runtime.h"
 #include "runko/simulation_context.h"
@@ -126,9 +127,6 @@ void
       sim.tiles.emplace<emf::YeeLattice>(id, std::move(*yee));
     }
   }
-
-  runko::set_cartesian_neighbors<3>(sim);
-  runko::set_cartesian_comm_infos<3>(sim);
 }
 
 
@@ -255,6 +253,8 @@ void
     .value("current_context", runko::symbol::current_context)
     .value("set_EBJ", runko::symbol::set_EBJ)
     .value("batch_set_EBJ", runko::symbol::batch_set_EBJ)
+    .value("set_cartesian_neighbors", runko::symbol::set_cartesian_neighbors)
+    .value("set_cartesian_comm_infos", runko::symbol::set_cartesian_comm_infos)
     .export_values();
 
   m_sub.def("empty_context_eval", &::empty_context_eval);

@@ -17,7 +17,9 @@ enum class symbol : std::uint8_t {
   comm_external,
   current_context,
   set_EBJ,
-  batch_set_EBJ
+  batch_set_EBJ,
+  set_cartesian_neighbors,
+  set_cartesian_comm_infos
 };
 
 [[nodiscard]]
