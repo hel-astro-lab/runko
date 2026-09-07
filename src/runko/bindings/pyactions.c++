@@ -1,6 +1,7 @@
 #include "pybind11/numpy.h"
 #include "pybind11/pybind11.h"
 #include "pybind11/stl.h"
+#include "runko/actions/emf.h"
 #include "runko/actions/env.h"
 #include "runko/communication_common.h"
 #include "runko/emf/yee_lattice.h"
@@ -41,6 +42,8 @@ ta::sexpr
     return obj.cast<runko::symbol>();
   } else if(py::isinstance<runko::comm_mode>(obj)) {
     return obj.cast<runko::comm_mode>();
+  } else if(py::isinstance<py::function>(obj)) {
+    return obj.cast<py::function>();
   } else if(py::isinstance<py::tuple>(obj)) {
     const auto tup = obj.cast<py::tuple>();
 
@@ -84,60 +87,41 @@ void
       ta::eval<runko::symbol>(body, runko::build_sim_env(sim)));
   } catch(const std::exception &e) {
     std::println("Evaluation exception in simulation_context_eval: {}", e.what());
+    std::terminate();
   }
+}
+void
+  add_tile(runko::simulation_context &sim, const std::array<std::ptrdiff_t, 3> idx)
+{
+  const auto id = sim.tiles.create();
+  sim.tiles.emplace<runko::cartesian_index<3>>(id, idx);
+  sim.tiles.emplace<runko::local_tile_tag>(id);
 }
 
 void
-  add_init_tiles(runko::simulation_context &sim, const py::handle &tiles)
+  add_tiles(runko::simulation_context &sim, const py::handle &tiles)
 {
   for(const auto &tile: tiles) {
-    const auto idx =
-      tile.attr("_idx").cast<std::tuple<std::size_t, std::size_t, std::size_t>>();
+    const auto other_id =
+      tile.attr("tile_id").cast<runko::simulation_context::tile_id_type>();
+    const auto &other_sim =
+      tile.attr("sim_context").cast<const runko::simulation_context &>();
 
-    const auto id    = sim.tiles.create();
-    using index_type = runko::cartesian_index<3>;
-    sim.tiles
-      .emplace<index_type>(id, std::get<0>(idx), std::get<1>(idx), std::get<2>(idx));
+    using index_type   = runko::cartesian_index<3>;
+    const auto idx_ptr = other_sim.tiles.try_get<index_type>(other_id);
+    if(not idx_ptr) {
+      std::runtime_error {
+        "add_init_tiles: added tile does not have runko::cartesian_index<3>"
+      };
+    }
+
+    const auto id = sim.tiles.create();
+    sim.tiles.emplace<index_type>(id, *idx_ptr);
     sim.tiles.emplace<runko::local_tile_tag>(id);
 
-    const auto extents =
-      tile.attr("_extents_wout_halo").cast<std::vector<std::ptrdiff_t>>();
-    auto yee = emf::YeeLattice(emf::make_yee_ctor_args_from_vector(extents));
-
-    const auto Ex = tile.attr("_Ex").cast<py::array_t<double>>();
-    const auto Ey = tile.attr("_Ey").cast<py::array_t<double>>();
-    const auto Ez = tile.attr("_Ez").cast<py::array_t<double>>();
-    const auto Bx = tile.attr("_Bx").cast<py::array_t<double>>();
-    const auto By = tile.attr("_By").cast<py::array_t<double>>();
-    const auto Bz = tile.attr("_Bz").cast<py::array_t<double>>();
-    const auto Jx = tile.attr("_Jx").cast<py::array_t<double>>();
-    const auto Jy = tile.attr("_Jy").cast<py::array_t<double>>();
-    const auto Jz = tile.attr("_Jz").cast<py::array_t<double>>();
-
-    const auto Exv = Ex.template unchecked<3>();
-    const auto Eyv = Ey.template unchecked<3>();
-    const auto Ezv = Ez.template unchecked<3>();
-    const auto Bxv = Bx.template unchecked<3>();
-    const auto Byv = By.template unchecked<3>();
-    const auto Bzv = Bz.template unchecked<3>();
-    const auto Jxv = Jx.template unchecked<3>();
-    const auto Jyv = Jy.template unchecked<3>();
-    const auto Jzv = Jz.template unchecked<3>();
-
-    yee.set_EBJ([&](const std::size_t i, const std::size_t j, const std::size_t k) {
-      return emf::YeeLatticeFieldsAtPoint { .Ex = Exv(i, j, k),
-                                            .Ey = Eyv(i, j, k),
-                                            .Ez = Ezv(i, j, k),
-                                            .Bx = Bxv(i, j, k),
-                                            .By = Byv(i, j, k),
-                                            .Bz = Bzv(i, j, k),
-                                            .Jx = Jxv(i, j, k),
-                                            .Jy = Jyv(i, j, k),
-                                            .Jz = Jzv(i, j, k) };
-    });
-
-
-    sim.tiles.emplace<emf::YeeLattice>(id, std::move(yee));
+    if(const auto yee = other_sim.tiles.try_get<emf::YeeLattice>(other_id)) {
+      sim.tiles.emplace<emf::YeeLattice>(id, std::move(*yee));
+    }
   }
 
   runko::set_cartesian_neighbors<3>(sim);
@@ -199,6 +183,8 @@ auto
     runko::simulation_context &sim,
     const runko::simulation_context::tile_id_type id)
 {
+  runko::ensure_constructed_yee_lattices(sim);
+
   if(const auto p = sim.tiles.try_get<emf::YeeLattice>(id)) {
     return to_ndarrays(p->get_EBJ_with_halo());
   } else {
@@ -264,6 +250,8 @@ void
     .value("comm_local", runko::symbol::comm_local)
     .value("comm_external", runko::symbol::comm_external)
     .value("current_context", runko::symbol::current_context)
+    .value("set_EBJ", runko::symbol::set_EBJ)
+    .value("batch_set_EBJ", runko::symbol::batch_set_EBJ)
     .export_values();
 
   m_sub.def("empty_context_eval", &::empty_context_eval);
@@ -283,7 +271,8 @@ void
       [](runko::simulation_context &sim, const py::handle &body_py) {
         simulation_context_eval(body_py, sim);
       })
-    .def("add_init_tiles", &add_init_tiles)
+    .def("add_tile", &add_tile)
+    .def("add_tiles", &add_tiles)
     .def(
       "get_local_tile_ids",
       [](const runko::simulation_context &sim) {

@@ -11,6 +11,7 @@ set (TOOLS_FILES
      ./runko/runtime.c++
      ./runko/actions/env.c++
      ./runko/actions/sim_env.c++
+     ./runko/actions/emf.c++
      )
 
 set (EMF_FILES
