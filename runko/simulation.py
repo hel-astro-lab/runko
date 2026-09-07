@@ -47,7 +47,7 @@ class Simulation:
         self._runtime_instance = actions.RuntimeInstance()
         self._simulation_context = actions.SimulationContext(self._config)
 
-        self._simulation_context.add_init_tiles(initial_tiles)
+        self._simulation_context.add_tiles(initial_tiles)
 
         self._lap = 0
 

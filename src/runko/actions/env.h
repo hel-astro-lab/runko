@@ -15,7 +15,9 @@ enum class symbol : std::uint8_t {
   mt_showcase,
   comm_local,
   comm_external,
-  current_context
+  current_context,
+  set_EBJ,
+  batch_set_EBJ
 };
 
 [[nodiscard]]

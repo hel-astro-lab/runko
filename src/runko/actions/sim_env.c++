@@ -1,6 +1,7 @@
 // Copyright 2025 - 2026, Miro Palmu, Joonas Nättilä and the runko contributors
 // SPDX-License-Identifier: GPL-3.0-or-later
 
+#include "runko/actions/emf.h"
 #include "runko/actions/env.h"
 #include "runko/comm/emf.h"
 #include "runko/communication_common.h"
@@ -57,6 +58,7 @@ tyvi::actions::sexpr
   // std::visit(ta::list_append, ...) but this workaround propably
   // is not a performance killer even if we have to do some extra copies.
   const auto env = ta::list(
+    ta::cons(runko::symbol::set_EBJ, ta::procedure { &runko::set_EBJ }),
     ta::cons(runko::symbol::current_context, std::ref(sim)),
     ta::cons(runko::symbol::comm_local, ta::procedure { comm_local }),
     ta::cons(runko::symbol::comm_external, ta::procedure { comm_external }));
