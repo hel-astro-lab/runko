@@ -1,6 +1,7 @@
 // Copyright 2025 - 2026, Miro Palmu, Joonas Nättilä and the runko contributors
 // SPDX-License-Identifier: GPL-3.0-or-later
 
+#include "runko/actions/args.h"
 #include "runko/actions/emf.h"
 #include "runko/actions/env.h"
 #include "runko/comm/cartesian_grid.h"
@@ -25,49 +26,37 @@ tyvi::actions::sexpr
   namespace te = tyvi::exec;
 
   auto comm_local = [](const ta::sexpr& args) -> ta::sexpr_sender {
-    const auto [sim, mode] = args_to_sim_n_comm_mode(args);
-    return te::just() | te::continues_on(te::thread_pool_scheduler {}) |
-           te::let_value([sim, mode]() -> ta::sexpr_sender {
-             switch(mode) {
-               case comm_mode::emf_B:
-                 return comm_local_B(sim) | te::then([] { return ta::null; });
-               default:
-                 throw std::runtime_error { "comm_local: unregonized comm mode" };
-             }
+    return parse_atom_args<
+             std::reference_wrapper<simulation_context>,
+             runko::comm_mode>(args) |
+           te::let_value(
+             [](simulation_context& sim, const auto mode) -> ta::sexpr_sender {
+               switch(mode) {
+                 case comm_mode::emf_B:
+                   return comm_local_B(sim) | te::then([] { return ta::null; });
+                 default:
+                   throw std::runtime_error { "comm_local: unregonized comm mode" };
+               }
 
-             return te::just(ta::null);
-           });
+               return te::just(ta::null);
+             });
   };
 
   auto comm_external = [](const ta::sexpr& args) -> ta::sexpr_sender {
-    const auto [sim, mode] = args_to_sim_n_comm_mode(args);
-    return te::just() | te::continues_on(te::thread_pool_scheduler {}) |
-           te::let_value([sim, mode]() -> ta::sexpr_sender {
-             switch(mode) {
-               case comm_mode::emf_B:
-                 return comm_external_B(sim) | te::then([] { return ta::null; });
-               default:
-                 throw std::runtime_error { "comm_external: unregonized comm mode" };
-             }
+    return parse_atom_args<
+             std::reference_wrapper<simulation_context>,
+             runko::comm_mode>(args) |
+           te::let_value(
+             [](simulation_context& sim, const auto mode) -> ta::sexpr_sender {
+               switch(mode) {
+                 case comm_mode::emf_B:
+                   return comm_external_B(sim) | te::then([] { return ta::null; });
+                 default:
+                   throw std::runtime_error { "comm_external: unregonized comm mode" };
+               }
 
-             return te::just(ta::null);
-           });
-  };
-
-  auto get_sim = [](const ta::sexpr& args) {
-    const auto arg_list = std::get<ta::cons>(args);
-    const auto arg0     = std::get<ta::atom>(arg_list.car());
-    return ta::atom_cast<std::reference_wrapper<simulation_context>>(arg0).value();
-  };
-
-  auto temp0 = [=](const ta::sexpr& args) -> ta::sexpr_sender {
-    runko::set_cartesian_neighbors<3>(get_sim(args).get());
-    return te::just(ta::null);
-  };
-
-  auto temp1 = [=](const ta::sexpr& args) -> ta::sexpr_sender {
-    runko::set_cartesian_comm_infos<3>(get_sim(args).get());
-    return te::just(ta::null);
+               return te::just(ta::null);
+             });
   };
 
   // Due to hipcc compiler bug, env not be non-const.
@@ -75,8 +64,20 @@ tyvi::actions::sexpr
   // std::visit(ta::list_append, ...) but this workaround propably
   // is not a performance killer even if we have to do some extra copies.
   const auto env = ta::list(
-    ta::cons(runko::symbol::set_cartesian_neighbors, ta::procedure { temp0 }),
-    ta::cons(runko::symbol::set_cartesian_comm_infos, ta::procedure { temp1 }),
+    ta::cons(
+      runko::symbol::set_cartesian_neighbors,
+      ta::procedure { [](const ta::sexpr& args) -> ta::sexpr_sender {
+        return parse_atom_args<std::reference_wrapper<simulation_context>>(args) |
+               te::then(&runko::set_cartesian_neighbors<3>) |
+               te::then([] { return ta::null; });
+      } }),
+    ta::cons(
+      runko::symbol::set_cartesian_comm_infos,
+      ta::procedure { [](const ta::sexpr& args) -> ta::sexpr_sender {
+        return parse_atom_args<std::reference_wrapper<simulation_context>>(args) |
+               te::then(&runko::set_cartesian_comm_infos<3>) |
+               te::then([] { return ta::null; });
+      } }),
     ta::cons(runko::symbol::set_EBJ, ta::procedure { &runko::set_EBJ }),
     ta::cons(runko::symbol::current_context, std::ref(sim)),
     ta::cons(runko::symbol::comm_local, ta::procedure { comm_local }),
