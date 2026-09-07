@@ -248,6 +248,16 @@ constexpr VecD<T, D>
 }
 
 template<arithmetic T, std::size_t D>
+constexpr VecD<T, D>
+  operator*(const VecD<T, D>& v1, const VecD<T, D>& v2)
+{
+  VecD<T, D> ret {};
+  for(size_t i = 0; i < D; i++) ret(i) = v1(i) * v2(i);
+  return ret;
+}
+
+
+template<arithmetic T, std::size_t D>
 constexpr T
   dot(const VecD<T, D>& v1, const VecD<T, D>& v2)
 {
