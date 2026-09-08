@@ -12,8 +12,7 @@ import matplotlib
 import matplotlib.pyplot as plt
 from runko.postprocessing import read_config
 from runko.mpiio_reader import read_field
-from turb_utils import (guide_field, snapshot_files, set_plot_style,
-                        save_figure)
+from turb_utils import (guide_field, snapshot_files, set_plot_style, save_figure)
 
 
 default_values = { 'cmap':  "viridis", 'vmin':  -1.0, 'vmax':  +1.0, 'title': '', 'derived': False, }
@@ -53,20 +52,19 @@ def preset(var):
 
 def get_normalization(var, conf):
     """Code units per plot unit. Densities in n_0, fields in B_0, currents in q_e n_0 c^2."""
-    n0 = 2.0 * conf.ppc              # total number density per cell
-    qe = abs(conf.q0)
     B0 = guide_field(conf)
 
     if var in ('n0', 'n1'):
         return conf.ppc
     if var == 'ntot':
-        return n0
+        return 2.0 * conf.ppc
     if var in ('ex', 'ey', 'ez', 'bx', 'by', 'bz', 'bperp'):
         return B0
     if var in ('b2', 'e2'):
         return B0**2
-    return qe * n0 * conf.cfl**2     # jx jy jz jpar jperp j
-
+    if var in ('jx', 'jy', 'jz', 'jpar', 'jperp', 'j'):
+        return abs(conf.q0) * 2.0 * conf.ppc * conf.cfl**2
+    return # error
 
 def read_variable(path, var):
     """The (nz, ny, nx) cube of var, assembled from the raw fields when derived."""

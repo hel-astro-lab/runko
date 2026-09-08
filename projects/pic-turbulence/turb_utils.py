@@ -30,6 +30,11 @@ def guide_field(conf):
     return np.sqrt(conf.ppc * conf.cfl**2 * conf.sigma * numerical_mass(conf, 0))
 
 
+def current_unit(conf):
+    """Current of the whole plasma streaming at c, q_e n_0 c^2 in code units."""
+    return abs(conf.q0) * 2.0 * conf.ppc * conf.cfl**2
+
+
 def d_forward(f, axis):
     """f(n+1) - f(n) across a periodic box."""
     return np.roll(f, -1, axis=axis) - f
@@ -146,6 +151,7 @@ def set_plot_style():
     """Publication styling shared by every figure; see plotting conventions."""
     plt.rc('font', family='serif')
     plt.rc('text', usetex=True)
+    plt.rc('text.latex', preamble=r'\usepackage{amsmath}')  # \dfrac and friends
     plt.rc('xtick', top=True, direction='out', labelsize=7)
     plt.rc('ytick', right=True, direction='out', labelsize=7)
     plt.rc('axes', labelsize=8)
