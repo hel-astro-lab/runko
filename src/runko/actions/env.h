@@ -11,6 +11,7 @@ namespace runko {
 enum class symbol : std::uint8_t {
   print,
   println,
+  format,
   version,
   mt_showcase,
   comm_local,
