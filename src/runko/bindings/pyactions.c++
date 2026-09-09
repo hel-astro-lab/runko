@@ -246,6 +246,7 @@ void
   py::enum_<runko::symbol>(m_sub, "symbol")
     .value("print", runko::symbol::print)
     .value("println", runko::symbol::println)
+    .value("format", runko::symbol::format)
     .value("version", runko::symbol::version)
     .value("mt_showcase", runko::symbol::mt_showcase)
     .value("comm_local", runko::symbol::comm_local)

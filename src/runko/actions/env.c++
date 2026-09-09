@@ -3,7 +3,7 @@
 
 #include "runko/actions/env.h"
 
-#include "tyvi/actions_list.h"
+#include "tyvi/actions.h"
 #include "tyvi/execution.h"
 
 #include <print>
@@ -43,6 +43,15 @@ tyvi::actions::sexpr
            });
   };
 
+  auto format = [](const ta::sexpr &args) -> ta::sexpr_sender {
+    return te::just(args) | te::then([](auto &&x) -> ta::sexpr {
+             auto str = std::string {};
+             for(const auto &arg: ta::list_view(x)) { str += std::format("{} ", arg); }
+             str.pop_back();
+             return str;
+           });
+  };
+
   auto version = ta::atom(std::string { "runko v6.x" });
 
   auto mt_showcase = [](const ta::sexpr &args) -> ta::sexpr_sender {
@@ -68,6 +77,7 @@ tyvi::actions::sexpr
   return ta::list(
     ta::cons(symbol::print, ta::procedure { print }),
     ta::cons(symbol::println, ta::procedure { println }),
+    ta::cons(symbol::format, ta::procedure { format }),
     ta::cons(symbol::version, version),
     ta::cons(symbol::mt_showcase, ta::procedure { mt_showcase }));
 }

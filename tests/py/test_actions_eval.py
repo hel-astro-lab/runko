@@ -108,5 +108,19 @@ class actions_eval(unittest.TestCase):
         self.assertEqual(s, correct)
 
 
+    def test_formatting(self):
+        fd = os.memfd_create("test.txt")
+
+        with stdout_redirected(fd) as mem:
+            body = (ra.print, (ra.format, (ra.quote, ("foo", 42)), "bar"))
+            ra.empty_context_eval(body)
+
+        correct = "(foo . (42 . ())) bar"
+        s = os.pread(fd, len(correct) + 1, 0).decode("utf-8")
+        os.close(fd)
+        self.assertEqual(s, correct)
+
+
 if __name__ == "__main__":
+    runtime = ra.RuntimeInstance()
     unittest.main()
