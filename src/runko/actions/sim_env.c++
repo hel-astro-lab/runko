@@ -106,6 +106,44 @@ tyvi::actions::sexpr
                  });
       } }),
     ta::cons(
+      runko::symbol::batch_set_EBJ,
+      ta::procedure { [](const ta::sexpr& args) -> ta::sexpr_sender {
+        return parse_atom_args<
+                 std::reference_wrapper<runko::simulation_context>,
+                 py::function,
+                 py::function,
+                 py::function,
+                 py::function,
+                 py::function,
+                 py::function,
+                 py::function,
+                 py::function,
+                 py::function>(args) |
+               te::let_value([](
+                               const auto sim,
+                               const auto& Exh,
+                               const auto& Eyh,
+                               const auto& Ezh,
+                               const auto& Bxh,
+                               const auto& Byh,
+                               const auto& Bzh,
+                               const auto& Jxh,
+                               const auto& Jyh,
+                               const auto& Jzh) {
+                 return emf::batch_set_EBJ(
+                   sim,
+                   Exh.template cast<emf::batch_vector_field_function>(),
+                   Eyh.template cast<emf::batch_vector_field_function>(),
+                   Ezh.template cast<emf::batch_vector_field_function>(),
+                   Bxh.template cast<emf::batch_vector_field_function>(),
+                   Byh.template cast<emf::batch_vector_field_function>(),
+                   Bzh.template cast<emf::batch_vector_field_function>(),
+                   Jxh.template cast<emf::batch_vector_field_function>(),
+                   Jyh.template cast<emf::batch_vector_field_function>(),
+                   Jzh.template cast<emf::batch_vector_field_function>());
+               });
+      } }),
+    ta::cons(
       runko::symbol::add_current,
       ta::procedure { [](const ta::sexpr& args) -> ta::sexpr_sender {
         return parse_atom_args<std::reference_wrapper<runko::simulation_context>>(
