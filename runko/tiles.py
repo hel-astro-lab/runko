@@ -14,6 +14,10 @@ class ProxyTile:
         self._runtime = runtime
 
 
+    def get_EBJ(self):
+        return self.sim_context.get_EBJ(self.tile_id)
+
+
     def get_EBJ_with_halo(self):
         return self.sim_context.get_EBJ_with_halo(self.tile_id)
 

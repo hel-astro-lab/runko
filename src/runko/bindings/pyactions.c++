@@ -6,8 +6,8 @@
 #include "pybind11/stl.h"
 #include "runko/actions/emf.h"
 #include "runko/actions/env.h"
-#include "runko/communication_common.h"
 #include "runko/comm/cartesian_grid.h"
+#include "runko/communication_common.h"
 #include "runko/emf/yee_lattice.h"
 #include "runko/runtime.h"
 #include "runko/simulation_context.h"
@@ -180,6 +180,22 @@ auto
 }
 
 auto
+  get_EBJ(
+    runko::simulation_context &sim,
+    const runko::simulation_context::tile_id_type id)
+{
+  runko::ensure_constructed_yee_lattices(sim);
+
+  if(const auto p = sim.tiles.try_get<emf::YeeLattice>(id)) {
+    return to_ndarrays(p->get_EBJ());
+  } else {
+    throw std::runtime_error(
+      "internal logic error: Trying to invoke get_EBJ of a tile which do not have "
+      "YeeLattice.");
+  }
+}
+
+auto
   get_EBJ_with_halo(
     runko::simulation_context &sim,
     const runko::simulation_context::tile_id_type id)
@@ -190,7 +206,8 @@ auto
     return to_ndarrays(p->get_EBJ_with_halo());
   } else {
     throw std::runtime_error(
-      "Trying to invoke get_EBJ_with_halo of a tile which do not have YeeLattice.");
+      "internal logic error: Trying to invoke get_EBJ_with_halo of a tile which do not "
+      "have YeeLattice.");
   }
 }
 
@@ -287,6 +304,7 @@ void
         }
         return ids;
       })
+    .def("get_EBJ", &get_EBJ)
     .def("get_EBJ_with_halo", &get_EBJ_with_halo)
     .def("debug_cartesian_grid", &debug_cartesian_grid);
 }
