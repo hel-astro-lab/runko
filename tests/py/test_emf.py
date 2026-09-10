@@ -29,6 +29,7 @@ class emf(unittest.TestCase):
         with self.assertRaisesRegex(RuntimeError, regex):
             runko.emf.threeD.Tile(tile_grid_idx, config)
 
+
     def test_field_set_and_get_roundtrip(self):
 
         config = runko.Configuration(None)
@@ -409,4 +410,5 @@ class emf(unittest.TestCase):
 
 
 if __name__ == "__main__":
+    _ = runko.actions.RuntimeInstance()
     unittest.main()
