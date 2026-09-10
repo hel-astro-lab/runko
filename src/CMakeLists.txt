@@ -9,6 +9,7 @@ set (TOOLS_FILES
      ./runko/simulation_context.c++
      ./runko/communication_common.c++
      ./runko/runtime.c++
+     ./runko/coords.c++
      ./runko/actions/env.c++
      ./runko/actions/sim_env.c++
      ./runko/actions/emf.c++
