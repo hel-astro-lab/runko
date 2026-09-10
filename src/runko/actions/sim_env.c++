@@ -1,6 +1,7 @@
 // Copyright 2025 - 2026, Miro Palmu, Joonas Nättilä and the runko contributors
 // SPDX-License-Identifier: GPL-3.0-or-later
 
+#include "pybind11/functional.h"
 #include "runko/actions/args.h"
 #include "runko/actions/emf.h"
 #include "runko/actions/env.h"
@@ -18,6 +19,7 @@ namespace ta = tyvi::actions;
 namespace te = tyvi::exec;
 namespace rn = std::ranges;
 namespace rv = std::views;
+namespace py = pybind11;
 
 tyvi::actions::sexpr
   build_sim_env(simulation_context& sim)
@@ -78,7 +80,33 @@ tyvi::actions::sexpr
                te::then(&runko::set_cartesian_comm_infos<3>) |
                te::then([] { return ta::null; });
       } }),
-    ta::cons(runko::symbol::set_EBJ, ta::procedure { &runko::set_EBJ }),
+    ta::cons(
+      runko::symbol::ensure_constructed_yee_lattices,
+      ta::procedure { [](const ta::sexpr& args) -> ta::sexpr_sender {
+        return parse_atom_args<std::reference_wrapper<runko::simulation_context>>(
+                 args) |
+               te::then(&emf::ensure_constructed_yee_lattices) |
+               te::then([] { return ta::null; });
+      }
+
+      }),
+    ta::cons(
+      runko::symbol::set_EBJ,
+      ta::procedure { [](const ta::sexpr& args) -> ta::sexpr_sender {
+        return parse_atom_args<
+                 std::reference_wrapper<runko::simulation_context>,
+                 py::function,
+                 py::function,
+                 py::function>(args) |
+               te::let_value(
+                 [](const auto sim, const auto& Eh, const auto& Bh, const auto& Jh) {
+                   return emf::set_EBJ(
+                     sim,
+                     Eh.template cast<emf::vector_field_function>(),
+                     Bh.template cast<emf::vector_field_function>(),
+                     Jh.template cast<emf::vector_field_function>());
+                 });
+      } }),
     ta::cons(runko::symbol::current_context, std::ref(sim)),
     ta::cons(runko::symbol::comm_local, ta::procedure { comm_local }),
     ta::cons(runko::symbol::comm_external, ta::procedure { comm_external }));

@@ -12,18 +12,23 @@ class ProxyTile:
         self.tile_id = tile_id
         self.sim_context = sim_context
         self._runtime = runtime
+        self._ensure_yee = (actions.ensure_constructed_yee_lattices, actions.current_context)
 
 
     def get_EBJ(self):
+        self.sim_context.eval(self._ensure_yee)
         return self.sim_context.get_EBJ(self.tile_id)
 
 
     def get_EBJ_with_halo(self):
+        self.sim_context.eval(self._ensure_yee)
         return self.sim_context.get_EBJ_with_halo(self.tile_id)
 
 
     def set_EBJ(self, E, B, J):
-        self.sim_context.eval((actions.set_EBJ, actions.current_context, E, B, J))
+        self.sim_context.eval((actions.sequence,
+                               (actions.quote, self._ensure_yee),
+                               (actions.quote, (actions.set_EBJ, actions.current_context, E, B, J))))
 
 
 

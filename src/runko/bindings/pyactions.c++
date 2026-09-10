@@ -184,8 +184,6 @@ auto
     runko::simulation_context &sim,
     const runko::simulation_context::tile_id_type id)
 {
-  runko::ensure_constructed_yee_lattices(sim);
-
   if(const auto p = sim.tiles.try_get<emf::YeeLattice>(id)) {
     return to_ndarrays(p->get_EBJ());
   } else {
@@ -200,8 +198,6 @@ auto
     runko::simulation_context &sim,
     const runko::simulation_context::tile_id_type id)
 {
-  runko::ensure_constructed_yee_lattices(sim);
-
   if(const auto p = sim.tiles.try_get<emf::YeeLattice>(id)) {
     return to_ndarrays(p->get_EBJ_with_halo());
   } else {
@@ -269,6 +265,9 @@ void
     .value("comm_local", runko::symbol::comm_local)
     .value("comm_external", runko::symbol::comm_external)
     .value("current_context", runko::symbol::current_context)
+    .value(
+      "ensure_constructed_yee_lattices",
+      runko::symbol::ensure_constructed_yee_lattices)
     .value("set_EBJ", runko::symbol::set_EBJ)
     .value("batch_set_EBJ", runko::symbol::batch_set_EBJ)
     .value("set_cartesian_neighbors", runko::symbol::set_cartesian_neighbors)

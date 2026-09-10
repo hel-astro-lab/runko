@@ -18,6 +18,7 @@ enum class symbol : std::uint8_t {
   comm_local,
   comm_external,
   current_context,
+  ensure_constructed_yee_lattices,
   set_EBJ,
   batch_set_EBJ,
   set_cartesian_neighbors,

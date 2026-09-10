@@ -8,11 +8,19 @@
 
 #include <functional>
 
-namespace runko {
+namespace emf {
 
 /// Constructs YeeLattice to each local tile if it is not already constructed.
-void ensure_constructed_yee_lattices(std::reference_wrapper<simulation_context>);
+void ensure_constructed_yee_lattices(std::reference_wrapper<runko::simulation_context>);
 
-tyvi::actions::sexpr_sender set_EBJ(const tyvi::actions::sexpr&);
+using vector_field_function =
+  std::function<std::tuple<double, double, double>(double, double, double)>;
 
-}  // namespace runko
+/// Sets E, B and J for each local tile.
+tyvi::actions::sexpr_sender set_EBJ(
+  std::reference_wrapper<runko::simulation_context>,
+  vector_field_function E,
+  vector_field_function B,
+  vector_field_function J);
+
+}  // namespace emf
