@@ -1,6 +1,7 @@
 // Copyright 2026 - 2026, Miro Palmu, Joonas Nättilä and the runko contributors
 // SPDX-License-Identifier: GPL-3.0-or-later
 
+#include "pybind11/functional.h"
 #include "pybind11/numpy.h"
 #include "pybind11/pybind11.h"
 #include "pybind11/stl.h"
@@ -8,6 +9,7 @@
 #include "runko/actions/env.h"
 #include "runko/comm/cartesian_grid.h"
 #include "runko/communication_common.h"
+#include "runko/coords.h"
 #include "runko/emf/yee_lattice.h"
 #include "runko/runtime.h"
 #include "runko/simulation_context.h"
@@ -307,6 +309,20 @@ void
       })
     .def("get_EBJ", &get_EBJ)
     .def("get_EBJ_with_halo", &get_EBJ_with_halo)
+    .def(
+      "global_coordinate_map",
+      [](
+        runko::simulation_context &sim,
+        const runko::simulation_context::tile_id_type id) {
+        if(const auto p = sim.tiles.try_get<runko::cartesian_index<3>>(id)) {
+          return std::function<std::array<double, 3>(std::array<double, 3>)>(
+            [gc = runko::global_coordinates(sim, p->as<double>().data)](
+              const std::array<double, 3> &arr) { return gc(arr[0], arr[1], arr[2]); });
+        } else {
+          throw std::runtime_error(
+            "error in global_coordinate_map: tile does not have cartesian_index<3>");
+        }
+      })
     .def("debug_cartesian_grid", &debug_cartesian_grid);
 }
 }  // namespace actions

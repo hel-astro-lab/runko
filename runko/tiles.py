@@ -43,6 +43,8 @@ class ProxyTile:
                                (actions.quote, (actions.add_current, actions.current_context))))
 
 
+    def global_coordinate_map(self):
+        return self.sim_context.global_coordinate_map(self.tile_id)
 
 def make_independent_tile(idx, conf) -> ProxyTile:
     """
