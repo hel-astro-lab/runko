@@ -23,6 +23,11 @@ RuntimeInstance::RuntimeInstance()
   }();
 
   if(not this->impl_) {
+    if(weak_ptr.expired()) {
+      throw std::runtime_error(
+        "error: runko runtime can only be initialized and deinitialized once during "
+        "execution.");
+    }
     this->impl_ = std::shared_ptr<RuntimeInstance::impl> { weak_ptr };
   }
 }
