@@ -88,4 +88,17 @@ ta::sexpr_sender
          });
 }
 
+ta::sexpr_sender
+  add_current(const std::reference_wrapper<runko::simulation_context> sim)
+{
+  return te::just() | te::then([=] {
+           for(auto&& [id, yee]:
+               sim.get()
+                 .template view_tiles<emf::YeeLattice, runko::local_tile_tag>()) {
+             yee.add_current();
+           }
+           return ta::null;
+         });
+}
+
 }  // namespace emf

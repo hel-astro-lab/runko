@@ -23,4 +23,8 @@ tyvi::actions::sexpr_sender set_EBJ(
   vector_field_function B,
   vector_field_function J);
 
+/// E -= J for each local tile.
+tyvi::actions::sexpr_sender
+  add_current(std::reference_wrapper<runko::simulation_context>);
+
 }  // namespace emf
