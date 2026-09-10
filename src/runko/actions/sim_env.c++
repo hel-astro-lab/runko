@@ -87,9 +87,7 @@ tyvi::actions::sexpr
                  args) |
                te::then(&emf::ensure_constructed_yee_lattices) |
                te::then([] { return ta::null; });
-      }
-
-      }),
+      } }),
     ta::cons(
       runko::symbol::set_EBJ,
       ta::procedure { [](const ta::sexpr& args) -> ta::sexpr_sender {
@@ -106,6 +104,13 @@ tyvi::actions::sexpr
                      Bh.template cast<emf::vector_field_function>(),
                      Jh.template cast<emf::vector_field_function>());
                  });
+      } }),
+    ta::cons(
+      runko::symbol::add_current,
+      ta::procedure { [](const ta::sexpr& args) -> ta::sexpr_sender {
+        return parse_atom_args<std::reference_wrapper<runko::simulation_context>>(
+                 args) |
+               te::let_value(&emf::add_current);
       } }),
     ta::cons(runko::symbol::current_context, std::ref(sim)),
     ta::cons(runko::symbol::comm_local, ta::procedure { comm_local }),

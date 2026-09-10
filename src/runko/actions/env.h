@@ -21,6 +21,7 @@ enum class symbol : std::uint8_t {
   ensure_constructed_yee_lattices,
   set_EBJ,
   batch_set_EBJ,
+  add_current,
   set_cartesian_neighbors,
   set_cartesian_comm_infos
 };

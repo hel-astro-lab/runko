@@ -31,6 +31,12 @@ class ProxyTile:
                                (actions.quote, (actions.set_EBJ, actions.current_context, E, B, J))))
 
 
+    def add_current(self):
+        self.sim_context.eval((actions.sequence,
+                               (actions.quote, self._ensure_yee),
+                               (actions.quote, (actions.add_current, actions.current_context))))
+
+
 
 def make_independent_tile(idx, conf) -> ProxyTile:
     """

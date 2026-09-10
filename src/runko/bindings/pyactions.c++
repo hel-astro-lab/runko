@@ -270,6 +270,7 @@ void
       runko::symbol::ensure_constructed_yee_lattices)
     .value("set_EBJ", runko::symbol::set_EBJ)
     .value("batch_set_EBJ", runko::symbol::batch_set_EBJ)
+    .value("add_current", runko::symbol::add_current)
     .value("set_cartesian_neighbors", runko::symbol::set_cartesian_neighbors)
     .value("set_cartesian_comm_infos", runko::symbol::set_cartesian_comm_infos)
     .value("sequence", runko::symbol::sequence)
