@@ -54,6 +54,16 @@ tyvi::actions::sexpr
 
   auto version = ta::atom(std::string { "runko v6.x" });
 
+  auto sequence = [](const ta::sexpr &args, ta::procedure eval) -> ta::sexpr_sender {
+    return te::just(args) | te::then([eval = std::move(eval)](auto &&x) {
+             auto ret = ta::sexpr {};
+             for(const auto &x: ta::list_view(x)) {
+               ret = tyvi::this_thread::sync_wait(eval(x));
+             }
+             return ret;
+           });
+  };
+
   auto mt_showcase = [](const ta::sexpr &args) -> ta::sexpr_sender {
     const auto arg_list = std::get<ta::cons>(args);
     const auto arg0     = std::get<ta::atom>(arg_list.car());
@@ -79,6 +89,7 @@ tyvi::actions::sexpr
     ta::cons(symbol::println, ta::procedure { println }),
     ta::cons(symbol::format, ta::procedure { format }),
     ta::cons(symbol::version, version),
+    ta::cons(symbol::sequence, ta::procedure_with_eval { sequence }),
     ta::cons(symbol::mt_showcase, ta::procedure { mt_showcase }));
 }
 }  // namespace runko

@@ -48,8 +48,13 @@ class Simulation:
         self._simulation_context = actions.SimulationContext(self._config)
 
         self._simulation_context.add_tiles(initial_tiles)
-        self._simulation_context.eval((actions.set_cartesian_neighbors, actions.current_context))
-        self._simulation_context.eval((actions.set_cartesian_comm_infos, actions.current_context))
+
+        set_neighs = (actions.set_cartesian_neighbors, actions.current_context)
+        set_comm_infos = (actions.set_cartesian_comm_infos, actions.current_context)
+
+        self._simulation_context.eval((actions.sequence,
+                                       (actions.quote, set_neighs),
+                                       (actions.quote, set_comm_infos)))
 
         self._lap = 0
 
