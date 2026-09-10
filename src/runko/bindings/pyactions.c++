@@ -310,6 +310,18 @@ void
     .def("get_EBJ", &get_EBJ)
     .def("get_EBJ_with_halo", &get_EBJ_with_halo)
     .def(
+      "index",
+      [](
+        runko::simulation_context &sim,
+        const runko::simulation_context::tile_id_type id) {
+        if(const auto p = sim.tiles.try_get<runko::cartesian_index<3>>(id)) {
+          return (*p).data;
+        } else {
+          throw std::runtime_error(
+            "error in simulatio_context.index: tile does not have cartesian_index<3>");
+        }
+      })
+    .def(
       "global_coordinate_map",
       [](
         runko::simulation_context &sim,
