@@ -31,6 +31,12 @@ class ProxyTile:
                                (actions.quote, (actions.set_EBJ, actions.current_context, E, B, J))))
 
 
+    def batch_set_EBJ(self, Ex, Ey, Ez, Bx, By, Bz, Jx, Jy, Jz):
+        self.sim_context.eval((actions.sequence,
+                               (actions.quote, self._ensure_yee),
+                               (actions.quote, (actions.batch_set_EBJ, actions.current_context, Ex, Ey, Ez, Bx, By, Bz, Jx, Jy, Jz))))
+
+
     def add_current(self):
         self.sim_context.eval((actions.sequence,
                                (actions.quote, self._ensure_yee),
