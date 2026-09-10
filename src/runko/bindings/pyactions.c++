@@ -75,7 +75,8 @@ void
   try {
     tyvi::this_thread::sync_wait(ta::eval<runko::symbol>(body, runko::build_std_env()));
   } catch(const std::exception &e) {
-    std::println("Evaluation exception in empty_context_eval: {}", e.what());
+    throw std::runtime_error(
+      std::format("Evaluation exception in empty_context_eval: {}", e.what()));
   }
 }
 
@@ -90,8 +91,8 @@ void
     tyvi::this_thread::sync_wait(
       ta::eval<runko::symbol>(body, runko::build_sim_env(sim)));
   } catch(const std::exception &e) {
-    std::println("Evaluation exception in simulation_context_eval: {}", e.what());
-    std::terminate();
+    throw std::runtime_error(
+      std::format("Evaluation exception in simulation_context_eval: {}", e.what()));
   }
 }
 void
