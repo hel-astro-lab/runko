@@ -256,6 +256,7 @@ void
     .value("batch_set_EBJ", runko::symbol::batch_set_EBJ)
     .value("set_cartesian_neighbors", runko::symbol::set_cartesian_neighbors)
     .value("set_cartesian_comm_infos", runko::symbol::set_cartesian_comm_infos)
+    .value("sequence", runko::symbol::sequence)
     .export_values();
 
   m_sub.def("empty_context_eval", &::empty_context_eval);

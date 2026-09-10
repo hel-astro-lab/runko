@@ -121,6 +121,19 @@ class actions_eval(unittest.TestCase):
         self.assertEqual(s, correct)
 
 
+    def test_sequence(self):
+        fd = os.memfd_create("test.txt")
+
+        with stdout_redirected(fd) as mem:
+            body = (ra.sequence, (ra.quote, (ra.print, "foo")), (ra.quote, (ra.print, "bar")))
+            ra.empty_context_eval(body)
+
+        correct = "foobar"
+        s = os.pread(fd, len(correct) + 100, 0).decode("utf-8")
+        os.close(fd)
+        self.assertEqual(s, correct)
+
+
 if __name__ == "__main__":
     runtime = ra.RuntimeInstance()
     unittest.main()
