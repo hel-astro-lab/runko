@@ -46,11 +46,26 @@ class ProxyTile:
     def global_coordinate_map(self):
         return self.sim_context.global_coordinate_map(self.tile_id)
 
+
+    @property
+    def index(self) -> tuple[int, int, int]:
+        return self.sim_context.index(self.tile_id)
+
+
+
+
 def make_independent_tile(idx, conf) -> ProxyTile:
     """
     Constructs a simulation context with a single tile.
     Rerturns a ProxyTile tile corresponding to the tile.
     """
+
+    idx_arr = np.array(idx)
+    check0 = np.zeros(len(idx)) <= idx_arr
+    check1 = np.array(idx) < conf.n_tiles
+    if not np.all(np.logical_and(check0, check1)):
+        msg = "Given tile index is not in range defined by n_tiles configuration parameter."
+        raise Exception(msg)
 
     runtime = actions.RuntimeInstance()
     sim = actions.SimulationContext(conf)
