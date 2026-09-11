@@ -31,10 +31,44 @@ struct [[nodiscard]] global_coordinates_closure {
     }(std::make_index_sequence<rank>());
     return ((coeff + tile_idx) * n_cells).data;
   }
+
+  /// Shorthand for operator()(0...).
+  [[nodiscard]]
+  constexpr std::array<double, rank> mins() const
+  {
+    return [this]<std::size_t... J>(std::index_sequence<J...>) {
+      return (*this)((0 * J)...);
+    }(std::make_index_sequence<rank>());
+  }
+
+  /// Shorthand for operator()(n_cells[i]...).
+  [[nodiscard]]
+  constexpr std::array<double, rank> maxs() const
+  {
+    return [this]<std::size_t... J>(std::index_sequence<J...>) {
+      return (*this)((this->n_cells[J])...);
+    }(std::make_index_sequence<rank>());
+  }
 };
 
 /// Constructs global_coordinates_closure from n_cells_per_tiles and given index.
 global_coordinates_closure<3>
   global_coordinates(const simulation_context&, const std::array<double, 3>&);
 
+/// Shorthand for { (0...), (n_tiles[i] * n_cells_per_tile[i]... ) }.
+template<std::size_t rank>
+std::array<std::array<double, rank>, 2>
+  global_coordinate_extents(const simulation_context& sim)
+{
+
+  const auto cells = toolbox::get_extent_list(sim.config, "n_cells_per_tile", rank);
+  const auto tiles = toolbox::get_extent_list(sim.config, "n_tiles", rank);
+
+  using arr = std::array<double, rank>;
+
+  return [&]<std::size_t... J>(std::index_sequence<J...>) {
+    return std::array { arr { static_cast<double>(0 * J)... },
+                        arr { static_cast<double>(tiles[J] * cells[J])... } };
+  }(std::make_index_sequence<rank>());
+}
 }  // namespace runko
