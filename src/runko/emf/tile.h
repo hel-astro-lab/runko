@@ -23,10 +23,6 @@
 #include <vector>
 
 namespace emf {
-
-enum class FieldPropagator { fdtd2, stencil };
-enum class CurrentFilter { binomial2, binomial2_unrolled };
-
 /*! \brief General Plasma tile for solving Maxwell's equations
  *
  * Internally everything for computations are stored in

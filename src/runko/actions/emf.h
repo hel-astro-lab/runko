@@ -68,4 +68,8 @@ struct antenna_buffers {
 /// uses the latest one and remove it.
 tyvi::actions::sexpr_sender deposit_antenna_current(runko::simulation_context&);
 
+tyvi::actions::sexpr_sender push_e(runko::simulation_context&);
+tyvi::actions::sexpr_sender push_half_b(runko::simulation_context&);
+tyvi::actions::sexpr_sender filter_current(runko::simulation_context&);
+
 }  // namespace emf
