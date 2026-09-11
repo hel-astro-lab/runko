@@ -413,4 +413,5 @@ for _pusher in _pushers:
 
 
 if __name__ == "__main__":
+    _ = runko.actions.RuntimeInstance()
     unittest.main()

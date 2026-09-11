@@ -224,4 +224,5 @@ class pic_reflector_wall(unittest.TestCase):
 
 
 if __name__ == "__main__":
+    _ = runko.actions.RuntimeInstance()
     unittest.main()
