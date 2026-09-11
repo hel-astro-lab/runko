@@ -117,4 +117,5 @@ class emf_current_filter_binomial2_unrolled(_binomial_filter_tests, unittest.Tes
 
 
 if __name__ == "__main__":
+    _ = runko.actions.RuntimeInstance()
     unittest.main()
