@@ -11,6 +11,7 @@
 #include "runko/communication_common.h"
 #include "runko/coords.h"
 #include "runko/emf/yee_lattice.h"
+#include "runko/emf/antenna.h"
 #include "runko/runtime.h"
 #include "runko/simulation_context.h"
 #include "tyvi/actions_ast.h"
@@ -50,6 +51,8 @@ ta::sexpr
     return obj.cast<runko::comm_mode>();
   } else if(py::isinstance<py::function>(obj)) {
     return obj.cast<py::function>();
+  } else if(py::isinstance<emf::antenna_mode>(obj)) {
+    return obj.cast<emf::antenna_mode>();
   } else if(py::isinstance<py::tuple>(obj)) {
     const auto tup = obj.cast<py::tuple>();
 
@@ -274,6 +277,8 @@ void
     .value("set_EBJ", runko::symbol::set_EBJ)
     .value("batch_set_EBJ", runko::symbol::batch_set_EBJ)
     .value("add_current", runko::symbol::add_current)
+    .value("register_antenna", runko::symbol::register_antenna)
+    .value("deposit_antenna_current", runko::symbol::deposit_antenna_current)
     .value("set_cartesian_neighbors", runko::symbol::set_cartesian_neighbors)
     .value("set_cartesian_comm_infos", runko::symbol::set_cartesian_comm_infos)
     .value("sequence", runko::symbol::sequence)

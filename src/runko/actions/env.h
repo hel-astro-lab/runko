@@ -3,8 +3,8 @@
 
 #pragma once
 
-#include "tyvi/actions_ast.h"
 #include "runko/simulation_context.h"
+#include "tyvi/actions_ast.h"
 
 namespace runko {
 
@@ -22,6 +22,8 @@ enum class symbol : std::uint8_t {
   set_EBJ,
   batch_set_EBJ,
   add_current,
+  register_antenna,
+  deposit_antenna_current,
   set_cartesian_neighbors,
   set_cartesian_comm_infos
 };
