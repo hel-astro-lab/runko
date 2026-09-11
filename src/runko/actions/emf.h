@@ -4,10 +4,13 @@
 #pragma once
 
 #include "pybind11/numpy.h"
+#include "runko/emf/antenna.h"
+#include "runko/emf/yee_lattice.h"
 #include "runko/simulation_context.h"
 #include "tyvi/actions_ast.h"
 
 #include <functional>
+#include <vector>
 
 namespace emf {
 
@@ -44,5 +47,25 @@ tyvi::actions::sexpr_sender batch_set_EBJ(
 /// E -= J for each local tile.
 tyvi::actions::sexpr_sender
   add_current(std::reference_wrapper<runko::simulation_context>);
+
+struct antennas {
+  std::vector<emf::antenna_mode> modes;
+};
+
+/// Registers a given antenna to as a entt::registry context variable.
+///
+/// see: https://github.com/skypjack/entt/wiki/Entity-Component-System#context-variables
+void register_antenna(runko::simulation_context&, emf::antenna_mode);
+
+struct antenna_buffers {
+  runko::VecGrid<emf::YeeLattice::value_type> vec_pot;
+  runko::VecGrid<emf::YeeLattice::value_type> generated_B;
+};
+
+/// Deposits current from registered antennas to local tiles.
+///
+/// If emf::antenna_mode contains modes with lap_coeffs,
+/// uses the latest one and remove it.
+tyvi::actions::sexpr_sender deposit_antenna_current(runko::simulation_context&);
 
 }  // namespace emf

@@ -4,6 +4,7 @@
 import numpy as np
 import itertools
 import runko_cpp_bindings.actions as actions
+from runko_cpp_bindings.emf.threeD import antenna_mode
 from .configuration import Configuration
 
 
@@ -50,6 +51,14 @@ class ProxyTile:
     @property
     def index(self) -> tuple[int, int, int]:
         return self.sim_context.index(self.tile_id)
+
+
+    def register_antenna(self, mode: antenna_mode):
+        return self.sim_context.eval((actions.register_antenna, actions.current_context, mode))
+
+
+    def deposit_antenna_current(self):
+        return self.sim_context.eval((actions.deposit_antenna_current, actions.current_context))
 
 
 

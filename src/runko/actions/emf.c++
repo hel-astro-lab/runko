@@ -12,6 +12,7 @@
 #include "runko/emf/yee_lattice.h"
 #include "runko/simulation_context.h"
 #include "runko/tools/config_parser.h"
+#include "runko/tools/math.h"
 #include "tyvi/execution.h"
 #include "tyvi/mdspan.h"
 
@@ -218,6 +219,266 @@ ta::sexpr_sender
                  .template view_tiles<emf::YeeLattice, runko::local_tile_tag>()) {
              yee.add_current();
            }
+           return ta::null;
+         });
+}
+
+
+void
+  register_antenna(runko::simulation_context& sim, emf::antenna_mode mode)
+{
+  if(not sim.tiles.ctx().contains<emf::antennas>()) {
+    sim.tiles.ctx().emplace<emf::antennas>();
+  }
+
+  // As the data storage for lap_coeffs in antennas are in std::vector and
+  // we use them in order, we can make this little bit nicer by reversing the data
+  // and using items from the back:
+  if(mode.lap_coeffs) { std::ranges::reverse(mode.lap_coeffs.value()); }
+
+  sim.tiles.ctx().get<emf::antennas>().modes.push_back(mode);
+}
+
+/// If modes contain lap coeffs, uses the latest one.
+void
+  deposit_antenna_current(
+    emf::YeeLattice& yee,
+    const std::vector<emf::antenna_mode>& modes,
+    const runko::global_coordinates_closure<3>& coords,
+    const auto global_coords_mins,
+    const auto global_coords_maxs,
+    const auto cfl,
+    emf::antenna_buffers& buffs)
+{
+  using vec_list = runko::VecList<emf::YeeLattice::value_type>;
+
+  // Fake complex numbers with arrays.
+  using complex_list = runko::ScalarList<std::array<emf::YeeLattice::value_type, 2>>;
+
+  const auto num_of_modes = modes.size();
+  auto A                  = vec_list(num_of_modes);
+  auto K                  = vec_list(num_of_modes);
+  auto lap_coeffs         = complex_list(num_of_modes);
+
+  const auto sA_mds          = A.staging_mds();
+  const auto sk_mds          = K.staging_mds();
+  const auto slap_coeffs_mds = lap_coeffs.staging_mds();
+
+  auto get_wave_vector = [&](const emf::antenna_mode& wm) {
+    auto handle_wave_data =
+      [&](auto&& data) -> toolbox::Vec3<emf::antenna_mode::value_type> {
+      using T = std::decay_t<decltype(data)>;
+      if constexpr(std::is_same_v<T, emf::antenna_mode::wave_vector>) {
+        return data.k;
+      } else if constexpr(std::is_same_v<T, emf::antenna_mode::wave_number>) {
+        using F         = emf::antenna_mode::value_type;
+        const auto mins = toolbox::Vec3<F>(global_coords_mins);
+        const auto maxs = toolbox::Vec3<F>(global_coords_maxs);
+        const auto L    = maxs - mins;
+
+        // toolbox::VecD does not have element wise divide.
+        const auto tmp = 2 * std::numbers::pi_v<F> * data.n;
+        return toolbox::Vec3<F>(tmp[0] / L[0], tmp[1] / L[1], tmp[2] / L[2]);
+      }
+    };
+
+    return std::visit(handle_wave_data, wm.wave_data);
+  };
+
+  for(const auto n: std::views::iota(0uz, num_of_modes)) {
+    const auto wave_vector = get_wave_vector(modes[n]);
+    for(const auto i: std::views::iota(0uz, 3uz)) {
+      sA_mds[n][i] = static_cast<emf::YeeLattice::value_type>(modes[n].A[i]);
+      sk_mds[n][i] = static_cast<emf::YeeLattice::value_type>(wave_vector[i]);
+    }
+
+    if(modes[n].lap_coeffs and modes[n].lap_coeffs.value().empty()) {
+      throw std::logic_error {
+        "Can not deposit antenna current, antenna_mode ran out of lap_coeffs!"
+      };
+    } else if(modes[n].lap_coeffs) {
+      const auto z = modes[n].lap_coeffs.value().back();
+
+      slap_coeffs_mds[n][][0] = static_cast<emf::YeeLattice::value_type>(z.real());
+      slap_coeffs_mds[n][][1] = static_cast<emf::YeeLattice::value_type>(z.imag());
+    } else {
+      slap_coeffs_mds[n][][0] = 1;
+      slap_coeffs_mds[n][][1] = 0;
+    }
+  }
+
+  const tyvi::mdgrid_work w {};
+  w.sync_from_staging(A).sync_from_staging(K).sync_from_staging(lap_coeffs);
+
+  auto& vec_pot = buffs.vec_pot;
+  vec_pot.invalidating_resize(yee.extents_with_halo());
+
+  const auto A_mds          = A.mds();
+  const auto K_mds          = K.mds();
+  const auto lap_coeffs_mds = lap_coeffs.mds();
+  const auto vec_pot_mds    = vec_pot.mds();
+
+  w.for_each_index(vec_pot_mds, [=](const auto idx) {
+    // For each is over all indices (including halo region)
+    // but the global coordinate map is defined s.t. (0, 0, 0) is located at corner of
+    // non-halo region.
+    const auto i = static_cast<double>(idx[0]) - emf::halo_size;
+    const auto j = static_cast<double>(idx[1]) - emf::halo_size;
+    const auto k = static_cast<double>(idx[2]) - emf::halo_size;
+
+    using vec        = toolbox::Vec3<double>;
+    const auto x_loc = vec(coords(i + 0.5, j, k));
+    const auto y_loc = vec(coords(i, j + 0.5, k));
+    const auto z_loc = vec(coords(i, j, k + 0.5));
+
+    vec_pot_mds[idx][0] = 0;
+    vec_pot_mds[idx][1] = 0;
+    vec_pot_mds[idx][2] = 0;
+
+    for(auto n = 0uz; n < num_of_modes; ++n) {
+      // std::complex is contexpr only in c++26 and thus not usable in kernel.
+      // Here we do manual complex arithmeitc as a work around.
+
+      const auto phi_x =
+        static_cast<emf::YeeLattice::value_type>(toolbox::dot(x_loc, vec(K_mds[n])));
+      const auto phi_y =
+        static_cast<emf::YeeLattice::value_type>(toolbox::dot(y_loc, vec(K_mds[n])));
+      const auto phi_z =
+        static_cast<emf::YeeLattice::value_type>(toolbox::dot(z_loc, vec(K_mds[n])));
+
+      const auto x_re = sstd::cos(phi_x);
+      const auto x_im = sstd::sin(phi_x);
+      const auto y_re = sstd::cos(phi_y);
+      const auto y_im = sstd::sin(phi_y);
+      const auto z_re = sstd::cos(phi_z);
+      const auto z_im = sstd::sin(phi_z);
+
+      const auto w    = std::array<emf::YeeLattice::value_type, 2>(lap_coeffs_mds[n][]);
+      const auto w_re = w[0];
+      const auto w_im = w[1];
+
+
+      vec_pot_mds[idx][0] =
+        vec_pot_mds[idx][0] + A_mds[n][0] * (w_re * x_re - w_im * x_im);
+      vec_pot_mds[idx][1] =
+        vec_pot_mds[idx][1] + A_mds[n][1] * (w_re * y_re - w_im * y_im);
+      vec_pot_mds[idx][2] =
+        vec_pot_mds[idx][2] + A_mds[n][2] * (w_re * z_re - w_im * z_im);
+    }
+  });
+
+  auto& generated_B = buffs.generated_B;
+  generated_B.invalidating_resize(yee.extents_with_halo());
+
+  const auto B_mds = generated_B.mds();
+
+  // We have to calculate B = curl(vec_pot) only in non-halo region + one deep shell in
+  // halo region.
+
+  const auto h = emf::halo_size;
+
+  const auto [ex, ey, ez] = yee.extents_wout_halo();
+  const auto i1           = std::tuple { h - 1uz, h + ex + 1uz };
+  const auto j1           = std::tuple { h - 1uz, h + ey + 1uz };
+  const auto k1           = std::tuple { h - 1uz, h + ez + 1uz };
+
+  const auto i1p1 = std::tuple { h, h + ex + 2uz };
+  const auto j1p1 = std::tuple { h, h + ey + 2uz };
+  const auto k1p1 = std::tuple { h, h + ez + 2uz };
+
+  // FIXME: unify this with emf fdtd2.
+  auto curl = [&](
+                const auto coeff_,
+                const auto out,
+                const auto X,
+                const auto Xip1,
+                const auto Xjp1,
+                const auto Xkp1) {
+    const auto coeff = static_cast<decltype(out)::element_type::element_type>(coeff_);
+    w.for_each_index(out, [=](const auto idx) {
+      const auto Dk = Xkp1[idx][1] - X[idx][1];
+      const auto Dj = Xjp1[idx][2] - X[idx][2];
+      out[idx][0]   = coeff * (Dj - Dk);
+    });
+    w.for_each_index(out, [=](const auto idx) {
+      const auto Di = Xip1[idx][2] - X[idx][2];
+      const auto Dk = Xkp1[idx][0] - X[idx][0];
+      out[idx][1]   = coeff * (Dk - Di);
+    });
+    w.for_each_index(out, [=](const auto idx) {
+      const auto Dj = Xjp1[idx][0] - X[idx][0];
+      const auto Di = Xip1[idx][1] - X[idx][1];
+      out[idx][2]   = coeff * (Di - Dj);
+    });
+  };
+
+  curl(
+    1,
+    std::submdspan(B_mds, i1, j1, k1),
+    std::submdspan(vec_pot_mds, i1, j1, k1),
+    std::submdspan(vec_pot_mds, i1p1, j1, k1),
+    std::submdspan(vec_pot_mds, i1, j1p1, k1),
+    std::submdspan(vec_pot_mds, i1, j1, k1p1));
+
+
+  // Now curl(B) in non-halo region.
+  // We can reuse vec_pot container.
+
+  const auto i   = std::tuple { h, h + ex };
+  const auto j   = std::tuple { h, h + ey };
+  const auto k   = std::tuple { h, h + ez };
+  const auto im1 = std::tuple { h - 1uz, h + ex - 1uz };
+  const auto jm1 = std::tuple { h - 1uz, h + ey - 1uz };
+  const auto km1 = std::tuple { h - 1uz, h + ez - 1uz };
+
+  // Here we negate cfl, as we put (im1, jm1, km1) instead of (ip1, jp1, kp1).
+  curl(
+    -cfl,
+    std::submdspan(vec_pot_mds, i, j, k),
+    std::submdspan(B_mds, i, j, k),
+    std::submdspan(B_mds, im1, j, k),
+    std::submdspan(B_mds, i, jm1, k),
+    std::submdspan(B_mds, i, j, km1));
+
+  yee.deposit_current(w, vec_pot);
+  w.wait();
+}
+
+ta::sexpr_sender
+  deposit_antenna_current(runko::simulation_context& x)
+{
+  if(not x.tiles.ctx().contains<emf::antenna_buffers>()) {
+    x.tiles.ctx().emplace<emf::antenna_buffers>();
+  }
+  return te::just(std::ref(x)) | te::then([](runko::simulation_context& sim) {
+           if(not sim.tiles.ctx().contains<emf::antennas>()) { return ta::null; }
+           auto& antennas          = sim.tiles.ctx().get<emf::antennas>();
+           auto& buffs             = sim.tiles.ctx().get<emf::antenna_buffers>();
+           const auto cfl          = sim.config.template get_or_throw<double>("cfl");
+           const auto [mins, maxs] = runko::global_coordinate_extents<3>(sim);
+           for(auto&& [_, yee, idx]: sim.view_tiles<
+                                     emf::YeeLattice,
+                                     runko::cartesian_index<3>,
+                                     runko::local_tile_tag>()) {
+             const auto coords =
+               runko::global_coordinates(sim, idx.template as<double>().data);
+             deposit_antenna_current(
+               yee,
+               antennas.modes,
+               coords,
+               mins,
+               maxs,
+               cfl,
+               buffs);
+           }
+
+
+           auto pop_lap_coeff = [](emf::antenna_mode& mode) {
+             if(mode.lap_coeffs) { mode.lap_coeffs.value().pop_back(); }
+           };
+
+           std::ranges::for_each(antennas.modes, pop_lap_coeff);
+
            return ta::null;
          });
 }
