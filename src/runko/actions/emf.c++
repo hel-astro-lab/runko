@@ -483,4 +483,119 @@ ta::sexpr_sender
          });
 }
 
+constexpr emf::FieldPropagator
+  parse_field_propagator(const toolbox::ConfigParser& config)
+{
+
+  if(const auto x = config.get<std::string>("field_propagator")) {
+    if(x.value() == "fdtd2") {
+      return emf::FieldPropagator::fdtd2;
+    } else if(x.value() == "stencil") {
+      return emf::FieldPropagator::stencil;
+    } else {
+      std::runtime_error { std::format("unregonized field_propagator: {}", x.value()) };
+    }
+  }
+  throw std::runtime_error {
+    "error: configuration parameter missing: field_propagator"
+  };
+}
+
+constexpr emf::CurrentFilter
+  parse_current_filter(const toolbox::ConfigParser& config)
+{
+  if(const auto x = config.get<std::string>("current_filter")) {
+    if(x.value() == "binomial2") {
+      return emf::CurrentFilter::binomial2;
+    } else if(x.value() == "binomial2_unrolled") {
+      return emf::CurrentFilter::binomial2_unrolled;
+    } else {
+      std::runtime_error { std::format("unregonized current_filter: {}", x.value()) };
+    }
+  }
+  throw std::runtime_error { "configuration parameter missing: current_filter" };
+}
+
+
+ta::sexpr_sender
+  push_e(runko::simulation_context& x)
+{
+
+  const auto cfl  = x.config.template get_or_throw<double>("cfl");
+  const auto prop = x.get_n_set_config<emf::FieldPropagator>(&parse_field_propagator);
+  using vt        = emf::YeeLattice::value_type;
+
+  return te::just(std::ref(x)) | te::then([prop, cfl](runko::simulation_context& sim) {
+           for(auto&& [_, yee]:
+               sim.view_tiles<emf::YeeLattice, runko::local_tile_tag>()) {
+             switch(prop) {
+               case FieldPropagator::fdtd2:
+                 yee.push_e_fdtd2(static_cast<vt>(cfl));
+                 break;
+               case FieldPropagator::stencil: break;
+               default:
+                 throw std::logic_error {
+                   "internal error: unregonized FieldPropagator"
+                 };
+             }
+           }
+
+           return ta::null;
+         });
+}
+
+
+ta::sexpr_sender
+  push_half_b(runko::simulation_context& x)
+{
+
+  const auto cfl  = x.config.template get_or_throw<double>("cfl");
+  const auto prop = x.get_n_set_config<emf::FieldPropagator>(&parse_field_propagator);
+  using vt        = emf::YeeLattice::value_type;
+
+  return te::just(std::ref(x)) | te::then([prop, cfl](runko::simulation_context& sim) {
+           for(auto&& [_, yee]:
+               sim.view_tiles<emf::YeeLattice, runko::local_tile_tag>()) {
+             switch(prop) {
+               case FieldPropagator::fdtd2:
+                 yee.push_b_fdtd2(static_cast<vt>(cfl / 2));
+                 break;
+               case FieldPropagator::stencil: break;
+               default:
+                 throw std::logic_error {
+                   "internal error: unregonized FieldPropagator"
+                 };
+             }
+           }
+
+           return ta::null;
+         });
+}
+
+ta::sexpr_sender
+  filter_current(runko::simulation_context& x)
+{
+  const auto filter = x.get_n_set_config<emf::CurrentFilter>(&parse_current_filter);
+
+  return te::just(std::ref(x)) | te::then([filter](runko::simulation_context& sim) {
+           for(auto&& [_, yee]:
+               sim.view_tiles<emf::YeeLattice, runko::local_tile_tag>()) {
+             switch(filter) {
+               case emf::CurrentFilter::binomial2:
+                 yee.filter_current_binomial2();
+                 break;
+               case emf::CurrentFilter::binomial2_unrolled:
+                 yee.filter_current_binomial2_unrolled();
+                 break;
+               default:
+                 throw std::logic_error {
+                   "filter_current internal error: unregonized current filter."
+                 };
+             }
+           }
+
+           return ta::null;
+         });
+}
+
 }  // namespace emf

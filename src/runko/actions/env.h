@@ -24,6 +24,9 @@ enum class symbol : std::uint8_t {
   add_current,
   register_antenna,
   deposit_antenna_current,
+  push_e,
+  push_half_b,
+  filter_current,
   set_cartesian_neighbors,
   set_cartesian_comm_infos
 };

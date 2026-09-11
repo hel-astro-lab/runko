@@ -165,6 +165,27 @@ tyvi::actions::sexpr
                  args) |
                te::let_value(&emf::deposit_antenna_current);
       } }),
+    ta::cons(
+      runko::symbol::push_e,
+      ta::procedure { [](const ta::sexpr& args) -> ta::sexpr_sender {
+        return parse_atom_args<std::reference_wrapper<runko::simulation_context>>(
+                 args) |
+               te::let_value(&emf::push_e);
+      } }),
+    ta::cons(
+      runko::symbol::push_half_b,
+      ta::procedure { [](const ta::sexpr& args) -> ta::sexpr_sender {
+        return parse_atom_args<std::reference_wrapper<runko::simulation_context>>(
+                 args) |
+               te::let_value(&emf::push_half_b);
+      } }),
+    ta::cons(
+      runko::symbol::filter_current,
+      ta::procedure { [](const ta::sexpr& args) -> ta::sexpr_sender {
+        return parse_atom_args<std::reference_wrapper<runko::simulation_context>>(
+                 args) |
+               te::let_value(&emf::filter_current);
+      } }),
     ta::cons(runko::symbol::current_context, std::ref(sim)),
     ta::cons(runko::symbol::comm_local, ta::procedure { comm_local }),
     ta::cons(runko::symbol::comm_external, ta::procedure { comm_external }));

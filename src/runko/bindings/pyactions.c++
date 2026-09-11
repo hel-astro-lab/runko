@@ -10,8 +10,8 @@
 #include "runko/comm/cartesian_grid.h"
 #include "runko/communication_common.h"
 #include "runko/coords.h"
-#include "runko/emf/yee_lattice.h"
 #include "runko/emf/antenna.h"
+#include "runko/emf/yee_lattice.h"
 #include "runko/runtime.h"
 #include "runko/simulation_context.h"
 #include "tyvi/actions_ast.h"
@@ -279,6 +279,9 @@ void
     .value("add_current", runko::symbol::add_current)
     .value("register_antenna", runko::symbol::register_antenna)
     .value("deposit_antenna_current", runko::symbol::deposit_antenna_current)
+    .value("push_e", runko::symbol::push_e)
+    .value("push_half_b", runko::symbol::push_half_b)
+    .value("filter_current", runko::symbol::filter_current)
     .value("set_cartesian_neighbors", runko::symbol::set_cartesian_neighbors)
     .value("set_cartesian_comm_infos", runko::symbol::set_cartesian_comm_infos)
     .value("sequence", runko::symbol::sequence)

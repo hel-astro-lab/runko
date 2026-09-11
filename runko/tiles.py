@@ -61,6 +61,18 @@ class ProxyTile:
         return self.sim_context.eval((actions.deposit_antenna_current, actions.current_context))
 
 
+    def push_e(self):
+        return self.sim_context.eval((actions.push_e, actions.current_context))
+
+
+    def push_half_b(self):
+        return self.sim_context.eval((actions.push_half_b, actions.current_context))
+
+
+    def filter_current(self):
+        return self.sim_context.eval((actions.filter_current, actions.current_context))
+
+
 
 
 def make_independent_tile(idx, conf) -> ProxyTile:
