@@ -11,6 +11,7 @@
 #include <optional>
 #include <ranges>
 #include <type_traits>
+#include <typeinfo>
 
 namespace runko {
 
@@ -26,6 +27,19 @@ struct simulation_context {
   template<typename... Ts>
   std::ranges::view auto view_tiles() const;
 
+
+  /// Returns a reference to context variable T.
+  ///
+  /// Throws exception if the context variable does not exists.
+  template<typename T>
+  const T& get_config() const;
+
+  /// Set config parameter using given mapper.
+  ///
+  /// If the config parameter has already been set, does nothing.
+  /// Returns true if the parameter is set and false if it was already set.
+  template<typename T, compatible_config_mapper<T> F>
+  bool set_config(F&&);
 
   /// Returns a reference to context variable T.
   ///
@@ -48,6 +62,27 @@ std::ranges::view auto
   simulation_context::view_tiles() const
 { return this->tiles.view<const Ts...>().each(); }
 
+template<typename T>
+const T&
+  simulation_context::get_config() const
+{
+  if(not this->tiles.ctx().contains<T>()) {
+    throw std::runtime_error { std::format(
+      "Config of a simulation_context does not contain: {}",
+      typeid(T).name()) };
+  }
+
+  return this->tiles.ctx().get<T>();
+}
+
+template<typename T, compatible_config_mapper<T> F>
+bool
+  simulation_context::set_config(F&& mapper)
+{
+  if(this->tiles.ctx().contains<T>()) { return false; }
+  this->tiles.ctx().emplace<T>(std::invoke(std::forward<F>(mapper), this->config));
+  return true;
+}
 
 template<typename T, compatible_config_mapper<T> F>
 const T&
