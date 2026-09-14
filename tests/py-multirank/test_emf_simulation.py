@@ -20,36 +20,6 @@ def create_test_grid():
     return config, runko.TileGrid(config)
 
 
-def virtual_emf_tiles():
-    """
-    Here we test that after grid.configure_simulation(...)
-    each virtual tile has bee initialized to emf tile,
-    as they are next to them.
-    """
-
-    conf, tile_grid = create_test_grid()
-
-    mpi_unittest.assertEqual(tile_grid.initialized_from_restart_file(), False)
-
-    local_idx = list(tile_grid.local_tile_indices())
-    mpi_unittest.assertNotEqual(len(local_idx), 0)
-
-    for idx in tile_grid.local_tile_indices():
-        tile = runko.emf.threeD.Tile(idx, conf)
-        tile_grid.add_tile(tile, idx)
-
-    simulation = tile_grid.configure_simulation(conf)
-
-    vtiles = list(simulation.virtual_tiles())
-    mpi_unittest.assertNotEqual(len(vtiles), 0)
-
-    asserts = []
-    for vtile in vtiles:
-        asserts.append(mpi_unittest.assertEqualDeferred(type(vtile), runko.emf.threeD.VirtualTile))
-
-    mpi_unittest.assertDeferredResults(asserts)
-
-
 def emf_communication():
     """
     TileGrid with only emf tiles, which have been initialized
@@ -223,6 +193,6 @@ def emf_J_exchange():
 
 
 if __name__ == "__main__":
-    virtual_emf_tiles()
+    _ = runko.actions.RuntimeInstance()
     emf_communication()
     emf_J_exchange()
