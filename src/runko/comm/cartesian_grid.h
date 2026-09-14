@@ -263,11 +263,11 @@ void
 
   local_displs.front() = 0;
   for(auto i = 1uz; i < local_displs.size(); ++i) {
-    local_displs[i] = local_displs[i - 1uz] + local_displs[i];
+    local_displs[i] = local_displs[i - 1uz] + local_tile_counts[i];
   }
   virt_displs.front() = 0;
   for(auto i = 1uz; i < virt_displs.size(); ++i) {
-    virt_displs[i] = virt_displs[i - 1uz] + virt_displs[i];
+    virt_displs[i] = virt_displs[i - 1uz] + virt_tile_counts[i];
   }
 
   auto local_indices = std::vector<index_type>(
@@ -279,9 +279,14 @@ void
      We'll just handle bytes, so this has to be taken into account,
      in recvcount and displs. */
 
-  for(auto& x: local_tile_counts) { x *= static_cast<int>(sizeof(index_type)); };
-  for(auto& x: virt_tile_counts) { x *= static_cast<int>(sizeof(index_type)); };
+  auto adjust_to_byte = [](auto& r) {
+    for(auto& x: r) { x *= static_cast<int>(sizeof(index_type)); };
+  };
 
+  adjust_to_byte(local_tile_counts);
+  adjust_to_byte(virt_tile_counts);
+  adjust_to_byte(local_displs);
+  adjust_to_byte(virt_displs);
 
   if(
     const auto err = MPI_Allgatherv(
