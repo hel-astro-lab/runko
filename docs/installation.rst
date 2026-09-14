@@ -118,6 +118,26 @@ Common requirements (version numbers are the ones tested to work; newer versions
 
       .. hint:: On LUMI ``<mpi-aware C compiler>`` is ``cc``.
 
+   .. group-tab:: hip backend on HILE
+
+      Obtain the required dependencies by loading modules as shown:
+
+      .. code-block:: shell
+
+         module use /appl/hile/modules
+         module load PrgEnv-cray
+         module load rocm
+         module load craype-accel-amd-gfx90a
+         module load cray-mpich
+         module load craype-network-ofi
+         module load buildtools
+         module load cray-python
+
+      .. include:: installation-mpi4py.rst
+
+      .. hint:: On HILE ``<mpi-aware C compiler>`` is ``cc``.
+
+
 .. _building:
 
 Building
@@ -192,6 +212,19 @@ available presets are:
       .. code:: shell
 
          pip install git+https://github.com/hel-astro-lab/runko --config-settings=cmake.args=--preset=lumi-gpu
+
+
+   .. group-tab:: hip backend on HILE
+
+      After loading the modules given above, runko can be built and installed with:
+
+      .. note::
+         HILE compute nodes do not have access to internet, so we have to compile on a login node.
+
+      .. code:: shell
+
+         pip install git+https://github.com/hel-astro-lab/runko --config-settings=cmake.args=--preset=hile-gpu
+
 
 
 .. hint::
@@ -292,6 +325,53 @@ Running
          - If you run into segfaults or crashes due to illegal instruction,
            it can be worked around by adding
            ``import matplotlib.pyplot`` before ``import runko``.
+
+
+   .. group-tab:: hip backend on HILE
+
+      The HIP backend uses GPU-aware MPI, which has to be enabled:
+
+      .. code:: shell
+
+         export MPICH_GPU_SUPPORT_ENABLED=1
+
+      Example slurm job script:
+
+      .. code:: shell
+
+         #!/bin/bash -l
+         #SBATCH --job-name=examplejob
+         #SBATCH --partition=hile
+         #SBATCH --nodes=2
+         #SBATCH --gpus-per-node=4       # 4x AMD MI210x per node
+         #SBATCH --ntasks-per-node=4     # needs to be same as gpu's
+         #SBATCH --time=1-12:00:00       # Run time (d-hh:mm:ss)
+         #SBATCH --cpus-per-gpu=8
+
+         # copy-paste module loads from requirements here:
+         #
+         #     module load ...
+         #
+         # or source a file that contains them:
+         #
+         #    source runko-modules.sh
+
+         cat << EOF > select_gpu
+         #!/bin/bash
+
+         export ROCR_VISIBLE_DEVICES=\$SLURM_LOCALID
+         exec \$*
+         EOF
+
+         chmod +x ./select_gpu
+
+         export OMP_NUM_THREADS=8
+         export MPICH_GPU_SUPPORT_ENABLED=1
+         export MPICH_GPU_IPC_ENABLED=0 # fixes p2p2 gpu communication
+
+         srun ./select_gpu python <args>
+         rm -rf ./select_gpu
+
 
 Now we can test if the installed package can be imported:
 

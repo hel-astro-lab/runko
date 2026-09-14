@@ -115,7 +115,7 @@
                 "tyvi_BACKEND": "hip",
                 "OpenMP_CXX_FLAGS": "-fopenmp",
                 "OpenMP_CXX_LIB_NAMES": "",
-                "CMAKE_CXX_FLAGS": "-O3",
+                "CMAKE_CXX_FLAGS": "-O3 --offload-arch=gfx90a",
                 "CMAKE_CXX_COMPILER": "hipcc",
                 "MPI_CXX_COMPILER": "CC"
             }
