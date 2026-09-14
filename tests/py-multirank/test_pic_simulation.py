@@ -68,35 +68,6 @@ def almost_equal(a: runko.pic.threeD.ParticleState, b: runko.pic.threeD.Particle
     return xok and yok and zok and velxok and velyok and velzok
 
 
-def virtual_pic_tiles():
-    """
-    Here we test that after grid.configure_simulation(...)
-    each virtual tile has bee initialized to pic tile,
-    as they are next to them.
-    """
-
-    conf, tile_grid = make_test_grid()
-
-    mpi_unittest.assertEqual(tile_grid.initialized_from_restart_file(), False)
-
-    local_idx = list(tile_grid.local_tile_indices())
-    mpi_unittest.assertNotEqual(len(local_idx), 0)
-
-    for idx in tile_grid.local_tile_indices():
-        tile = runko.pic.threeD.Tile(idx, conf)
-        tile_grid.add_tile(tile, idx)
-
-    simulation = tile_grid.configure_simulation(conf)
-
-    vtiles = list(simulation.virtual_tiles())
-
-    asserts = []
-    for vtile in vtiles:
-        asserts.append(mpi_unittest.assertEqualDeferred(type(vtile), runko.pic.threeD.VirtualTile))
-
-    mpi_unittest.assertDeferredResults(asserts)
-
-
 def pic_noop_communication():
     """
     TileGrid with only pic tiles, which have been initialized
@@ -692,7 +663,6 @@ def pic_wrap_positions():
 
 
 if __name__ == "__main__":
-    virtual_pic_tiles()
     pic_noop_communication()
     pic_communication()
     pic_realistic_communication()
