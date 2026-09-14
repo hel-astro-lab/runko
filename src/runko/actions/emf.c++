@@ -9,6 +9,7 @@
 #include "runko/comm/cartesian_grid.h"
 #include "runko/coords.h"
 #include "runko/emf/common.h"
+#include "runko/emf/stencil_coefficients.h"
 #include "runko/emf/yee_lattice.h"
 #include "runko/simulation_context.h"
 #include "runko/tools/config_parser.h"
@@ -516,6 +517,54 @@ constexpr emf::CurrentFilter
   throw std::runtime_error { "configuration parameter missing: current_filter" };
 }
 
+constexpr emf::StencilCoeffs
+  parse_stencil_coeffs(const toolbox::ConfigParser& config)
+{
+  // Read stencil coefficients from config.
+  // For each coefficient, try per-axis key (stencil_x_name) first, then isotropic
+  // (stencil_name). Default to 0.
+
+  auto read_coeff = [&](const std::string& axis_prefix, const std::string& name) {
+    // Per-axis key: stencil_x_delta, stencil_y_delta, ...
+    if(const auto v = config.get<double>(axis_prefix + name)) {
+      return static_cast<float>(v.value());
+    }
+    // Isotropic key: stencil_delta, stencil_gamma, ...
+    if(const auto v = config.get<double>("stencil_" + name)) {
+      return static_cast<float>(v.value());
+    }
+    return 0.0f;
+  };
+
+  auto read_axis = [&](const std::string& axis_prefix) -> emf::StencilAxisCoeffs {
+    emf::StencilAxisCoeffs c {};
+    c.M[1][0] = read_coeff(axis_prefix, "delta");
+    c.M[2][0] = read_coeff(axis_prefix, "gamma");
+    c.M[0][1] = read_coeff(axis_prefix, "beta_p1");
+    c.M[0][2] = read_coeff(axis_prefix, "beta_p2");
+    c.M[1][1] = read_coeff(axis_prefix, "beta2_p1");
+    c.M[1][2] = read_coeff(axis_prefix, "beta2_p2");
+    c.M[2][1] = read_coeff(axis_prefix, "beta3_p1");
+    c.M[2][2] = read_coeff(axis_prefix, "beta3_p2");
+    c.M[0][3] = read_coeff(axis_prefix, "zeta_p1");
+    c.M[0][4] = read_coeff(axis_prefix, "zeta_p2");
+    c.M[1][3] = read_coeff(axis_prefix, "zeta2_p1");
+    c.M[1][4] = read_coeff(axis_prefix, "zeta2_p2");
+    c.M[2][3] = read_coeff(axis_prefix, "zeta3_p1");
+    c.M[2][4] = read_coeff(axis_prefix, "zeta3_p2");
+    // Set alpha from normalization
+    c.M[0][0] = c.alpha();
+    return c;
+  };
+
+  emf::StencilCoeffs coeffs {};
+  coeffs.axis[0] = read_axis("stencil_x_");
+  coeffs.axis[1] = read_axis("stencil_y_");
+  coeffs.axis[2] = read_axis("stencil_z_");
+
+  return coeffs;
+}
+
 
 ta::sexpr_sender
   push_e(runko::simulation_context& x)
@@ -523,16 +572,17 @@ ta::sexpr_sender
 
   const auto cfl  = x.config.template get_or_throw<double>("cfl");
   const auto prop = x.get_n_set_config<emf::FieldPropagator>(&parse_field_propagator);
-  using vt        = emf::YeeLattice::value_type;
+
+  using vt = emf::YeeLattice::value_type;
 
   return te::just(std::ref(x)) | te::then([prop, cfl](runko::simulation_context& sim) {
            for(auto&& [_, yee]:
                sim.view_tiles<emf::YeeLattice, runko::local_tile_tag>()) {
              switch(prop) {
                case FieldPropagator::fdtd2:
+               case FieldPropagator::stencil:
                  yee.push_e_fdtd2(static_cast<vt>(cfl));
                  break;
-               case FieldPropagator::stencil: break;
                default:
                  throw std::logic_error {
                    "internal error: unregonized FieldPropagator"
@@ -551,7 +601,12 @@ ta::sexpr_sender
 
   const auto cfl  = x.config.template get_or_throw<double>("cfl");
   const auto prop = x.get_n_set_config<emf::FieldPropagator>(&parse_field_propagator);
-  using vt        = emf::YeeLattice::value_type;
+
+  if(prop == emf::FieldPropagator::stencil) {
+    std::ignore = x.set_config<emf::StencilCoeffs>(&parse_stencil_coeffs);
+  }
+
+  using vt = emf::YeeLattice::value_type;
 
   return te::just(std::ref(x)) | te::then([prop, cfl](runko::simulation_context& sim) {
            for(auto&& [_, yee]:
@@ -560,7 +615,11 @@ ta::sexpr_sender
                case FieldPropagator::fdtd2:
                  yee.push_b_fdtd2(static_cast<vt>(cfl / 2));
                  break;
-               case FieldPropagator::stencil: break;
+               case FieldPropagator::stencil:
+                 yee.push_b_stencil(
+                   static_cast<vt>(cfl / 2),
+                   sim.get_config<emf::StencilCoeffs>());
+                 break;
                default:
                  throw std::logic_error {
                    "internal error: unregonized FieldPropagator"
