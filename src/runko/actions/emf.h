@@ -5,6 +5,7 @@
 
 #include "pybind11/numpy.h"
 #include "runko/emf/antenna.h"
+#include "runko/emf/edge_bc.h"
 #include "runko/emf/yee_lattice.h"
 #include "runko/simulation_context.h"
 #include "tyvi/actions_ast.h"
@@ -71,5 +72,24 @@ tyvi::actions::sexpr_sender deposit_antenna_current(runko::simulation_context&);
 tyvi::actions::sexpr_sender push_e(runko::simulation_context&);
 tyvi::actions::sexpr_sender push_half_b(runko::simulation_context&);
 tyvi::actions::sexpr_sender filter_current(runko::simulation_context&);
+
+struct boundary_conditions {
+  std::vector<emf::edge_bc> edges;
+};
+
+/// Registers a given edge_bc to as a entt::registry context variable.
+///
+/// Type of the context variable is emf::boundary_conditions.
+/// see: https://github.com/skypjack/entt/wiki/Entity-Component-System#context-variables
+void register_edge_bc(runko::simulation_context&, const emf::edge_bc&);
+
+/// Applies given edge boundary condition to local tiles.
+tyvi::actions::sexpr_sender
+  apply_edge_bc(runko::simulation_context&, const emf::edge_bc&, runko::comm_mode);
+
+/// Applies registered edge boundary conditions to local tiles.
+tyvi::actions::sexpr_sender
+  apply_edge_bcs(runko::simulation_context&, runko::comm_mode);
+
 
 }  // namespace emf

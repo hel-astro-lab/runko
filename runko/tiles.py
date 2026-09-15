@@ -73,6 +73,18 @@ class ProxyTile:
         return self.sim_context.eval((actions.filter_current, actions.current_context))
 
 
+    def register_edge_bc(self, edge_bc):
+        return self.sim_context.eval((actions.register_edge_bc, actions.current_context, edge_bc))
+
+
+    def apply_edge_bc(self, edge_bc, mode):
+        return self.sim_context.eval((actions.apply_edge_bc, actions.current_context, edge_bc, mode))
+
+
+    def apply_edge_bcs(self, mode):
+        return self.sim_context.eval((actions.apply_edge_bcs, actions.current_context, mode))
+
+
 
 
 def make_independent_tile(idx, conf) -> ProxyTile:

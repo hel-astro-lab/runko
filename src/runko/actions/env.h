@@ -27,6 +27,10 @@ enum class symbol : std::uint8_t {
   push_e,
   push_half_b,
   filter_current,
+  register_edge_bc,
+  apply_edge_bc,
+  apply_edge_bcs,
+  clear_bcs,
   set_cartesian_neighbors,
   set_cartesian_comm_infos
 };

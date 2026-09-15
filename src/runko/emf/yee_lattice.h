@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include "runko/communication_common.h"
 #include "runko/emf/common.h"
 #include "runko/emf/edge_bc.h"
 #include "runko/emf/stencil_coefficients.h"
@@ -88,9 +89,7 @@ public:
   using dir_type = std::array<int, 3>;
 
   [[nodiscard]] static constexpr dir_type invert_dir(const dir_type& dir)
-  {
-    return dir_type { -dir[0], -dir[1], -dir[2] };
-  }
+  { return dir_type { -dir[0], -dir[1], -dir[2] }; }
 
 private:
   std::array<std::size_t, 3> extents_wout_halo_;
@@ -319,7 +318,8 @@ public:
   ///
   /// The SIMD-vectorizable inner loop uses tyvi::mdgrid_work::for_each_index
   /// with no inner loops, ensuring #pragma omp simd on the innermost dimension.
-  void apply_edge_bc(const struct edge_bc& bc, std::size_t width, int mode);
+  void
+    apply_edge_bc(const struct edge_bc& bc, std::size_t width, runko::comm_mode mode);
 
   /// Set J = 0 everywhere including in halo.
   void clear_current();
@@ -396,75 +396,51 @@ public:
 
 inline auto
   YeeLattice::span_E() &
-{
-  return this->E_.span();
-}
+{ return this->E_.span(); }
 
 inline auto
   YeeLattice::span_E() const&
-{
-  return this->E_.span();
-}
+{ return this->E_.span(); }
 
 inline auto
   YeeLattice::span_B() &
-{
-  return this->B_.span();
-}
+{ return this->B_.span(); }
 
 inline auto
   YeeLattice::span_B() const&
-{
-  return this->B_.span();
-}
+{ return this->B_.span(); }
 
 inline auto
   YeeLattice::span_J() &
-{
-  return this->J_.span();
-}
+{ return this->J_.span(); }
 
 inline auto
   YeeLattice::span_J() const&
-{
-  return this->J_.span();
-}
+{ return this->J_.span(); }
 
 inline auto
   YeeLattice::mds_E() &
-{
-  return this->E_.mds();
-}
+{ return this->E_.mds(); }
 
 inline auto
   YeeLattice::mds_E() const&
-{
-  return this->E_.mds();
-}
+{ return this->E_.mds(); }
 
 inline auto
   YeeLattice::mds_B() &
-{
-  return this->B_.mds();
-}
+{ return this->B_.mds(); }
 
 inline auto
   YeeLattice::mds_B() const&
-{
-  return this->B_.mds();
-}
+{ return this->B_.mds(); }
 
 inline auto
   YeeLattice::mds_J() &
-{
-  return this->J_.mds();
-}
+{ return this->J_.mds(); }
 
 inline auto
   YeeLattice::mds_J() const&
-{
-  return this->J_.mds();
-}
+{ return this->J_.mds(); }
 
 template<typename MDS>
 auto

@@ -186,6 +186,42 @@ tyvi::actions::sexpr
                  args) |
                te::let_value(&emf::filter_current);
       } }),
+    ta::cons(
+      runko::symbol::register_edge_bc,
+      ta::procedure { [](const ta::sexpr& args) -> ta::sexpr_sender {
+        return parse_atom_args<
+                 std::reference_wrapper<runko::simulation_context>,
+                 emf::edge_bc>(args) |
+               te::then(&emf::register_edge_bc) | te::then([] { return ta::null; });
+      } }),
+    ta::cons(
+      runko::symbol::apply_edge_bc,
+      ta::procedure { [](const ta::sexpr& args) -> ta::sexpr_sender {
+        return parse_atom_args<
+                 std::reference_wrapper<runko::simulation_context>,
+                 emf::edge_bc,
+                 runko::comm_mode>(args) |
+               te::let_value(&emf::apply_edge_bc);
+      } }),
+    ta::cons(
+      runko::symbol::apply_edge_bcs,
+      ta::procedure { [](const ta::sexpr& args) -> ta::sexpr_sender {
+        return parse_atom_args<
+                 std::reference_wrapper<runko::simulation_context>,
+                 runko::comm_mode>(args) |
+               te::let_value(&emf::apply_edge_bcs);
+      } }),
+    ta::cons(
+      runko::symbol::clear_bcs,
+      ta::procedure { [](const ta::sexpr& args) -> ta::sexpr_sender {
+        return parse_atom_args<std::reference_wrapper<runko::simulation_context>>(
+                 args) |
+               te::then([](runko::simulation_context& sim) {
+                 sim.template get_config<emf::boundary_conditions>() =
+                   emf::boundary_conditions {};
+                 return ta::null;
+               });
+      } }),
     ta::cons(runko::symbol::current_context, std::ref(sim)),
     ta::cons(runko::symbol::comm_local, ta::procedure { comm_local }),
     ta::cons(runko::symbol::comm_external, ta::procedure { comm_external }));
