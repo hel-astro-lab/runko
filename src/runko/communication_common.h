@@ -5,6 +5,7 @@
 
 #include "runko/tools/vector.h"
 #include "tyvi/actions_ast.h"
+#include "tyvi/actions_format.h"
 #include "tyvi/mdspan.h"
 
 #include <algorithm>
@@ -246,3 +247,25 @@ std::tuple<std::reference_wrapper<simulation_context>, runko::comm_mode>
   args_to_sim_n_comm_mode(const tyvi::actions::sexpr& args);
 
 }  // namespace runko
+
+template<typename CharT>
+struct std::formatter<runko::comm_mode, CharT> {
+  static constexpr auto parse(std::basic_format_parse_context<CharT>& ctx)
+  { return tyvi::sstd::assert_no_format_spec(ctx); }
+
+  template<typename FormatContext>
+  static constexpr auto format(const runko::comm_mode mode, FormatContext& ctx)
+  {
+    auto s = "unregonized runko::comm_mode";
+    switch(mode) {
+      case runko::comm_mode::emf_E: s = "emf_E"; break;
+      case runko::comm_mode::emf_B: s = "emf_B"; break;
+      case runko::comm_mode::emf_J: s = "emf_J"; break;
+      case runko::comm_mode::pic_particle: s = "pic_particle"; break;
+      case runko::comm_mode::pic_particle_extra: s = "pic_particle_extra"; break;
+      case runko::comm_mode::number_of_particles: s = "number_of_particles"; break;
+      case runko::comm_mode::emf_J_exchange: s = "emf_J_exchange"; break;
+    }
+    return std::format_to(ctx.out(), "{}", s);
+  }
+};
