@@ -834,9 +834,9 @@ void
 
 template<std::size_t D>
 void
-  Tile<D>::apply_edge_bc(const edge_bc& bc, const int mode)
+  Tile<D>::apply_edge_bc(const edge_bc&, const int)
 {
-  if(const auto w = edge_bc_width(bc)) { yee_lattice_.apply_edge_bc(bc, *w, mode); }
+    // if(const auto w = edge_bc_width(bc)) { yee_lattice_.apply_edge_bc(bc, *w, mode); }
 }
 
 template<std::size_t D>

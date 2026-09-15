@@ -261,15 +261,18 @@ void
 }
 
 void
-  YeeLattice::apply_edge_bc(const edge_bc& bc, const std::size_t width, const int mode)
+  YeeLattice::apply_edge_bc(
+    const edge_bc& bc,
+    const std::size_t width,
+    const runko::comm_mode mode)
 {
   if(width == 0) return;
 
-  const auto d    = bc.direction;
-  const auto dims = extents_with_halo();
-  constexpr auto h    = halo_size;
-  const auto Nd   = extents_wout_halo_[d];
-  const auto w    = std::min(width, Nd);
+  const auto d     = bc.direction;
+  const auto dims  = extents_with_halo();
+  constexpr auto h = halo_size;
+  const auto Nd    = extents_wout_halo_[d];
+  const auto w     = std::min(width, Nd);
 
   // Compute per-dimension ranges for the edge region
   auto make_range = [&](const std::size_t dim) -> std::tuple<std::size_t, std::size_t> {
@@ -285,19 +288,26 @@ void
   auto apply = [&](auto& field, std::uint8_t mask, auto vx, auto vy, auto vz) {
     const auto region = std::submdspan(field.mds(), xr, yr, zr);
     tyvi::mdgrid_work {}
-      .for_each_index(region, [=](const auto idx) {
-        if(mask & 1u) region[idx][0] = vx;
-        if(mask & 2u) region[idx][1] = vy;
-        if(mask & 4u) region[idx][2] = vz;
-      })
+      .for_each_index(
+        region,
+        [=](const auto idx) {
+          if(mask & 1u) region[idx][0] = vx;
+          if(mask & 2u) region[idx][1] = vy;
+          if(mask & 4u) region[idx][2] = vz;
+        })
       .wait();
   };
 
-  using CM = runko::comm_mode;
-  switch(static_cast<CM>(mode)) {
-    case CM::emf_E: apply(E_, bc.E_components, bc.Ex, bc.Ey, bc.Ez); break;
-    case CM::emf_B: apply(B_, bc.B_components, bc.Bx, bc.By, bc.Bz); break;
-    case CM::emf_J: apply(J_, bc.J_components, bc.Jx, bc.Jy, bc.Jz); break;
+  switch(mode) {
+    case runko::comm_mode::emf_E:
+      apply(E_, bc.E_components, bc.Ex, bc.Ey, bc.Ez);
+      break;
+    case runko::comm_mode::emf_B:
+      apply(B_, bc.B_components, bc.Bx, bc.By, bc.Bz);
+      break;
+    case runko::comm_mode::emf_J:
+      apply(J_, bc.J_components, bc.Jx, bc.Jy, bc.Jz);
+      break;
     default:
       throw std::runtime_error { std::format(
         "YeeLattice::apply_edge_bc does not support given communication mode: {}",
@@ -376,9 +386,7 @@ void
 
 YeeLattice::VecGridMDS::mapping_type
   YeeLattice::grid_mapping_with_halo() const noexcept
-{
-  return this->E_.mds().mapping();
-}
+{ return this->E_.mds().mapping(); }
 
 double
   YeeLattice::total_energy_B() const

@@ -7,6 +7,7 @@
 #include "pybind11/pybind11.h"
 #include "runko/actions/args.h"
 #include "runko/comm/cartesian_grid.h"
+#include "runko/communication_common.h"
 #include "runko/coords.h"
 #include "runko/emf/common.h"
 #include "runko/emf/stencil_coefficients.h"
@@ -650,6 +651,88 @@ ta::sexpr_sender
                  throw std::logic_error {
                    "filter_current internal error: unregonized current filter."
                  };
+             }
+           }
+
+           return ta::null;
+         });
+}
+
+void
+  register_edge_bc(runko::simulation_context& sim, const emf::edge_bc& bc)
+{
+  std::ignore = sim.set_config(emf::boundary_conditions {});
+  auto& bcs   = sim.get_config<emf::boundary_conditions>();
+  bcs.edges.push_back(bc);
+}
+
+std::optional<std::size_t>
+  edge_bc_width(
+    const emf::edge_bc& bc,
+    const runko::global_coordinates_closure<3>& tile_coords,
+    const auto& tile_extents)
+{
+  const auto d        = bc.direction;
+  const auto tile_min = static_cast<edge_bc::value_type>(tile_coords.mins()[d]);
+  const auto tile_max = static_cast<edge_bc::value_type>(tile_coords.maxs()[d]);
+  const auto Nd       = tile_extents[d];
+
+  if(bc.side == 0) {
+    if(bc.position <= tile_min) return std::nullopt;
+    if(bc.position >= tile_max) return Nd;
+    return static_cast<std::size_t>(bc.position - tile_min) + 1;
+  } else {
+    if(bc.position >= tile_max) return std::nullopt;
+    if(bc.position <= tile_min) return Nd;
+    return Nd - static_cast<std::size_t>(bc.position - tile_min);
+  }
+}
+
+ta::sexpr_sender
+  apply_edge_bc(
+    runko::simulation_context& x,
+    const emf::edge_bc& e,
+    const runko::comm_mode y)
+{
+  return te::just(std::ref(x), e, y) |
+         te::then(
+           [](runko::simulation_context& sim, const emf::edge_bc& bc, const auto mode) {
+             for(auto&& [_, yee, idx]: sim.view_tiles<
+                                       emf::YeeLattice,
+                                       runko::cartesian_index<3>,
+                                       runko::local_tile_tag>()) {
+
+               const auto w = edge_bc_width(
+                 bc,
+                 global_coordinates(sim, idx.template as<double>().data),
+                 yee.extents_wout_halo());
+               if(w) { yee.apply_edge_bc(bc, w.value(), mode); }
+             }
+
+             return ta::null;
+           });
+}
+
+ta::sexpr_sender
+  apply_edge_bcs(runko::simulation_context& x, const runko::comm_mode y)
+{
+  if(not x.has_config<emf::boundary_conditions>()) { return te::just(ta::null); }
+  return te::just(std::ref(x), y, std::cref(x.get_config<emf::boundary_conditions>())) |
+         te::then([](
+                    runko::simulation_context& sim,
+                    const auto mode,
+                    const emf::boundary_conditions& bcs) {
+           for(auto&& [_, yee, idx]: sim.view_tiles<
+                                     emf::YeeLattice,
+                                     runko::cartesian_index<3>,
+                                     runko::local_tile_tag>()) {
+
+             for(const auto& e: bcs.edges) {
+               const auto w = edge_bc_width(
+                 e,
+                 global_coordinates(sim, idx.template as<double>().data),
+                 yee.extents_wout_halo());
+               if(w) { yee.apply_edge_bc(e, w.value(), mode); }
              }
            }
 

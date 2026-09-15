@@ -53,6 +53,8 @@ ta::sexpr
     return obj.cast<py::function>();
   } else if(py::isinstance<emf::antenna_mode>(obj)) {
     return obj.cast<emf::antenna_mode>();
+  } else if(py::isinstance<emf::edge_bc>(obj)) {
+    return obj.cast<emf::edge_bc>();
   } else if(py::isinstance<py::tuple>(obj)) {
     const auto tup = obj.cast<py::tuple>();
 
@@ -282,6 +284,10 @@ void
     .value("push_e", runko::symbol::push_e)
     .value("push_half_b", runko::symbol::push_half_b)
     .value("filter_current", runko::symbol::filter_current)
+    .value("register_edge_bc", runko::symbol::register_edge_bc)
+    .value("apply_edge_bc", runko::symbol::apply_edge_bc)
+    .value("apply_edge_bcs", runko::symbol::apply_edge_bcs)
+    .value("clear_bcs", runko::symbol::clear_bcs)
     .value("set_cartesian_neighbors", runko::symbol::set_cartesian_neighbors)
     .value("set_cartesian_comm_infos", runko::symbol::set_cartesian_comm_infos)
     .value("sequence", runko::symbol::sequence)
