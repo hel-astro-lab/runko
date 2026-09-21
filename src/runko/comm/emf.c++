@@ -113,8 +113,25 @@ tyvi::actions::sexpr_sender
     }
   };
 
+  const auto comm = [mode, sim = std::ref(x)] {
+    switch(mode) {
+      case runko::comm_mode::emf_E:
+        return emf::make_communicator<runko::comm_mode::emf_E>(sim).comm;
+        break;
+      case runko::comm_mode::emf_B:
+        return emf::make_communicator<runko::comm_mode::emf_B>(sim).comm;
+        break;
+      case runko::comm_mode::emf_J:
+        return emf::make_communicator<runko::comm_mode::emf_J>(sim).comm;
+        break;
+      default:
+        throw std::runtime_error {
+          std::format("emf::comm_external: unregonized comm_mode: {}", mode)
+        };
+    }
+  }();
 
-  auto recvs = [mode, get_span](runko::simulation_context& sim) {
+  auto recvs = [mode, get_span, comm](runko::simulation_context& sim) {
     auto senders = std::vector<te::unique_any_sender<>> {};
     for(auto&& [_, idx, virt, comm_buffs]: sim.view_tiles<
                                            const index_type,
@@ -136,7 +153,7 @@ tyvi::actions::sexpr_sender
           MPI_FLOAT,
           rank,
           tag,
-          MPI_COMM_WORLD)
+          comm)
 
         | te::continues_on(te::thread_pool_scheduler {}) |
         pmpi::transform_mpi(MPI_Irecv));
@@ -144,7 +161,7 @@ tyvi::actions::sexpr_sender
     return te::when_all_vector(std::move(senders));
   };
 
-  auto sends = [mode, get_span](runko::simulation_context& sim) {
+  auto sends = [mode, get_span, comm](runko::simulation_context& sim) {
     auto senders = std::vector<te::unique_any_sender<>> {};
     for(auto&& [_, idx, boundary, comm_buffs]: sim.view_tiles<
                                                const index_type,
@@ -164,7 +181,7 @@ tyvi::actions::sexpr_sender
             MPI_FLOAT,
             rank,
             tag,
-            MPI_COMM_WORLD) |
+            comm) |
           te::continues_on(te::thread_pool_scheduler {}) |
           pmpi::transform_mpi(MPI_Isend));
       }

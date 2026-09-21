@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include "mpi.h"
 #include "runko/tools/vector.h"
 #include "tyvi/actions_ast.h"
 #include "tyvi/actions_format.h"
@@ -42,6 +43,10 @@ enum class comm_mode : int {
   emf_J_exchange
 };
 
+template<runko::comm_mode mode>
+struct exclusive_communicator {
+  MPI_Comm comm;
+};
 
 /// Returns a communication which has to be done before given communication.
 [[nodiscard]] constexpr std::optional<comm_mode>
