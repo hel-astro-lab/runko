@@ -49,32 +49,32 @@ class TileGrid:
         self._world_size = MPI.COMM_WORLD.Get_size()
 
         total_n_tiles = self._Nx * self._Ny * self._Nz
+
+        tiles_per_rank = [total_n_tiles // self._world_size] * self._world_size
+
+        # Add left over tiles evenly between the ranks.
+        i = 0
+        while sum(tiles_per_rank) != total_n_tiles:
+            tiles_per_rank[i] += 1
+            i = (i + 1) % self._world_size
+
+        skipped_tiles = sum(tiles_per_rank[:self._my_rank])
+
         if conf.tile_partitioning == "hilbert_curve":
-            raise NotImplementedError()
+            is_power_of_two = lambda n: n > 0 and (n & (n - 1)) == 0
+            if not is_power_of_two(self._Nx) or not is_power_of_two(self._Ny) or not is_power_of_two(self._Nz):
+                raise "Hilbert curve tile partition requires n_tiles to be powers of two!"
+
+            from .hilbert import Hilbert3D
+            H = Hilbert3D(self._Nx, self._Ny, self._Nz)
+
+            for n in range(skipped_tiles, skipped_tiles + tiles_per_rank[self._my_rank]):
+                self._local_indices.append(H.inv(n))
+
         elif conf.tile_partitioning == "catepillar_track":
-            tiles_per_rank = [total_n_tiles // self._world_size] * self._world_size
-
-            # Add left over tiles evenly between the ranks.
-            i = 0
-            while sum(tiles_per_rank) != total_n_tiles:
-                tiles_per_rank[i] += 1
-                i = (i + 1) % self._world_size
-
-            rank_in_progress = 0
-            count_for_rank_in_progress = 0
-            for i in range(self._Nx):
-                for j in range(self._Ny):
-                    for k in range(self._Nz):
-                        if rank_in_progress == self._my_rank:
-                            self._local_indices.append((i, j, k))
-                        count_for_rank_in_progress += 1
-                        if count_for_rank_in_progress == tiles_per_rank[rank_in_progress]:
-                            rank_in_progress += 1
-                            count_for_rank_in_progress = 0
-
-            # Sanity check:
-            if rank_in_progress != self._world_size or count_for_rank_in_progress != 0:
-                raise RuntimeError(f"Internal logic error in constructing catepillar_track.")
+            index_space = list(itertools.product(range(self._Nx), range(self._Ny), range(self._Nz)))
+            for idx in index_space[skipped_tiles:][:tiles_per_rank[self._my_rank]]:
+                self._local_indices.append(idx)
         else:
             raise RuntimeError("Due to previous checking this should not happend.")
 
