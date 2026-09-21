@@ -320,6 +320,14 @@ void
     };
   }
 
+  auto adjust_back = [](auto& r) {
+    for(auto& x: r) { x /= static_cast<int>(sizeof(index_type)); };
+  };
+
+  adjust_back(local_displs);
+  adjust_back(virt_displs);
+  // {local,virt}_tile_counts are not adjusted back as they are not needed anymore.
+
   auto local_index_to_rank = std::map<index_type, int> {};
   {
     auto current_rank = 0;
@@ -332,7 +340,9 @@ void
       local_index_to_rank[idx] = current_rank;
     }
   }
-  auto virt_index_to_rank = std::map<index_type, int> {};
+  // This can not be std::map because there might be many virtual tiles
+  // with the same virtual tile index but on different ranks.
+  auto virt_index_n_rank = std::vector<std::pair<index_type, int>> {};
   {
     auto current_rank = 0;
     for(const auto& [n, idx]: std::views::enumerate(virt_indices)) {
@@ -341,7 +351,7 @@ void
         n >= virt_displs.at(static_cast<std::size_t>(current_rank + 1))) {
         current_rank += 1;
       }
-      virt_index_to_rank[idx] = current_rank;
+      virt_index_n_rank.emplace_back(idx, current_rank);
     }
   }
 
@@ -356,7 +366,7 @@ void
       sim.view_tiles<const index_type, boundary_tile_tag>()) {
     boundary.dest_infos.clear();
 
-    for(const auto& [virt_idx, virt_rank]: virt_index_to_rank) {
+    for(const auto& [virt_idx, virt_rank]: virt_index_n_rank) {
       if(idx == wrap_cartesian_index<rank>(virt_idx, n_tiles)) {
         boundary.dest_infos.push_back(
           comm_info_type { .rank = virt_rank,
