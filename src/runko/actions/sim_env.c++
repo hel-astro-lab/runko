@@ -34,10 +34,14 @@ tyvi::actions::sexpr
            te::let_value(
              [](simulation_context& sim, const auto mode) -> ta::sexpr_sender {
                switch(mode) {
+                 case comm_mode::emf_E:
                  case comm_mode::emf_B:
-                   return comm_local_B(sim) | te::then([] { return ta::null; });
+                 case comm_mode::emf_J:
+                 case comm_mode::emf_J_exchange: return emf::comm_local(sim, mode);
                  default:
-                   throw std::runtime_error { "comm_local: unregonized comm mode" };
+                   throw std::runtime_error {
+                     std::format("comm_local: unregonized comm_mode: {}", mode)
+                   };
                }
 
                return te::just(ta::null);
@@ -51,10 +55,13 @@ tyvi::actions::sexpr
            te::let_value(
              [](simulation_context& sim, const auto mode) -> ta::sexpr_sender {
                switch(mode) {
+                 case comm_mode::emf_E:
                  case comm_mode::emf_B:
-                   return comm_external_B(sim) | te::then([] { return ta::null; });
+                 case comm_mode::emf_J: return emf::comm_external(sim, mode);
                  default:
-                   throw std::runtime_error { "comm_external: unregonized comm mode" };
+                   throw std::runtime_error {
+                     std::format("comm_external: unregonized comm_mode: {}", mode)
+                   };
                }
 
                return te::just(ta::null);
