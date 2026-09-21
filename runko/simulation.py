@@ -283,13 +283,12 @@ class Simulation:
                 else:
                     raise RuntimeError(f"Unregonized communication: {method}")
 
+                mode_to_prog = lambda m: (actions.quote, (symbol, actions.current_context, m))
+                prog = (actions.sequence,)
                 modes = (*vargs,)
-                if len(modes) != 1:
-                    raise RuntimeError(f"Currently only one comm_mode at the same time is supported.")
-                prg = (symbol, actions.current_context) + modes
-                print(prg)
-                self._simulation_context.eval(prg)
-                print("done")
+                for mode in modes:
+                    prog = prog + (mode_to_prog(mode),)
+                self._simulation_context.eval(prog)
             else:
                 raise RuntimeError(f"{method} is not supported!")
 
