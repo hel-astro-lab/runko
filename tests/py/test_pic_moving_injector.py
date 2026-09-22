@@ -74,6 +74,18 @@ class TestBatchInjectInStripe(unittest.TestCase):
             self.assertGreaterEqual(px, 3.0)
             self.assertLess(px, 7.0)
 
+    def test_stripe_fractional_edges(self):
+        """Stripe [3.5, 6.5): partial edge cells 3 and 6 are passed to the pgen, but
+        only particles inside the stripe are kept (corner 3.0 dropped, 6.0 kept)."""
+        config = make_config()
+        tile = runko.pic.threeD.Tile((0, 0, 0), config)
+        tile.batch_inject_in_x_stripe(0, identity_pgen, 3.5, 6.5)
+
+        posx, _, _ = tile.get_positions(0)
+        expected = 3 * config.n_cells_per_tile[1] * config.n_cells_per_tile[2]  # cells 4, 5, 6
+        self.assertEqual(len(posx), expected)
+        self.assertTrue(np.all((np.asarray(posx) >= 3.5) & (np.asarray(posx) < 6.5)))
+
     def test_pgen_receives_only_stripe_coords(self):
         """Verify pgen only gets x-coordinates within the stripe."""
         config = make_config()

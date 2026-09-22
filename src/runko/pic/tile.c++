@@ -234,7 +234,7 @@ void
   const auto global_coordinates = this->global_coordinate_map();
   const auto e                  = this->yee_lattice_.extents_wout_halo();
 
-  // find x-cell range within the stripe (O(1) since dx=1)
+  // find x-cells overlapping the stripe (O(1) since dx=1)
   // cell i spans [tile_xmin+i, tile_xmin+i+1)
   const auto diff_left  = x_left - tile_xmin;
   const auto diff_right = x_right - tile_xmin;
@@ -309,13 +309,15 @@ void
   const auto vely_view = state_batch.vel[1].template unchecked<1>();
   const auto velz_view = state_batch.vel[2].template unchecked<1>();
 
-  auto states = std::vector<runko::ParticleState<double>>(batch_size);
+  auto states = std::vector<runko::ParticleState<double>> {};
+  states.reserve(batch_size);
   for(const auto n: std::views::iota(0uz, batch_size)) {
-    states[n] = runko::ParticleState<double> {
+    // partial edge cells are generated whole; keep only the part inside the stripe
+    if(posx_view(n) < x_left or posx_view(n) >= x_right) { continue; }
+    states.push_back(runko::ParticleState<double> {
       .pos = { posx_view(n), posy_view(n), posz_view(n) },
       .vel = { velx_view(n), vely_view(n), velz_view(n) },
-      .id  = this->consume_next_id_(particle_type)
-    };
+      .id  = this->consume_next_id_(particle_type) });
   }
 
   this->particle_buffs_.at(particle_type).add_particles(states);

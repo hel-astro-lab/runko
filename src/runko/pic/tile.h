@@ -137,8 +137,9 @@ public:
 
   /// Inject particles in a stripe between x_left and x_right.
   ///
-  /// Only cells whose x-coordinate falls within [x_left, x_right) are
-  /// passed to the generator. Full y and z extent of the tile is used.
+  /// Cells overlapping [x_left, x_right) are passed to the generator; generated
+  /// particles outside [x_left, x_right) are dropped, so partial edge cells get
+  /// the matching fraction. Full y and z extent of the tile is used.
   /// No-op if the stripe does not overlap this tile.
   void batch_inject_in_x_stripe(
     std::size_t particle_type,
