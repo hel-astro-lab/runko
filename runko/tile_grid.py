@@ -6,6 +6,7 @@ import pickle
 import logging
 import pathlib
 import pycorgi.threeD as pycorgi
+import numpy as np
 from .simulation import Simulation
 from .runko_logging import runko_logger, on_main_rank
 from .balance_grid import balance_mpi, load_catepillar_track_mpi
@@ -58,8 +59,6 @@ class TileGrid:
             tiles_per_rank[i] += 1
             i = (i + 1) % self._world_size
 
-        skipped_tiles = sum(tiles_per_rank[:self._my_rank])
-
         if conf.tile_partitioning == "hilbert_curve":
             is_power_of_two = lambda n: n > 0 and (n & (n - 1)) == 0
             if not is_power_of_two(self._Nx) or not is_power_of_two(self._Ny) or not is_power_of_two(self._Nz):
@@ -68,13 +67,36 @@ class TileGrid:
             from .hilbert import Hilbert3D
             H = Hilbert3D(self._Nx, self._Ny, self._Nz)
 
+            skipped_tiles = sum(tiles_per_rank[:self._my_rank])
             for n in range(skipped_tiles, skipped_tiles + tiles_per_rank[self._my_rank]):
                 self._local_indices.append(H.inv(n))
 
         elif conf.tile_partitioning == "catepillar_track":
-            index_space = list(itertools.product(range(self._Nx), range(self._Ny), range(self._Nz)))
-            for idx in index_space[skipped_tiles:][:tiles_per_rank[self._my_rank]]:
-                self._local_indices.append(idx)
+            if not hasattr(conf, "catepillar_track_length"):
+                raise RuntimeError("'catepillar_track' tile partitioning requires 'catepillar_track_length' to be defined.")
+
+            ctl = conf.catepillar_track_length
+
+            if type(ctl) != int or ctl <= 0:
+                raise RuntimeError(f"'catepillar_track_length' is required to be positive int and not: {ctl}")
+
+            grid = np.zeros((ctl, self._Ny, self._Nz))
+            val = 0.0
+            for i in range(ctl):
+                for j in range(self._Ny):
+                    for k in range(self._Nz):
+                        grid[i, j, k] = val
+                        val += 1.0
+
+            hmax = np.max(grid)
+
+            for i in range(self._Nx):
+                for j in range(self._Ny):
+                    for k in range(self._Nz):
+                        ic = i % ctl
+                        if self._my_rank == np.floor(self._world_size * grid[ic, j, k] / (hmax + 1)):
+                            self._local_indices.append((i, j, k))
+
         else:
             raise RuntimeError("Due to previous checking this should not happend.")
 
