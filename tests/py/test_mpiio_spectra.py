@@ -5,6 +5,7 @@ import unittest
 import tempfile
 import shutil
 import os
+import itertools
 
 import numpy as np
 
@@ -231,11 +232,14 @@ class TestMpiioSpectraWriter(unittest.TestCase):
         self.assertEqual(len(b_cents), 10)
         self.assertAlmostEqual(b_cents[5], 0.1, places=5)  # midpoint ~ 0
 
-    def test_multi_tile_x_resolved(self):
-        """2x1x1 grid, each tile with different velocity.
-        Verify the x-resolved spectra have peaks at different bins for each tile."""
-        config = make_pic_config(Nx=2, Ny=1, Nz=1, outdir=self.outdir)
+    def test_multi_tile_resolved(self):
+        """2x2x2 grid, each tile with a different velocity.
+        Verify every tile's particles land in its own (z, y, x-range) slot and u bin."""
+        config = make_pic_config(Nx=2, Ny=2, Nz=2, outdir=self.outdir)
         P = runko.pic.threeD.ParticleState
+
+        def tile_u(i, j, k):
+            return 2.0**(i + 2*j + 4*k)  # |u| = 1, 2, ..., 128; one per tile
 
         tile_grid = runko.TileGrid(config)
         for idx in tile_grid.local_tile_indices():
@@ -243,10 +247,7 @@ class TestMpiioSpectraWriter(unittest.TestCase):
             zero = lambda x, y, z: (0, 0, 0)
             tile.set_EBJ(zero, zero, zero)
 
-            # Tile 0: |u|=1, tile 1: |u|=50
-            vx = 1.0 if idx[0] == 0 else 50.0
-
-            def gen(x, y, z, _vx=vx):
+            def gen(x, y, z, _vx=tile_u(*idx)):
                 return [P(pos=(x + 0.5, y + 0.5, z + 0.5), vel=(_vx, 0, 0))]
             for species in range(2):
                 tile.inject_to_each_cell(species, gen)
@@ -258,23 +259,15 @@ class TestMpiioSpectraWriter(unittest.TestCase):
         hdr, fields = spectra_write_and_read(
             tile_grid, self.outdir, config, nbins=nbins, umin=umin, umax=umax)
 
-        # Output shape: (Nz=1, Ny=1, nx=16, nbins)
-        self.assertEqual(fields["s0_u"].shape, (1, 1, 16, nbins))
+        # Output shape: (Nz=2, Ny=2, nx=16, nbins)
+        self.assertEqual(fields["s0_u"].shape, (2, 2, 16, nbins))
 
         edges = u_bin_edges(hdr)
-        bin_u1 = np.searchsorted(edges, 1.0) - 1
-        bin_u50 = np.searchsorted(edges, 50.0) - 1
-        self.assertNotEqual(bin_u1, bin_u50)
-
-        # Tile 0 x-columns [0:8] should have peak at u=1
-        tile0_spectrum = fields["s0_u"][0, 0, 0:8, :].sum(axis=0)
-        self.assertGreater(tile0_spectrum[bin_u1], 0)
-        self.assertEqual(tile0_spectrum[bin_u50], 0)
-
-        # Tile 1 x-columns [8:16] should have peak at u=50
-        tile1_spectrum = fields["s0_u"][0, 0, 8:16, :].sum(axis=0)
-        self.assertGreater(tile1_spectrum[bin_u50], 0)
-        self.assertEqual(tile1_spectrum[bin_u1], 0)
+        for i, j, k in itertools.product(range(2), repeat=3):
+            spectrum = fields["s0_u"][k, j, 8*i:8*(i + 1), :].sum(axis=0)
+            expected = np.zeros(nbins)
+            expected[np.searchsorted(edges, tile_u(i, j, k)) - 1] = 8**3
+            np.testing.assert_array_equal(spectrum, expected)
 
     def test_two_species_distinct_spectra(self):
         """Inject species 0 with |u|=1 and species 1 with |u|=100.
