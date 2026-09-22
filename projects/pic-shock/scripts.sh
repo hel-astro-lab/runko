@@ -14,7 +14,7 @@ declare -a conf_arr=(
 # one-time scripts that read all the time slices in one go
 declare -a single_scripts_arr=(
 "plot_energy_timeline.py"
-"plot_pspec_time.py"
+"plot_pspectra_time.py"
 )
 
 

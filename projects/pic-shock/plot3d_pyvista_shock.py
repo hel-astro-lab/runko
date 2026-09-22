@@ -277,7 +277,7 @@ if __name__ == "__main__":
         stream = mesh.streamlines_from_source(
             seed,
             vectors='bvec',
-            max_time=1e5,
+            max_length=1e5,
             #initial_step_length=0.1,
             integration_direction='both',
             #integration_direction='forward',
@@ -664,7 +664,7 @@ if __name__ == "__main__":
 
     #--------------------------------------------------
     slap = str(lap).rjust(5, '0')
-    p.screenshot(conf.io_outdir + "/" + "3d_" + var + "_" + slap + ".png", scale=2)
+    p.screenshot(conf.outdir + "/" + "3d_" + var + "_" + slap + ".png", scale=2)
 
     print('camera pos:', cpos)
 
@@ -674,7 +674,7 @@ if __name__ == "__main__":
     print('up', p.camera.up)
 
     if False:
-        p.open_movie(conf.io_outdir + "/" + "3d_jz_b.mp4", quality=8)
+        p.open_movie(conf.outdir + "/" + "3d_jz_b.mp4", quality=8)
 
         for az in np.linspace(0, 360, 360):
             p.camera.azimuth = az
