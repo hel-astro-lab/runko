@@ -86,6 +86,9 @@ void
         break;
       case runko::comm_mode::emf_J: comm_buffs.J.set_from_mds(w, yee.mds_J()); break;
       default:
+        throw std::logic_error {
+          std::format("update_send_buff({}): unhandled comm_mode", mode)
+        };
     }
   }
 
@@ -240,6 +243,9 @@ tyvi::actions::sexpr_sender
               yee.add_to_J_from_subregion(w, dir_arr, *p);
               break;
             default:
+              throw std::logic_error { std::format(
+                "comm_local({}): unhandled comm_mode for non-virtual neighbor",
+                mode) };
           }
         } else if(const auto p = sim.get().tiles.try_get<emf::comm_buffs>(neigh_id)) {
 
@@ -257,6 +263,9 @@ tyvi::actions::sexpr_sender
               yee.add_to_J_from_subregion(w, dir_arr, p->J);
               break;
             default:
+              throw std::logic_error { std::format(
+                "comm_local({}): unhandled comm_mode for virtual neighbor",
+                mode) };
           }
         } else {
           throw std::logic_error(std::format("comm_local({}): invalid neighbor", mode));
