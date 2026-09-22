@@ -285,6 +285,10 @@ void mpiio::FieldsWriter<3>::pack_tile(emf::Tile<3>& tile)
     const auto my = static_cast<vt>(tile.mins[1]);
     const auto mz = static_cast<vt>(tile.mins[2]);
     const auto inv_stride = vt{1} / static_cast<vt>(stride);
+    // particles appended after pack_outgoing may sit exactly on the upper tile face
+    const auto last = std::array { static_cast<vt>(nxt_ - 1),
+                                   static_cast<vt>(nyt_ - 1),
+                                   static_cast<vt>(nzt_ - 1) };
 
     auto deposit_species = [&](std::size_t species, int f_idx) {
       const auto pos_mds = pic_tile->particles(species).pos_mds();
@@ -300,9 +304,9 @@ void mpiio::FieldsWriter<3>::pack_tile(emf::Tile<3>& tile)
             const auto py = pos_mds[idx][1] - my;
             const auto pz = pos_mds[idx][2] - mz;
 
-            const auto ci = static_cast<std::size_t>(sstd::floor(px * inv_stride));
-            const auto cj = static_cast<std::size_t>(sstd::floor(py * inv_stride));
-            const auto ck = static_cast<std::size_t>(sstd::floor(pz * inv_stride));
+            const auto ci = static_cast<std::size_t>(sstd::min(sstd::floor(px * inv_stride), last[0]));
+            const auto cj = static_cast<std::size_t>(sstd::min(sstd::floor(py * inv_stride), last[1]));
+            const auto ck = static_cast<std::size_t>(sstd::min(sstd::floor(pz * inv_stride), last[2]));
 
             auto* const n = &thrust::raw_reference_cast(buf_mds[ck, cj, ci][fi]);
             sstd::atomic_add(n, vt{1});

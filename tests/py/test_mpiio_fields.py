@@ -434,6 +434,32 @@ class TestMpiioFieldsDensity(unittest.TestCase):
         np.testing.assert_allclose(fields["n0"], volume * 1.0, atol=1e-5)
         np.testing.assert_allclose(fields["n1"], volume * 1.0, atol=1e-5)
 
+    def test_density_tile_face_particles(self):
+        """Particles exactly on tile (0,0,0)'s upper faces (x = maxs), as left by
+        wrap/injection rounding, are counted in that tile's last cell."""
+
+        config = make_pic_config(Nx=2, Ny=2, Nz=2, outdir=self.outdir)
+        P = runko.pic.threeD.ParticleState
+        zero = lambda x, y, z: (0, 0, 0)
+        # (x, y, z) positions and the (z, y, x) cell they must land in
+        faces = {(8.0, 4.5, 4.5): (4, 4, 7), (4.5, 8.0, 4.5): (4, 7, 4),
+                 (4.5, 4.5, 8.0): (7, 4, 4), (8.0, 8.0, 8.0): (7, 7, 7)}
+
+        tile_grid = runko.TileGrid(config)
+        for idx in tile_grid.local_tile_indices():
+            tile = runko.pic.threeD.Tile(idx, config)
+            tile.set_EBJ(zero, zero, zero)
+            if tuple(idx) == (0, 0, 0):
+                tile.inject(0, [P(pos=p, vel=(0, 0, 0)) for p in faces])
+            tile_grid.add_tile(tile, idx)
+        _ = tile_grid.configure_simulation(config)
+
+        _, fields = write_and_read(tile_grid, self.outdir, config)
+        self.assertEqual(fields["n0"].sum(), len(faces))
+        for cell in faces.values():
+            self.assertEqual(fields["n0"][cell], 1.0)
+        self.assertEqual(fields["n1"].sum(), 0.0)
+
     def test_emf_tile_density_zero(self):
         """EMF-only tile (no particles). n0 and n1 should be 0."""
 

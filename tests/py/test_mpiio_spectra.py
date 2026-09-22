@@ -269,6 +269,31 @@ class TestMpiioSpectraWriter(unittest.TestCase):
             expected[np.searchsorted(edges, tile_u(i, j, k)) - 1] = 8**3
             np.testing.assert_array_equal(spectrum, expected)
 
+    def test_tile_face_particles(self):
+        """Particles exactly on tile (0,0,0)'s upper x face (x = maxs), as left by
+        wrap/injection rounding, are counted in that tile's last x-bin."""
+        config = make_pic_config(Nx=2, Ny=2, Nz=2, outdir=self.outdir)
+        P = runko.pic.threeD.ParticleState
+
+        tile_grid = runko.TileGrid(config)
+        for idx in tile_grid.local_tile_indices():
+            tile = runko.pic.threeD.Tile(idx, config)
+            zero = lambda x, y, z: (0, 0, 0)
+            tile.set_EBJ(zero, zero, zero)
+            if tuple(idx) == (0, 0, 0):
+                tile.inject(0, [P(pos=p, vel=(1, 0, 0))
+                                for p in ((8.0, 4.5, 4.5), (8.0, 8.0, 8.0), (4.5, 4.5, 8.0))])
+            tile_grid.add_tile(tile, idx)
+        _ = tile_grid.configure_simulation(config)
+
+        hdr, fields = spectra_write_and_read(tile_grid, self.outdir, config)
+
+        s0_u = fields["s0_u"]
+        self.assertEqual(s0_u.sum(), 3)
+        self.assertEqual(s0_u[0, 0, 7, :].sum(), 2)  # x = 8 -> last x-bin of tile 0
+        self.assertEqual(s0_u[0, 0, 4, :].sum(), 1)
+        self.assertEqual(fields["s1_u"].sum(), 0)
+
     def test_two_species_distinct_spectra(self):
         """Inject species 0 with |u|=1 and species 1 with |u|=100.
         Verify s0_u and s1_u peak at different bins."""

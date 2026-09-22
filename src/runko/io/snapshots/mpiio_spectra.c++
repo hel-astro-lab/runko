@@ -156,6 +156,7 @@ void mpiio::SpectraWriter<3>::histogram_tile(emf::Tile<3>& tile)
   const auto inv_dlog   = static_cast<vt>(inv_dlog_);
   const auto inv_dbeta  = static_cast<vt>(inv_dbeta_);
   const auto last_bin_f = static_cast<vt>(nbins_ - 1);
+  const auto last_x_f   = static_cast<vt>(nxt_ - 1);
 
   const auto nspec = static_cast<int>(pic_tile->number_of_species());
   const int ndeposit = std::min(nspec, nspecies_);
@@ -174,7 +175,7 @@ void mpiio::SpectraWriter<3>::histogram_tile(emf::Tile<3>& tile)
         
           // particle x position -> x bin
           const auto px = pos_mds[idx][0] - mx;
-          const auto ix = static_cast<runko::index_t>(sstd::floor(px * inv_stride));
+          const auto ix = static_cast<runko::index_t>(sstd::min(sstd::floor(px * inv_stride), last_x_f));
 
           // particle velocities
           const auto ux = vel_mds[idx][0];
