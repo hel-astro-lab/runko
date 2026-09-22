@@ -40,6 +40,10 @@ if __name__ == "__main__":
     upstream_gamma = conf.upstream_gamma
     n_filter_passes = conf.n_filter_passes or 3
     output_interval = conf.io_output_interval or 20
+    use_reflector = True if conf.use_reflector is None else conf.use_reflector
+
+    full_grid = np.array(conf.n_tiles) * np.array(conf.n_cells_per_tile)
+    Lx = full_grid[0]
 
     # Bulk flow (upstream_gamma is always a Lorentz factor >= 1)
     beta = np.sqrt(1.0 - 1.0 / upstream_gamma**2)
@@ -94,7 +98,6 @@ if __name__ == "__main__":
         logger.info(f"{'--- [grid] ---':}")
         logger.info(f"  {'tiles':<{W}}= {conf.n_tiles}")
         logger.info(f"  {'mesh per tile':<{W}}= {conf.n_cells_per_tile}")
-        full_grid = np.array(conf.n_tiles) * np.array(conf.n_cells_per_tile)
         logger.info(f"  {'full grid':<{W}}= {full_grid}")
         logger.info(f"  {'grid in c/wp':<{W}}= {full_grid / c_omp}")
 
@@ -110,6 +113,7 @@ if __name__ == "__main__":
         logger.info(f"  {'theta_e / theta_i':<{W}}= {theta0:.6g} / {theta1:.6g}")
 
         logger.info(f"{'--- [problem] ---':}")
+        logger.info(f"  {'setup':<{W}}= {'shock' if use_reflector else 'cherenkov'}")
         logger.info(f"  {'sigma':<{W}}= {sigma}")
         logger.info(f"  {'c/wp':<{W}}= {c_omp}")
         logger.info(f"  {'upstream gamma':<{W}}= {upstream_gamma}")
@@ -130,26 +134,26 @@ if __name__ == "__main__":
         logger.info(f"  {'tile_partitioning':<{W}}= {conf.tile_partitioning}")
 
     # --------------------------------------------------
-    # Reflector wall and moving injector
+    # Reflector wall and moving injector (shock only)
 
-    Lx = full_grid[0]
-    walloc = 15.0  # cell location of wall (leave >10 cells for BCs)
-    wall = runko.pic.threeD.reflector_wall(walloc=walloc)
-    conducting_bc = runko.emf.threeD.edge_bc(direction=0, side=0, position=walloc,
-                                              E_components=0b110, B_components=0, J_components=0b111)
-    upstream_bc = runko.emf.threeD.edge_bc(direction=0, side=1, position=Lx - 5,
-                                            Ex=Ex_up, Ey=Ey_up, Ez=Ez_up,
-                                            Bx=Bx_up, By=By_up, Bz=Bz_up,
-                                            J_components=0b111)
+    if use_reflector:
+        walloc = 15.0  # cell location of wall (leave >10 cells for BCs)
+        wall = runko.pic.threeD.reflector_wall(walloc=walloc)
+        conducting_bc = runko.emf.threeD.edge_bc(direction=0, side=0, position=walloc,
+                                                  E_components=0b110, B_components=0, J_components=0b111)
+        upstream_bc = runko.emf.threeD.edge_bc(direction=0, side=1, position=Lx - 5,
+                                                Ex=Ex_up, Ey=Ey_up, Ez=Ez_up,
+                                                Bx=Bx_up, By=By_up, Bz=Bz_up,
+                                                J_components=0b111)
 
-    injloc0 = walloc + 10.0 * c_omp  # initial injection right edge
-    n_inj = 50
-    injector = runko.MovingInjector(
-        injloc=injloc0, beta_inj=1.0, beta_flow=beta,
-        cfl=conf.cfl, n_inj=n_inj, walloc=walloc, Lx=Lx)
+        injloc0 = walloc + 10.0 * c_omp  # initial injection right edge
+        n_inj = 50
+        injector = runko.MovingInjector(
+            injloc=injloc0, beta_inj=1.0, beta_flow=beta,
+            cfl=conf.cfl, n_inj=n_inj, walloc=walloc, Lx=Lx)
 
-    logger.info(f"Reflector wall at x={walloc}")
-    logger.info(f"Moving injector at x={injloc0}, beta_inj=1.0, beta_flow={beta:.4g}, n_inj={n_inj}")
+        logger.info(f"Reflector wall at x={walloc}")
+        logger.info(f"Moving injector at x={injloc0}, beta_inj=1.0, beta_flow={beta:.4g}, n_inj={n_inj}")
 
     # --------------------------------------------------
     # Particle generators
@@ -173,31 +177,22 @@ if __name__ == "__main__":
 
     tile_grid = runko.TileGrid(conf)
 
-    if True: # regular shock setup
-        if not tile_grid.initialized_from_restart_file():
-            for idx in tile_grid.local_tile_indices():
-                tile = runko.pic.threeD.Tile(idx, conf)
-                tile.batch_set_EBJ(Z, Ey, Ez, Bx, By, Bz, Z, Z, Z)
+    if not tile_grid.initialized_from_restart_file():
+        for idx in tile_grid.local_tile_indices():
+            tile = runko.pic.threeD.Tile(idx, conf)
+            tile.batch_set_EBJ(Z, Ey, Ez, Bx, By, Bz, Z, Z, Z)
+            if use_reflector: # shock: plasma between wall and injector
                 tile.register_reflector_wall(wall)
                 tile.register_edge_bc(conducting_bc)
                 tile.register_edge_bc(upstream_bc)
                 for _ in range(ppc):
                     tile.batch_inject_in_x_stripe(0, pgen0, walloc, injloc0)
                     tile.batch_inject_in_x_stripe(1, pgen1, walloc, injloc0)
-                tile_grid.add_tile(tile, idx)
-
-    else: # Cherenkov-measuring setup w/o reflectors or boundaries
-        if not tile_grid.initialized_from_restart_file():
-            for idx in tile_grid.local_tile_indices():
-                tile = runko.pic.threeD.Tile(idx, conf)
-                tile.batch_set_EBJ(Z, Ey, Ez, Bx, By, Bz, Z, Z, Z)
-                # no reflectors or bcs
+            else: # cherenkov: drifting plasma fills the periodic box
                 for _ in range(ppc):
-                    # inject everywhere
                     tile.batch_inject_to_cells(0, pgen0)
                     tile.batch_inject_to_cells(1, pgen1)
-                tile_grid.add_tile(tile, idx)
-
+            tile_grid.add_tile(tile, idx)
 
     # --------------------------------------------------
     # Configure and start simulation
@@ -267,7 +262,8 @@ if __name__ == "__main__":
         x.prtcl_advance_reflector_walls()
 
         # --- moving particle injector ---
-        injector.inject(simulation, [(0, pgen0), (1, pgen1)], ppc)
+        if use_reflector:
+            injector.inject(simulation, [(0, pgen0), (1, pgen1)], ppc)
 
         # --- IO ---
         MPI.COMM_WORLD.Barrier()
