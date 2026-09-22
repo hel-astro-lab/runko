@@ -8,7 +8,8 @@ set (TOOLS_FILES
      ./runko/tools/system.c++
      ./runko/simulation_context.c++
      ./runko/communication_common.c++
-     ./runko/comm/emf.c++
+     ./runko/comm/local.c++
+     ./runko/comm/external.c++
      ./runko/runtime.c++
      ./runko/coords.c++
      ./runko/actions/env.c++

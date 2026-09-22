@@ -6,7 +6,8 @@
 #include "runko/actions/emf.h"
 #include "runko/actions/env.h"
 #include "runko/comm/cartesian_grid.h"
-#include "runko/comm/emf.h"
+#include "runko/comm/external.h"
+#include "runko/comm/local.h"
 #include "runko/communication_common.h"
 #include "tyvi/actions_ast.h"
 #include "tyvi/actions_list.h"
@@ -26,47 +27,6 @@ tyvi::actions::sexpr
 {
   namespace ta = tyvi::actions;
   namespace te = tyvi::exec;
-
-  auto comm_local = [](const ta::sexpr& args) -> ta::sexpr_sender {
-    return parse_atom_args<
-             std::reference_wrapper<simulation_context>,
-             runko::comm_mode>(args) |
-           te::let_value(
-             [](simulation_context& sim, const auto mode) -> ta::sexpr_sender {
-               switch(mode) {
-                 case comm_mode::emf_E:
-                 case comm_mode::emf_B:
-                 case comm_mode::emf_J:
-                 case comm_mode::emf_J_exchange: return emf::comm_local(sim, mode);
-                 default:
-                   throw std::runtime_error {
-                     std::format("comm_local: unregonized comm_mode: {}", mode)
-                   };
-               }
-
-               return te::just(ta::null);
-             });
-  };
-
-  auto comm_external = [](const ta::sexpr& args) -> ta::sexpr_sender {
-    return parse_atom_args<
-             std::reference_wrapper<simulation_context>,
-             runko::comm_mode>(args) |
-           te::let_value(
-             [](simulation_context& sim, const auto mode) -> ta::sexpr_sender {
-               switch(mode) {
-                 case comm_mode::emf_E:
-                 case comm_mode::emf_B:
-                 case comm_mode::emf_J: return emf::comm_external(sim, mode);
-                 default:
-                   throw std::runtime_error {
-                     std::format("comm_external: unregonized comm_mode: {}", mode)
-                   };
-               }
-
-               return te::just(ta::null);
-             });
-  };
 
   // Due to hipcc compiler bug, env not be non-const.
   // It would be better to have it be non-const and be moved into
@@ -230,8 +190,22 @@ tyvi::actions::sexpr
                });
       } }),
     ta::cons(runko::symbol::current_context, std::ref(sim)),
-    ta::cons(runko::symbol::comm_local, ta::procedure { comm_local }),
-    ta::cons(runko::symbol::comm_external, ta::procedure { comm_external }));
+    ta::cons(
+      runko::symbol::comm_local,
+      ta::procedure { [](const ta::sexpr& args) -> ta::sexpr_sender {
+        return parse_atom_args<
+                 std::reference_wrapper<simulation_context>,
+                 runko::comm_mode>(args) |
+               te::let_value(&runko::comm_local);
+      } }),
+    ta::cons(
+      runko::symbol::comm_external,
+      ta::procedure { [](const ta::sexpr& args) -> ta::sexpr_sender {
+        return parse_atom_args<
+                 std::reference_wrapper<simulation_context>,
+                 runko::comm_mode>(args) |
+               te::let_value(&runko::comm_external);
+      } }));
 
   return std::visit(ta::list_append, env, runko::build_std_env());
 }
