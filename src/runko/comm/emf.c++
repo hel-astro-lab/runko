@@ -84,7 +84,7 @@ void
       case runko::comm_mode::emf_B:
         comm_buffs.B.set_from_mds(w, yee.nonhalo_submds(yee.mds_B()));
         break;
-      case runko::comm_mode::emf_J: comm_buffs.J.set_from_mds(w, yee.mds_B()); break;
+      case runko::comm_mode::emf_J: comm_buffs.J.set_from_mds(w, yee.mds_J()); break;
       default:
     }
   }
