@@ -23,7 +23,7 @@ if __name__ == "__main__":
         # logger.setLevel(logging.DEBUG)
 
     parser = argparse.ArgumentParser(description="PIC collisionless shock simulation")
-    parser.add_argument("--conf", type=str, default="shock_3d.ini",
+    parser.add_argument("--conf", type=str, default="3d_shock.ini",
                         help="Path to .ini configuration file")
     args = parser.parse_args()
 
@@ -172,38 +172,6 @@ if __name__ == "__main__":
     # Grid and tile setup
 
     tile_grid = runko.TileGrid(conf)
-
-    # Particle container pre-allocation. Two optional knobs (either or both
-    # may be set in [particles]; taking the tighter constraint):
-    #   prealloc_factor            — multiplier on ppc (e.g. 4.0 for the
-    #                                Rankine-Hugoniot downstream compression
-    #                                ratio). 0 / unset = no pre-allocation.
-    #   prealloc_memory_gb_per_rank — cap by per-rank memory budget
-    #                                (32 B / particle, split across local
-    #                                tiles and species).
-    n_species = 2
-    local_tiles_count = sum(1 for _ in tile_grid.local_tile_indices())
-    cells_per_tile = np.multiply.reduce(conf.n_cells_per_tile)
-    prealloc_caps = []
-    if conf.prealloc_factor is not None:
-        prealloc_caps.append(int(conf.prealloc_factor * ppc * cells_per_tile))
-    if conf.prealloc_memory_gb_per_rank is not None and local_tiles_count > 0:
-        budget_bytes = conf.prealloc_memory_gb_per_rank * 1e9
-        prealloc_caps.append(int(budget_bytes / local_tiles_count / n_species / 32))
-    prealloc_n = min(prealloc_caps) if prealloc_caps else 0
-
-    # Pass per-species prealloc size through the config so each Tile sizes its
-    # particle containers at construction time with dead-filled slots; later
-    # batch_inject_in_x_stripe calls write into those slots in place without
-    # reallocation.
-    conf.prealloc_per_species = prealloc_n
-
-    if runko.on_main_rank() and prealloc_n > 0:
-        logger.info(
-            f"Pre-allocating {prealloc_n} dead particles per species per tile "
-            f"at construction ({prealloc_n * n_species * 32 / 1e6:.1f} MB/tile, "
-            f"{prealloc_n * n_species * 32 * local_tiles_count / 1e9:.2f} GB/rank)"
-        )
 
     if True: # regular shock setup
         if not tile_grid.initialized_from_restart_file():
