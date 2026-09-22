@@ -23,7 +23,7 @@ from mpi4py import MPI
 print(\"1. mpi4py OK, rank\", MPI.COMM_WORLD.Get_rank(), flush=True)
 import runko
 print(\"2. import OK, rank\", MPI.COMM_WORLD.Get_rank(), flush=True)
-conf = runko.Configuration(\"shock_3d.ini\")
+conf = runko.Configuration(\"3d_shock.ini\")
 print(\"3. conf OK, rank\", MPI.COMM_WORLD.Get_rank(), flush=True)
 tile_grid = runko.TileGrid(conf)
 print(\"4. TileGrid OK, rank\", MPI.COMM_WORLD.Get_rank(), flush=True)

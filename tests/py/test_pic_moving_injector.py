@@ -157,7 +157,7 @@ class TestBatchInjectInStripe(unittest.TestCase):
         """Two injection rounds with flow correction should leave no x-gap."""
         config = make_config()
         # use a wide tile to fit everything
-        config.NxMesh = 40
+        config.n_cells_per_tile = [40, 4, 4]
         tile = runko.pic.threeD.Tile((0, 0, 0), config)
 
         beta_inj = 0.5

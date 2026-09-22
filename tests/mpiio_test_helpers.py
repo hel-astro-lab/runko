@@ -55,8 +55,6 @@ def make_pic_config(Nx=1, Ny=1, Nz=1, NxMesh=8, NyMesh=8, NzMesh=8,
         setattr(config, f"q{i}", charges[i % len(charges)])
         setattr(config, f"m{i}", masses[i % len(masses)])
 
-    config.delgam = 1e-5
-    config.temperature_ratio = 1.0
     config.sigma = 40
     config.n_cells_per_skindepth = 1
     config.particle_pusher = "boris"

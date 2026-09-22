@@ -1,7 +1,11 @@
-field_propagator, str, emf, "**options**: ftdt2, stencil"
-field_propagator_cfl_coeff, float, emf, "CFL in field propagator is multiplied by this (default: 1)."
+field_propagator, str, emf, "**options**: fdtd2, stencil"
+current_filter, str, emf, "Current smoothing filter. **options**: binomial2, binomial2_unrolled"
+stencil_<coeff>, float, emf, "| Stencil coefficient for all axes (**default**: 0);
+| ``stencil_[x|y|z]_<coeff>`` overrides it per axis.
+| **coeff**: delta, gamma, beta_p[1|2], beta[2|3]_p[1|2], zeta_p[1|2], zeta[2|3]_p[1|2]"
 particle_pusher, str, pic, "**options**: boris, higuera_cary, faraday"
-field_interpolator, str, pic,  "**options**: binomial2, binomial2_unrolled"
-current_depositor, str, pic, "**options**: linear_1st, linear_1st_unrolled"
-domain_decomposition, str, tile_grid, "How tiles are divided between MPI ranks. **options**: hilbert_curve, catepillar_track"
-catepillar_track_length, int, catepillar_track, FIXME
+field_interpolator, str, pic, "**options**: linear_1st, linear_1st_unrolled"
+current_depositer, str, pic, "**options**: zigzag_1st, zigzag_1st_atomic"
+prealloc_per_species, int, pic, "Dead-particle slots preallocated per species at tile construction (**default**: 0)."
+tile_partitioning, str, :python:`TileGrid`, "How tiles are divided between MPI ranks. **options**: hilbert_curve, catepillar_track"
+catepillar_track_length, int, :python:`TileGrid`, "Length in tiles of the x-block whose rank layout repeats along x (required for catepillar_track)."

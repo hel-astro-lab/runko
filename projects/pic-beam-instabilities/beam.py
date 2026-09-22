@@ -64,7 +64,6 @@ if __name__ == "__main__":
     config.n_tiles = [1, 1, 1]
     config.n_cells_per_tile = [320, 80, 6]
     config.io_grid_stride = 1
-    config.field_propagator_cfl_coeff = 1.02
     config.field_propagator = "fdtd2"
     config.particle_pusher = "boris"
     config.field_interpolator = "linear_1st"

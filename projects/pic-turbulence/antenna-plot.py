@@ -14,19 +14,12 @@ import numpy as np
 def make_config():
     config = runko.Configuration(None)
 
-    config.outdir = "antenna-plot-output"
-    config.Nx = 1
-    config.Ny = 1
-    config.Nz = 1
-    config.NxMesh = 10
-    config.NyMesh = 10
-    config.NzMesh = 10
+    config.io_outdir = "antenna-plot-output"
+    config.n_tiles = [1, 1, 1]
+    config.n_cells_per_tile = [10, 10, 10]
     config.cfl = 0.45
-    config.Nt = 1000
-    config.xmin = 0
-    config.ymin = 0
-    config.zmin = 0
-    config.field_propagator = "FDTD2"
+    config.n_laps = 1000
+    config.field_propagator = "fdtd2"
     config.m0 = 1
     config.m1 = 1
     config.particle_pusher = "boris"
@@ -41,7 +34,7 @@ def make_config():
 def make_antennas(config, N=1, sigma=10):
     modes = [(N, 0, N), (N, 0, -N), (0, N, N), (0, N, -N)]
 
-    eddy_length = config.NxMesh * config.Nx / N
+    eddy_length = config.n_cells_per_tile[0] * config.n_tiles[0] / N
     light_crossing_time = eddy_length / config.cfl # in units of dt
 
     v_alfen = np.sqrt(sigma / (1 + sigma)) # in units of c
@@ -52,7 +45,7 @@ def make_antennas(config, N=1, sigma=10):
     #
     # Otherwise, different parts of the modes will evolve differently.
     # Here it does not matter, because we only have one node.
-    time_evolution = runko.sample_oscillating_langevin_antenna(size=config.Nt,
+    time_evolution = runko.sample_oscillating_langevin_antenna(size=config.n_laps,
                                                                characteristic_freq=0.8 * w0,
                                                                decorrelation_rate=-0.06 * w0)
 
@@ -91,10 +84,7 @@ if __name__ == "__main__":
     fig = plt.figure()
     ax = fig.add_subplot(projection="3d")
     ax.set(xlabel="x", ylabel="y", zlabel="z")
-    x, y, z = np.meshgrid(range(config.NxMesh),
-                          range(config.NyMesh),
-                          range(config.NzMesh),
-                          indexing="ij")
+    x, y, z = np.meshgrid(*map(range, config.n_cells_per_tile), indexing="ij")
 
     Q = ax.quiver(x, y, z, np.zeros_like(x), np.zeros_like(x), np.zeros_like(x))
 
@@ -112,6 +102,6 @@ if __name__ == "__main__":
 
         return Q,
 
-    # Without init_func FuncAnimation calls update function twice with frame = 0, so frames = Nt - 1.
-    anim = animation.FuncAnimation(fig, update, frames=config.Nt - 1, interval=50, repeat=False)
+    # Without init_func FuncAnimation calls update function twice with frame = 0, so frames = n_laps - 1.
+    anim = animation.FuncAnimation(fig, update, frames=config.n_laps - 1, interval=50, repeat=False)
     plt.show()

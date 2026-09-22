@@ -15,7 +15,7 @@ def create_test_grid():
     config.n_cells_per_tile = [10, 11, 13]
     config.cfl = 1
     config.field_propagator = "fdtd2"
-    config.outdir = tempfile.mkdtemp(prefix="runko-emf-test-output")
+    config.io_outdir = tempfile.mkdtemp(prefix="runko-emf-test-output")
 
     return config, runko.TileGrid(config)
 

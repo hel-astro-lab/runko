@@ -76,7 +76,6 @@ def add_shock_derived(conf):
         * conf.me * (1.0 + conf.me / (conf.m1 * abs(conf.qe)))
         * conf.sigma
     )
-    conf.stride = 1
 
 
 def get_normalization(var, conf):
@@ -119,7 +118,7 @@ if __name__ == "__main__":
 
     conf = runko.Configuration(args_cli.conf)
     add_shock_derived(conf)
-    conf.outdir = resolve_outdir(conf)
+    outdir = resolve_outdir(conf)
 
     var = args_cli.var
 
@@ -136,14 +135,14 @@ if __name__ == "__main__":
         pass
 
 
-    print(conf.outdir)
+    print(outdir)
     print("plotting {}".format(var))
 
     lap = args_cli.lap
 
     #--------------------------------------------------
     # read binary snapshot; fields are (nz, ny, nx) C-order
-    fields = read_field_snapshot(os.path.join(conf.outdir, f"flds_{lap}.bin"))
+    fields = read_field_snapshot(os.path.join(outdir, f"flds_{lap}.bin"))
 
     rho = fields["n0"] + fields["n1"]
     jx  = fields["jx"]
@@ -664,7 +663,7 @@ if __name__ == "__main__":
 
     #--------------------------------------------------
     slap = str(lap).rjust(5, '0')
-    p.screenshot(conf.outdir + "/" + "3d_" + var + "_" + slap + ".png", scale=2)
+    p.screenshot(outdir + "/" + "3d_" + var + "_" + slap + ".png", scale=2)
 
     print('camera pos:', cpos)
 
@@ -674,7 +673,7 @@ if __name__ == "__main__":
     print('up', p.camera.up)
 
     if False:
-        p.open_movie(conf.outdir + "/" + "3d_jz_b.mp4", quality=8)
+        p.open_movie(outdir + "/" + "3d_jz_b.mp4", quality=8)
 
         for az in np.linspace(0, 360, 360):
             p.camera.azimuth = az

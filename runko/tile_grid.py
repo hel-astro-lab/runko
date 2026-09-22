@@ -202,11 +202,11 @@ class TileGrid:
                          outdir=resolve_outdir(config),
                          nspecies=nspecies,
                          n_prtcls=config.io_n_sampled_prtcls if config.io_n_sampled_prtcls else 0,
-                         laps_in_timer_statistics=getattr(config, 'io_n_laps_in_timer_stats', None),
-                         spectra_nbins=getattr(config, 'io_n_spectra_bins', 200),
-                         spectra_umin=getattr(config, 'io_spectra_umin', 1e-4),
-                         spectra_umax=getattr(config, 'io_spectra_umax', 1e3),
-                         spectra_stride=getattr(config, 'io_spectra_stride', None) or stride)
+                         laps_in_timer_statistics=config.io_n_laps_in_timer_stats,
+                         spectra_nbins=config.io_n_spectra_bins or 200,
+                         spectra_umin=config.io_spectra_umin or 1e-4,
+                         spectra_umax=config.io_spectra_umax or 1e3,
+                         spectra_stride=config.io_spectra_stride or stride)
 
         pathlib.Path(io_config["outdir"]).mkdir(parents=True, exist_ok=True)
 
