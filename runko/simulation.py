@@ -254,7 +254,8 @@ class Simulation:
                 raise NotImplementedError("prtcl_ actions")
 
             elif method.startswith("grid_"):
-                raise NotImplementedError("grid_ actions")
+                symbol = getattr(actions, method[len("grid_"):])
+                self._simulation_context.eval((symbol, actions.current_context))
 
             elif method.startswith("io_"):
                 match method[3:]:
