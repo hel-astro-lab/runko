@@ -6,7 +6,7 @@ function(add_python_test name)
         ${Python_EXECUTABLE} "${CMAKE_CURRENT_SOURCE_DIR}/test_${name}.py"
     )
     set_property(TEST py-${name}
-        PROPERTY ENVIRONMENT PYTHONPATH=${CMAKE_BINARY_DIR}/src:${PROJECT_SOURCE_DIR}
+        PROPERTY ENVIRONMENT PYTHONPATH=${CMAKE_BINARY_DIR}/src:${CMAKE_BINARY_DIR}/external/corgi/pycorgi:${PROJECT_SOURCE_DIR}
     )
 endfunction(add_python_test)
 
