@@ -11,6 +11,7 @@ from runko_cpp_bindings import *
 from .tiles import make_independent_tile
 
 emf.threeD.Tile = make_independent_tile
+pic.threeD.Tile = make_independent_tile
 
 # Helper scripts to initialize the simulation 
 from .configuration import Configuration

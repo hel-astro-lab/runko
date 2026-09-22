@@ -5,6 +5,7 @@
 #include "runko/actions/args.h"
 #include "runko/actions/emf.h"
 #include "runko/actions/env.h"
+#include "runko/actions/pic.h"
 #include "runko/comm/cartesian_grid.h"
 #include "runko/comm/external.h"
 #include "runko/comm/local.h"
@@ -188,6 +189,14 @@ tyvi::actions::sexpr
                    emf::boundary_conditions {};
                  return ta::null;
                });
+      } }),
+    ta::cons(
+      runko::symbol::ensure_constructed_particle_containers,
+      ta::procedure { [](const ta::sexpr& args) -> ta::sexpr_sender {
+        return parse_atom_args<std::reference_wrapper<runko::simulation_context>>(
+                 args) |
+               te::then(&pic::ensure_constructed_particle_containers) |
+               te::then([] { return ta::null; });
       } }),
     ta::cons(runko::symbol::current_context, std::ref(sim)),
     ta::cons(

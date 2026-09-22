@@ -31,6 +31,7 @@ enum class symbol : std::uint8_t {
   apply_edge_bc,
   apply_edge_bcs,
   clear_bcs,
+  ensure_constructed_particle_containers,
   set_cartesian_neighbors,
   set_cartesian_comm_infos
 };

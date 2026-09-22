@@ -14,6 +14,7 @@ class ProxyTile:
         self.sim_context = sim_context
         self._runtime = runtime
         self._ensure_yee = (actions.ensure_constructed_yee_lattices, actions.current_context)
+        self._ensure_prtcls = (actions.ensure_constructed_particle_containers, actions.current_context)
 
 
     def get_EBJ(self):
@@ -83,6 +84,21 @@ class ProxyTile:
 
     def apply_edge_bcs(self, mode):
         return self.sim_context.eval((actions.apply_edge_bcs, actions.current_context, mode))
+
+
+    def get_positions(self, ptype: int):
+        self.sim_context.eval(self._ensure_prtcls)
+        return self.sim_context.get_positions(self.tile_id, ptype)
+
+
+    def get_velocities(self, ptype: int):
+        self.sim_context.eval(self._ensure_prtcls)
+        return self.sim_context.get_velocities(self.tile_id, ptype)
+
+
+    def get_ids(self, ptype: int):
+        self.sim_context.eval(self._ensure_prtcls)
+        return self.sim_context.get_ids(self.tile_id, ptype)
 
 
 

@@ -7,6 +7,7 @@
 #include "pybind11/stl.h"
 #include "runko/actions/emf.h"
 #include "runko/actions/env.h"
+#include "runko/actions/pic.h"
 #include "runko/comm/cartesian_grid.h"
 #include "runko/communication_common.h"
 #include "runko/coords.h"
@@ -17,6 +18,7 @@
 #include "tyvi/actions_ast.h"
 #include "tyvi/actions_eval.h"
 
+#include <array>
 #include <chrono>
 #include <exception>
 #include <pika/execution.hpp>
@@ -187,6 +189,19 @@ auto
                       std::tuple { std::move(Jx), std::move(Jy), std::move(Jz) } };
 }
 
+template<typename T>
+auto
+  to_ndarray(const std::vector<T> &vec)
+{
+  const auto grid_shape = std::array { vec.size() };
+  auto mda              = py::array_t<T, py::array::c_style>(grid_shape);
+  auto mda_mut          = mda.template mutable_unchecked<1>();
+
+  for(const auto i: std::views::iota(0uz, vec.size())) { mda_mut(i) = vec[i]; }
+
+  return std::move(mda);
+}
+
 auto
   get_EBJ(
     runko::simulation_context &sim,
@@ -214,6 +229,54 @@ auto
       "have YeeLattice.");
   }
 }
+
+auto
+  get_positions(
+    runko::simulation_context &sim,
+    const runko::simulation_context::tile_id_type id,
+    const std::size_t ptype)
+{
+  if(const auto p = sim.tiles.try_get<pic::particle_containers>(id)) {
+    const auto [x, y, z] = p->at(ptype).get_positions();
+    return std::tuple { to_ndarray(x), to_ndarray(y), to_ndarray(z) };
+  } else {
+    throw std::runtime_error(
+      "internal logic error: Trying to invoke get_positions of a tile which does not "
+      "have pic::particle_containers.");
+  }
+}
+
+auto
+  get_velocities(
+    runko::simulation_context &sim,
+    const runko::simulation_context::tile_id_type id,
+    const std::size_t ptype)
+{
+  if(const auto p = sim.tiles.try_get<pic::particle_containers>(id)) {
+    const auto [x, y, z] = p->at(ptype).get_velocities();
+    return std::tuple { to_ndarray(x), to_ndarray(y), to_ndarray(z) };
+  } else {
+    throw std::runtime_error(
+      "internal logic error: Trying to invoke get_velocities of a tile which does not "
+      "have pic::particle_containers.");
+  }
+}
+
+auto
+  get_ids(
+    runko::simulation_context &sim,
+    const runko::simulation_context::tile_id_type id,
+    const std::size_t ptype)
+{
+  if(const auto p = sim.tiles.try_get<pic::particle_containers>(id)) {
+    return to_ndarray(p->at(ptype).get_ids());
+  } else {
+    throw std::runtime_error(
+      "internal logic error: Trying to invoke get_ids of a tile which does not "
+      "have pic::particle_containers.");
+  }
+}
+
 
 auto
   debug_cartesian_grid(const runko::simulation_context &sim)
@@ -288,6 +351,9 @@ void
     .value("apply_edge_bc", runko::symbol::apply_edge_bc)
     .value("apply_edge_bcs", runko::symbol::apply_edge_bcs)
     .value("clear_bcs", runko::symbol::clear_bcs)
+    .value(
+      "ensure_constructed_particle_containers",
+      runko::symbol::ensure_constructed_particle_containers)
     .value("set_cartesian_neighbors", runko::symbol::set_cartesian_neighbors)
     .value("set_cartesian_comm_infos", runko::symbol::set_cartesian_comm_infos)
     .value("sequence", runko::symbol::sequence)
@@ -323,6 +389,9 @@ void
       })
     .def("get_EBJ", &get_EBJ)
     .def("get_EBJ_with_halo", &get_EBJ_with_halo)
+    .def("get_positions", &get_positions)
+    .def("get_velocities", &get_velocities)
+    .def("get_ids", &get_ids)
     .def(
       "index",
       [](
