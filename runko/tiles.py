@@ -5,6 +5,7 @@ import numpy as np
 import itertools
 import runko_cpp_bindings.actions as actions
 from runko_cpp_bindings.emf.threeD import antenna_mode
+from runko_cpp_bindings.pic.threeD import ParticleState, ParticleStateBatch
 from .configuration import Configuration
 
 
@@ -101,6 +102,32 @@ class ProxyTile:
         return self.sim_context.get_ids(self.tile_id, ptype)
 
 
+    def inject_to_each_cell(self, ptype: int, pgen):
+        prg = (actions.inject_to_each_cell, actions.current_context, ptype, pgen)
+        self.sim_context.eval((actions.sequence,
+                               (actions.quote, self._ensure_prtcls),
+                               (actions.quote, prg)))
+
+
+    def inject(self, ptype: int, particles: list[ParticleState]):
+        prg = (actions.inject, actions.current_context, ptype, particles)
+        self.sim_context.eval((actions.sequence,
+                               (actions.quote, self._ensure_prtcls),
+                               (actions.quote, prg)))
+
+
+    def batch_inject_to_cells(self, ptype: int, batch_pgen):
+        prg = (actions.batch_inject_to_cells, actions.current_context, ptype, batch_pgen)
+        self.sim_context.eval((actions.sequence,
+                               (actions.quote, self._ensure_prtcls),
+                               (actions.quote, prg)))
+
+
+    def batch_inject_in_x_stripe(self, ptype: int, batch_pgen, x_left: float, x_right: float):
+        prg = (actions.batch_inject_in_x_stripe, actions.current_context, ptype, batch_pgen, x_left, x_right)
+        self.sim_context.eval((actions.sequence,
+                               (actions.quote, self._ensure_prtcls),
+                               (actions.quote, prg)))
 
 
 def make_independent_tile(idx, conf) -> ProxyTile:
