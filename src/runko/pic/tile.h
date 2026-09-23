@@ -64,7 +64,7 @@ private:
   runko::prtc_id_type consume_next_id_(std::size_t ptype);
 
   std::map<std::size_t, ParticleContainer> particle_buffs_;
-  ParticlePusher particle_pusher_;
+  std::vector<ParticlePusher> particle_pushers_;  // indexed by species
   FieldInterpolator field_interpolator_;
   CurrentDepositer current_depositer_;
 
@@ -90,7 +90,8 @@ public:
   /// `qx`:    charge of x:th particle species (x is natural number)
   /// `mx`:    mass of x:th particle species (x is natural number)
   ///
-  /// `particle_pusher`:     scheme to update particles velocities and positions
+  /// `particle_pusher`:     scheme to update particles velocities and positions,
+  ///                        one name for all species or a list with one per species
   /// `fields_interpolator`: scheme to interpolate E and B fields to particles
   /// `current_depositer`:   scheme to depot current
   ///

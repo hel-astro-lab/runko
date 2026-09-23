@@ -121,14 +121,25 @@ Tile<D>::Tile(
   const toolbox::ConfigParser& conf) :
   corgi::Tile<D>(),
   emf::Tile<D>(tile_grid_idx, conf),
-  particle_pusher_ { parse_particle_pusher(
-    conf.get_or_throw<std::string>("particle_pusher")) },
   field_interpolator_ { parse_field_interpolator(
     conf.get_or_throw<std::string>("field_interpolator")) },
   current_depositer_ { parse_current_depositer(
     conf.get_or_throw<std::string>("current_depositer")) }
 {
   construct_particle_buffs(particle_buffs_, conf);
+
+  const auto pushers = conf.get_or_throw<std::vector<std::string>>("particle_pusher");
+  const auto n_species = particle_buffs_.size();
+  if(pushers.size() != 1uz and pushers.size() != n_species) {
+    throw std::runtime_error { std::format(
+      "particle_pusher has {} entries but there are {} species.",
+      pushers.size(),
+      n_species) };
+  }
+  for(auto i = 0uz; i < n_species; ++i) {
+    particle_pushers_.push_back(
+      parse_particle_pusher(pushers[pushers.size() == 1uz ? 0uz : i]));
+  }
 
   const auto tiles = conf.get_or_throw<std::vector<std::ptrdiff_t>>("n_tiles");
   const auto Nx    = static_cast<std::size_t>(tiles[0]);
@@ -335,8 +346,8 @@ void
 
 
   auto push_impl = [&](const auto& interpolator) {
-    for(auto& [_, pbuff]: particle_buffs_) {
-      switch(particle_pusher_) {
+    for(auto& [i, pbuff]: particle_buffs_) {
+      switch(particle_pushers_.at(i)) {
         case ParticlePusher::boris:
           pbuff.push_particles_boris(this->cfl_, interpolator);
           break;

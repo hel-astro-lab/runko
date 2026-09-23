@@ -42,6 +42,8 @@ public:
         return static_cast<T>(value);
       } else if constexpr(std::same_as<U, none_tag_type>) {
         return {};
+      } else if constexpr(std::same_as<T, std::vector<U>>) {
+        return T { value };  // scalar promotes to one-element list
       } else {
         throw std::runtime_error {
           "Accessed value is not convertible to requested type."
