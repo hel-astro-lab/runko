@@ -310,4 +310,85 @@ void
   }
 }
 
+void
+  push_particles(runko::simulation_context& sim)
+{
+
+  using yee_value_type = emf::YeeLattice::value_type;
+  const auto particle_pusher =
+    sim.get_n_set_config<pic::ParticlePusher>([](auto&& conf) {
+      const auto p = conf.template get_or_throw<std::string>("particle_pusher");
+      if(p == "boris") {
+        return pic::ParticlePusher::boris;
+      } else if(p == "higuera_cary") {
+        return pic::ParticlePusher::higuera_cary;
+      } else if(p == "faraday") {
+        return pic::ParticlePusher::faraday;
+      } else {
+        const auto msg = std::format("{} is not supported particle pusher.", p);
+        throw std::runtime_error { msg };
+      }
+    });
+
+  const auto field_interpolator =
+    sim.get_n_set_config<pic::FieldInterpolator>([](auto&& conf) {
+      const auto p = conf.template get_or_throw<std::string>("field_interpolator");
+      if(p == "linear_1st") {
+        return pic::FieldInterpolator::linear_1st;
+      } else if(p == "linear_1st_unrolled") {
+        return pic::FieldInterpolator::linear_1st_unrolled;
+      } else {
+        const auto msg = std::format("{} is not supported field_interpolator.", p);
+        throw std::runtime_error { msg };
+      }
+    });
+
+  const auto cfl = sim.config.template get_or_throw<double>("cfl");
+  for(auto&& [_, yee, particles, idx, id_gen]: sim.template view_tiles<
+                                               emf::YeeLattice,
+                                               pic::particle_containers,
+                                               const runko::cartesian_index<3>,
+                                               pic::particle_id_generator,
+                                               runko::local_tile_tag>()) {
+    const auto gc = runko::global_coordinates(sim, idx.template as<double>().data);
+    const auto origo_pos =
+      std::array { static_cast<yee_value_type>(gc.mins()[0]) - emf::halo_size,
+                   static_cast<yee_value_type>(gc.mins()[1]) - emf::halo_size,
+                   static_cast<yee_value_type>(gc.mins()[2]) - emf::halo_size };
+
+    auto push_impl = [&](const auto& interpolator) {
+      for(auto& [_, pbuff]: particles) {
+        switch(particle_pusher) {
+          case ParticlePusher::boris:
+            pbuff.push_particles_boris(cfl, interpolator);
+            break;
+          case ParticlePusher::higuera_cary:
+            pbuff.push_particles_higuera_cary(cfl, interpolator);
+            break;
+          case ParticlePusher::faraday:
+            pbuff.push_particles_faraday(cfl, interpolator);
+            break;
+          default:
+            throw std::logic_error {
+              "pic::Tile::push_particles: unkown particle pusher"
+            };
+        }
+      }
+    };
+
+    switch(field_interpolator) {
+      case FieldInterpolator::linear_1st:
+        push_impl(yee.interpolate_EB_linear_1st(origo_pos));
+        break;
+      case FieldInterpolator::linear_1st_unrolled:
+        push_impl(yee.interpolate_EB_linear_1st_unrolled(origo_pos));
+        break;
+      default:
+        throw std::logic_error {
+          "pic::Tile::push_particles: unkown field interpolator"
+        };
+    }
+  }
+}
+
 }  // namespace pic

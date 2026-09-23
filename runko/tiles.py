@@ -130,6 +130,12 @@ class ProxyTile:
                                (actions.quote, prg)))
 
 
+    def push_particles(self):
+        self.sim_context.eval((actions.push_particles, actions.current_context))
+
+
+
+
 def make_independent_tile(idx, conf) -> ProxyTile:
     """
     Constructs a simulation context with a single tile.

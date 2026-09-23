@@ -270,6 +270,13 @@ tyvi::actions::sexpr
                  return ta::null;
                });
       } }),
+    ta::cons(
+      runko::symbol::push_particles,
+      ta::procedure { [](const ta::sexpr& args) -> ta::sexpr_sender {
+        return parse_atom_args<std::reference_wrapper<runko::simulation_context>>(
+                 args) |
+               te::then(&pic::push_particles) | te::then([] { return ta::null; });
+      } }),
     ta::cons(runko::symbol::current_context, std::ref(sim)),
     ta::cons(
       runko::symbol::comm_local,

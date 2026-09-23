@@ -36,6 +36,7 @@ enum class symbol : std::uint8_t {
   inject,
   batch_inject_to_cells,
   batch_inject_in_x_stripe,
+  push_particles,
   set_cartesian_neighbors,
   set_cartesian_comm_infos
 };

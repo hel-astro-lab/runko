@@ -70,4 +70,8 @@ void batch_inject_in_x_stripe(
   double x_left,
   double x_right);
 
+
+/// Push particles in local tiles updating their velocities and positions.
+void push_particles(runko::simulation_context&);
+
 }  // namespace pic
