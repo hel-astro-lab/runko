@@ -75,6 +75,13 @@ if __name__ == "__main__":
     laps_per_eddy = eddy_length_num / conf.cfl
     conf.n_laps = int(conf.n_eddy_turnovers * laps_per_eddy)
 
+    # radiative drag: drag_strength = A = (l_0/c)/t_cool(gamma~1) in U = B_0^2/8pi (NB21 eq. A)
+    # pusher code units: compton du = -drag_compton g^2 beta; sync scales the LL force by 1/B_0^2
+    # (3/2: pitch-angle-averaged synchrotron rate equals the compton rate at U = U_B0)
+    drag_strength = conf.drag_strength or 0.0
+    conf.drag_compton = drag_strength * conf.cfl / eddy_length_num
+    conf.drag_sync = 1.5 * conf.drag_compton / float(B0_num)**2
+
     zero_field = lambda x, y, z: np.zeros_like(x)
     bz = lambda x, y, z: np.ones_like(x) * B0_num
 
@@ -210,6 +217,7 @@ if __name__ == "__main__":
         logger.info(f"{'--- [algorithms] ---':}")
         logger.info(f"  {'field_propagator':<{W}}= {conf.field_propagator}")
         logger.info(f"  {'particle_pusher':<{W}}= {conf.particle_pusher}")
+        logger.info(f"  {'drag_strength A':<{W}}= {drag_strength:.6g}  (drag_sync {conf.drag_sync:.3g}, drag_compton {conf.drag_compton:.3g})")
         logger.info(f"  {'field_interpolator':<{W}}= {conf.field_interpolator}")
         logger.info(f"  {'current_depositer':<{W}}= {conf.current_depositer}")
         logger.info(f"  {'current_filter':<{W}}= {conf.current_filter}")

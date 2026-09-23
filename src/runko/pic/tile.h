@@ -31,7 +31,13 @@ namespace pic {
 
 namespace mpi = mpi4cpp::mpi;
 
-enum class ParticlePusher { boris, higuera_cary, faraday };
+enum class ParticlePusher {
+  boris,
+  higuera_cary,
+  faraday,
+  higuera_cary_sync,     // + synchrotron (Landau-Lifshitz) drag
+  higuera_cary_compton,  // + isotropic Compton drag
+};
 enum class FieldInterpolator { linear_1st, linear_1st_unrolled };
 enum class CurrentDepositer { zigzag_1st, zigzag_1st_atomic };
 
@@ -65,6 +71,8 @@ private:
 
   std::map<std::size_t, ParticleContainer> particle_buffs_;
   std::vector<ParticlePusher> particle_pushers_;  // indexed by species
+  double drag_sync_ { 0 };     // code-unit drag coefficient of higuera_cary_sync
+  double drag_compton_ { 0 };  // code-unit drag coefficient of higuera_cary_compton
   FieldInterpolator field_interpolator_;
   CurrentDepositer current_depositer_;
 
@@ -92,6 +100,8 @@ public:
   ///
   /// `particle_pusher`:     scheme to update particles velocities and positions,
   ///                        one name for all species or a list with one per species
+  /// `drag_sync`/`drag_compton`: drag coefficients, required by the
+  ///                        higuera_cary_sync / higuera_cary_compton pushers
   /// `fields_interpolator`: scheme to interpolate E and B fields to particles
   /// `current_depositer`:   scheme to depot current
   ///

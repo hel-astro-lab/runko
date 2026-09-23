@@ -79,6 +79,10 @@ pic::ParticlePusher
     return pic::ParticlePusher::higuera_cary;
   } else if(p == "faraday") {
     return pic::ParticlePusher::faraday;
+  } else if(p == "higuera_cary_sync") {
+    return pic::ParticlePusher::higuera_cary_sync;
+  } else if(p == "higuera_cary_compton") {
+    return pic::ParticlePusher::higuera_cary_compton;
   } else {
     const auto msg = std::format("{} is not supported particle pusher.", p);
     throw std::runtime_error { msg };
@@ -139,6 +143,14 @@ Tile<D>::Tile(
   for(auto i = 0uz; i < n_species; ++i) {
     particle_pushers_.push_back(
       parse_particle_pusher(pushers[pushers.size() == 1uz ? 0uz : i]));
+  }
+  // drag coefficients are required only if some species uses a drag pusher
+  for(const auto p: particle_pushers_) {
+    if(p == ParticlePusher::higuera_cary_sync) {
+      drag_sync_ = conf.get_or_throw<double>("drag_sync");
+    } else if(p == ParticlePusher::higuera_cary_compton) {
+      drag_compton_ = conf.get_or_throw<double>("drag_compton");
+    }
   }
 
   const auto tiles = conf.get_or_throw<std::vector<std::ptrdiff_t>>("n_tiles");
@@ -356,6 +368,14 @@ void
           break;
         case ParticlePusher::faraday:
           pbuff.push_particles_faraday(this->cfl_, interpolator);
+          break;
+        case ParticlePusher::higuera_cary_sync:
+          pbuff.template push_particles_higuera_cary<Drag::synchrotron>(
+            this->cfl_, interpolator, drag_sync_);
+          break;
+        case ParticlePusher::higuera_cary_compton:
+          pbuff.template push_particles_higuera_cary<Drag::compton>(
+            this->cfl_, interpolator, drag_compton_);
           break;
         default:
           throw std::logic_error {

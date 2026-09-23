@@ -4,3 +4,5 @@ n_cells_per_tile, list[int], emf, Grid cells per tile per dimension (dx=dy=dz=1)
 cfl, float, emf, Courant number dt/dx; (must be <= 0.5).
 qN, float, pic, "Charge of Nth particle species in code units (N=0, 1, ...)."
 mN, float, pic, "Mass-to-charge magnitude ratio :math:`r_N = \frac{\hat m_N}{|\hat q_N|}` of the Nth particle species (N=0, 1, ...)."
+drag_sync, float, pic, "Code-unit drag coefficient of higuera_cary_sync (required by it; derived from drag_strength in pic-turbulence/pic.py)."
+drag_compton, float, pic, "Code-unit drag coefficient of higuera_cary_compton (required by it; derived from drag_strength)."

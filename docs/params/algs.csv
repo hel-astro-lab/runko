@@ -3,7 +3,7 @@ current_filter, str, emf, "Current smoothing filter. **options**: binomial2, bin
 stencil_<coeff>, float, emf, "| Stencil coefficient for all axes (**default**: 0);
 | ``stencil_[x|y|z]_<coeff>`` overrides it per axis.
 | **coeff**: delta, gamma, beta_p[1|2], beta[2|3]_p[1|2], zeta_p[1|2], zeta[2|3]_p[1|2]"
-particle_pusher, str, pic, "**options**: boris, higuera_cary, faraday"
+particle_pusher, str, pic, "One name for all species or a list with one per species. **options**: boris, higuera_cary, faraday, higuera_cary_sync (+ synchrotron drag), higuera_cary_compton (+ Compton drag)"
 field_interpolator, str, pic, "**options**: linear_1st, linear_1st_unrolled"
 current_depositer, str, pic, "**options**: zigzag_1st, zigzag_1st_atomic"
 prealloc_per_species, int, pic, "Dead-particle slots preallocated per species at tile construction (**default**: 0)."

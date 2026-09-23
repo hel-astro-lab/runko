@@ -43,6 +43,9 @@
 
 namespace pic {
 
+/// Radiative drag stage of the Higuera-Cary pusher.
+enum class Drag { none, synchrotron, compton };
+
 struct ParticleContainerArgs {
   std::size_t N;
   double charge, mass;
@@ -199,10 +202,14 @@ public:
     double cfl,
     runko::EB_interpolator<value_type> auto interpolator);
 
-  /// Push particles velocities and positions using Higuera-Cary scheme.
+  /// Push particles velocities and positions using Higuera-Cary scheme,
+  /// optionally followed by a radiative drag stage (Tamburini+10 splitting).
+  /// `drag_coeff` is the code-unit drag coefficient (see projects/pic-turbulence/pic.py).
+  template<Drag drag = Drag::none>
   inline void push_particles_higuera_cary(
     double cfl,
-    runko::EB_interpolator<value_type> auto interpolator);
+    runko::EB_interpolator<value_type> auto interpolator,
+    double drag_coeff = 0.0);
 
   /// Push particles velocities and positions using Faraday-Cayley scheme.
   inline void push_particles_faraday(
