@@ -1,14 +1,14 @@
 #!/bin/bash -l
-#SBATCH --job-name=dec2
+#SBATCH --job-name=shock
 #SBATCH --account=project_462001358   # billing account
 #SBATCH --output=%J.out               # <slurm job id>.out
 #SBATCH --error=%J.err                # <slurm job id.err
 #SBATCH --partition=standard          # cpu partition
-#SBATCH --nodes=1                     # modify
+#SBATCH --nodes=1                     
 #SBATCH --ntasks-per-node=8           # max 128 cores per node
 #SBATCH --cpus-per-task=1             # keep 1; no threading
 #SBATCH --mem=224G                    # max memory per node
-#SBATCH --time=0-03:00:00             # Run time (d-hh:mm:ss)
+#SBATCH --time=2-00:00:00             # Run time (d-hh:mm:ss)
 
 
 # Load correct modules here
@@ -17,7 +17,7 @@ source /pfs/lustrep3/scratch/project_462001358/$USER/venvs/runko-c/bin/activate
 
 export OMP_NUM_THREADS=1
 
-echo $RUNKODIR/projects/pic-turbulence/
-cd $RUNKODIR/projects/pic-turbulence/
+echo $RUNKODIR/projects/pic-shock/
+cd $RUNKODIR/projects/pic-shock/
 
-srun --label python pic.py --conf turb_decay.ini
+srun --label python pic.py --conf 2d_shock.ini
