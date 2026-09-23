@@ -57,6 +57,8 @@ ta::sexpr
     return obj.cast<emf::antenna_mode>();
   } else if(py::isinstance<emf::edge_bc>(obj)) {
     return obj.cast<emf::edge_bc>();
+  } else if(py::isinstance<py::list>(obj)) {
+    return obj.cast<py::list>();
   } else if(py::isinstance<py::tuple>(obj)) {
     const auto tup = obj.cast<py::tuple>();
 
@@ -354,6 +356,10 @@ void
     .value(
       "ensure_constructed_particle_containers",
       runko::symbol::ensure_constructed_particle_containers)
+    .value("inject_to_each_cell", runko::symbol::inject_to_each_cell)
+    .value("inject", runko::symbol::inject)
+    .value("batch_inject_to_cells", runko::symbol::batch_inject_to_cells)
+    .value("batch_inject_in_x_stripe", runko::symbol::batch_inject_in_x_stripe)
     .value("set_cartesian_neighbors", runko::symbol::set_cartesian_neighbors)
     .value("set_cartesian_comm_infos", runko::symbol::set_cartesian_comm_infos)
     .value("sequence", runko::symbol::sequence)

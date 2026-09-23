@@ -2,6 +2,8 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 #include "pybind11/functional.h"
+#include "pybind11/pybind11.h"
+#include "pybind11/stl.h"
 #include "runko/actions/args.h"
 #include "runko/actions/emf.h"
 #include "runko/actions/env.h"
@@ -197,6 +199,76 @@ tyvi::actions::sexpr
                  args) |
                te::then(&pic::ensure_constructed_particle_containers) |
                te::then([] { return ta::null; });
+      } }),
+    ta::cons(
+      runko::symbol::inject_to_each_cell,
+      ta::procedure { [](const ta::sexpr& args) -> ta::sexpr_sender {
+        return parse_atom_args<
+                 std::reference_wrapper<runko::simulation_context>,
+                 long,
+                 py::function>(args) |
+               te::then([](const auto sim, const auto ptype, const auto& pgen) {
+                 pic::inject_to_each_cell(
+                   sim,
+                   runko::checked_cast<std::size_t>(ptype),
+                   pgen.template cast<pic::particle_generator>());
+                 return ta::null;
+               });
+      } }),
+    ta::cons(
+      runko::symbol::inject,
+      ta::procedure { [](const ta::sexpr& args) -> ta::sexpr_sender {
+        return parse_atom_args<
+                 std::reference_wrapper<runko::simulation_context>,
+                 long,
+                 py::list>(args) |
+               te::then([](const auto sim, const auto ptype, const auto& particles) {
+                 pic::inject(
+                   sim,
+                   runko::checked_cast<std::size_t>(ptype),
+                   particles
+                     .template cast<std::vector<runko::ParticleState<double>>>());
+                 return ta::null;
+               });
+      } }),
+    ta::cons(
+      runko::symbol::batch_inject_to_cells,
+      ta::procedure { [](const ta::sexpr& args) -> ta::sexpr_sender {
+        return parse_atom_args<
+                 std::reference_wrapper<runko::simulation_context>,
+                 long,
+                 py::function>(args) |
+               te::then([](const auto sim, const auto ptype, const auto& pgen) {
+                 pic::batch_inject_to_cells(
+                   sim,
+                   runko::checked_cast<std::size_t>(ptype),
+                   pgen.template cast<pic::batch_particle_generator>());
+                 return ta::null;
+               });
+      } }),
+    ta::cons(
+      runko::symbol::batch_inject_in_x_stripe,
+      ta::procedure { [](const ta::sexpr& args) -> ta::sexpr_sender {
+        return parse_atom_args<
+                 std::reference_wrapper<runko::simulation_context>,
+                 long,
+                 py::function,
+                 double,
+                 double>(args) |
+               te::then([](
+                          const auto sim,
+                          const auto ptype,
+                          const auto& pgen,
+                          const auto a,
+                          const auto b) {
+                 pic::batch_inject_in_x_stripe(
+                   sim,
+                   runko::checked_cast<std::size_t>(ptype),
+                   pgen.template cast<pic::batch_particle_generator>(),
+                   a,
+                   b);
+                 return ta::null;
+               });
       } }),
     ta::cons(runko::symbol::current_context, std::ref(sim)),
     ta::cons(

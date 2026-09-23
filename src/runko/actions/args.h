@@ -52,9 +52,12 @@ auto
       if(auto x = tyvi::actions::atom_cast<U>(atoms[n])) {
         return std::move(x).value();
       }
-      throw std::runtime_error {
-        std::format("atom at argument {} does not hold {}", n, typeid(U).name())
-      };
+      throw std::runtime_error { std::format(
+        "atom at argument {} does not hold object of type: '{}' (note that the name is "
+        "from typeid(T).name() and thus might hold compiler specific name for the "
+        "type).",
+        n,
+        typeid(U).name()) };
     };
 
     return [&]<std::size_t... I>(std::index_sequence<I...>) {

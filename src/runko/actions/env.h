@@ -32,6 +32,10 @@ enum class symbol : std::uint8_t {
   apply_edge_bcs,
   clear_bcs,
   ensure_constructed_particle_containers,
+  inject_to_each_cell,
+  inject,
+  batch_inject_to_cells,
+  batch_inject_in_x_stripe,
   set_cartesian_neighbors,
   set_cartesian_comm_infos
 };
