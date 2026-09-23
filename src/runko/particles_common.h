@@ -41,4 +41,27 @@ concept EB_interpolator =
     { eb.B } -> std::convertible_to<toolbox::Vec3<T>>;
   };
 
+
+enum class ParticlePusher {
+  boris,
+  higuera_cary,
+  faraday,
+  rad_drag,       // isotropic Compton drag -A gamma^2 beta; rad_* stay last
+  rad_beam,       // + beamed radiation field
+  rad_comp_heat,  // + Compton heating (Thomson diffusion tensor)
+  rad_sync,       // synchrotron: Landau-Lifshitz reduced force
+  rad_sync_ssa,   // + self-absorption on a thermal population
+};
+
+constexpr bool
+  is_rad_pusher(const ParticlePusher x)
+{
+  using enum ParticlePusher;
+  return x == rad_drag or x == rad_beam or x == rad_comp_heat or x == rad_sync or
+         x == rad_sync_ssa;
+}
+
+enum class FieldInterpolator { linear_1st, linear_1st_unrolled };
+enum class CurrentDepositer { zigzag_1st, zigzag_1st_atomic };
+
 }  // namespace runko

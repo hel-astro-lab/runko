@@ -13,6 +13,7 @@
 #include <algorithm>
 #include <array>
 #include <optional>
+#include <ranges>
 #include <string>
 #include <vector>
 
@@ -307,6 +308,190 @@ void
     }
 
     particles.at(particle_type).add_particles(states);
+  }
+}
+
+void
+  push_particles(runko::simulation_context& sim)
+{
+
+  using yee_value_type = emf::YeeLattice::value_type;
+  const auto particle_pushers =
+    sim.get_n_set_config<std::vector<runko::ParticlePusher>>([](auto&& conf) {
+      auto string_to_pusher = [](const auto& p) {
+        if(p == "boris") {
+          return runko::ParticlePusher::boris;
+        } else if(p == "higuera_cary") {
+          return runko::ParticlePusher::higuera_cary;
+        } else if(p == "faraday") {
+          return runko::ParticlePusher::faraday;
+        } else if(p == "rad_drag") {
+          return runko::ParticlePusher::rad_drag;
+        } else if(p == "rad_beam") {
+          return runko::ParticlePusher::rad_beam;
+        } else if(p == "rad_comp_heat") {
+          return runko::ParticlePusher::rad_comp_heat;
+        } else if(p == "rad_sync") {
+          return runko::ParticlePusher::rad_sync;
+        } else if(p == "rad_sync_ssa") {
+          return runko::ParticlePusher::rad_sync_ssa;
+        } else {
+          const auto msg = std::format("{} is not supported particle pusher.", p);
+          throw std::runtime_error { msg };
+        }
+      };
+
+      return conf.template get_or_throw<std::vector<std::string>>("particle_pusher") |
+             std::views::transform(string_to_pusher) |
+             std::ranges::to<std::vector<runko::ParticlePusher>>();
+    });
+
+  struct rad_pusher_rng {
+    std::uint32_t seed;
+    std::uint64_t counter { 0 };
+  };
+
+  auto& rad_rng = sim.template get_n_set_config<rad_pusher_rng>([](auto&& conf) {
+    return rad_pusher_rng { static_cast<std::uint32_t>(
+      conf.template get<std::ptrdiff_t>("rng_seed").value_or(std::ptrdiff_t { 0 })) };
+  });
+  ++rad_rng.counter;
+
+  const auto rad_params = [&] {
+    auto rad_params = pic::RadParams {};
+    for(const auto pusher: particle_pushers) {
+      if(runko::is_rad_pusher(pusher)) {
+        rad_params.drag = sim.config.get_or_throw<double>("drag");
+      }
+
+      using enum runko::ParticlePusher;
+      if(pusher == rad_comp_heat or pusher == rad_sync_ssa) {
+        rad_params.rad_temp = sim.config.get_or_throw<double>("rad_temp");
+      }
+      if(pusher == rad_sync_ssa) {
+        rad_params.gamma_t = sim.config.get_or_throw<double>("gamma_t");
+      }
+      if(pusher == rad_beam) {
+        const auto b = sim.config.get_or_throw<std::vector<double>>("drag_beam");
+        if(b.size() != 3uz) {
+          throw std::runtime_error { "drag_beam must be a 3-vector." };
+        }
+        rad_params.beam = { b[0], b[1], b[2] };
+      }
+    }
+    return rad_params;
+  }();
+
+  const auto field_interpolator =
+    sim.get_n_set_config<pic::FieldInterpolator>([](auto&& conf) {
+      const auto p = conf.template get_or_throw<std::string>("field_interpolator");
+      if(p == "linear_1st") {
+        return pic::FieldInterpolator::linear_1st;
+      } else if(p == "linear_1st_unrolled") {
+        return pic::FieldInterpolator::linear_1st_unrolled;
+      } else {
+        const auto msg = std::format("{} is not supported field_interpolator.", p);
+        throw std::runtime_error { msg };
+      }
+    });
+
+  const auto cfl = sim.config.template get_or_throw<double>("cfl");
+  for(auto&& [id, yee, particles, idx, id_gen]: sim.template view_tiles<
+                                                emf::YeeLattice,
+                                                pic::particle_containers,
+                                                const runko::cartesian_index<3>,
+                                                pic::particle_id_generator,
+                                                runko::local_tile_tag>()) {
+    const auto gc = runko::global_coordinates(sim, idx.template as<double>().data);
+    const auto origo_pos =
+      std::array { static_cast<yee_value_type>(gc.mins()[0]) - emf::halo_size,
+                   static_cast<yee_value_type>(gc.mins()[1]) - emf::halo_size,
+                   static_cast<yee_value_type>(gc.mins()[2]) - emf::halo_size };
+
+    if(particle_pushers.size() != 1 and particles.size() != particle_pushers.size()) {
+      throw std::runtime_error { std::format(
+        "particle_pusher has {} entries but there are {} species.",
+        particle_pushers.size(),
+        particles.size()) };
+    }
+
+    auto push_impl = [&](const auto& interpolator) {
+      for(auto& [i, pbuff]: particles) {
+        const auto pusher_index = particle_pushers.size() == 1 ? 0uz : i;
+        const auto pusher       = particle_pushers[pusher_index];
+
+        using enum runko::ParticlePusher;
+        switch(pusher) {
+          case boris: pbuff.push_particles_boris(cfl, interpolator); break;
+          case higuera_cary:
+            pbuff.push_particles_higuera_cary(cfl, interpolator);
+            break;
+          case faraday: pbuff.push_particles_faraday(cfl, interpolator); break;
+          case rad_drag:
+            pbuff.template push_particles_radiation<rad_drag>(
+              cfl,
+              interpolator,
+              rad_params,
+              rad_rng.counter,
+              static_cast<std::uint32_t>(i),
+              rad_rng.seed);
+            break;
+          case rad_beam:
+            pbuff.template push_particles_radiation<rad_beam>(
+              cfl,
+              interpolator,
+              rad_params,
+              rad_rng.counter,
+              static_cast<std::uint32_t>(i),
+              rad_rng.seed);
+            break;
+          case rad_comp_heat:
+            pbuff.template push_particles_radiation<rad_comp_heat>(
+              cfl,
+              interpolator,
+              rad_params,
+              rad_rng.counter,
+              static_cast<std::uint32_t>(i),
+              rad_rng.seed);
+            break;
+          case rad_sync:
+            pbuff.template push_particles_radiation<rad_sync>(
+              cfl,
+              interpolator,
+              rad_params,
+              rad_rng.counter,
+              static_cast<std::uint32_t>(i),
+              rad_rng.seed);
+            break;
+          case rad_sync_ssa:
+            pbuff.template push_particles_radiation<rad_sync_ssa>(
+              cfl,
+              interpolator,
+              rad_params,
+              rad_rng.counter,
+              static_cast<std::uint32_t>(i),
+              rad_rng.seed);
+            break;
+          default:
+            throw std::logic_error {
+              "pic::Tile::push_particles: unkown particle pusher"
+            };
+        }
+      }
+    };
+
+    switch(field_interpolator) {
+      case FieldInterpolator::linear_1st:
+        push_impl(yee.interpolate_EB_linear_1st(origo_pos));
+        break;
+      case FieldInterpolator::linear_1st_unrolled:
+        push_impl(yee.interpolate_EB_linear_1st_unrolled(origo_pos));
+        break;
+      default:
+        throw std::logic_error {
+          "pic::Tile::push_particles: unkown field interpolator"
+        };
+    }
   }
 }
 

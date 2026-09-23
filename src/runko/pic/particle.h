@@ -44,24 +44,14 @@
 
 namespace pic {
 
-/// Particle pushers; rad_* add a radiative stage to higuera_cary (see radiative_drag_v2.tex).
-enum class ParticlePusher {
-  boris,
-  higuera_cary,
-  faraday,
-  rad_drag,       // isotropic Compton drag -A gamma^2 beta; rad_* stay last
-  rad_beam,       // + beamed radiation field
-  rad_comp_heat,  // + Compton heating (Thomson diffusion tensor)
-  rad_sync,       // synchrotron: Landau-Lifshitz reduced force
-  rad_sync_ssa,   // + self-absorption on a thermal population
-};
-
 /// Radiation pusher inputs in code units; each closure reads only what it needs.
 struct RadParams {
+  // clang-format off
   double drag { 0 };                        // A dt of the closure: A_c dt (Compton) or A_s dt (sync)
   std::array<double, 3> beam { 0, 0, 0 };  // A_b dt n, beam strength times direction (rad_beam)
   double rad_temp { 0 };                    // Theta_r (rad_comp_heat, rad_sync_ssa)
   double gamma_t { 1 };                     // gamma where tau_nu = 1 (rad_sync_ssa)
+  // clang-format on
 };
 
 struct ParticleContainerArgs {
@@ -227,7 +217,7 @@ public:
 
   /// Higuera-Cary Lorentz push followed by a radiative stage (Tamburini+10 splitting).
   /// `cntr`, `species` and `seed` key the counter-based noise of the stochastic closures.
-  template<ParticlePusher rad>
+  template<runko::ParticlePusher rad>
   inline void push_particles_radiation(
     double cfl,
     runko::EB_interpolator<value_type> auto interpolator,
