@@ -73,5 +73,9 @@ void batch_inject_in_x_stripe(
 
 /// Push particles in local tiles updating their velocities and positions.
 void push_particles(runko::simulation_context&);
+/// Deposit current in local tiles from all particls.
+void deposit_current(runko::simulation_context&);
+/// Sorts the particles in local tiles in order to reduce cache misses.
+void sort_particles(runko::simulation_context&);
 
 }  // namespace pic

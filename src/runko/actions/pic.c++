@@ -391,4 +391,115 @@ void
   }
 }
 
+void
+  deposit_current(runko::simulation_context& sim)
+{
+  const auto current_depositer =
+    sim.get_n_set_config<pic::CurrentDepositer>([](auto&& conf) {
+      const auto p = conf.template get_or_throw<std::string>("current_depositer");
+      if(p == "zigzag" or p == "zigzag_1st") {
+        return pic::CurrentDepositer::zigzag_1st;
+      } else if(p == "zigzag_1st_atomic") {
+        return pic::CurrentDepositer::zigzag_1st_atomic;
+      } else {
+        const auto msg = std::format("{} is not supported current depositer.", p);
+        throw std::runtime_error { msg };
+      }
+    });
+  const auto cfl = sim.config.template get_or_throw<double>("cfl");
+
+  for(auto&& [tile_id, yee, particles, idx, id_gen]: sim.template view_tiles<
+                                                     emf::YeeLattice,
+                                                     pic::particle_containers,
+                                                     const runko::cartesian_index<3>,
+                                                     pic::particle_id_generator,
+                                                     runko::local_tile_tag>()) {
+    yee.clear_current();
+
+    using yee_value_type = emf::YeeLattice::value_type;
+    const auto gc = runko::global_coordinates(sim, idx.template as<double>().data);
+    const auto origo_pos =
+      std::array { static_cast<yee_value_type>(gc.mins()[0]) - emf::halo_size,
+                   static_cast<yee_value_type>(gc.mins()[1]) - emf::halo_size,
+                   static_cast<yee_value_type>(gc.mins()[2]) - emf::halo_size };
+
+
+    switch(current_depositer) {
+      case CurrentDepositer::zigzag_1st:
+        for(const auto& [_, pcontainer]: particles) {
+          yee.deposit_current(pcontainer.current_zigzag_1st(origo_pos, cfl));
+        }
+        break;
+      case CurrentDepositer::zigzag_1st_atomic: {
+        struct J_cache {
+          using type = runko::VecGrid<emf::YeeLattice::value_type>;
+          type cache;
+        };
+
+        auto cache_ptr = sim.tiles.try_get<J_cache>(tile_id);
+        if(not cache_ptr) {
+          cache_ptr = &sim.tiles.emplace<J_cache>(
+            tile_id,
+            J_cache::type(yee.extents_with_halo()));
+        }
+        auto& generated_J = cache_ptr->cache;
+
+        const auto genJmds = generated_J.mds();
+        tyvi::mdgrid_work {}
+          .for_each_index(
+            genJmds,
+            [=](const auto idx, const auto tidx) { genJmds[idx][tidx] = 0; })
+          .wait();
+
+        for(const auto& [_, pcontainer]: particles) {
+          pcontainer.current_zigzag_1st(generated_J, origo_pos, cfl);
+        }
+
+        yee.deposit_current(generated_J);
+        break;
+      }
+      default:
+        throw std::logic_error { "pic::deposit_current: unkown current depositer" };
+    }
+
+
+    /* TODO
+  if(reflector_correction_pending_) {
+    this->yee_lattice_.deposit_current(reflector_correction_J_.value());
+    reflector_correction_pending_ = false;
+    } */
+  }
+}
+
+void
+  sort_particles(runko::simulation_context& sim)
+{
+  for(auto&& [_, yee, particles, idx]: sim.template view_tiles<
+                                       emf::YeeLattice,
+                                       pic::particle_containers,
+                                       const runko::cartesian_index<3>,
+                                       runko::local_tile_tag>()) {
+
+    const auto m = yee.grid_mapping_with_halo();
+    using M      = decltype(m);
+
+    using F = pic::ParticleContainer::value_type;
+
+    const auto gc = runko::global_coordinates(sim, idx.template as<double>().data);
+    const auto origo_pos = std::array { static_cast<F>(gc.mins()[0]) - emf::halo_size,
+                                        static_cast<F>(gc.mins()[1]) - emf::halo_size,
+                                        static_cast<F>(gc.mins()[2]) - emf::halo_size };
+    using Vec3F          = toolbox::Vec3<F>;
+
+    auto score = [=](const F x, const F y, const F z) {
+      const auto dx  = Vec3F(x, y, z) - Vec3F(origo_pos);
+      const auto idx = dx.template as<typename M::index_type>();
+
+      return m(idx[0], idx[1], idx[2]);
+    };
+
+    for(auto& [_, pbuff]: particles) { pbuff.sort(score); }
+  }
+}
+
 }  // namespace pic

@@ -361,6 +361,8 @@ void
     .value("batch_inject_to_cells", runko::symbol::batch_inject_to_cells)
     .value("batch_inject_in_x_stripe", runko::symbol::batch_inject_in_x_stripe)
     .value("push_particles", runko::symbol::push_particles)
+    .value("deposit_current", runko::symbol::deposit_current)
+    .value("sort_particles", runko::symbol::sort_particles)
     .value("set_cartesian_neighbors", runko::symbol::set_cartesian_neighbors)
     .value("set_cartesian_comm_infos", runko::symbol::set_cartesian_comm_infos)
     .value("sequence", runko::symbol::sequence)
