@@ -134,6 +134,14 @@ class ProxyTile:
         self.sim_context.eval((actions.push_particles, actions.current_context))
 
 
+    def deposit_current(self):
+        self.sim_context.eval((actions.deposit_current, actions.current_context))
+
+
+    def sort_particles(self):
+        self.sim_context.eval((actions.sort_particles, actions.current_context))
+
+
 
 
 def make_independent_tile(idx, conf) -> ProxyTile:
