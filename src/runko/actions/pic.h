@@ -78,4 +78,29 @@ void deposit_current(runko::simulation_context&);
 /// Sorts the particles in local tiles in order to reduce cache misses.
 void sort_particles(runko::simulation_context&);
 
+struct reflectors {
+  std::vector<pic::reflector_wall> walls;
+};
+
+struct correction_J {
+  bool pending;
+  using type = runko::VecGrid<emf::YeeLattice::value_type>;
+  type J;
+};
+
+/// Registers the given reflector to the context variables of type pic::reflectors.
+///
+/// see: https://github.com/skypjack/entt/wiki/Entity-Component-System#context-variables
+void register_reflector_wall(runko::simulation_context&, const pic::reflector_wall&);
+
+/// Reflect particles that crossed any registered reflectors in local tiles.
+///
+/// Must be called after push_particles and before deposit_current.
+/// Modifies particle positions/velocities for reflected particles
+/// and stores correction currents that deposit_current will add.
+void reflect_particles(runko::simulation_context&);
+
+/// Update reflector wall locations by their velocity * cfl.
+void advance_reflector_walls(runko::simulation_context&);
+
 }  // namespace pic

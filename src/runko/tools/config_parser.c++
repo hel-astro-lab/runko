@@ -95,35 +95,4 @@ ConfigParser::ConfigParser(const pybind11::handle& conf_obj)
   }
 }
 
-std::vector<std::ptrdiff_t>
-  get_extent_list(
-    const toolbox::ConfigParser& p,
-    const std::string& name,
-    const std::size_t expected_length)
-{
-  auto x = p.get<std::vector<std::ptrdiff_t>>(name);
-  if(not x) {
-    throw std::runtime_error { std::format("Config does not contain: {}", name) };
-  }
-
-  auto v = std::move(x).value();
-  if(v.size() != expected_length) {
-    throw std::runtime_error { std::format(
-      "Config parameter {} is list of length {} which is not the expected length {}.",
-      name,
-      v.size(),
-      expected_length) };
-  }
-
-  for(const auto val: v) {
-    if(val <= 0) {
-      throw std::runtime_error { std::format(
-        "{} is expected to only contain positive integers ({} found)",
-        name,
-        val) };
-    }
-  }
-
-  return v;
-}
 }  // namespace toolbox
