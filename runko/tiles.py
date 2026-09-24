@@ -142,6 +142,18 @@ class ProxyTile:
         self.sim_context.eval((actions.sort_particles, actions.current_context))
 
 
+    def register_reflector_wall(self, wall):
+        self.sim_context.eval((actions.register_reflector_wall, actions.current_context, wall))
+
+
+    def reflect_particles(self):
+        self.sim_context.eval((actions.reflect_particles, actions.current_context))
+
+
+    def advance_reflector_walls(self):
+        self.sim_context.eval((actions.advance_reflector_walls, actions.current_context))
+
+
 
 
 def make_independent_tile(idx, conf) -> ProxyTile:

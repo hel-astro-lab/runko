@@ -12,6 +12,7 @@
 #include "runko/comm/external.h"
 #include "runko/comm/local.h"
 #include "runko/communication_common.h"
+#include "runko/pic/reflector_wall.h"
 #include "tyvi/actions_ast.h"
 #include "tyvi/actions_list.h"
 
@@ -290,6 +291,30 @@ tyvi::actions::sexpr
         return parse_atom_args<std::reference_wrapper<runko::simulation_context>>(
                  args) |
                te::then(&pic::sort_particles) | te::then([] { return ta::null; });
+      } }),
+    ta::cons(
+      runko::symbol::register_reflector_wall,
+      ta::procedure { [](const ta::sexpr& args) -> ta::sexpr_sender {
+        return parse_atom_args<
+                 std::reference_wrapper<runko::simulation_context>,
+                 pic::reflector_wall>(args) |
+               te::then(&pic::register_reflector_wall) |
+               te::then([] { return ta::null; });
+      } }),
+    ta::cons(
+      runko::symbol::reflect_particles,
+      ta::procedure { [](const ta::sexpr& args) -> ta::sexpr_sender {
+        return parse_atom_args<std::reference_wrapper<runko::simulation_context>>(
+                 args) |
+               te::then(&pic::reflect_particles) | te::then([] { return ta::null; });
+      } }),
+    ta::cons(
+      runko::symbol::advance_reflector_walls,
+      ta::procedure { [](const ta::sexpr& args) -> ta::sexpr_sender {
+        return parse_atom_args<std::reference_wrapper<runko::simulation_context>>(
+                 args) |
+               te::then(&pic::advance_reflector_walls) |
+               te::then([] { return ta::null; });
       } }),
     ta::cons(runko::symbol::current_context, std::ref(sim)),
     ta::cons(

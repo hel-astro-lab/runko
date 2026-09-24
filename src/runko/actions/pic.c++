@@ -462,12 +462,18 @@ void
         throw std::logic_error { "pic::deposit_current: unkown current depositer" };
     }
 
-
-    /* TODO
-  if(reflector_correction_pending_) {
-    this->yee_lattice_.deposit_current(reflector_correction_J_.value());
-    reflector_correction_pending_ = false;
-    } */
+    if(const auto corrJ_ptr = sim.tiles.try_get<pic::correction_J>(tile_id)) {
+      if(corrJ_ptr->pending) {
+        yee.deposit_current(corrJ_ptr->J);
+        const auto corrJmds = corrJ_ptr->J.mds();
+        tyvi::mdgrid_work {}
+          .for_each_index(
+            corrJmds,
+            [=](const auto idx, const auto tidx) { corrJmds[idx][tidx] = 0; })
+          .wait();
+        corrJ_ptr->pending = false;
+      }
+    }
   }
 }
 
@@ -499,6 +505,89 @@ void
     };
 
     for(auto& [_, pbuff]: particles) { pbuff.sort(score); }
+  }
+}
+
+
+void
+  register_reflector_wall(
+    runko::simulation_context& sim,
+    const pic::reflector_wall& wall)
+{
+  sim
+    .get_n_set_config<pic::reflectors>(
+      [](auto&&) { return pic::reflectors { .walls {} }; })
+    .walls.push_back(wall);
+}
+
+void
+  reflect_particles(runko::simulation_context& sim)
+{
+
+  if(not sim.has_config<pic::reflectors>()) { return; }
+  auto& reflectors = sim.get_config<pic::reflectors>();
+  if(reflectors.walls.empty()) { return; }
+
+  const auto e = toolbox::get_extent_list(
+    sim.config,
+    "n_cells_per_tile",
+    3,
+    toolbox::with_halo<emf::halo_size>);
+  const auto cfl = sim.config.template get_or_throw<double>("cfl");
+
+  for(auto&& [tile_id, particles, idx]: sim.template view_tiles<
+                                        pic::particle_containers,
+                                        const runko::cartesian_index<3>>()) {
+
+    const auto gc = runko::global_coordinates(sim, idx.template as<double>().data);
+
+    const auto mins            = gc.mins();
+    const auto maxs            = gc.maxs();
+    const auto wall_is_in_tile = [&](const pic::reflector_wall& w) {
+      using vt = pic::reflector_wall::value_type;
+      return w.walloc >= static_cast<vt>(mins[0]) - cfl &&
+             w.walloc <= static_cast<vt>(maxs[0]);
+    };
+    if(std::ranges::none_of(reflectors.walls, wall_is_in_tile)) { continue; }
+
+    auto corr_J_ptr = sim.tiles.try_get<pic::correction_J>(tile_id);
+    if(not corr_J_ptr) {
+      corr_J_ptr = &sim.tiles.emplace<pic::correction_J>(
+        tile_id,
+        true,
+        pic::correction_J::type(std::array { e[0], e[1], e[2] }));
+    }
+
+    corr_J_ptr->pending = true;
+
+    using yee_value_type = emf::YeeLattice::value_type;
+    const auto origo_pos =
+      std::array { static_cast<yee_value_type>(gc.mins()[0]) - emf::halo_size,
+                   static_cast<yee_value_type>(gc.mins()[1]) - emf::halo_size,
+                   static_cast<yee_value_type>(gc.mins()[2]) - emf::halo_size };
+
+    for(const auto& wall: reflectors.walls) {
+      if(!wall_is_in_tile(wall)) { continue; }
+
+      for(auto& [_, pbuff]: particles) {
+        pbuff.reflect_at_wall(wall, corr_J_ptr->J, origo_pos, cfl);
+      }
+    }
+  }
+}
+
+void
+  advance_reflector_walls(runko::simulation_context& sim)
+{
+
+  if(not sim.has_config<pic::reflectors>()) { return; }
+  auto& reflectors = sim.get_config<pic::reflectors>();
+  if(reflectors.walls.empty()) { return; }
+
+  const auto cfl = sim.config.template get_or_throw<double>("cfl");
+
+  for(auto& wall: reflectors.walls) {
+    wall.walloc += wall.betawall * pic::reflector_wall::value_type(cfl);
   }
 }
 

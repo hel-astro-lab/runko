@@ -13,6 +13,7 @@
 #include "runko/coords.h"
 #include "runko/emf/antenna.h"
 #include "runko/emf/yee_lattice.h"
+#include "runko/pic/reflector_wall.h"
 #include "runko/runtime.h"
 #include "runko/simulation_context.h"
 #include "tyvi/actions_ast.h"
@@ -59,6 +60,8 @@ ta::sexpr
     return obj.cast<emf::antenna_mode>();
   } else if(py::isinstance<emf::edge_bc>(obj)) {
     return obj.cast<emf::edge_bc>();
+  } else if(py::isinstance<pic::reflector_wall>(obj)) {
+    return obj.cast<pic::reflector_wall>();
   } else if(py::isinstance<py::list>(obj)) {
     return obj.cast<py::list>();
   } else if(py::isinstance<py::tuple>(obj)) {
@@ -365,6 +368,9 @@ void
     .value("push_particles", runko::symbol::push_particles)
     .value("deposit_current", runko::symbol::deposit_current)
     .value("sort_particles", runko::symbol::sort_particles)
+    .value("register_reflector_wall", runko::symbol::register_reflector_wall)
+    .value("reflect_particles", runko::symbol::reflect_particles)
+    .value("advance_reflector_walls", runko::symbol::advance_reflector_walls)
     .value("set_cartesian_neighbors", runko::symbol::set_cartesian_neighbors)
     .value("set_cartesian_comm_infos", runko::symbol::set_cartesian_comm_infos)
     .value("sequence", runko::symbol::sequence)

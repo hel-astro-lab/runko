@@ -39,6 +39,9 @@ enum class symbol : std::uint8_t {
   push_particles,
   deposit_current,
   sort_particles,
+  register_reflector_wall,
+  reflect_particles,
+  advance_reflector_walls,
   set_cartesian_neighbors,
   set_cartesian_comm_infos
 };
