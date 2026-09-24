@@ -43,6 +43,8 @@ ta::sexpr
 {
   if(py::isinstance<py::int_>(obj)) {
     return obj.cast<long>();
+  } else if(py::isinstance<py::float_>(obj)) {
+    return obj.cast<double>();
   } else if(py::isinstance<py::str>(obj)) {
     return obj.cast<std::string>();
   } else if(py::isinstance<ta::intrinsic>(obj)) {
