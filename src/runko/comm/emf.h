@@ -5,6 +5,7 @@
 
 #include "runko/emf/common.h"
 #include "runko/emf/yee_lattice.h"
+#include "tyvi/actions.h"
 
 namespace emf {
 
@@ -18,5 +19,8 @@ struct comm_buffs {
   hollow_grid_EB E, B;
   hollow_grid_J J;
 };
+
+tyvi::actions::sexpr_sender comm_external(runko::simulation_context&, runko::comm_mode);
+tyvi::actions::sexpr_sender comm_local(runko::simulation_context&, runko::comm_mode);
 
 }  // namespace emf

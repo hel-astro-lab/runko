@@ -10,6 +10,8 @@ set (TOOLS_FILES
      ./runko/communication_common.c++
      ./runko/comm/local.c++
      ./runko/comm/external.c++
+     ./runko/comm/pic.c++
+     ./runko/comm/emf.c++
      ./runko/runtime.c++
      ./runko/coords.c++
      ./runko/actions/env.c++

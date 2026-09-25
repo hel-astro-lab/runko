@@ -4,6 +4,7 @@
 import numpy as np
 import itertools
 import runko_cpp_bindings.actions as actions
+from .runko_logging import runko_logger, on_main_rank
 from runko_cpp_bindings.emf.threeD import antenna_mode
 from runko_cpp_bindings.pic.threeD import ParticleState, ParticleStateBatch
 from .configuration import Configuration
@@ -14,6 +15,7 @@ class ProxyTile:
         self.tile_id = tile_id
         self.sim_context = sim_context
         self._runtime = runtime
+        self._logger = runko_logger("ProxyTile")
         self._ensure_yee = (actions.ensure_constructed_yee_lattices, actions.current_context)
         self._ensure_prtcls = (actions.ensure_constructed_particle_containers, actions.current_context)
 
@@ -53,6 +55,16 @@ class ProxyTile:
     @property
     def index(self) -> tuple[int, int, int]:
         return self.sim_context.index(self.tile_id)
+
+
+    @property
+    def mins(self) -> tuple[int, int, int]:
+        return self.sim_context.mins(self.tile_id)
+
+
+    @property
+    def maxs(self) -> tuple[int, int, int]:
+        return self.sim_context.maxs(self.tile_id)
 
 
     def register_antenna(self, mode: antenna_mode):
@@ -152,6 +164,11 @@ class ProxyTile:
 
     def advance_reflector_walls(self):
         self.sim_context.eval((actions.advance_reflector_walls, actions.current_context))
+
+
+    def pack_outgoing_particles(self):
+        if on_main_rank():
+            self._logger.warn("pack_outgoing_particles is depricated and implemented as no-op.")
 
 
 

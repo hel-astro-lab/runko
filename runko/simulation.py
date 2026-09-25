@@ -251,7 +251,13 @@ class Simulation:
                 if method in method_mapper:
                     method = method_mapper[method]
 
-                raise NotImplementedError("prtcl_ actions")
+                if method == "pack_outgoing_particles":
+                    if on_main_rank():
+                        self._logger.warn("pack_outgoing_particles is depricated and implemented as no-op.")
+                    return
+
+                symbol = getattr(actions, method)
+                self._simulation_context.eval((symbol, actions.current_context))
 
             elif method.startswith("grid_"):
                 symbol = getattr(actions, method[len("grid_"):])
