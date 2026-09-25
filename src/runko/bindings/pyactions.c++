@@ -9,6 +9,7 @@
 #include "runko/actions/env.h"
 #include "runko/actions/pic.h"
 #include "runko/comm/cartesian_grid.h"
+#include "runko/comm/pic.h"
 #include "runko/communication_common.h"
 #include "runko/coords.h"
 #include "runko/emf/antenna.h"
@@ -142,6 +143,10 @@ void
 
     if(const auto yee = other_sim.tiles.try_get<emf::YeeLattice>(other_id)) {
       sim.tiles.emplace<emf::YeeLattice>(id, std::move(*yee));
+    }
+
+    if(const auto p = other_sim.tiles.try_get<pic::particle_containers>(other_id)) {
+      sim.tiles.emplace<pic::particle_containers>(id, std::move(*p));
     }
   }
 }
@@ -419,6 +424,30 @@ void
         } else {
           throw std::runtime_error(
             "error in simulatio_context.index: tile does not have cartesian_index<3>");
+        }
+      })
+    .def(
+      "mins",
+      [](
+        runko::simulation_context &sim,
+        const runko::simulation_context::tile_id_type id) {
+        if(const auto p = sim.tiles.try_get<runko::cartesian_index<3>>(id)) {
+          return runko::global_coordinates(sim, p->as<double>().data).mins();
+        } else {
+          throw std::runtime_error(
+            "error in simulatio_context.mins: tile does not have cartesian_index<3>");
+        }
+      })
+    .def(
+      "maxs",
+      [](
+        runko::simulation_context &sim,
+        const runko::simulation_context::tile_id_type id) {
+        if(const auto p = sim.tiles.try_get<runko::cartesian_index<3>>(id)) {
+          return runko::global_coordinates(sim, p->as<double>().data).maxs();
+        } else {
+          throw std::runtime_error(
+            "error in simulatio_context.maxs: tile does not have cartesian_index<3>");
         }
       })
     .def(

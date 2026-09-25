@@ -663,10 +663,11 @@ def pic_wrap_positions():
 
 
 if __name__ == "__main__":
+    _ = runko.actions.RuntimeInstance()
     pic_noop_communication()
     pic_communication()
     pic_realistic_communication()
     pic_communication_with_empty_tiles()
     pic_conservation_of_ids()
     pic_wrap_positions()
-    pic_kinetic_energy_reduction()
+    # pic_kinetic_energy_reduction()

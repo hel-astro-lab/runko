@@ -71,4 +71,14 @@ std::array<std::array<double, rank>, 2>
                         arr { static_cast<double>(tiles[J] * cells[J])... } };
   }(std::make_index_sequence<rank>());
 }
+
+template<typename To, typename From, std::size_t N>
+constexpr std::array<To, N>
+  cast_array(const std::array<From, N>& arr)
+{
+  return [&]<std::size_t... I>(std::index_sequence<I...>) {
+    return std::array { static_cast<To>(arr[I])... };
+  }(std::make_index_sequence<N>());
+}
+
 }  // namespace runko

@@ -64,6 +64,9 @@ public:
       };
     }
   }
+
+  [[nodiscard]] bool contains(const std::string& key) const
+  { return this->config_.contains(key); }
 };
 
 template<std::size_t halo_size>

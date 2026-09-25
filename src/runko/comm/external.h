@@ -14,7 +14,7 @@ template<runko::comm_mode mode>
 runko::exclusive_communicator<mode> make_communicator(runko::simulation_context&);
 
 /// Constructs communication buffers for virtual and boundary tiles.
-void ensure_constructed_comm_buffs(runko::simulation_context&);
+void ensure_constructed_comm_buffs(runko::simulation_context&, runko::comm_mode);
 /// Updates send buffer in boundary tiles.
 void update_send_buff(runko::simulation_context&, runko::comm_mode);
 
