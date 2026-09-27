@@ -8,3 +8,4 @@ upstream_gamma, float,, Bulk Lorentz factor of the upstream flow.
 b_proj, list[float],, B-field direction cosines.
 n_particles, int, weak-scaling plots, Total number of particles in the simulation. Used to calculate push time.
 drag_strength, float,, "Radiative cooling strength A = (l_0/c)/t_cool of a gamma~1 particle at U = B_0^2/8pi (0 = off)."
+drag_beam_strength, list[float],, "Beamed radiation field A_b n: strength normalised as drag_strength times beam direction."

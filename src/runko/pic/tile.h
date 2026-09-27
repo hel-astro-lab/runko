@@ -18,6 +18,7 @@
 #include <array>
 #include <concepts>
 #include <cstddef>
+#include <cstdint>
 #include <functional>
 #include <iterator>
 #include <optional>
@@ -31,13 +32,6 @@ namespace pic {
 
 namespace mpi = mpi4cpp::mpi;
 
-enum class ParticlePusher {
-  boris,
-  higuera_cary,
-  faraday,
-  higuera_cary_sync,     // + synchrotron (Landau-Lifshitz) drag
-  higuera_cary_compton,  // + isotropic Compton drag
-};
 enum class FieldInterpolator { linear_1st, linear_1st_unrolled };
 enum class CurrentDepositer { zigzag_1st, zigzag_1st_atomic };
 
@@ -71,8 +65,9 @@ private:
 
   std::map<std::size_t, ParticleContainer> particle_buffs_;
   std::vector<ParticlePusher> particle_pushers_;  // indexed by species
-  double drag_sync_ { 0 };     // code-unit drag coefficient of higuera_cary_sync
-  double drag_compton_ { 0 };  // code-unit drag coefficient of higuera_cary_compton
+  RadParams rad_params_ {};       // inputs of the rad_* pushers
+  std::uint64_t rng_cntr_ { 0 };  // push counter keying the radiative noise
+  std::uint32_t rng_seed_ { 0 };  // run seed of the radiative noise
   FieldInterpolator field_interpolator_;
   CurrentDepositer current_depositer_;
 
@@ -100,8 +95,12 @@ public:
   ///
   /// `particle_pusher`:     scheme to update particles velocities and positions,
   ///                        one name for all species or a list with one per species
-  /// `drag_sync`/`drag_compton`: drag coefficients, required by the
-  ///                        higuera_cary_sync / higuera_cary_compton pushers
+  /// `drag`, `drag_beam`, `rad_temp`, `gamma_t`:
+  ///                        code-unit inputs of the rad_* pushers, each required
+  ///                        only by the pushers that use it (see pic::RadParams);
+  ///                        one `drag` serves all species, so Compton and sync
+  ///                        pushers can not be mixed in one run
+  /// `rng_seed`:            optional seed of the radiative noise (default 0)
   /// `fields_interpolator`: scheme to interpolate E and B fields to particles
   /// `current_depositer`:   scheme to depot current
   ///

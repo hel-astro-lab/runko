@@ -168,6 +168,26 @@ ceil(const T x) {
 
 template<typename T>
 constexpr auto
+exp(const T x) {
+    if constexpr (std::is_same_v<T, float>) {
+        return ::expf(x);
+    } else {
+        return ::exp(x);
+    }
+}
+
+template<typename T>
+constexpr auto
+log(const T x) {
+    if constexpr (std::is_same_v<T, float>) {
+        return ::logf(x);
+    } else {
+        return ::log(x);
+    }
+}
+
+template<typename T>
+constexpr auto
 log10(const T x) {
     if constexpr (std::is_same_v<T, float>) {
         return ::log10f(x);

@@ -20,6 +20,8 @@ def make_test_tile(particle_pusher, field_interpolator):
     config.particle_pusher = particle_pusher
     config.field_interpolator = field_interpolator
     config.current_depositer = "zigzag_1st"
+    # rad_* pushers reduce to higuera_cary with zero drag and temperature
+    config.drag, config.drag_beam, config.rad_temp, config.gamma_t = 0.0, [0, 0, 0], 0.0, 1.0
 
     return config, runko.pic.threeD.Tile((3, 3, 3), config)
 
@@ -397,7 +399,8 @@ class _particle_pusher_tests:
 
 
 # Generate concrete test classes for all (pusher, interpolator) combinations
-_pushers = ["boris", "higuera_cary", "faraday"]
+_pushers = ["boris", "higuera_cary", "faraday",
+            "rad_drag", "rad_beam", "rad_comp_heat", "rad_sync", "rad_sync_ssa"]
 _interpolators = ["linear_1st", "linear_1st_unrolled"]
 
 for _pusher in _pushers:

@@ -44,6 +44,10 @@ public:
         return {};
       } else if constexpr(std::same_as<T, std::vector<U>>) {
         return T { value };  // scalar promotes to one-element list
+      } else if constexpr(
+        std::same_as<T, std::vector<double>> and
+        std::same_as<U, std::vector<std::ptrdiff_t>>) {
+        return T(value.begin(), value.end());  // int list promotes to double list
       } else {
         throw std::runtime_error {
           "Accessed value is not convertible to requested type."

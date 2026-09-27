@@ -79,10 +79,16 @@ pic::ParticlePusher
     return pic::ParticlePusher::higuera_cary;
   } else if(p == "faraday") {
     return pic::ParticlePusher::faraday;
-  } else if(p == "higuera_cary_sync") {
-    return pic::ParticlePusher::higuera_cary_sync;
-  } else if(p == "higuera_cary_compton") {
-    return pic::ParticlePusher::higuera_cary_compton;
+  } else if(p == "rad_drag") {
+    return pic::ParticlePusher::rad_drag;
+  } else if(p == "rad_beam") {
+    return pic::ParticlePusher::rad_beam;
+  } else if(p == "rad_comp_heat") {
+    return pic::ParticlePusher::rad_comp_heat;
+  } else if(p == "rad_sync") {
+    return pic::ParticlePusher::rad_sync;
+  } else if(p == "rad_sync_ssa") {
+    return pic::ParticlePusher::rad_sync_ssa;
   } else {
     const auto msg = std::format("{} is not supported particle pusher.", p);
     throw std::runtime_error { msg };
@@ -144,12 +150,19 @@ Tile<D>::Tile(
     particle_pushers_.push_back(
       parse_particle_pusher(pushers[pushers.size() == 1uz ? 0uz : i]));
   }
-  // drag coefficients are required only if some species uses a drag pusher
+  // radiative inputs are required only by the pushers that use them
+  rng_seed_ = static_cast<std::uint32_t>(conf.get<std::ptrdiff_t>("rng_seed").value_or(0));
   for(const auto p: particle_pushers_) {
-    if(p == ParticlePusher::higuera_cary_sync) {
-      drag_sync_ = conf.get_or_throw<double>("drag_sync");
-    } else if(p == ParticlePusher::higuera_cary_compton) {
-      drag_compton_ = conf.get_or_throw<double>("drag_compton");
+    using enum ParticlePusher;
+    if(p >= rad_drag) { rad_params_.drag = conf.get_or_throw<double>("drag"); }
+    if(p == rad_comp_heat or p == rad_sync_ssa) {
+      rad_params_.rad_temp = conf.get_or_throw<double>("rad_temp");
+    }
+    if(p == rad_sync_ssa) { rad_params_.gamma_t = conf.get_or_throw<double>("gamma_t"); }
+    if(p == rad_beam) {
+      const auto b = conf.get_or_throw<std::vector<double>>("drag_beam");
+      if(b.size() != 3uz) { throw std::runtime_error { "drag_beam must be a 3-vector." }; }
+      rad_params_.beam = { b[0], b[1], b[2] };
     }
   }
 
@@ -359,6 +372,7 @@ void
 
   auto push_impl = [&](const auto& interpolator) {
     for(auto& [i, pbuff]: particle_buffs_) {
+      const auto sp = static_cast<std::uint32_t>(i);
       switch(particle_pushers_.at(i)) {
         case ParticlePusher::boris:
           pbuff.push_particles_boris(this->cfl_, interpolator);
@@ -369,13 +383,25 @@ void
         case ParticlePusher::faraday:
           pbuff.push_particles_faraday(this->cfl_, interpolator);
           break;
-        case ParticlePusher::higuera_cary_sync:
-          pbuff.template push_particles_higuera_cary<Drag::synchrotron>(
-            this->cfl_, interpolator, drag_sync_);
+        case ParticlePusher::rad_drag:
+          pbuff.template push_particles_radiation<ParticlePusher::rad_drag>(
+            this->cfl_, interpolator, rad_params_, rng_cntr_, sp, rng_seed_);
           break;
-        case ParticlePusher::higuera_cary_compton:
-          pbuff.template push_particles_higuera_cary<Drag::compton>(
-            this->cfl_, interpolator, drag_compton_);
+        case ParticlePusher::rad_beam:
+          pbuff.template push_particles_radiation<ParticlePusher::rad_beam>(
+            this->cfl_, interpolator, rad_params_, rng_cntr_, sp, rng_seed_);
+          break;
+        case ParticlePusher::rad_comp_heat:
+          pbuff.template push_particles_radiation<ParticlePusher::rad_comp_heat>(
+            this->cfl_, interpolator, rad_params_, rng_cntr_, sp, rng_seed_);
+          break;
+        case ParticlePusher::rad_sync:
+          pbuff.template push_particles_radiation<ParticlePusher::rad_sync>(
+            this->cfl_, interpolator, rad_params_, rng_cntr_, sp, rng_seed_);
+          break;
+        case ParticlePusher::rad_sync_ssa:
+          pbuff.template push_particles_radiation<ParticlePusher::rad_sync_ssa>(
+            this->cfl_, interpolator, rad_params_, rng_cntr_, sp, rng_seed_);
           break;
         default:
           throw std::logic_error {
@@ -385,6 +411,7 @@ void
     }
   };
 
+  ++rng_cntr_;  // fresh noise stream every push
   switch(field_interpolator_) {
     case FieldInterpolator::linear_1st:
       push_impl(this->yee_lattice_.interpolate_EB_linear_1st(origo_pos));

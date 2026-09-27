@@ -12,12 +12,10 @@
 #include "runko/tools/vector.h"
 #include "tyvi/mdgrid.h"
 
-template<pic::Drag drag>
-inline void
+void
   pic::ParticleContainer::push_particles_higuera_cary(
     const double cfl_d,
-    const runko::EB_interpolator<value_type> auto interpolator,
-    const double drag_coeff)
+    const runko::EB_interpolator<value_type> auto interpolator)
 {
   const auto pos_mds = pos_.mds();  // particle positions
   const auto vel_mds = vel_.mds();  // particle (four-)velocities
@@ -31,8 +29,6 @@ inline void
   const vt cfl2  = cfl * cfl;                       // c^2
   const vt cinv  = vt { 1 } / cfl;                  // 1/c
   const vt cinv2 = cinv * cinv;                     // 1/c^2
-  // drag coefficient; sigma_T/m ~ m^-3 so heavier species radiate less
-  const vt A = static_cast<vt>(drag_coeff / (mass_ * mass_ * mass_));
 
   tyvi::mdgrid_work {}
     .for_each_index(
@@ -68,25 +64,7 @@ inline void
         const vt f = vt { 2 } / (vt { 1 } + gc * gc * b2);
 
         const Vec3 u1 = f * (u0 + toolbox::cross(u0, B0));
-        Vec3 u2       = u0 + toolbox::cross(u1, B0) + E0;
-
-        if constexpr(drag != Drag::none) {
-          // radiative drag split from the Lorentz push (Tamburini+10):
-          // force at the mid-step velocity, gamma^2 term implicit in u
-          const Vec3 un  = vt { 0.5 } * cinv * (u2 + v0);  // u at t^n
-          const vt gn    = sstd::sqrt(vt { 1 } + toolbox::dot(un, un));
-          const Vec3 bn  = un / gn;
-          vt kappa       = A * gn;  // compton: -A gamma^2 beta = -(A gamma) u
-          if constexpr(drag == Drag::synchrotron) {
-            // Landau-Lifshitz reduced force (Vranic+16 eq. 9) in units of B_0
-            const Vec3 fL = E + toolbox::cross(bn, B);
-            const vt bE   = toolbox::dot(bn, E);
-            kappa *= toolbox::dot(fL, fL) - bE * bE;
-            u2 = u2 + (A * cfl) * (toolbox::cross(E, B)
-                                   + toolbox::cross(B, toolbox::cross(B, bn)) + bE * E);
-          }
-          u2 = u2 / (vt { 1 } + kappa);
-        }
+        const Vec3 u2 = u0 + toolbox::cross(u1, B0) + E0;
 
         const vt ginv2 = cfl / sstd::sqrt(cfl2 + toolbox::dot(u2, u2));
 

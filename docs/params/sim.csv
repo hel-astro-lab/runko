@@ -4,5 +4,8 @@ n_cells_per_tile, list[int], emf, Grid cells per tile per dimension (dx=dy=dz=1)
 cfl, float, emf, Courant number dt/dx; (must be <= 0.5).
 qN, float, pic, "Charge of Nth particle species in code units (N=0, 1, ...)."
 mN, float, pic, "Mass-to-charge magnitude ratio :math:`r_N = \frac{\hat m_N}{|\hat q_N|}` of the Nth particle species (N=0, 1, ...)."
-drag_sync, float, pic, "Code-unit drag coefficient of higuera_cary_sync (required by it; derived from drag_strength in pic-turbulence/pic.py)."
-drag_compton, float, pic, "Code-unit drag coefficient of higuera_cary_compton (required by it; derived from drag_strength)."
+drag, float, pic, "Code-unit drag coefficient of the rad_* pushers: A_c dt for Compton, A_s dt for sync (derived from drag_strength in pic-turbulence/pic.py)."
+drag_beam, list[float], pic, "Code-unit beam vector A_b dt n of rad_beam (derived from drag_beam_strength)."
+rad_temp, float, pic, "Radiation temperature :math:`\Theta_r` in units of :math:`m_e c^2` (rad_comp_heat, rad_sync_ssa)."
+gamma_t, float, pic, "Lorentz factor where the synchrotron optical depth is 1 (rad_sync_ssa)."
+rng_seed, int, pic, "Seed of the radiative noise (**default**: 0)."
