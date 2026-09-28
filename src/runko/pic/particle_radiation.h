@@ -3,14 +3,9 @@
 
 #pragma once
 
-// Due to the templated interpolator this can not be in its own compilation unit,
-// i.e. this has to be in a header. To not make particle.h too long
-// the pushers are in own separate headers which are included at the end of particle.h.
-//
-// Radiative pushers: Higuera-Cary Lorentz push (copied from particle_higuera_cary.h),
-// then a radiative stage at the mid-step velocity (Tamburini+10 splitting) with the
-// gamma^2 term implicit in u, then an Euler-Maruyama kick for the stochastic closures.
-// Formulas and notation follow radiative_drag_v2.tex.
+// Radiative pushers: Higuera-Cary Lorentz push followed by the cooling drift at the 
+// mid-step velocity (Tamburini+10 splitting). For rad_comp_heat / rad_sync_ssa a 
+// fluctuation-dissipation kick whose diffusion follows from the drift by the Einstein relation. 
 
 #include "runko/pic/particle.h"
 #include "runko/tools/math.h"
@@ -34,6 +29,10 @@ inline void
     const std::uint32_t seed)
 {
   using enum ParticlePusher;
+
+  using toolbox::cross;
+  using toolbox::dot;
+
   constexpr bool is_sync = rad == rad_sync or rad == rad_sync_ssa;
   constexpr bool beam    = rad == rad_beam;
   constexpr bool heat    = rad == rad_comp_heat;
@@ -46,26 +45,25 @@ inline void
   using vt   = value_type;
   using Vec3 = toolbox::Vec3<vt>;
 
-  const vt cfl   = static_cast<vt>(cfl_d);                      // c dx/dt
+  const vt cfl   = static_cast<vt>(cfl_d);                        // c dx/dt
   const vt qm    = static_cast<vt>(sstd::sign(charge_) / mass_);  // charge-to-mass ratio
-  const vt hqm   = vt { 0.5 } * qm;                             // half charge-to-mass ratio
-  const vt cfl2  = cfl * cfl;                                   // c^2
-  const vt cinv  = vt { 1 } / cfl;                              // 1/c
-  const vt cinv2 = cinv * cinv;                                 // 1/c^2
+  const vt hqm   = vt { 0.5 } * qm;                               // half charge-to-mass ratio
+  const vt cfl2  = cfl * cfl;                                     // c^2
+  const vt cinv  = vt { 1 } / cfl;                                // 1/c
+  const vt cinv2 = cinv * cinv;                                   // 1/c^2
 
   // sigma_T/m ~ m^-3 so heavier species radiate less
   const double m3 = mass_ * mass_ * mass_;
   const vt A      = static_cast<vt>(params.drag / m3);
-  // beam: 3/4 A_b dt and unit vector n from the vector A_b dt n
-  const auto& b   = params.beam;
+  const auto& b   = params.beam; // beam: 3/4 A_b dt and unit vector n from the vector A_b dt n
   const double bb = std::sqrt(b[0] * b[0] + b[1] * b[1] + b[2] * b[2]);
   [[maybe_unused]] const vt Ab = static_cast<vt>(0.75 * bb / m3);
   [[maybe_unused]] const Vec3 nb =
     bb > 0.0 ? Vec3 { static_cast<vt>(b[0] / bb), static_cast<vt>(b[1] / bb), static_cast<vt>(b[2] / bb) }
              : Vec3 { vt { 0 }, vt { 0 }, vt { 0 } };
-  // rad_temp is in m_e c^2; in units of this species' m c^2 it is rad_temp m_e/m
-  const double theta_d = params.rad_temp / mass_;
+  const double theta_d = params.rad_temp / mass_; // rad_temp in m_e c^2
   [[maybe_unused]] const vt theta = static_cast<vt>(theta_d);
+
   // SSA escape function tau(gamma) = (gamma_t/gamma)^{13/3} exp[-c_M (gamma^{2/3} - gamma_t^{2/3})]
   [[maybe_unused]] const vt lgt  = static_cast<vt>(std::log(params.gamma_t));
   [[maybe_unused]] const vt gt23 = static_cast<vt>(std::pow(params.gamma_t, 2.0 / 3.0));
@@ -83,15 +81,15 @@ inline void
         const Vec3& E = eb.E;
         const Vec3& B = eb.B;
 
-        // --- Higuera-Cary Lorentz push (copy of particle_higuera_cary.h) ---
+        // --- Higuera-Cary Lorentz push ---
         const Vec3 v0 = cfl * Vec3(vel_mds[idx]);
         const Vec3 E0 = hqm * E;
         const Vec3 u0 = v0 + E0;
         const Vec3 Bt = hqm * B;  // B half-impulse (NOT divided by cfl)
 
-        const vt u0sq  = toolbox::dot(u0, u0);
-        const vt b2    = toolbox::dot(Bt, Bt);
-        const vt bdotu = toolbox::dot(Bt, u0);
+        const vt u0sq  = dot(u0, u0);
+        const vt b2    = dot(Bt, Bt);
+        const vt bdotu = dot(Bt, u0);
         const vt gmb   = vt { 1 } + u0sq * cinv2 - b2 * cinv2;
         const vt disc  = gmb * gmb + vt { 4 } * (b2 * cinv2 + bdotu * bdotu * cinv2);
         const vt ginv  = vt { 1 } / sstd::sqrt(vt { 0.5 } * (gmb + sstd::sqrt(disc)));
@@ -99,108 +97,101 @@ inline void
         const vt gc   = ginv * cinv;
         const Vec3 B0 = gc * Bt;
         const vt f    = vt { 2 } / (vt { 1 } + gc * gc * b2);
-        const Vec3 u1 = f * (u0 + toolbox::cross(u0, B0));
-        const Vec3 uL = u0 + toolbox::cross(u1, B0) + E0;  // c u_L
+        const Vec3 u1 = f * (u0 + cross(u0, B0));
+        const Vec3 uL = u0 + cross(u1, B0) + E0;  // c u_L
 
         // --- radiative drift at the mid-step velocity u^n ---
         const Vec3 un = vt { 0.5 } * cinv * (uL + v0);
-        const vt gn   = sstd::sqrt(vt { 1 } + toolbox::dot(un, un));
+        const vt gn   = sstd::sqrt(vt { 1 } + dot(un, un));
         const Vec3 bn = un / gn;  // beta^n
 
         vt kappa   = A * gn;  // compton: -A gamma^2 beta = -(A gamma) u
         Vec3 a_mid = Vec3 { vt { 0 }, vt { 0 }, vt { 0 } };  // c a_mid dt
+
+        //----------------------------------------------------------------------------------------- 
         [[maybe_unused]] vt F2 = vt { 0 };  // (E + beta x B)^2 - (beta.E)^2; gamma^2 F2 = E_rest^2
-        if constexpr(is_sync) {
-          // Landau-Lifshitz reduced force (Vranic+16 eq. 9) in units of B_0
-          const Vec3 fL = E + toolbox::cross(bn, B);
-          const vt bE   = toolbox::dot(bn, E);
-          F2            = toolbox::dot(fL, fL) - bE * bE;
+        [[maybe_unused]] vt kB = vt { 0 };  // B x (B x beta) = -(B^2/gamma) u_perp: friction across B
+        [[maybe_unused]] Vec3 bh = Vec3 { vt { 0 }, vt { 0 }, vt { 0 } };  // B/|B|
+        if constexpr(is_sync) { // Landau-Lifshitz reduced force (Vranic+16 eq. 9) in units of B_0
+          const Vec3 fL = E + cross(bn, B);
+          const vt bE   = dot(bn, E);
+          const vt B2   = dot(B, B);
+          F2            = dot(fL, fL) - bE * bE;
           kappa *= F2;
-          a_mid = (A * cfl) * (toolbox::cross(E, B)
-                               + toolbox::cross(B, toolbox::cross(B, bn)) + bE * E);
+          kB    = A * B2 / gn;
+          bh    = B / (sstd::sqrt(B2) + eps);
+          a_mid = (A * cfl) * (cross(E, B) + bE * E);
         }
-        if constexpr(beam) {
-          // Compton rocket: pressure 3/4 A_b (1 - beta.n) n and drag 3/4 A_b gamma (1 - beta.n)^2
-          const vt w = vt { 1 } - toolbox::dot(bn, nb);
+
+        //----------------------------------------------------------------------------------------- 
+        if constexpr(beam) { // Beamed radiation field; Compton rocket
+          const vt w = vt { 1 } - dot(bn, nb);
           kappa += Ab * gn * w * w;
           a_mid = a_mid + (Ab * cfl * w) * nb;
         }
 
-        // SSA: drift frame (E' || B'), boosted u', escape function, heating multiplier h
-        [[maybe_unused]] vt betaD = 0, gammaD = 1, s = vt { 0 };
-        [[maybe_unused]] Vec3 nD = Vec3 { vt { 1 }, vt { 0 }, vt { 0 } };
-        if constexpr(ssa) {
-          const Vec3 ExB = toolbox::cross(E, B);
-          const vt S2    = toolbox::dot(ExB, ExB);
-          const vt E2    = toolbox::dot(E, E);
-          const vt B2    = toolbox::dot(B, B);
-          const vt S     = sstd::sqrt(S2);
-          const vt W     = E2 + B2;
-          // v_D/c = [W - sqrt(W^2 - 4 S^2)] / 2S written without cancellation
-          betaD  = vt { 2 } * S / (W + sstd::sqrt(sstd::max(W * W - vt { 4 } * S2, vt { 0 })) + eps);
-          gammaD = vt { 1 } / sstd::sqrt(sstd::max(vt { 1 } - betaD * betaD, eps));  // finite as E -> B
-          nD     = ExB / (S + eps);
-          const vt upar = toolbox::dot(un, nD);
-          const vt gp   = gammaD * (gn - betaD * upar);
-          const vt pp2  = sstd::max(gp * gp - vt { 1 }, vt { 0 });
-          // escape s = 1 - e^-tau and s' = ds/dgamma'; log tau clamped so tau e^-tau stays finite
-          const vt lg   = sstd::log(gp);
-          const vt g23  = sstd::exp(vt { 2 } / vt { 3 } * lg);
-          const vt ltau = sstd::min(vt { 13 } / vt { 3 } * (lgt - lg) - cM * (g23 - gt23), vt { 30 });
-          const vt tau  = sstd::exp(ltau);
-          const vt etau = sstd::exp(-tau);
-          const vt thick = E2 < B2 ? vt { 1 } : vt { 0 };  // no absorption where E > B
-          s             = thick * (vt { 1 } - etau);
-          const vt sp   = -thick * tau * etau
-                        * (vt { 13 } / (vt { 3 } * gp) + vt { 2 } * cM / (vt { 3 } * sstd::exp(lg / vt { 3 })));
-          // h of Eq. (h): 1 where emission escapes, < 0 where absorption heats; scales the whole LL force
-          const vt h = vt { 1 } - theta * ((vt { 1 } / gp + vt { 3 } * gp / (pp2 + eps)) * s + sp);
-          kappa *= h;
-          a_mid = h * a_mid;
+        //----------------------------------------------------------------------------------------- 
+        // cooling: every friction implicit, u2 = (1 + K)^{-1} (uL + a_mid), K = kappa + kB (1 - bh bh)
+        const Vec3 uw = uL + a_mid;
+        Vec3 u2       = uw / (vt { 1 } + kappa + kB);
+        if constexpr(is_sync) {
+          u2 = u2 + (dot(uw, bh) * (vt { 1 } / (vt { 1 } + kappa) - vt { 1 } / (vt { 1 } + kappa + kB))) * bh;
         }
 
-        // implicit factor for cooling, explicit update for heating (kappa < 0)
-        Vec3 u2 = kappa >= vt { 0 } ? (uL + a_mid) / (vt { 1 } + kappa)
-                                    : (uL + a_mid) * (vt { 1 } - kappa);
-
-        // --- stochastic kick, coefficients at u^n ---
+        //----------------------------------------------------------------------------------------- 
+        // Heating: Euler-Maruyama kick, coefficients at u^n ---
         if constexpr(heat or ssa) {
           const auto xi = toolbox::normal4<vt>(ids_mds[idx][], cntr, species, seed);
-          if constexpr(heat) {
-            // Thomson diffusion tensor D_par bb + D_perp (1 - bb); gamma^2 beta^2 = p^2
-            const vt AT    = A * theta;
-            const vt gn2   = gn * gn;
-            const vt p2    = toolbox::dot(un, un);
-            const vt Dpar  = AT * gn2 * (gn2 + vt { 3.2 } * p2);
-            const vt Dperp = AT * (gn2 - vt { 0.1 } * p2);
-            // kick std capped at gamma^n: beyond 2 D dt ~ gamma^2 (8 A Theta gamma^4 > gamma^2)
-            // the step is invalid and gamma^4 runs away to inf/NaN in a few laps
-            const vt kpar  = sstd::min(sstd::sqrt(vt { 2 } * Dpar), gn);
-            const vt kperp = sstd::min(sstd::sqrt(vt { 2 } * Dperp), gn);
-            // D^{1/2} xi = kperp xi + (kpar - kperp)(bh.xi) bh; at rest kpar = kperp
-            const Vec3 x  = Vec3 { xi[0], xi[1], xi[2] };
-            const Vec3 bh = un / (sstd::sqrt(p2) + eps);
-            u2 = u2 + cfl * (kperp * x + ((kpar - kperp) * toolbox::dot(bh, x)) * bh);
+          const Vec3 x  = Vec3 { xi[0], xi[1], xi[2] };
+
+          //----------------------------------------------------------------------------------------- 
+          if constexpr(heat) { // Compton heating; isotropic, box frame
+            const vt D = A * theta * (gn * gn + vt { 2 } * theta * gn + vt { 2 } * theta * theta);
+            u2 = u2 + (cfl * sstd::sqrt(vt { 2 } * D)) * x;
           }
-          if constexpr(ssa) {
-            // Eq. (kick_ssa): step gamma' in the drift frame, reflect at 1, rescale u' at fixed pitch;
-            // D_e = Theta s A gamma^2 F2 (Eq. De_code). A du' = dgamma'/beta' step would add a spurious Ito drift
-            const vt De    = theta * s * A * gn * gn * F2;
-            const Vec3 u   = cinv * u2;
-            const vt g     = sstd::sqrt(vt { 1 } + toolbox::dot(u, u));
-            const vt upar  = toolbox::dot(u, nD);
-            const vt gpk   = gammaD * (g - betaD * upar);
-            const Vec3 up  = u + (gammaD * (upar - betaD * g) - upar) * nD;
-            const vt ppk   = sstd::sqrt(toolbox::dot(up, up));
-            const vt gpn   = vt { 1 } + sstd::abs(gpk - vt { 1 } + xi[0] * sstd::sqrt(vt { 2 } * De / gammaD));
-            const vt ppn   = sstd::sqrt(gpn * gpn - vt { 1 });
-            const Vec3 upn = (ppn / (ppk + eps)) * up;
-            const vt uparn = toolbox::dot(upn, nD);
-            u2 = cfl * (upn + (gammaD * (uparn + betaD * gpn) - uparn) * nD);
+
+          //----------------------------------------------------------------------------------------- 
+          if constexpr(ssa) { // SSA: drift frame (E' || B'); boost along nD
+            const Vec3 ExB = cross(E, B);
+            const vt E2    = dot(E, E);
+            const vt B2    = dot(B, B);
+            const vt EB    = dot(E, B);
+            const vt S     = sstd::sqrt(dot(ExB, ExB));
+            const vt W     = E2 + B2;
+            // v_D/c = [W - sqrt(W^2 - 4 S^2)] / 2S written without cancellation
+            const vt betaD  = vt { 2 } * S / (W + sstd::sqrt(sstd::max(W * W - vt { 4 } * S * S, vt { 0 })) + eps);
+            const vt gammaD = vt { 1 } / sstd::sqrt(sstd::max(vt { 1 } - betaD * betaD, eps));
+            const Vec3 nD   = ExB / (S + eps);
+            const vt Bp2    = vt { 0.5 } * ((B2 - E2) + sstd::sqrt((B2 - E2) * (B2 - E2) + vt { 4 } * EB * EB));
+
+            // lorentz boost helper 
+            const auto boost = [=](const Vec3& u, const vt sgn) {  // sgn = -1: to drift frame, +1: back
+              const vt g  = sstd::sqrt(vt { 1 } + dot(u, u));
+              const vt up = dot(u, nD);
+              return u + (gammaD * (up + sgn * betaD * g) - up) * nD;
+            };
+
+            // escape s(gamma'); log tau clamped; off where E' > B' (= E > B)
+            const vt gp    = gammaD * (gn - betaD * dot(un, nD));
+            const vt lg    = sstd::log(gp);
+            const vt ltau  = sstd::min(vt { 13 } / vt { 3 } * (lgt - lg) - cM * (sstd::exp(vt { 2 } / vt { 3 } * lg) - gt23), vt { 30 });
+            const vt thick = E2 < B2 ? vt { 1 } : vt { 0 };
+            const vt s     = thick * (vt { 1 } - sstd::exp(-sstd::exp(ltau)));
+
+            // D_s,perp and D_s,par with the invariant gamma^2 F2, times s, per box time (1/gammaD)
+            const vt g2F2  = gn * gn * F2;
+            const vt w     = vt { 2 } * A * theta * s / gammaD;
+            const vt kpar  = sstd::sqrt(w * g2F2);
+            const vt kperp = sstd::sqrt(w * (g2F2 + Bp2 * (vt { 1 } + vt { 2 } * theta * gp + vt { 2 } * theta * theta)));
+
+            // D^{1/2} x = k_perp x + (k_par - k_perp)(x.bh) bh
+            const Vec3 du = kperp * x + ((kpar - kperp) * dot(x, bh)) * bh;
+            u2 = cfl * boost(boost(cinv * u2, vt { -1 }) + du, vt { 1 });
           }
         }
 
-        const vt ginv2 = cfl / sstd::sqrt(cfl2 + toolbox::dot(u2, u2));
+        //----------------------------------------------------------------------------------------- 
+        const vt ginv2 = cfl / sstd::sqrt(cfl2 + dot(u2, u2));
         for(auto i = 0uz; i < 3uz; ++i) {
           vel_mds[idx][i] = u2[i] * cinv;
           pos_mds[idx][i] += u2[i] * ginv2;
