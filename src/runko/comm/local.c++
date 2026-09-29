@@ -39,8 +39,7 @@ tyvi::actions::sexpr_sender
         };
     }
   };
-  return te::just() | te::let_value(f) | te::drop_value() |
-         te::then([] { return ta::null; });
+  return te::just() | te::let_value(f);
 }
 
 }  // namespace runko

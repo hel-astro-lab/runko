@@ -80,8 +80,7 @@ tyvi::actions::sexpr
         }));
     }
 
-    return te::when_all_vector(std::move(senders)) | te::drop_value() |
-           te::then([] { return ta::null; });
+    return te::when_all_vector(std::move(senders)) | te::then([] { return ta::null; });
   };
 
   return ta::list(

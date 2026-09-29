@@ -208,7 +208,7 @@ tyvi::actions::sexpr_sender
          te::let_value([sim = std::ref(x), virt_tiles, boundary_tiles] {
            return te::when_all(virt_tiles(sim), boundary_tiles(sim));
          }) |
-         te::drop_value() | te::then([] { return tyvi::actions::null; });
+         te::then([] { return tyvi::actions::null; });
 }
 
 tyvi::actions::sexpr_sender
@@ -317,8 +317,7 @@ tyvi::actions::sexpr_sender
 
     return te::when_all_vector(std::move(senders));
   };
-  return te::just(std::ref(x)) | te::let_value(f) | te::drop_value() |
-         te::then([] { return ta::null; });
+  return te::just(std::ref(x)) | te::let_value(f) | te::then([] { return ta::null; });
 }
 
 }  // namespace pic
