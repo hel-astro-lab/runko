@@ -65,7 +65,6 @@ target_compile_options(runko_warnings
     -Werror
 )
 
-add_subdirectory(external/corgi)
 add_subdirectory(external/tyvi)
 add_subdirectory(external/entt)
 
@@ -76,13 +75,11 @@ set_target_properties(tyvi PROPERTIES POSITION_INDEPENDENT_CODE TRUE)
 add_library(runko_dependencies INTERFACE)
 target_link_libraries(runko_dependencies
     INTERFACE
-    corgi
     tyvi
     EnTT::EnTT
 )
 target_include_directories(runko_dependencies
     SYSTEM INTERFACE
-    $<TARGET_PROPERTY:corgi,INTERFACE_INCLUDE_DIRECTORIES>
     $<TARGET_PROPERTY:tyvi,INTERFACE_INCLUDE_DIRECTORIES>
 )
 

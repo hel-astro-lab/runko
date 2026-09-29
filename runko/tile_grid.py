@@ -5,7 +5,6 @@ import itertools
 import pickle
 import logging
 import pathlib
-import pycorgi.threeD as pycorgi
 import numpy as np
 from .simulation import Simulation
 from .runko_logging import runko_logger, on_main_rank

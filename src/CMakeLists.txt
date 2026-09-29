@@ -78,7 +78,4 @@ endif()
 
 # Install runko_cpp_bindings.
 install(TARGETS runko_cpp_bindings DESTINATION .)
-# Vendor-in corgi if we are building the python package:
-install(TARGETS pycorgi DESTINATION .)
-
 

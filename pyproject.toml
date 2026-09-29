@@ -24,8 +24,6 @@ classifiers = [
   "Topic :: Scientific/Engineering",
 ]
 dependencies = [
-  "mpi4py",
-  "corgi",
   "numpy",
   "scipy",
 ]
