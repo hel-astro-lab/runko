@@ -5,7 +5,6 @@
 
 #include "runko/emf/yee_lattice.h"
 #include "runko/pic/particle.h"
-#include "runko/pic/tile.h"
 #include "runko/tools/vector.h"
 #include "tyvi/mdgrid.h"
 #include "tyvi/sstd.h"
@@ -238,74 +237,4 @@ void
     .wait();
 }
 
-
-/// Register a reflector wall with this tile.
-template<std::size_t D>
-void
-  Tile<D>::register_reflector_wall(pic::reflector_wall wall)
-{
-  reflector_walls_.push_back(wall);
-}
-
-/// Reflect particles at all registered walls that overlap this tile.
-///
-/// Allocates a temporary correction-J grid, calls reflect_at_wall for every
-/// particle species, then the correction is added to the tile's Yee lattice
-/// current during the deposit phase.
-template<std::size_t D>
-void
-  Tile<D>::reflect_particles()
-{
-  if(reflector_walls_.empty()) return;
-
-  const auto wall_is_in_tile = [&](const reflector_wall& w) {
-    return w.walloc >= value_type(this->mins[0]) - value_type(this->cfl_) &&
-           w.walloc <= value_type(this->maxs[0]);
-  };
-  if(std::ranges::none_of(reflector_walls_, wall_is_in_tile)) return;
-
-  // lazily allocate the correction J grid on first use; reuse on
-  // subsequent steps to avoid per-step alloc/free churn that leaks
-  // host memory on HIP builds.
-  if(not reflector_correction_J_) {
-    reflector_correction_J_.emplace(this->yee_lattice_.extents_with_halo());
-  }
-  reflector_correction_pending_ = true;
-
-  const auto genJmds = reflector_correction_J_->mds();
-  tyvi::mdgrid_work {}
-    .for_each_index(
-      genJmds,
-      [=](const auto idx, const auto tidx) { genJmds[idx][tidx] = 0; })
-    .wait();
-
-  const auto origo_pos = std::array { value_type(this->mins[0]) - emf::halo_size,
-                                      value_type(this->mins[1]) - emf::halo_size,
-                                      value_type(this->mins[2]) - emf::halo_size };
-
-  for(const auto& wall: reflector_walls_) {
-    if(!wall_is_in_tile(wall)) continue;
-
-    for(auto& [_, pbuff]: particle_buffs_) {
-      pbuff
-        .reflect_at_wall(wall, reflector_correction_J_.value(), origo_pos, this->cfl_);
-    }
-  }
-}
-
-/// Advance all wall positions by betawall * cfl each timestep.
-template<std::size_t D>
-void
-  Tile<D>::advance_reflector_walls()
-{
-  if(reflector_walls_.empty()) return;
-
-  for(auto& wall: reflector_walls_) {
-    wall.walloc += wall.betawall * value_type(this->cfl_);
-  }
-}
-
 }  // namespace pic
-
-
-template class pic::Tile<3>;

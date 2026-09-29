@@ -316,14 +316,14 @@ void
 
   using yee_value_type = emf::YeeLattice::value_type;
   const auto particle_pusher =
-    sim.get_n_set_config<pic::ParticlePusher>([](auto&& conf) {
+    sim.get_n_set_config<runko::ParticlePusher>([](auto&& conf) {
       const auto p = conf.template get_or_throw<std::string>("particle_pusher");
       if(p == "boris") {
-        return pic::ParticlePusher::boris;
+        return runko::ParticlePusher::boris;
       } else if(p == "higuera_cary") {
-        return pic::ParticlePusher::higuera_cary;
+        return runko::ParticlePusher::higuera_cary;
       } else if(p == "faraday") {
-        return pic::ParticlePusher::faraday;
+        return runko::ParticlePusher::faraday;
       } else {
         const auto msg = std::format("{} is not supported particle pusher.", p);
         throw std::runtime_error { msg };
@@ -331,12 +331,12 @@ void
     });
 
   const auto field_interpolator =
-    sim.get_n_set_config<pic::FieldInterpolator>([](auto&& conf) {
+    sim.get_n_set_config<runko::FieldInterpolator>([](auto&& conf) {
       const auto p = conf.template get_or_throw<std::string>("field_interpolator");
       if(p == "linear_1st") {
-        return pic::FieldInterpolator::linear_1st;
+        return runko::FieldInterpolator::linear_1st;
       } else if(p == "linear_1st_unrolled") {
-        return pic::FieldInterpolator::linear_1st_unrolled;
+        return runko::FieldInterpolator::linear_1st_unrolled;
       } else {
         const auto msg = std::format("{} is not supported field_interpolator.", p);
         throw std::runtime_error { msg };
@@ -359,13 +359,13 @@ void
     auto push_impl = [&](const auto& interpolator) {
       for(auto& [_, pbuff]: particles) {
         switch(particle_pusher) {
-          case ParticlePusher::boris:
+          case runko::ParticlePusher::boris:
             pbuff.push_particles_boris(cfl, interpolator);
             break;
-          case ParticlePusher::higuera_cary:
+          case runko::ParticlePusher::higuera_cary:
             pbuff.push_particles_higuera_cary(cfl, interpolator);
             break;
-          case ParticlePusher::faraday:
+          case runko::ParticlePusher::faraday:
             pbuff.push_particles_faraday(cfl, interpolator);
             break;
           default:
@@ -377,10 +377,10 @@ void
     };
 
     switch(field_interpolator) {
-      case FieldInterpolator::linear_1st:
+      case runko::FieldInterpolator::linear_1st:
         push_impl(yee.interpolate_EB_linear_1st(origo_pos));
         break;
-      case FieldInterpolator::linear_1st_unrolled:
+      case runko::FieldInterpolator::linear_1st_unrolled:
         push_impl(yee.interpolate_EB_linear_1st_unrolled(origo_pos));
         break;
       default:
@@ -395,12 +395,12 @@ void
   deposit_current(runko::simulation_context& sim)
 {
   const auto current_depositer =
-    sim.get_n_set_config<pic::CurrentDepositer>([](auto&& conf) {
+    sim.get_n_set_config<runko::CurrentDepositer>([](auto&& conf) {
       const auto p = conf.template get_or_throw<std::string>("current_depositer");
       if(p == "zigzag" or p == "zigzag_1st") {
-        return pic::CurrentDepositer::zigzag_1st;
+        return runko::CurrentDepositer::zigzag_1st;
       } else if(p == "zigzag_1st_atomic") {
-        return pic::CurrentDepositer::zigzag_1st_atomic;
+        return runko::CurrentDepositer::zigzag_1st_atomic;
       } else {
         const auto msg = std::format("{} is not supported current depositer.", p);
         throw std::runtime_error { msg };
@@ -425,12 +425,12 @@ void
 
 
     switch(current_depositer) {
-      case CurrentDepositer::zigzag_1st:
+      case runko::CurrentDepositer::zigzag_1st:
         for(const auto& [_, pcontainer]: particles) {
           yee.deposit_current(pcontainer.current_zigzag_1st(origo_pos, cfl));
         }
         break;
-      case CurrentDepositer::zigzag_1st_atomic: {
+      case runko::CurrentDepositer::zigzag_1st_atomic: {
         struct J_cache {
           using type = runko::VecGrid<emf::YeeLattice::value_type>;
           type cache;
