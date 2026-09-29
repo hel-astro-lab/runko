@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include "pybind11/numpy.h"
 #include "runko/tools/vector.h"
 
 #include <array>
@@ -22,7 +23,7 @@ enum class particle : std::size_t {
 using prtc_id_type                 = std::uint64_t;
 static constexpr auto dead_prtc_id = std::numeric_limits<prtc_id_type>::max();
 
-template <typename T>
+template<typename T>
 struct ParticleState {
   using vec3 = std::array<T, 3>;
 
@@ -32,6 +33,13 @@ struct ParticleState {
 };
 
 static_assert(std::is_trivially_copyable_v<ParticleState<float>>);
+
+struct ParticleStateBatch {
+  using container_type = std::array<pybind11::array_t<double>, 3>;
+
+  container_type pos;
+  container_type vel;
+};
 
 template<typename F, typename T>
 concept EB_interpolator =

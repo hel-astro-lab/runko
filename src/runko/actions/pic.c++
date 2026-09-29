@@ -383,12 +383,12 @@ void
   }();
 
   const auto field_interpolator =
-    sim.get_n_set_config<pic::FieldInterpolator>([](auto&& conf) {
+    sim.get_n_set_config<runko::FieldInterpolator>([](auto&& conf) {
       const auto p = conf.template get_or_throw<std::string>("field_interpolator");
       if(p == "linear_1st") {
-        return pic::FieldInterpolator::linear_1st;
+        return runko::FieldInterpolator::linear_1st;
       } else if(p == "linear_1st_unrolled") {
-        return pic::FieldInterpolator::linear_1st_unrolled;
+        return runko::FieldInterpolator::linear_1st_unrolled;
       } else {
         const auto msg = std::format("{} is not supported field_interpolator.", p);
         throw std::runtime_error { msg };
@@ -481,10 +481,10 @@ void
     };
 
     switch(field_interpolator) {
-      case FieldInterpolator::linear_1st:
+      case runko::FieldInterpolator::linear_1st:
         push_impl(yee.interpolate_EB_linear_1st(origo_pos));
         break;
-      case FieldInterpolator::linear_1st_unrolled:
+      case runko::FieldInterpolator::linear_1st_unrolled:
         push_impl(yee.interpolate_EB_linear_1st_unrolled(origo_pos));
         break;
       default:
@@ -499,12 +499,12 @@ void
   deposit_current(runko::simulation_context& sim)
 {
   const auto current_depositer =
-    sim.get_n_set_config<pic::CurrentDepositer>([](auto&& conf) {
+    sim.get_n_set_config<runko::CurrentDepositer>([](auto&& conf) {
       const auto p = conf.template get_or_throw<std::string>("current_depositer");
       if(p == "zigzag" or p == "zigzag_1st") {
-        return pic::CurrentDepositer::zigzag_1st;
+        return runko::CurrentDepositer::zigzag_1st;
       } else if(p == "zigzag_1st_atomic") {
-        return pic::CurrentDepositer::zigzag_1st_atomic;
+        return runko::CurrentDepositer::zigzag_1st_atomic;
       } else {
         const auto msg = std::format("{} is not supported current depositer.", p);
         throw std::runtime_error { msg };
@@ -529,12 +529,12 @@ void
 
 
     switch(current_depositer) {
-      case CurrentDepositer::zigzag_1st:
+      case runko::CurrentDepositer::zigzag_1st:
         for(const auto& [_, pcontainer]: particles) {
           yee.deposit_current(pcontainer.current_zigzag_1st(origo_pos, cfl));
         }
         break;
-      case CurrentDepositer::zigzag_1st_atomic: {
+      case runko::CurrentDepositer::zigzag_1st_atomic: {
         struct J_cache {
           using type = runko::VecGrid<emf::YeeLattice::value_type>;
           type cache;

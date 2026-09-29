@@ -8,8 +8,6 @@
 #include "runko/communication_common.h"
 #include "runko/emf/antenna.h"
 #include "runko/emf/edge_bc.h"
-#include "runko/emf/tile.h"
-#include "runko/emf/virtual_tile.h"
 #include "runko/tools/config_parser.h"
 #include "tyvi/mdgrid_buffer.h"
 #include "tyvi/mdspan.h"
