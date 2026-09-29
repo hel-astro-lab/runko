@@ -3,8 +3,6 @@
 
 #include "runko/particles_common.h"
 #include "runko/pic/reflector_wall.h"
-#include "runko/pic/tile.h"
-#include "runko/pic/virtual_tile.h"
 #include "pybind11/functional.h"
 #include "pybind11/numpy.h"
 #include "pybind11/pybind11.h"
@@ -57,7 +55,7 @@ void
     .def_readwrite("vel", &PS::vel);
 
   // object for storing a batch of multiple particle's data
-  using PSB = pic::ParticleStateBatch;
+  using PSB = runko::ParticleStateBatch;
   py::class_<PSB>(m_3d, "ParticleStateBatch")
     .def(
       py::init<PSB::container_type, PSB::container_type>(),

@@ -6,7 +6,6 @@
 #include "pybind11/numpy.h"
 #include "runko/particles_common.h"
 #include "runko/pic/particle.h"
-#include "runko/pic/tile.h"
 #include "runko/simulation_context.h"
 #include "tyvi/actions_ast.h"
 
@@ -46,7 +45,7 @@ void inject(
 
 using batch_array = pybind11::array_t<double>;
 using batch_particle_generator =
-  std::function<pic::ParticleStateBatch(batch_array, batch_array, batch_array)>;
+  std::function<runko::ParticleStateBatch(batch_array, batch_array, batch_array)>;
 
 /// Inject particles to local tiles based on given generator.
 ///

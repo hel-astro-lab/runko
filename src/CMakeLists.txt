@@ -22,8 +22,6 @@ set (TOOLS_FILES
 
 set (EMF_FILES
      ./runko/bindings/pyemf.c++
-     ./runko/emf/tile.c++
-     ./runko/emf/virtual_tile.c++
      ./runko/emf/yee_lattice.c++
      ./runko/emf/yee_lattice_fdtd2.c++
      ./runko/emf/yee_lattice_stencil.c++
@@ -32,9 +30,6 @@ set (EMF_FILES
 
 set (PIC_FILES
      ./runko/bindings/pypic.c++
-     ./runko/pic/tile.c++
-     ./runko/pic/tile_communication.c++
-     ./runko/pic/virtual_tile.c++
      ./runko/pic/particle.c++
      ./runko/pic/particle_current_zigzag_1st.c++
      ./runko/pic/reflector_wall.c++
