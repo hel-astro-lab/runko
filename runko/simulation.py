@@ -63,9 +63,6 @@ class Simulation:
         self._total_interval_time = 0
 
         self._io_config = kwargs['io_config']
-        self._emf_writer = None
-        self._prtcl_writers = {}  # species -> ParticlesWriter, lazily constructed
-        self._spectra_writer = None
 
         self._lap_timers = []
         self._lap_wall_times = []
@@ -100,59 +97,6 @@ class Simulation:
         ctor_msg += f"\tNt = {kwargs['Nt']}\n"
         ctor_msg += f"\tio config: {self._io_config}"
         self._logger.debug(ctor_msg)
-
-
-    def _ensure_constructed_emf_writer(self):
-        if self._emf_writer:
-            return
-
-        self._emf_writer = FieldsWriter(self._io_config["outdir"],
-                                        self._tile_grid._Nx,
-                                        self._tile_grid._NxMesh,
-                                        self._tile_grid._Ny,
-                                        self._tile_grid._NyMesh,
-                                        self._tile_grid._Nz,
-                                        self._tile_grid._NzMesh,
-                                        self._io_config["stride"],
-                                        self._io_config.get("nspecies", 2))
-
-        self._logger.debug("FieldsWriter constructed.")
-
-
-    def _ensure_constructed_prtcl_writers(self):
-        if self._prtcl_writers:
-            return
-
-        n_prtcls = self._io_config.get("n_prtcls", 0)
-        nspecies = self._io_config.get("nspecies", 2)
-        outdir   = self._io_config["outdir"]
-
-        for sp in range(nspecies):
-            self._prtcl_writers[sp] = ParticlesWriter(outdir, n_prtcls, sp)
-
-        self._logger.debug(f"ParticlesWriters constructed for {nspecies} species, n_prtcls={n_prtcls}.")
-
-
-    def _ensure_constructed_spectra_writer(self):
-        if self._spectra_writer:
-            return
-
-        io = self._io_config
-        self._spectra_writer = SpectraWriter(
-            io["outdir"],
-            self._tile_grid._Nx,
-            self._tile_grid._NxMesh,
-            self._tile_grid._Ny,
-            self._tile_grid._NyMesh,
-            self._tile_grid._Nz,
-            self._tile_grid._NzMesh,
-            io.get("spectra_stride", io["stride"]),
-            io["spectra_nbins"],
-            io["spectra_umin"],
-            io["spectra_umax"],
-            io.get("nspecies", 2))
-
-        self._logger.debug("SpectraWriter constructed.")
 
 
     def virtual_tiles(self):
