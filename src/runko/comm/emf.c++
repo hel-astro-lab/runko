@@ -216,7 +216,7 @@ tyvi::actions::sexpr_sender
          te::let_value([sim = std::ref(x), sends, recvs] {
            return te::when_all(sends(sim), recvs(sim));
          }) |
-         te::drop_value() | te::then([] { return tyvi::actions::null; });
+         te::then([] { return tyvi::actions::null; });
 }
 
 
