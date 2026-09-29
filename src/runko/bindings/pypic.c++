@@ -5,7 +5,6 @@
 #include "runko/pic/reflector_wall.h"
 #include "runko/pic/tile.h"
 #include "runko/pic/virtual_tile.h"
-#include "runko/io/pic_average_kinetic_energy.h"
 #include "pybind11/functional.h"
 #include "pybind11/numpy.h"
 #include "pybind11/pybind11.h"
@@ -81,8 +80,6 @@ void
     .def_readwrite("walloc", &RW::walloc)
     .def_readwrite("betawall", &RW::betawall)
     .def_readwrite("gammawall", &RW::gammawall);
-
-  m_3d.def("_write_average_kinetic_energy", &pic::write_average_kinetic_energy);
 }
 
 }  // namespace pic
