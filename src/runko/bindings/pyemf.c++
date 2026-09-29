@@ -1,20 +1,15 @@
 // Copyright 2016 - 2026, Miro Palmu, Joonas Nättilä and the runko contributors
 // SPDX-License-Identifier: GPL-3.0-or-later
 
-#include "runko/communication_common.h"
-#include "runko/emf/antenna.h"
-#include "runko/emf/edge_bc.h"
-#include "runko/emf/tile.h"
-#include "runko/io/emf_average_field_energy_density.h"
-#include "runko/io/snapshots/mpiio_writer_base.h"
-#include "runko/io/snapshots/mpiio_fields.h"
-#include "runko/io/snapshots/mpiio_particles.h"
-#include "runko/io/snapshots/mpiio_spectra.h"
-#include "runko/emf/virtual_tile.h"
 #include "pybind11/functional.h"
 #include "pybind11/numpy.h"
 #include "pybind11/pybind11.h"
 #include "pybind11/stl.h"
+#include "runko/communication_common.h"
+#include "runko/emf/antenna.h"
+#include "runko/emf/edge_bc.h"
+#include "runko/emf/tile.h"
+#include "runko/emf/virtual_tile.h"
 #include "runko/tools/config_parser.h"
 #include "tyvi/mdgrid_buffer.h"
 #include "tyvi/mdspan.h"
@@ -118,26 +113,39 @@ void
   using EBC = emf::edge_bc;
   py::class_<EBC>(m_3d, "edge_bc")
     .def(
-      py::init([](std::uint8_t direction,
-                  std::uint8_t side,
-                  EBC::value_type position,
-                  EBC::value_type Ex, EBC::value_type Ey, EBC::value_type Ez,
-                  EBC::value_type Bx, EBC::value_type By, EBC::value_type Bz,
-                  EBC::value_type Jx, EBC::value_type Jy, EBC::value_type Jz,
-                  std::uint8_t E_components,
-                  std::uint8_t B_components,
-                  std::uint8_t J_components) {
-        return EBC { direction, side, position,
-                     Ex, Ey, Ez, Bx, By, Bz, Jx, Jy, Jz,
-                     E_components, B_components, J_components };
+      py::init([](
+                 std::uint8_t direction,
+                 std::uint8_t side,
+                 EBC::value_type position,
+                 EBC::value_type Ex,
+                 EBC::value_type Ey,
+                 EBC::value_type Ez,
+                 EBC::value_type Bx,
+                 EBC::value_type By,
+                 EBC::value_type Bz,
+                 EBC::value_type Jx,
+                 EBC::value_type Jy,
+                 EBC::value_type Jz,
+                 std::uint8_t E_components,
+                 std::uint8_t B_components,
+                 std::uint8_t J_components) {
+        return EBC { direction, side, position,     Ex,           Ey,
+                     Ez,        Bx,   By,           Bz,           Jx,
+                     Jy,        Jz,   E_components, B_components, J_components };
       }),
       py::kw_only(),
       py::arg("direction")    = std::uint8_t { 0 },
       py::arg("side")         = std::uint8_t { 0 },
       py::arg("position")     = EBC::value_type { 0 },
-      py::arg("Ex") = EBC::value_type { 0 }, py::arg("Ey") = EBC::value_type { 0 }, py::arg("Ez") = EBC::value_type { 0 },
-      py::arg("Bx") = EBC::value_type { 0 }, py::arg("By") = EBC::value_type { 0 }, py::arg("Bz") = EBC::value_type { 0 },
-      py::arg("Jx") = EBC::value_type { 0 }, py::arg("Jy") = EBC::value_type { 0 }, py::arg("Jz") = EBC::value_type { 0 },
+      py::arg("Ex")           = EBC::value_type { 0 },
+      py::arg("Ey")           = EBC::value_type { 0 },
+      py::arg("Ez")           = EBC::value_type { 0 },
+      py::arg("Bx")           = EBC::value_type { 0 },
+      py::arg("By")           = EBC::value_type { 0 },
+      py::arg("Bz")           = EBC::value_type { 0 },
+      py::arg("Jx")           = EBC::value_type { 0 },
+      py::arg("Jy")           = EBC::value_type { 0 },
+      py::arg("Jz")           = EBC::value_type { 0 },
       py::arg("E_components") = std::uint8_t { 0b111 },
       py::arg("B_components") = std::uint8_t { 0b111 },
       py::arg("J_components") = std::uint8_t { 0b111 })
@@ -156,37 +164,5 @@ void
     .def_readwrite("E_components", &EBC::E_components)
     .def_readwrite("B_components", &EBC::B_components)
     .def_readwrite("J_components", &EBC::J_components);
-
-  // MPI-IO writer base class
-  py::class_<mpiio::WriterBase<3>>(m_3d, "MpiioWriterBase")
-    .def("write", &mpiio::WriterBase<3>::write);
-
-  // MPI-IO field snapshot writer
-  py::class_<mpiio::FieldsWriter<3>, mpiio::WriterBase<3>>(m_3d, "MpiioFieldsWriter")
-    .def(py::init<const std::string&, int, int, int, int, int, int, int, int>(),
-         py::arg("prefix"), py::arg("Nx"), py::arg("NxMesh"),
-         py::arg("Ny"), py::arg("NyMesh"),
-         py::arg("Nz"), py::arg("NzMesh"),
-         py::arg("stride"), py::arg("nspecies") = 2)
-    .def("write_collective", &mpiio::FieldsWriter<3>::write_collective);
-
-  // MPI-IO particle snapshot writer
-  py::class_<mpiio::ParticlesWriter<3>, mpiio::WriterBase<3>>(m_3d, "MpiioParticlesWriter")
-    .def(py::init<const std::string&, int64_t, int>(),
-         py::arg("prefix"), py::arg("n_prtcls"),
-         py::arg("species") = 0);
-
-  // MPI-IO spectra snapshot writer
-  py::class_<mpiio::SpectraWriter<3>, mpiio::WriterBase<3>>(m_3d, "MpiioSpectraWriter")
-    .def(py::init<const std::string&, int, int, int, int, int, int, int, int, float, float, int>(),
-         py::arg("prefix"), py::arg("Nx"), py::arg("NxMesh"),
-         py::arg("Ny"), py::arg("NyMesh"),
-         py::arg("Nz"), py::arg("NzMesh"),
-         py::arg("stride"),
-         py::arg("nbins"), py::arg("umin"), py::arg("umax"),
-         py::arg("nspecies") = 2);
-
-  m_3d.def("_write_average_B_energy_density", &emf::write_average_B_energy_density)
-    .def("_write_average_E_energy_density", &emf::write_average_E_energy_density);
 }
 }  // namespace emf

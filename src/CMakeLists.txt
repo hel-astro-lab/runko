@@ -41,9 +41,6 @@ set (PIC_FILES
      )
 
 set (IO_FILES
-     ./runko/io/snapshots/mpiio_fields.c++
-     ./runko/io/snapshots/mpiio_particles.c++
-     ./runko/io/snapshots/mpiio_spectra.c++
     )
 
 set (RUNKO_CPP_BINDINGS_FILES
