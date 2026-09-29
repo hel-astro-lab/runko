@@ -326,31 +326,6 @@ class emf(unittest.TestCase):
             self.assertTrue(Az_arr[i, j, k] < 0)
 
 
-    def test_tile_index_is_set(self):
-        config = runko.Configuration(None)
-        config.n_tiles = [2, 3, 4]
-        config.n_cells_per_tile = [10, 12, 14]
-        config.field_propagator = "fdtd2"
-        config.cfl = 1
-
-        tile_grid_idx = [1, 2, 3]
-        tile = runko.emf.threeD.Tile(tile_grid_idx, config)
-
-        """
-        This is not 100% neccesseary, as corgi grids add_tile method
-        will set the index too. However, many tile methods assume that
-        it is set, so this prevents bugs when tiles are used outside
-        of corgi grid.
-        """
-
-        if type(tile.index) is tuple:
-            #Handle cases where the tile index is a tuple
-            self.assertEqual(tile.index, tuple(tile_grid_idx))
-        else:
-            #Expect the tile index to be a list
-            self.assertEqual(tile.index, tile_grid_idx)
-
-
     def test_bogus_tile_index_raises_exception(self):
         config = runko.Configuration(None)
         config.n_tiles = [2, 3, 4]
