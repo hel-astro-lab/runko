@@ -83,6 +83,7 @@ Key contributors that provided additional features and/or improvements include
    debugging
    senders-and-receivers
    actions
+   ecs
    unittool
    versions
    documentation
