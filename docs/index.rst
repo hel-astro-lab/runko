@@ -81,6 +81,7 @@ Key contributors that provided additional features and/or improvements include
    contributing
    dev-workflow
    debugging
+   senders-and-receivers
    unittool
    versions
    documentation
