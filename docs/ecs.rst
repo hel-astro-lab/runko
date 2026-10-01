@@ -3,36 +3,17 @@
 Tiles as entities
 #################
 
-If you read an action in ``src/runko/actions/`` or ``src/runko/comm/``
-you will rarely see a tile object.
-Instead you will see loops like this one from ``emf::push_e``:
-
-.. code:: c++
-
-   for(auto&& [_, yee]: sim.view_tiles<emf::YeeLattice, runko::local_tile_tag>()) {
-     yee.push_e_fdtd2(static_cast<vt>(cfl));
-   }
-
-and lookups like ``sim.tiles.try_get<emf::YeeLattice>(id)``.
-There is no ``Tile`` class that has a Yee lattice and a list of particles as members.
-A tile is only a number, and its data is stored elsewhere, grouped by type.
+There is no ``Tile`` class that has a Yee lattice or particles as members.
+Instead, a tile is only a number, and its data is stored elsewhere, grouped by type.
 This is the *entity component system* (ECS) pattern,
 and runko uses the `EnTT <https://github.com/skypjack/entt>`_ library
 (``external/entt``) to implement it.
 
-This page explains what that pattern is, how runko maps tiles onto it,
-and what it means for you when you change the C++ code.
-It does not document the EnTT API.
-The goal is to give you a mental model that makes the existing code readable
-and helps you reason about your own changes.
-
-This page builds on :ref:`senders-and-receivers` and :ref:`actions-language`
-only in the last sections.
-The rest can be read on its own.
+This page explains what that pattern is and how runko maps tiles onto it.
 
 
-The problem ECS solves
-======================
+Problem ECS solves
+==================
 
 A runko simulation is split into *tiles*.
 Each MPI rank owns some tiles, and every tile covers a small, regular part of the grid.
@@ -79,8 +60,8 @@ Instead of asking "what class is this tile?",
 code asks "which tiles have these pieces of data?".
 
 
-The core idea: an id and a bag of components
-============================================
+What is ECS?
+============
 
 ECS has three concepts.
 
@@ -139,6 +120,10 @@ in which rows are entities and columns are component types:
 Tile 0 is an interior local tile, tile 1 is a local tile on a rank boundary,
 and tiles 2 and 3 are virtual tiles standing in for neighbors on other ranks.
 The "kind" of a tile is nothing more than which columns are filled in.
+
+This way of representing program state is desirable for Runko,
+but we don't want to maintain our own implementation of it.
+Many simpler alternatives are just badly implemented ECS in disguise.
 
 
 How runko uses the registry
@@ -203,7 +188,6 @@ A few details are easy to miss when reading such loops:
   That is why ``view_tiles<const index_type, local_tile_tag>()`` binds ``[_, index]``,
   while ``view_tiles<const index_type, virtual_tile_tag>()`` binds ``[_, index, virt]``,
   because ``virtual_tile_tag`` has a member.
-  If you add a member to an empty tag, every structured binding over it changes.
 * ``const T`` in the list gives a ``const T&`` and documents that the loop only reads it.
   The ``const`` overload of ``view_tiles`` adds ``const`` to every type.
 
@@ -219,8 +203,8 @@ use the registry directly with ``entt::exclude``:
 Single-tile access
 ------------------
 
-When you already have an id, for example a neighbor id from
-``runko::cartesian_neighbors<3>``, use the registry directly:
+A tile id, for example a neighbor id from ``runko::cartesian_neighbors<3>``,
+can be used to access the tile directly:
 
 * ``tiles.try_get<T>(id)`` returns a pointer, or ``nullptr`` if the tile has no ``T``.
   This is the ECS way to ask "what kind of tile is this?".
@@ -289,27 +273,26 @@ For example,
 and ``reflect_particles`` later reads it, returning early if nothing has been registered.
 
 
-Consequences for people changing the code
-=========================================
-
-The type is the name
---------------------
+Type is the name
+----------------
 
 The registry identifies components and context variables by their C++ type.
-Two consequences follow.
+Defining a new type is the way to name things.
+For a new kind of data, give it its own ``struct``,
+even if it only wraps a single member.
 
-A type alias is not a new type.
-``pic::particle_containers`` is
-``using particle_containers = std::map<std::size_t, pic::ParticleContainer>;``,
-so *any* ``std::map<std::size_t, pic::ParticleContainer>`` component *is*
-the particle containers of the tile.
-The same holds for ``std::vector<double>`` or any other common type.
-If you want a new kind of data, give it its own ``struct``,
-even if it only wraps a single member, like ``emf::antennas`` and ``pic::reflectors`` do.
+.. note::
 
-Conversely, defining a new ``struct`` is all it takes to add a new component.
-There is no registration and no change to ``simulation_context``.
-``emplace`` it where you need it and ``view`` it where you use it.
+   C++ type aliases are indistinguishable from the underlying type:
+
+   .. code:: c++
+
+      using vec = std::vector<int>;
+
+      // The following are equivalent:
+      tiles.get<vec>(id);
+      tiles.get<std::vector<int>>(id);
+
 
 Filter with components, not with flags
 --------------------------------------
@@ -317,8 +300,8 @@ Filter with components, not with flags
 If a system should only touch some tiles, express that as a component in the view,
 not as an ``if`` inside the loop.
 Almost every system over fields or particles includes ``local_tile_tag``,
-because virtual tiles must not be pushed.
-If you need a new category of tiles, add a tag and put it in the view.
+because virtual tiles are not evolved.
+
 
 Structural changes and iteration
 --------------------------------
@@ -328,7 +311,7 @@ are *structural* changes to the registry.
 Modifying the *values* of the components a view yields is always fine.
 Structural changes to pools that the view iterates over, including excluded types, are not.
 Either collect ids first, as ``ensure_constructed_yee_lattices`` does,
-or make sure the type you add is unrelated to the view.
+or make sure the type added is unrelated to the view.
 ``set_cartesian_neighbors`` adds ``boundary_tile_tag`` while iterating over
 ``cartesian_index<3>`` and ``local_tile_tag``, which is fine because the tag is not part of that view.
 
@@ -350,11 +333,8 @@ The registry is not thread-safe
 -------------------------------
 
 EnTT does no locking.
-Right now the loops over tiles run inside plain ``te::then`` on the thread that waits in
-``sync_wait``, so there is only one thread touching the registry at a time.
-If you move work to pika's thread pool with ``continues_on`` and run branches concurrently
-with ``when_all``, it is up to you to make sure that at most one branch makes structural
-changes, and that no two branches write the same component of the same tile.
+If concurrent work on pika's thread pool needs to access the same data,
+there has to be some kind of synchronization. Otherwise there will be a data race.
 Views and reads of *different* pools from different threads are fine as long as nobody
 changes the structure at the same time.
 
@@ -364,7 +344,7 @@ Components are touched when the sender runs
 As explained in :ref:`senders-and-receivers`, code in an action runs at two different times.
 Reading context variables that come from the configuration, such as the field propagator,
 can happen when the sender is built.
-Iterating over tiles and emplacing components must happen inside the ``then`` lambda,
+Iterating over tiles and emplacing components must happen inside a sender,
 so that it sees the tiles as earlier steps of the program left them.
 
 Adding new per-tile data
@@ -379,26 +359,6 @@ Adding a new kind of per-tile data usually looks like this:
 #. write systems that ``view_tiles`` over it together with the tags that select the right tiles,
 #. if Python needs to read it, add a method to ``SimulationContext``
    in ``src/runko/bindings/pyactions.c++`` that takes a tile id and uses ``try_get``.
-
-Nothing else in runko needs to change.
-
-
-Why EnTT?
-=========
-
-Some alternatives, and why they fit runko less well:
-
-* **A tile class hierarchy.**
-  As described above, per-tile features in runko are independent of each other,
-  and a hierarchy cannot express that without either exploding into many classes
-  or carrying unused members.
-* **A ``Tile`` struct with ``std::optional`` members.**
-  This avoids the hierarchy, but every new feature still changes a central type,
-  and every system still loops over all tiles and checks each optional.
-* **A hand-written map from tile id to data per type.**
-  This is essentially an ECS without views,
-  and it would have to reimplement the multi-type iteration, exclusion and
-  context variables that EnTT already provides.
 
 
 Further reading
