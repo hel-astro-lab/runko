@@ -3,8 +3,8 @@
 Senders and receivers
 #####################
 
-If you open almost any file under ``src/runko/actions/`` or ``src/runko/comm/``
-you will see functions that return a ``tyvi::actions::sexpr_sender``
+C++ code at ``src/runko/actions/`` or ``src/runko/comm/``
+contain functions that return a ``tyvi::actions::sexpr_sender``
 and bodies that look like this:
 
 .. code:: c++
@@ -16,22 +16,17 @@ and bodies that look like this:
             return ta::null;
           });
 
-This page explains what this style of code is, why runko uses it,
-and how to think about it when you change runko's C++ code.
-It does not list every function.
-The goal is to give you a mental model
-that makes the existing code readable and your own changes easier to reason about.
+This page explains what this style of code is and why runko uses it.
 
 
-The problem senders solve
-=========================
+Problem senders solve
+=====================
 
 A simulation time step in runko is a series of operations:
 push the fields, push the particles, deposit current, and exchange data with neighboring tiles,
 both between tiles in the same process and between MPI ranks.
 Most of these operations are ordinary loops over tiles.
 Some of them, like MPI communication, are *asynchronous*.
-You start them, and they finish at some later point.
 
 The simplest way to write this is a list of function calls that each finish before returning.
 That works, but it has two drawbacks:
@@ -64,12 +59,16 @@ Inside runko the convention is ``namespace te = tyvi::exec;``,
 so ``te::just``, ``te::then`` and so on come from pika.
 The names match ``std::execution``,
 so most material written about the standard version also applies here.
-This is because the standard library support for senders and receivers is poor at the moment,
-so tyvi vendors in the functionality via ``tyvi::exec``.
+
+.. note::
+   Pika is exposed via tyvi because the standard library support
+   for senders and receivers is poor at the moment.
+   Ideally, ``tyvi::actions`` would only depend on standard library
+   and users of tyvi would be able choose any scheduler (e.g. pika).
 
 
-The core idea: describe work first, run it later
-================================================
+Senders are descriptions of lazy work
+=====================================
 
 A **sender** is an object that *describes* some work.
 Creating a sender does not do the work.
@@ -89,7 +88,6 @@ The work calls exactly one of them, exactly once.
 To actually run the work, a sender is *connected* to a receiver.
 This produces an *operation state*, an object that holds everything the work needs while it runs.
 The operation state is then *started*.
-Roughly (here we are using the standard namespace):
 
 .. code:: c++
 
@@ -100,9 +98,9 @@ Roughly (here we are using the standard namespace):
    // set_value / set_error / set_stopped will be called.
 
 
-As someone modifying runko, you will almost never write a receiver or call ``connect``/``start``
-yourself. Those are the library's job (``std::exec``/``tyvi::exec``).
-The part you write is the **composition of senders**.
+Developers of runko will **almost never write a receiver or call connect/start explicitly**.
+The standard library is responsible for that.
+Developers job is the **composition of senders**.
 Receivers are still worth knowing about,
 because they explain why senders behave the way they do.
 A sender cannot "return" its result like a function.
@@ -114,7 +112,7 @@ the result can arrive on another thread, at any later time, and still reach the 
 Building senders out of smaller senders
 =======================================
 
-Senders become useful when you combine them.
+Senders become useful when combined.
 The library provides *sender factories*, which create senders from nothing,
 and *sender adaptors*, which take a sender and return a new, bigger sender.
 Adaptors are usually chained with ``|``, which reads left to right like a Unix pipe.
@@ -126,8 +124,8 @@ These are the building blocks that appear in runko's source.
    A factory: a sender that immediately completes with ``args...`` as its values.
    It is the usual starting point of a chain.
    ``te::just()`` with no arguments completes with no values.
-   You use it when there is nothing to pass on yet
-   and you only want somewhere to attach the following steps.
+   Useful when there is nothing to pass on yet
+   and the following steps require a starting point.
 
 ``sender | te::then(f)``
    When ``sender`` completes with values ``v...``, call ``f(v...)``.
@@ -140,7 +138,7 @@ These are the building blocks that appear in runko's source.
    Like ``then``, but ``f`` returns *another sender*,
    and the result is whatever that inner sender produces.
    Use it when the next step is itself asynchronous work,
-   or when you can only decide which work to do once you have the value.
+   or when the value is required to decide which work to do next.
    ``runko::comm_local`` is an example:
    it picks one of several communication routines based on the ``comm_mode``,
    and each routine returns a sender.
@@ -156,11 +154,13 @@ These are the building blocks that appear in runko's source.
       };
       return te::just() | te::let_value(f);
 
-   A useful rule: if your lambda returns a plain value, use ``then``.
-   If it returns a sender, use ``let_value``.
+
    ``let_value`` also keeps the values it received alive
-   for as long as the inner sender runs,
-   so the inner work can safely refer to them.
+   for as long as the inner sender runs, so the inner work can safely refer to them.
+
+   .. tip::
+
+      If lambda returns a plain value, use ``then``. If it returns a sender, use ``let_value``.
 
 ``te::when_all(s1, s2, ...)`` and ``te::when_all_vector(vec)``
    Run several senders and complete when *all* of them have completed.
@@ -195,7 +195,7 @@ These are the building blocks that appear in runko's source.
    A pika adaptor (``pika::mpi::experimental``) that turns a non-blocking MPI call into a sender.
    It calls the MPI function with the incoming values plus an ``MPI_Request``,
    and completes the sender once that request has finished.
-   You do not have to call ``MPI_Wait`` or ``MPI_Test`` yourself.
+   Explicit ``MPI_Wait`` or ``MPI_Test`` is not required.
    Pika polls outstanding requests in the background.
    The ``RuntimeActivator`` in ``src/runko/runtime.h`` turns that polling on.
 
@@ -203,7 +203,6 @@ These are the building blocks that appear in runko's source.
    The bridge back to ordinary, blocking code.
    It connects the sender to a receiver of its own, starts it, blocks the calling thread
    until the receiver is called, and then returns the value or rethrows the error.
-   This is the only place where you get a "result" out of a sender the way you get one from a function.
 
 Put together, a chain like
 
@@ -283,15 +282,8 @@ or to return them from a ``std::function``.
 It can hold any sender that completes with ``T...``, in the same way that ``std::function``
 can hold any callable with a given signature.
 Runko uses it at the boundaries: the ``procedure`` signature, and the vectors passed to
-``when_all_vector``. Inside a function you can keep the concrete types.
-``unique_`` means it is move-only. You can pass it on, but not copy it,
+``when_all_vector``. ``unique_`` means it is move-only. You can pass it on, but not copy it,
 which is why you see ``std::move(senders)`` around these vectors.
-
-
-Consequences for people changing the code
-=========================================
-
-The model has some practical consequences that tend to surprise newcomers.
 
 Two phases: building and running
 --------------------------------
@@ -325,7 +317,7 @@ so lambdas must not capture local variables by reference.
 Runko code captures small values by copy (``[prop, cfl]``)
 and the large, long-lived ``simulation_context`` through ``std::ref``/``std::reference_wrapper``.
 That is safe because the context outlives any evaluation.
-If you need data that lives only during the operation,
+If data is needed that lives during the operation,
 pass it as a value through the chain (for example ``te::just(buffer) | te::let_value(...)``),
 so that the operation state owns it.
 
@@ -335,10 +327,11 @@ Concurrency is opt-in and explicit
 Steps joined with ``|`` always run one after another.
 Only branches of a ``when_all`` or ``when_all_vector`` may run at the same time,
 and only in parallel if they have been moved to the thread pool with ``continues_on``.
-If two branches touch the same tile data, *you* have to make sure that is safe.
+If two branches touch the same tile data, it is a data-race unless other means
+of synchronization is used.
 
 A related detail: the interpreter evaluates the arguments of a call with ``when_all``,
-so you should not rely on them being evaluated in any particular order.
+so there is no guarantee that they are evaluated in any particular order.
 The ``sequence`` procedure in ``src/runko/actions/env.c++`` exists for this reason.
 It evaluates its arguments one at a time, calling ``sync_wait`` on each one in turn.
 
@@ -380,12 +373,12 @@ Some alternatives, and why they fit runko less well:
   They start work eagerly, usually allocate, and chaining them
   (``.then`` continuations) was never standardized.
   Senders are lazy, so a whole pipeline can be built, inspected and optimized before anything runs.
-* **Hand-written ``MPI_Request`` bookkeeping.** This is efficient,
+* **Hand-written ``MPI_Request`` bookkeeping.** This can be efficient,
   but every communication routine then has to manage arrays of requests and wait calls,
   and none of it composes with the rest of the code.
 
-Senders cost you some verbosity and longer compile errors.
-In return you get one composable model for synchronous work, threaded work and MPI.
+Senders add verbosity and produce longer compilation errors
+while providing one composable model for synchronous work, threaded work and MPI.
 The same model is the one the C++ standard is adopting.
 
 

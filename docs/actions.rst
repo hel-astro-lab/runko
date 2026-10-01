@@ -1,11 +1,11 @@
 .. _actions-language:
 
-The actions language
-####################
+Actions language
+################
 
-If you read ``runko/simulation.py`` or ``runko/tiles.py`` you will find Python code
-that does not call C++ functions directly.
-Instead it builds nested tuples and hands them to ``eval``:
+Often Python code in ``runko/simulation.py`` or ``runko/tiles.py``
+does not call C++ functions directly.
+Instead, nested tuples are build and handed to ``eval``:
 
 .. code:: python
 
@@ -21,20 +21,15 @@ Instead it builds nested tuples and hands them to ``eval``:
 These tuples are programs in a very small, Lisp-like language.
 The language is implemented in C++ by ``tyvi::actions``
 (``external/tyvi/src/tyvi/actions*.h``).
-This page explains what that language is, how runko uses it
-between Python and C++, and why this is a good way to describe asynchronous work
-from Python without using Python threads.
-It does not list every action.
-The goal is to give you a mental model that makes the existing code readable
-and helps you reason about your own changes.
+This page explains what that language is and how runko uses it between Python and C++.
 
 This page builds on :ref:`senders-and-receivers`.
-You do not need all of it, but you should know that a *sender* is a lazy
-description of work, and that ``sync_wait`` runs a sender and blocks until it has finished.
+Main points are that a *sender* is a lazy description of work,
+and ``sync_wait`` starts the sender and blocks until it finishes.
 
 
-The problem the language solves
-===============================
+Problem the language solves
+===========================
 
 Runko is split in two halves.
 Python is where a simulation is *configured and driven*.
@@ -48,7 +43,8 @@ pika's thread pool.
 
 This leaves the question of how Python should ask C++ to do something?
 
-The obvious answer is to bind every C++ function with pybind11 and call it.
+The obvious answer is to bind every C++ function with
+`pybind11 <https://pybind11.readthedocs.io/en/stable/>`_ and call it.
 That works for synchronous functions, but it breaks down for asynchronous work:
 
 * **Senders cannot cross the boundary.**
@@ -98,8 +94,8 @@ In ``tyvi/actions_ast.h`` an s-expression is one of three things:
    And thus for example a ``long``, a ``double``, a ``std::string``, an enum value,
    a ``std::reference_wrapper<simulation_context>``, a ``pybind11::function``
    and a ``tyvi::actions::procedure`` all work as atoms.
-   You get the value back with ``atom_cast<T>``,
-   which returns ``std::optional`` that holds the value only if ``T`` is *exactly* the stored type.
+   Contained value is optained value is obtained with ``atom_cast<T>``,
+   which returns ``std::optional<T>`` that holds the value only if ``T`` is *exactly* the stored type.
 
 ``cons``
    A pair of two s-expressions, traditionally called ``car`` (the first element)
@@ -146,9 +142,10 @@ For example, ``(a . (b . (c . ())))`` is a list that holds elements ``a``, ``b``
 By convention, lists are usually written without the cons dots, nested parentheses
 and terminating null. So, ``(a . (b . (c . ())))`` is equivelant to ``(a b c)``.
 As a syntactic sugar, ``ta::list(a, b, c)`` builds such a chain in C++.
-On the Python side you never see ``cons`` cells.
-``parse_element`` in ``src/runko/bindings/pyactions.c++`` converts Python objects into
-s-expressions with a few fixed rules:
+In Python there are no explicit syntax constructs.
+Python tuples are interpret as lists containing elements.
+``parse_element`` in ``src/runko/bindings/pyactions.c++``
+converts Python objects into s-expressions:
 
 * a Python ``tuple`` becomes a list, converted element by element,
 * ``int`` becomes an atom holding ``long``,
@@ -161,7 +158,38 @@ s-expressions with a few fixed rules:
 
 So ``(actions.push_e, actions.current_context)`` in Python is the two-element list
 ``(push_e current_context)`` in C++,
-whose elements are atoms that hold ``runko::symbol`` enum values.
+whose elements are atoms that hold ``runko::symbol`` enum values
+which are exposed to python from the runko C++ bindings module:
+
+.. code:: python
+
+   import runko_cpp_bindings.actions as actions
+   # ...
+   sim_ctx.eval((actions.emf_snapshot, actions.current_context, self.lap))
+   actions.empty_context_eval((actions.println, (actions.format, "running", actions.version)))
+   prog = (actions.sequence,
+           (actions.quote, (actions.comm_external, actions.current_context, mode_a)),
+           (actions.quote, (actions.comm_external, actions.current_context, mode_b)))
+   sim_ctx.eval(prog)
+
+
+Inproper lists
+--------------
+
+List-like s-expressions that does not end in a null is called an *inproper list*.
+For example, ``(a . (b . c))`` is an inproper list:
+
+.. code::
+
+     .
+    / \
+   a   .
+      / \
+     b   c
+
+
+Facilities in Runko try to make it hard to create an inproper list
+and thus they are rarely encountered.
 
 
 Association lists
@@ -193,23 +221,21 @@ For example, ``((A . 1) (B . 2) (C . 3))`` is a alist that maps ``A`` to ``1``,
 How a program is evaluated
 ==========================
 
-``tyvi::actions::eval<Symbols...>(body, env)`` in ``tyvi/actions_eval.h``
-is the entire interpreter.
-It is about a hundred lines long,
-and it follows the shape of the original Lisp ``eval`` closely.
+``tyvi::actions::eval<Symbols...>(body, env)`` in
+``tyvi/actions_eval.h`` is the entire interpreter.
 It has only a handful of rules.
 
 **Symbols are looked up.**
-An atom whose type is one of the *symbol types* is a name.
-The symbol types are ``tyvi::actions::intrinsic``
-and the types given as ``Symbols...``, which in runko is ``runko::symbol``.
-Its value is found in the *environment*. It is an alist that maps symbols to s-expressions.
+An atom whose type is in ``Symbols...`` is treated as a symbol.
+When the interpreter encounters a symbol it will look up corresponding s-expression
+from the *environment*, which is an alist that maps symbols to s-expressions.
+In Runko ``runko::symbol`` is used as a symbol type.
 
 **Other atoms evaluate to themselves.**
 ``42``, ``1.5``, a string or a ``comm_mode`` value is simply returned.
 
 **A list is a call.**
-To evaluate ``(f a b)``, the interpreter evaluates ``f``, ``a`` and ``b``.
+To evaluate ``(f a b)``, the interpreter recursively evaluates ``f``, ``a`` and ``b``.
 The value of ``f`` must be an atom holding a procedure.
 The procedure is then called with the list of evaluated arguments ``(a' b')``.
 
@@ -217,19 +243,15 @@ The procedure is then called with the list of evaluated arguments ``(a' b')``.
 ``(quote x)`` evaluates to ``x`` itself, unevaluated.
 This is the one *special form* built into the interpreter.
 ``quote`` is recognised only in the head position of a list.
+It is represented by atom containing ``tyvi::actions::intrinsic::quote``.
+This is the trick that allows Lisp treat code as a data.
 
 **The empty list cannot be evaluated.**
 Evaluating ``()`` is an error.
 
-On top of these rules there are two built-in procedures, ``car`` and ``cdr``,
-which take a pair and return its first or second half.
-Together with ``quote`` they form the ``intrinsic`` enum,
-and Python sees them as ``actions.car``, ``actions.cdr`` and ``actions.quote``.
 
-That is all.
-The language has no variables you can define, no ``lambda``, no ``if`` and no loops.
-This is on purpose.
-It is not meant for writing algorithms.
+The language has no user defined variables, no ``lambda``, no ``if`` and no loops.
+This is by design. It is not meant for writing algorithms.
 It is meant for *wiring together* operations that are written in C++.
 Any logic that needs loops or conditions stays either in Python,
 which decides which program to build, or in C++, inside a procedure.
@@ -296,7 +318,7 @@ so that new special forms can be written in C++ without changing the interpreter
 
 
 Evaluation produces a sender
-============================
+----------------------------
 
 The most important property of ``eval`` is its return type.
 It does not return a result. It returns a ``sexpr_sender``.
@@ -330,49 +352,6 @@ It lets the *structure* of the work come from Python
 while the *execution* of the work stays entirely inside C++.
 
 
-Using the language from Python
-==============================
-
-A single action on the current simulation is a two-element tuple:
-
-.. code:: python
-
-   sim_ctx.eval((actions.push_e, actions.current_context))
-
-Extra arguments follow the context.
-They are converted by the rules above, so they must have the types that the procedure's
-``parse_atom_args`` expects:
-
-.. code:: python
-
-   sim_ctx.eval((actions.emf_snapshot, actions.current_context, self.lap))
-   sim_ctx.eval((actions.set_EBJ, actions.current_context, E, B, J))   # E, B, J are Python callables
-
-Nested tuples are nested calls.
-The inner call is evaluated first and its result becomes an argument:
-
-.. code:: python
-
-   actions.empty_context_eval((actions.println, (actions.format, "running", actions.version)))
-
-To run several actions *in order*, wrap each of them in ``quote``
-and give them to ``sequence``:
-
-.. code:: python
-
-   prog = (actions.sequence,
-           (actions.quote, (actions.comm_external, actions.current_context, mode_a)),
-           (actions.quote, (actions.comm_external, actions.current_context, mode_b)))
-   sim_ctx.eval(prog)
-
-The ``quote`` is necessary, and it is explained in the next section.
-
-Because a program is just a tuple, it can be build it with ordinary Python code.
-
-
-Consequences for people changing the code
-=========================================
-
 Arguments are evaluated concurrently
 ------------------------------------
 
@@ -383,23 +362,6 @@ They may even run at the same time.
 If the order matters, or if both touch the same tile data,
 do not put them next to each other as arguments.
 
-Ordering is expressed with ``quote`` and ``sequence``
------------------------------------------------------
-
-``sequence`` is a ``procedure_with_eval``.
-Like every procedure it receives *evaluated* arguments.
-Without ``quote`` its arguments would already have run, concurrently, before ``sequence``
-was even called.
-With ``quote`` each argument evaluates to the unevaluated program it contains.
-``sequence`` then evaluates those programs one after another,
-calling ``sync_wait`` on each before starting the next,
-and returns the value of the last one.
-
-This is the same trick Lisp uses for control flow.
-``quote`` turns code into data, and a procedure that has access to ``eval``
-decides when that data becomes code again.
-If you need a new kind of control flow, for example "run these concurrently but on the thread pool",
-write a new ``procedure_with_eval`` in C++ rather than extending the interpreter.
 
 One ``eval`` call is one synchronisation point
 ----------------------------------------------
@@ -407,9 +369,9 @@ One ``eval`` call is one synchronisation point
 Everything inside one ``eval`` can overlap.
 Nothing overlaps *across* two ``eval`` calls, because Python waits for the first one to
 finish before it can build the second one.
-If you want two pieces of work to be able to overlap,
-they have to be in the same program.
+If two pieces of work need to overlap, they have to be in the same program.
 This is also a reason to prefer one larger program over many small ``eval`` calls.
+
 
 Python does not run while C++ evaluates
 ---------------------------------------
@@ -435,9 +397,8 @@ Types must match exactly
 ``parse_atom_args<T...>`` uses ``atom_cast``, which compares types exactly.
 A Python ``int`` arrives as ``long`` and a Python ``float`` as ``double``.
 A procedure that asks for ``int`` or ``float`` will reject them with an
-"atom at argument n does not hold object of type" error.
-Declare procedure arguments with the types ``parse_element`` produces.
-If you need another type, add a case to ``parse_element``.
+"atom at argument n does not hold object of type ..." error.
+
 
 Errors become Python exceptions
 -------------------------------
@@ -448,8 +409,9 @@ and any exception thrown inside a procedure's sender travel down the sender's er
 that pybind11 raises in Python.
 A failing action therefore shows up as an ordinary Python traceback at the ``eval`` call.
 
+
 Adding a new action
--------------------
+===================
 
 A new action touches the same few places every time:
 
@@ -482,7 +444,7 @@ Extra: But why choose lisp as DSL between Python and C++?
 Something has to define the semantics between Python and C++.
 One option is to invent new domain specific language (DSL).
 However, this was deemed unnecessary when one could just use lisp,
-which means you don't have to design a syntax, a data model or an evaluator yourself,
+and not design a syntax, a data model and an evaluator
 because those questions were settled decades ago.
 
 As `Greenspun's tenth rule <https://en.wikipedia.org/wiki/Greenspun%27s_tenth_rule>`_
@@ -503,13 +465,13 @@ There is no parser, because code is already data
 
 An s-expression is both the source code and the syntax tree.
 Python tuples are already nested lists, so ``parse_element``
-is a  shortstructural conversion, not a grammar.
+is a short structural conversion, not a grammar.
 A newly invented DSL would need one of two things:
 
-- A text syntax. Then you need a lexer, a parser, error recovery and error locations,
+- A text syntax. This requires a lexer, a parser, error recovery and error locations,
   and Python would have to build strings, with the quoting and injection problems that brings.
-- A custom abstract syntax tree (AST).
-  Then you need node classes on both the Python and the C++ side, and a binding for each node type.
+- A custom abstract syntax tree (AST) for representing programs.
+  This requires node classes on both the Python and the C++ side, and a binding for each node type.
 
 With s-expressions, the Python side's "AST builder" is the tuple literal.
 
@@ -522,16 +484,20 @@ Adding an action means binding a symbol in the environment, and the interpreter 
 Invented DSLs tend to grow a new syntax rule for each feature ("comm blocks", "io statements", …),
 and each new rule touches the parser, the AST and the evaluator.
 
-Semantics that are already known, so you don't have to design them
-------------------------------------------------------------------
+"It's a tiny Lisp" is a sentence that carries a lot of meaning,
+and there is decades of material about it. A bespoke DSL needs its own documentation
+from scratch. Runko's version is small enough that the whole language fits in one page.
+
+Semantics that are already known
+--------------------------------
 
 Many hard questions already have well-understood Lisp answers:
 
 - What happens to arguments before a call? They are evaluated first.
-- How do you delay evaluation? With quote.
-- How do names resolve? By looking them up in an association list (the environment).
-- How do you add control flow without changing the core?
-  Through special forms, which here are ``procedure_with_eval`` functions like sequence.
+- How to delay evaluation? With quote.
+- How names are resolved? By looking them up in an association list (the environment).
+- How to add control flow without changing the core?
+  Through special forms, which here are ``procedure_with_eval`` functions like ``sequence``.
 
 An invented language usually rediscovers these, often inconsistently.
 
@@ -541,6 +507,7 @@ It maps naturally onto senders
 
 Lisp evaluation is a recursive tree walk: evaluate the head and the arguments, then apply.
 This matches sender composition almost exactly:
+
 - evaluating the children becomes ``when_all``,
 - applying the procedure becomes ``let_value``,
 - a constant becomes ``just``.
@@ -557,11 +524,3 @@ Because programs are plain data, Python can build, store, reuse and change them 
 The same applies to C++: a ``procedure_with_eval`` receives unevaluated code
 as a list it can inspect, rewrite, repeat or run in another order.
 This is Lisp's macro idea, and it comes free.
-
-
-Newcomers can learn it quickly
-------------------------------
-
-"It's a tiny Lisp" is a sentence that carries a lot of meaning,
-and there is decades of material about it. A bespoke DSL needs its own documentation
-from scratch. Runko's version is small enough that the whole language fits in one page.
