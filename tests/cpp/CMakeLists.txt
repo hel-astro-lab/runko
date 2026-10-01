@@ -3,6 +3,7 @@
 
 set(TESTS_TO_RUN
     unit_testing
+    parse_atom_args
 )
 
 foreach(test ${TESTS_TO_RUN})
