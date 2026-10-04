@@ -36,6 +36,7 @@ set (PIC_FILES
      )
 
 set (IO_FILES
+    ./runko/io/snapshot.c++
     )
 
 set (RUNKO_CPP_BINDINGS_FILES

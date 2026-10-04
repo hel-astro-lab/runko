@@ -16,8 +16,8 @@ import numpy as np
 from mpi4py import MPI
 
 import runko
-from runko_cpp_bindings.emf.threeD import MpiioFieldsWriter
-from tests.mpiio_test_helpers import FIELD_NAMES, make_config, find_output_file
+from runko import actions
+from tests.mpiio_test_helpers import EMF_FIELD_NAMES, make_config, find_output_file
 from runko.mpiio_reader import read_header, read_field_snapshot
 
 
@@ -45,7 +45,7 @@ def cleanup_outdir(outdir):
 # ---------------------------------------------------------------------------
 # Test 1: constant fields across all tiles on 4 ranks
 # ---------------------------------------------------------------------------
-def test_multirank_constant_fields(collective=False):
+def test_multirank_constant_fields():
     """2x2x2 grid, 8^3 mesh per tile, stride=1, hilbert_curve partitioning.
     Every tile sets constant E=(1,2,3), B=(4,5,6), J=(0,0,0).
     After writing, rank 0 reads the file and verifies all field values."""
@@ -65,13 +65,9 @@ def test_multirank_constant_fields(collective=False):
         tile.set_EBJ(E_func, B_func, J_func)
         tile_grid.add_tile(tile, idx)
 
-    _ = tile_grid.configure_simulation(config)
-
-    writer = MpiioFieldsWriter(outdir, 2, 8, 2, 8, 2, 8, 1)
-    if collective:
-        writer.write_collective(tile_grid._corgi_grid, 0)
-    else:
-        writer.write(tile_grid._corgi_grid, 0)
+    sim = tile_grid.configure_simulation(config)
+    prog = (actions.emf_snapshot, actions.current_context, 0, str(outdir))
+    sim.for_one_lap(lambda x: x.eval(prog))
 
     if rank == 0:
         path = find_output_file(outdir)
@@ -91,8 +87,6 @@ def test_multirank_constant_fields(collective=False):
         np.testing.assert_allclose(fields["jx"], 7.0, atol=1e-5)
         np.testing.assert_allclose(fields["jy"], 8.0, atol=1e-5)
         np.testing.assert_allclose(fields["jz"], 9.0, atol=1e-5)
-        np.testing.assert_allclose(fields["n0"], 0.0, atol=1e-5)
-        np.testing.assert_allclose(fields["n1"], 0.0, atol=1e-5)
 
     comm.Barrier()
     mpi_unittest.assertEqual(True, True)
@@ -126,13 +120,9 @@ def test_multirank_tile_placement(collective=False):
         tile.set_EBJ(E_func, B_func, J_func)
         tile_grid.add_tile(tile, idx)
 
-    _ = tile_grid.configure_simulation(config)
-
-    writer = MpiioFieldsWriter(outdir, 2, 8, 2, 8, 2, 8, 1)
-    if collective:
-        writer.write_collective(tile_grid._corgi_grid, 0)
-    else:
-        writer.write(tile_grid._corgi_grid, 0)
+    sim = tile_grid.configure_simulation(config)
+    prog = (actions.emf_snapshot, actions.current_context, 0, str(outdir))
+    sim.for_one_lap(lambda x: x.eval(prog))
 
     if rank == 0:
         path = find_output_file(outdir)
@@ -188,13 +178,9 @@ def test_multirank_asymmetric_mesh(collective=False):
         tile.set_EBJ(E_func, B_func, J_func)
         tile_grid.add_tile(tile, idx)
 
-    _ = tile_grid.configure_simulation(config)
-
-    writer = MpiioFieldsWriter(outdir, 2, 10, 2, 11, 2, 13, 1)
-    if collective:
-        writer.write_collective(tile_grid._corgi_grid, 0)
-    else:
-        writer.write(tile_grid._corgi_grid, 0)
+    sim = tile_grid.configure_simulation(config)
+    prog = (actions.emf_snapshot, actions.current_context, 0, str(outdir))
+    sim.for_one_lap(lambda x: x.eval(prog))
 
     if rank == 0:
         path = find_output_file(outdir)
@@ -205,7 +191,7 @@ def test_multirank_asymmetric_mesh(collective=False):
         assert hdr["ny"] == 22, f"Expected ny=22, got {hdr['ny']}"
         assert hdr["nz"] == 26, f"Expected nz=26, got {hdr['nz']}"
 
-        for name in FIELD_NAMES:
+        for name in EMF_FIELD_NAMES:
             assert fields[name].shape == (26, 22, 20), \
                 f"Field '{name}' has wrong shape: {fields[name].shape}"
 
@@ -218,8 +204,6 @@ def test_multirank_asymmetric_mesh(collective=False):
         np.testing.assert_allclose(fields["jx"], 13.0, atol=1e-5)
         np.testing.assert_allclose(fields["jy"], 14.0, atol=1e-5)
         np.testing.assert_allclose(fields["jz"], 15.0, atol=1e-5)
-        np.testing.assert_allclose(fields["n0"], 0.0, atol=1e-5)
-        np.testing.assert_allclose(fields["n1"], 0.0, atol=1e-5)
 
     comm.Barrier()
     mpi_unittest.assertEqual(True, True)
@@ -228,9 +212,7 @@ def test_multirank_asymmetric_mesh(collective=False):
 
 
 if __name__ == "__main__":
+    _ = runko.actions.RuntimeInstance()
     test_multirank_constant_fields()
     test_multirank_tile_placement()
     test_multirank_asymmetric_mesh()
-    test_multirank_constant_fields(collective=True)
-    test_multirank_tile_placement(collective=True)
-    test_multirank_asymmetric_mesh(collective=True)

@@ -12,6 +12,7 @@
 #include "runko/comm/external.h"
 #include "runko/comm/local.h"
 #include "runko/communication_common.h"
+#include "runko/io/snapshot.h"
 #include "runko/pic/reflector_wall.h"
 #include "tyvi/actions_ast.h"
 #include "tyvi/actions_list.h"
@@ -315,6 +316,29 @@ tyvi::actions::sexpr
                  args) |
                te::then(&pic::advance_reflector_walls) |
                te::then([] { return ta::null; });
+      } }),
+    ta::cons(
+      runko::symbol::emf_snapshot,
+      ta::procedure { [](const ta::sexpr& args) -> ta::sexpr_sender {
+        return parse_atom_args<
+                 std::reference_wrapper<runko::simulation_context>,
+                 long,
+                 runko::opt_arg<std::string>>(args) |
+               te::let_value(&runko::emf_snapshot);
+      } }),
+    ta::cons(
+      runko::symbol::prtcl_snapshot,
+      ta::procedure { [](const ta::sexpr& args) -> ta::sexpr_sender {
+        return parse_atom_args<std::reference_wrapper<runko::simulation_context>, long>(
+                 args) |
+               te::let_value(&runko::prtcl_snapshot);
+      } }),
+    ta::cons(
+      runko::symbol::spectra_snapshot,
+      ta::procedure { [](const ta::sexpr& args) -> ta::sexpr_sender {
+        return parse_atom_args<std::reference_wrapper<runko::simulation_context>, long>(
+                 args) |
+               te::let_value(&runko::spectra_snapshot);
       } }),
     ta::cons(runko::symbol::current_context, std::ref(sim)),
     ta::cons(

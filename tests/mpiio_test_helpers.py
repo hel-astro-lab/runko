@@ -6,7 +6,7 @@
 import os
 
 import runko
-from runko_cpp_bindings.emf.threeD import MpiioFieldsWriter
+actions = runko.actions
 from runko.mpiio_reader import read_header, read_field_snapshot
 
 
@@ -25,7 +25,8 @@ FIELD_NAMES = field_names(2)
 
 
 def make_config(Nx=1, Ny=1, Nz=1, NxMesh=8, NyMesh=8, NzMesh=8,
-                outdir=None, tile_partitioning="catepillar_track"):
+                outdir=None, tile_partitioning="catepillar_track",
+                stride=1):
     """Create a standard test configuration."""
 
     config = runko.Configuration(None)
@@ -38,16 +39,17 @@ def make_config(Nx=1, Ny=1, Nz=1, NxMesh=8, NyMesh=8, NzMesh=8,
     config.n_laps = 1
     config.field_propagator = "fdtd2"
     config.io_outdir = outdir
+    config.io_grid_stride = stride
     return config
 
 
 def make_pic_config(Nx=1, Ny=1, Nz=1, NxMesh=8, NyMesh=8, NzMesh=8,
                     outdir=None, tile_partitioning="catepillar_track",
-                    nspecies=2):
+                    nspecies=2, stride=1):
     """Create a PIC test configuration with nspecies species."""
 
     config = make_config(Nx, Ny, Nz, NxMesh, NyMesh, NzMesh,
-                         outdir, tile_partitioning)
+                         outdir, tile_partitioning, stride)
 
     charges = [-1, 1, -1, 1, -1]
     masses  = [ 1, 1,  1, 1,  1]
@@ -63,23 +65,17 @@ def make_pic_config(Nx=1, Ny=1, Nz=1, NxMesh=8, NyMesh=8, NzMesh=8,
     return config
 
 
-def setup_grid_with_fields(config, E_func, B_func, J_func):
+def setup_grid_with_fields(tile_grid, config, E_func, B_func, J_func):
     """Create a TileGrid, populate tiles with fields, and configure simulation.
-
-    Returns only tile_grid (simulation object is unused by callers).
     """
 
-    tile_grid = runko.TileGrid(config)
     for idx in tile_grid.local_tile_indices():
         tile = runko.emf.threeD.Tile(idx, config)
         tile.set_EBJ(E_func, B_func, J_func)
         tile_grid.add_tile(tile, idx)
 
-    _ = tile_grid.configure_simulation(config)
-    return tile_grid
 
-
-def setup_pic_grid_with_particles(config, E_func, B_func, J_func, ppc=1,
+def setup_pic_grid_with_particles(tile_grid, config, E_func, B_func, J_func, ppc=1,
                                    nspecies=2):
     """Create PIC TileGrid with particles at cell centers.
 
@@ -92,7 +88,6 @@ def setup_pic_grid_with_particles(config, E_func, B_func, J_func, ppc=1,
         return [P(pos=(x + 0.5, y + 0.5, z + 0.5), vel=(0, 0, 0))
                 for _ in range(ppc)]
 
-    tile_grid = runko.TileGrid(config)
     for idx in tile_grid.local_tile_indices():
         tile = runko.pic.threeD.Tile(idx, config)
         tile.set_EBJ(E_func, B_func, J_func)
@@ -101,9 +96,6 @@ def setup_pic_grid_with_particles(config, E_func, B_func, J_func, ppc=1,
             tile.inject_to_each_cell(species, particle_gen)
 
         tile_grid.add_tile(tile, idx)
-
-    _ = tile_grid.configure_simulation(config)
-    return tile_grid
 
 
 def find_output_file(outdir):
@@ -119,23 +111,15 @@ def find_output_file(outdir):
     return os.path.join(outdir, files[0])
 
 
-def write_and_read(tile_grid, outdir, config, stride=1, lap=0, nspecies=2,
-                    collective=False):
+
+def write_and_read(sim, outdir, lap=0):
     """Write a snapshot and read it back via the Python reader.
 
     Returns (header_dict, fields_dict).
     """
 
-    writer = MpiioFieldsWriter(
-        outdir,
-        config.n_tiles[0], config.n_cells_per_tile[0],
-        config.n_tiles[1], config.n_cells_per_tile[1],
-        config.n_tiles[2], config.n_cells_per_tile[2],
-        stride, nspecies)
-    if collective:
-        writer.write_collective(tile_grid._corgi_grid, lap)
-    else:
-        writer.write(tile_grid._corgi_grid, lap)
+    prog = (actions.emf_snapshot, actions.current_context, int(lap), str(outdir))
+    sim.for_one_lap(lambda x: x.eval(prog))
     path = find_output_file(outdir)
     hdr = read_header(path)
     fields = read_field_snapshot(path)
