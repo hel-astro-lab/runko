@@ -329,8 +329,11 @@ tyvi::actions::sexpr
     ta::cons(
       runko::symbol::prtcl_snapshot,
       ta::procedure { [](const ta::sexpr& args) -> ta::sexpr_sender {
-        return parse_atom_args<std::reference_wrapper<runko::simulation_context>, long>(
-                 args) |
+        return parse_atom_args<
+                 std::reference_wrapper<runko::simulation_context>,
+                 long,
+                 runko::opt_arg<std::string>,
+                 runko::opt_arg<long>>(args) |
                te::let_value(&runko::prtcl_snapshot);
       } }),
     ta::cons(

@@ -13,6 +13,9 @@
 #include "runko/particles_common.h"
 #include "runko/tools/config_parser.h"
 #include "runko/tools/math.h"
+#include "thrust/copy.h"
+#include "thrust/count.h"
+#include "thrust/iterator/counting_iterator.h"
 #include "thrust/memory.h"
 #include "tyvi/execution.h"
 #include "tyvi/mdgrid.h"
@@ -20,6 +23,7 @@
 #include <algorithm>
 #include <array>
 #include <bit>
+#include <cmath>
 #include <cstddef>
 #include <cstdint>
 #include <cstring>
@@ -30,6 +34,7 @@
 #include <stdexcept>
 #include <string>
 #include <string_view>
+#include <vector>
 
 namespace runko {
 
@@ -129,6 +134,18 @@ auto
          });
 }
 
+/// Number of particle species in the config (q0/m0, q1/m1, ...).
+int
+  count_species(const toolbox::ConfigParser& config)
+{
+  auto nspecies = 0;
+  while(config.get<double>(std::format("q{}", nspecies)) and
+        config.get<double>(std::format("m{}", nspecies))) {
+    ++nspecies;
+  }
+  return nspecies;
+}
+
 /// Snapshot parameters parsed from the config.
 struct emf_snapshot_params {
   int Nx, Ny, Nz;
@@ -152,13 +169,7 @@ struct emf_snapshot_params {
       };
     }
 
-    // Count particle species from config (q0/m0, q1/m1, ...)
-    auto nspecies = 0;
-    while(nspecies < max_species and
-          config.get<double>(std::format("q{}", nspecies)) and
-          config.get<double>(std::format("m{}", nspecies))) {
-      ++nspecies;
-    }
+    const auto nspecies = std::min(count_species(config), max_species);
 
     auto p = emf_snapshot_params {};
 
@@ -195,7 +206,7 @@ std::string
   if(not x or x.value().empty()) { return "runko_output"; }
   if(x.value() == "auto") {
     throw std::runtime_error {
-      "emf_snapshot: io_outdir = \"auto\" can not be resolved, pass the output "
+      "snapshot: io_outdir = \"auto\" can not be resolved, pass the output "
       "directory explicitly."
     };
   }
@@ -314,6 +325,326 @@ void
     });
   }
   w.wait();
+}
+
+/// Write the 512-byte particle snapshot header to an MPI file handle.
+///
+/// Header layout is the same as for fields snapshot, except:
+///   [16:24]   int64   n_prtcls (global number of written particles)
+///   [24:28]   int32   unused (zero)
+///   [28:32]   int32   species
+///   [32:56]   int32   unused (zeros)
+///   [64:64+num_prtcl_fields*16]  char[16]*num_prtcl_fields  field names
+void
+  write_prtcl_header(
+    MPI_File fh,
+    const std::int64_t n_prtcls,
+    const std::int32_t species,
+    const std::int32_t lap)
+{
+  auto buf        = std::array<char, header_size> {};
+  auto buf_ptr_at = [&](const auto n) { return std::ranges::next(buf.data(), n); };
+
+  auto put = [&](int offset, const auto val) {
+    std::memcpy(buf_ptr_at(offset), &val, sizeof(val));
+  };
+
+  put(0, magic);
+  put(4, version);
+  put(8, static_cast<std::uint32_t>(header_size));
+  put(12, static_cast<std::uint32_t>(num_prtcl_fields));
+  put(16, n_prtcls);
+  put(28, species);
+  put(56, lap);
+  put(60, std::uint32_t { 4 });  // dtype_size = sizeof(float)
+
+  for(int f = 0; f < num_prtcl_fields; f++) {
+    const auto name = std::string_view { prtcl_field_names[f] };
+    const auto n    = std::ranges::min(name.size(), 15uz);
+    std::memcpy(buf_ptr_at(64 + f * 16), name.data(), n);
+  }
+
+  MPI_Status status;
+  if(
+    MPI_SUCCESS !=
+    MPI_File_write_at(fh, 0, buf.data(), header_size, MPI_BYTE, &status)) {
+    throw std::runtime_error { "prtcl_snapshot: writing header failed!" };
+  }
+}
+
+/// Every stride:th particle slot holding a live particle is sampled.
+auto
+  is_sampled(const pic::ParticleContainer& container, const runko::index_t stride)
+{
+  return [=, ids_mds = container.ids_mds()](const runko::index_t n) {
+    return n % stride == 0u and ids_mds[n][] != runko::dead_prtc_id;
+  };
+}
+
+std::int64_t
+  count_sampled(const pic::ParticleContainer& container, const runko::index_t stride)
+{
+  const auto slots_begin = thrust::counting_iterator<runko::index_t>(0uz);
+
+  return static_cast<std::int64_t>(thrust::count_if(
+    tyvi::mdgrid_work {}.on_this(),
+    slots_begin,
+    slots_begin + container.ssize(),
+    is_sampled(container, stride)));
+}
+
+/// Sampling of particles of one species in one local tile.
+struct prtcl_tile_sample {
+  const pic::ParticleContainer* container;
+  const emf::YeeLattice* yee;
+  std::array<emf::YeeLattice::value_type, 3> lattice_origo;
+  std::int64_t count;         // live particles
+  runko::index_t stride = 1;  // every stride:th slot is sampled
+  std::int64_t sampled  = 0;  // live particles in sampled slots
+};
+
+/// Write sampled particles of given species to {outdir}/prtcls_{species}_{lap}.bin.
+///
+/// Writes a sub-sample of approximately n_prtcls particles in total,
+/// with per-tile quotas proportional to the tile's particle count.
+void
+  write_prtcl_species(
+    runko::simulation_context& sim,
+    const long lap,
+    const std::size_t species,
+    const std::int64_t n_prtcls,
+    const std::string& outdir)
+{
+  using yee_value_type = emf::YeeLattice::value_type;
+
+  // 1. Count live particles in local tiles.
+  auto samples             = std::vector<prtcl_tile_sample> {};
+  std::int64_t local_total = 0;
+
+  for(auto&& [id, yee, idx]: sim.view_tiles<
+                             emf::YeeLattice,
+                             runko::cartesian_index<3>,
+                             runko::local_tile_tag>()) {
+    const auto* particles = sim.tiles.try_get<pic::particle_containers>(id);
+    if(not particles or not particles->contains(species)) { continue; }
+
+    const auto& container = particles->at(species);
+    const auto gc = runko::global_coordinates(sim, idx.template as<double>().data);
+    const auto lattice_origo =
+      std::array { static_cast<yee_value_type>(gc.mins()[0]) - emf::halo_size,
+                   static_cast<yee_value_type>(gc.mins()[1]) - emf::halo_size,
+                   static_cast<yee_value_type>(gc.mins()[2]) - emf::halo_size };
+
+    const auto count = count_sampled(container, 1);
+    samples.push_back({ &container, &yee, lattice_origo, count });
+    local_total += count;
+  }
+
+  // 2. Per-tile quotas and strides based on the global particle count.
+  std::int64_t global_total = 0;
+  if(
+    MPI_SUCCESS != MPI_Allreduce(
+                     &local_total,
+                     &global_total,
+                     1,
+                     MPI_INT64_T,
+                     MPI_SUM,
+                     MPI_COMM_WORLD)) {
+    throw std::runtime_error { std::format(
+      "prtcl_snapshot: total particle count MPI_Allreduce failed") };
+  }
+
+  const auto frac =
+    global_total > 0
+      ? std::min(1.0, static_cast<double>(n_prtcls) / static_cast<double>(global_total))
+      : 0.0;
+
+  std::int64_t local_sampled = 0;
+  for(auto& t: samples) {
+    const auto quota = std::min(
+      t.count,
+      static_cast<std::int64_t>(std::round(static_cast<double>(t.count) * frac)));
+    if(quota <= 0) { continue; }
+
+    t.stride  = static_cast<runko::index_t>(t.count / quota);
+    t.sampled = count_sampled(*t.container, t.stride);
+    local_sampled += t.sampled;
+  }
+
+  // 3. Location of this rank's particles in the file.
+  std::int64_t rank_offset = 0;
+  if(
+    MPI_SUCCESS !=
+    MPI_Exscan(&local_sampled, &rank_offset, 1, MPI_INT64_T, MPI_SUM, MPI_COMM_WORLD)) {
+    throw std::runtime_error { std::format(
+      "prtcl_snapshot: rank offset MPI_Exscan failed") };
+  }
+
+  int comm_rank = -1;
+  if(MPI_SUCCESS != MPI_Comm_rank(MPI_COMM_WORLD, &comm_rank)) {
+    throw std::runtime_error { std::format("prtcl_snapshot: MPI_Comm_rank failed") };
+  }
+
+  // MPI_Exscan leaves receive buffer undefined on rank 0.
+  if(comm_rank == 0) { rank_offset = 0; }
+
+  std::int64_t global_sampled = 0;
+
+  if(
+    MPI_SUCCESS != MPI_Allreduce(
+                     &local_sampled,
+                     &global_sampled,
+                     1,
+                     MPI_INT64_T,
+                     MPI_SUM,
+                     MPI_COMM_WORLD)) {
+    throw std::runtime_error { std::format(
+      "prtcl_snapshot: gloabl_sampled MPI_Allreduce failed") };
+  }
+
+  // 4. Pack sampled particles and their interpolated fields to SoA buffer:
+  //    field f is contiguous at offset f * local_sampled.
+  auto prtcl_buf =
+    runko::PrtclFieldList<float>(static_cast<std::size_t>(local_sampled));
+  const auto buf_mds = prtcl_buf.mds();
+
+  auto sampled_slots   = runko::device_scalar_segments<runko::index_t>();
+  auto tile_buf_offset = 0uz;
+
+  const auto w = tyvi::mdgrid_work {};
+  for(const auto& t: samples) {
+    if(t.sampled == 0) { continue; }
+    const auto n_s = static_cast<std::size_t>(t.sampled);
+
+    sampled_slots.resize(n_s);
+    {
+      const auto slots_begin = thrust::counting_iterator<runko::index_t>(0uz);
+      const auto out         = sampled_slots.component_view<>();
+
+      const auto sampled_end = thrust::copy_if(
+        w.on_this(),
+        slots_begin,
+        slots_begin + t.container->ssize(),
+        out.begin(),
+        is_sampled(*t.container, t.stride));
+
+      if(sampled_end != out.end()) {
+        throw std::logic_error {
+          "prtcl_snapshot: number of sampled slots changed between counting and "
+          "copying."
+        };
+      }
+    }
+
+    const auto slots_mds    = sampled_slots.mds();
+    const auto pos_mds      = t.container->pos_mds();
+    const auto vel_mds      = t.container->vel_mds();
+    const auto interpolator = t.yee->interpolate_EB_linear_1st(t.lattice_origo);
+
+    const auto dst_range = std::array { tile_buf_offset, tile_buf_offset + n_s };
+    const auto dst_mds   = std::submdspan(buf_mds, dst_range);
+
+    w.for_each_index(dst_mds, [=](const auto idx) {
+      using vt     = pic::ParticleContainer::value_type;
+      const auto n = static_cast<std::size_t>(slots_mds[idx[0]][]);
+
+      // particle positions are already global
+      dst_mds[idx][0] = pos_mds[n][0];
+      dst_mds[idx][1] = pos_mds[n][1];
+      dst_mds[idx][2] = pos_mds[n][2];
+      dst_mds[idx][3] = vel_mds[n][0];
+      dst_mds[idx][4] = vel_mds[n][1];
+      dst_mds[idx][5] = vel_mds[n][2];
+
+      const auto EB = interpolator(toolbox::Vec3<vt>(pos_mds[n]));
+
+      dst_mds[idx][6]  = EB.E[0];
+      dst_mds[idx][7]  = EB.E[1];
+      dst_mds[idx][8]  = EB.E[2];
+      dst_mds[idx][9]  = EB.B[0];
+      dst_mds[idx][10] = EB.B[1];
+      dst_mds[idx][11] = EB.B[2];
+    });
+
+    tile_buf_offset += n_s;
+  }
+  w.wait();
+
+  // On CPU the device buffer is host-accessible; on GPU use staging.
+#if defined(TYVI_BACKEND_CPU)
+  const float* write_ptr = prtcl_buf.span().data();
+#elif defined(TYVI_BACKEND_HIP)
+  tyvi::mdgrid_work {}.sync_to_staging(prtcl_buf).wait();
+  const float* write_ptr = prtcl_buf.staging_span().data();
+#endif
+
+  // 5. Write to file.
+  const auto filename = std::format("{}/prtcls_{}_{}.bin", outdir, species, lap);
+
+  MPI_File fh;
+  if(
+    MPI_SUCCESS != MPI_File_open(
+                     MPI_COMM_WORLD,
+                     filename.c_str(),
+                     MPI_MODE_CREATE | MPI_MODE_WRONLY,
+                     MPI_INFO_NULL,
+                     &fh)) {
+    throw std::runtime_error {
+      std::format("prtcl_snapshot: could not open {}", filename)
+    };
+  }
+
+  auto throw_n_close = [&](const std::string_view what) {
+    MPI_File_close(&fh);
+    throw std::runtime_error {
+      std::format("prtcl_snapshot: {} failed for {}", what, filename)
+    };
+  };
+
+  const MPI_Offset field_bytes =
+    static_cast<MPI_Offset>(global_sampled) * static_cast<MPI_Offset>(sizeof(float));
+
+  // Pre-allocate the file to its full size
+  const MPI_Offset total_size = header_size + num_prtcl_fields * field_bytes;
+  if(MPI_SUCCESS != MPI_File_set_size(fh, total_size)) {
+    throw_n_close("MPI_File_set_size");
+  }
+
+  if(comm_rank == 0) {
+    write_prtcl_header(
+      fh,
+      global_sampled,
+      checked_cast<std::int32_t>(species),
+      checked_cast<std::int32_t>(lap));
+  }
+
+  if(local_sampled > 0) {
+    for(int f = 0; f < num_prtcl_fields; f++) {
+      const MPI_Offset file_offset =
+        header_size + f * field_bytes +
+        static_cast<MPI_Offset>(rank_offset) * static_cast<MPI_Offset>(sizeof(float));
+
+      const auto buf_offset = f * local_sampled;
+
+      MPI_Status status;
+      if(
+        MPI_SUCCESS != MPI_File_write_at(
+                         fh,
+                         file_offset,
+                         std::ranges::next(write_ptr, buf_offset),
+                         checked_cast<int>(local_sampled),
+                         MPI_FLOAT,
+                         &status)) {
+        throw_n_close("MPI_File_write_at");
+      }
+    }
+  }
+
+  if(MPI_SUCCESS != MPI_File_close(&fh)) {
+    throw std::runtime_error {
+      std::format("prtcl_snapshot: could not close {}", filename)
+    };
+  }
 }
 
 }  // namespace
@@ -483,8 +814,35 @@ tyvi::actions::sexpr_sender
 }
 
 tyvi::actions::sexpr_sender
-  prtcl_snapshot(runko::simulation_context&, long)
-{ return te::just(ta::null); }
+  prtcl_snapshot(
+    runko::simulation_context& sim,
+    const long lap,
+    std::optional<std::string> outdir_arg,
+    std::optional<long> n_prtcls_arg)
+{
+  return te::just() |
+         te::then([&sim, lap, outdir_arg = std::move(outdir_arg), n_prtcls_arg]() {
+           const auto n_prtcls = n_prtcls_arg.or_else(
+             [&] { return sim.config.get<long>("io_n_sampled_prtcls"); });
+
+           if(not n_prtcls or n_prtcls.value() < 0) {
+             throw std::runtime_error {
+               "prtcl_snapshot: number of sampled particles has to be given "
+               "(io_n_sampled_prtcls) and non-negative."
+             };
+           }
+
+           const auto outdir = resolve_outdir(sim.config, outdir_arg);
+           std::filesystem::create_directories(outdir);
+
+           const auto nspecies = static_cast<std::size_t>(count_species(sim.config));
+           for(auto s = 0uz; s < nspecies; ++s) {
+             write_prtcl_species(sim, lap, s, n_prtcls.value(), outdir);
+           }
+
+           return ta::null;
+         });
+}
 tyvi::actions::sexpr_sender
   spectra_snapshot(runko::simulation_context&, long)
 { return te::just(ta::null); }
