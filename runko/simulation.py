@@ -208,23 +208,27 @@ class Simulation:
                 self._simulation_context.eval((symbol, actions.current_context))
 
             elif method.startswith("io_"):
+                prog = None
                 match method[3:]:
                     case "emf_snapshot":
-                        raise NotImplementedError()
+                        prog = (actions.emf_snapshot, actions.current_context, self.lap)
                     case "prtcl_snapshot":
-                        raise NotImplementedError()
-                    case "average_kinetic_energy":
-                        raise NotImplementedError()
-                    case "average_B_energy_density":
-                        raise NotImplementedError()
-                    case "average_E_energy_density":
-                        raise NotImplementedError()
+                        prog = (actions.prtcl_snapshot, actions.current_context, self.lap)
                     case "spectra_snapshot":
-                        raise NotImplementedError()
+                        prog = (actions.spectra_snapshot, actions.current_context, self.lap)
+                    case "average_kinetic_energy":
+                        raise NotImplementedError("no actions port")
+                    case "average_B_energy_density":
+                        raise NotImplementedError("no actions port")
+                    case "average_E_energy_density":
+                        raise NotImplementedError("no actions port")
                     case "ram_usage":
-                        raise NotImplementedError()
+                        self._write_ram_usage()
                     case _:
                         raise AttributeError(f"{method} is not supported IO type.")
+
+                if prog:
+                    self._simulation_context.eval(prog)
 
             elif method.startswith("comm_"):
                 if method == "comm_external":
@@ -240,6 +244,9 @@ class Simulation:
                 for mode in modes:
                     prog = prog + (mode_to_prog(mode),)
                 self._simulation_context.eval(prog)
+            elif method == "eval":
+                self._simulation_context.eval(vargs[0])
+
             else:
                 raise RuntimeError(f"{method} is not supported!")
 
