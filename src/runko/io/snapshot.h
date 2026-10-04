@@ -9,6 +9,7 @@
 #include <bit>
 #include <cstddef>
 #include <optional>
+#include <string>
 
 namespace runko {
 
@@ -55,7 +56,16 @@ inline constexpr const char* spectra_suffixes[4] = { "u", "bx", "by", "bz" };
 
 tyvi::actions::sexpr_sender
   emf_snapshot(runko::simulation_context&, long lap, std::optional<std::string>);
-tyvi::actions::sexpr_sender prtcl_snapshot(runko::simulation_context&, long lap);
+
+/// Write sampled particles of each species to {outdir}/prtcls_{species}_{lap}.bin.
+///
+/// Number of sampled particles is read from config (io_n_sampled_prtcls),
+/// if it is not given explicitly. Same for outdir (io_outdir).
+tyvi::actions::sexpr_sender prtcl_snapshot(
+  runko::simulation_context&,
+  long lap,
+  std::optional<std::string> outdir,
+  std::optional<long> n_sampled_prtcls);
 tyvi::actions::sexpr_sender spectra_snapshot(runko::simulation_context&, long lap);
 
 }  // namespace runko

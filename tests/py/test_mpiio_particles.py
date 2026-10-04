@@ -9,7 +9,7 @@ import os
 import numpy as np
 
 import runko
-from runko_cpp_bindings.emf.threeD import MpiioParticlesWriter
+actions = runko.actions
 from runko.mpiio_prtcl_reader import MAGIC, read_prtcl_header, read_prtcl_snapshot
 from tests.mpiio_test_helpers import (
     make_pic_config, setup_pic_grid_with_particles, PRTCL_FIELD_NAMES,
@@ -24,30 +24,23 @@ def find_prtcl_file(outdir, species=0):
     return os.path.join(outdir, files[0])
 
 
-def prtcl_write_and_read(tile_grid, outdir, n_prtcls, species=0, lap=0):
+def prtcl_write(sim, outdir, n_prtcls, lap=0):
+    """Write particle snapshots of all species."""
+    prog = (actions.prtcl_snapshot, actions.current_context,
+            int(lap), str(outdir), int(n_prtcls))
+    sim.for_one_lap(lambda x: x.eval(prog))
+
+
+def prtcl_write_and_read(sim, outdir, n_prtcls, species=0, lap=0):
     """Write a particle snapshot and read it back.
 
     Returns (header_dict, fields_dict).
     """
-    writer = MpiioParticlesWriter(outdir, n_prtcls, species)
-    writer.write(tile_grid._corgi_grid, lap)
+    prtcl_write(sim, outdir, n_prtcls, lap)
     path = find_prtcl_file(outdir, species)
     hdr = read_prtcl_header(path)
     fields = read_prtcl_snapshot(path)
     return hdr, fields
-
-
-class TestMpiioParticlesWriterConstruction(unittest.TestCase):
-
-    # TODO combine this class with the others; re-use setUp and tearDown
-
-    def test_construction(self):
-        """Create MpiioParticlesWriter and verify no crash."""
-        outdir = tempfile.mkdtemp()
-        try:
-            writer = MpiioParticlesWriter(outdir, 100, 0)
-        finally:
-            shutil.rmtree(outdir)
 
 
 class TestMpiioParticlesWriter(unittest.TestCase):
@@ -62,9 +55,12 @@ class TestMpiioParticlesWriter(unittest.TestCase):
         """Verify header has correct magic, version, field names."""
         config = make_pic_config(outdir=self.outdir)
         zero = lambda x, y, z: (0, 0, 0)
-        tile_grid = setup_pic_grid_with_particles(config, zero, zero, zero, ppc=1)
+        tile_grid = runko.TileGrid(config)
+        setup_pic_grid_with_particles(
+            tile_grid, config, zero, zero, zero, ppc=1)
+        sim = tile_grid.configure_simulation(config)
 
-        hdr, _ = prtcl_write_and_read(tile_grid, self.outdir, n_prtcls=100)
+        hdr, _ = prtcl_write_and_read(sim, self.outdir, n_prtcls=100)
 
         self.assertEqual(hdr["magic"], MAGIC)
         self.assertEqual(hdr["num_fields"], 12)
@@ -76,11 +72,14 @@ class TestMpiioParticlesWriter(unittest.TestCase):
         """When n_prtcls > total particles, all particles should be written."""
         config = make_pic_config(outdir=self.outdir)
         zero = lambda x, y, z: (0, 0, 0)
-        tile_grid = setup_pic_grid_with_particles(config, zero, zero, zero, ppc=1)
+        tile_grid = runko.TileGrid(config)
+        setup_pic_grid_with_particles(
+            tile_grid, config, zero, zero, zero, ppc=1)
+        sim = tile_grid.configure_simulation(config)
 
         total_particles = 8 * 8 * 8  # ppc=1, 8^3 mesh
         hdr, fields = prtcl_write_and_read(
-            tile_grid, self.outdir, n_prtcls=total_particles * 10)
+            sim, self.outdir, n_prtcls=total_particles * 10)
 
         self.assertEqual(hdr["n_prtcls"], total_particles)
         for name in PRTCL_FIELD_NAMES:
@@ -90,12 +89,15 @@ class TestMpiioParticlesWriter(unittest.TestCase):
         """When n_prtcls < total, output should have fewer particles."""
         config = make_pic_config(outdir=self.outdir)
         zero = lambda x, y, z: (0, 0, 0)
-        tile_grid = setup_pic_grid_with_particles(config, zero, zero, zero, ppc=2)
+        tile_grid = runko.TileGrid(config)
+        setup_pic_grid_with_particles(
+            tile_grid, config, zero, zero, zero, ppc=2)
+        sim = tile_grid.configure_simulation(config)
 
         total_particles = 2 * 8 * 8 * 8  # ppc=2, 8^3 mesh = 1024
         n_target = 100
         hdr, fields = prtcl_write_and_read(
-            tile_grid, self.outdir, n_prtcls=n_target)
+            sim, self.outdir, n_prtcls=n_target)
 
         self.assertGreater(hdr["n_prtcls"], 0)
         self.assertLess(hdr["n_prtcls"], total_particles)
@@ -107,11 +109,14 @@ class TestMpiioParticlesWriter(unittest.TestCase):
         1x1x1 grid with mins at (0,0,0), so positions should be in [0, NxMesh)."""
         config = make_pic_config(outdir=self.outdir)
         zero = lambda x, y, z: (0, 0, 0)
-        tile_grid = setup_pic_grid_with_particles(config, zero, zero, zero, ppc=1)
+        tile_grid = runko.TileGrid(config)
+        setup_pic_grid_with_particles(
+            tile_grid, config, zero, zero, zero, ppc=1)
+        sim = tile_grid.configure_simulation(config)
 
         total = 8**3
         hdr, fields = prtcl_write_and_read(
-            tile_grid, self.outdir, n_prtcls=total * 10)
+            sim, self.outdir, n_prtcls=total * 10)
 
         # All positions should be within [0, NxMesh=8)
         for coord in ("x", "y", "z"):
@@ -142,11 +147,11 @@ class TestMpiioParticlesWriter(unittest.TestCase):
             tile.inject_to_each_cell(1, gen2)
 
             tile_grid.add_tile(tile, idx)
-        _ = tile_grid.configure_simulation(config)
+        sim = tile_grid.configure_simulation(config)
 
         total = 8**3
         hdr, fields = prtcl_write_and_read(
-            tile_grid, self.outdir, n_prtcls=total * 10, species=0)
+            sim, self.outdir, n_prtcls=total * 10, species=0)
 
         np.testing.assert_allclose(fields["ux"], 1.0, atol=1e-5)
         np.testing.assert_allclose(fields["uy"], 2.0, atol=1e-5)
@@ -169,11 +174,11 @@ class TestMpiioParticlesWriter(unittest.TestCase):
             for sp in range(2):
                 tile.inject_to_each_cell(sp, gen)
             tile_grid.add_tile(tile, idx)
-        _ = tile_grid.configure_simulation(config)
+        sim = tile_grid.configure_simulation(config)
 
         total = 8**3
         hdr, fields = prtcl_write_and_read(
-            tile_grid, self.outdir, n_prtcls=total * 10)
+            sim, self.outdir, n_prtcls=total * 10)
 
         # Each particle's velocity should match its position
         np.testing.assert_allclose(fields["ux"], fields["x"], atol=1e-4)
@@ -188,11 +193,14 @@ class TestMpiioParticlesWriter(unittest.TestCase):
         B_func = lambda x, y, z: (4, 5, 6)
         J_func = lambda x, y, z: (0, 0, 0)
 
-        tile_grid = setup_pic_grid_with_particles(config, E_func, B_func, J_func, ppc=1)
+        tile_grid = runko.TileGrid(config)
+        setup_pic_grid_with_particles(
+            tile_grid, config, E_func, B_func, J_func, ppc=1)
+        sim = tile_grid.configure_simulation(config)
 
         total = 8**3
         hdr, fields = prtcl_write_and_read(
-            tile_grid, self.outdir, n_prtcls=total * 10)
+            sim, self.outdir, n_prtcls=total * 10)
 
         # Interior particles (away from halo boundaries) should see uniform fields.
         # Near edges the staggered Yee interpolation may sample halo cells.
@@ -218,12 +226,14 @@ class TestMpiioParticlesWriter(unittest.TestCase):
         B_func = lambda x, y, z: (0, 0, 0)
         J_func = lambda x, y, z: (0, 0, 0)
 
-        tile_grid = setup_pic_grid_with_particles(
-            config, E_func, B_func, J_func, ppc=1)
+        tile_grid = runko.TileGrid(config)
+        setup_pic_grid_with_particles(
+            tile_grid, config, E_func, B_func, J_func, ppc=1)
+        sim = tile_grid.configure_simulation(config)
 
         total = 8**3
         hdr, fields = prtcl_write_and_read(
-            tile_grid, self.outdir, n_prtcls=total * 10)
+            sim, self.outdir, n_prtcls=total * 10)
 
         x, y, z = fields["x"], fields["y"], fields["z"]
         interior = ((x > 1.5) & (x < 6.5) &
@@ -243,7 +253,7 @@ class TestMpiioParticlesWriter(unittest.TestCase):
             fields["ez"][interior], z[interior], atol=1.0)
 
     def test_two_species_separate_files(self):
-        """Write species 0 and 1 separately, verify different files and
+        """Write species 0 and 1, verify different files and
         that both species have correct velocities."""
         config = make_pic_config(outdir=self.outdir)
         P = runko.pic.threeD.ParticleState
@@ -265,17 +275,12 @@ class TestMpiioParticlesWriter(unittest.TestCase):
             tile.inject_to_each_cell(1, gen1)
 
             tile_grid.add_tile(tile, idx)
-        _ = tile_grid.configure_simulation(config)
+        sim = tile_grid.configure_simulation(config)
 
         total = 8**3
 
-        # Write species 0
-        w0 = MpiioParticlesWriter(self.outdir, total * 10, 0)
-        w0.write(tile_grid._corgi_grid, 0)
-
-        # Write species 1
-        w1 = MpiioParticlesWriter(self.outdir, total * 10, 1)
-        w1.write(tile_grid._corgi_grid, 0)
+        # Writes both species
+        prtcl_write(sim, self.outdir, total * 10)
 
         h0 = read_prtcl_header(find_prtcl_file(self.outdir, 0))
         h1 = read_prtcl_header(find_prtcl_file(self.outdir, 1))
@@ -310,11 +315,11 @@ class TestMpiioParticlesWriter(unittest.TestCase):
             for species in range(2):
                 tile.inject_to_each_cell(species, gen)
             tile_grid.add_tile(tile, idx)
-        _ = tile_grid.configure_simulation(config)
+        sim = tile_grid.configure_simulation(config)
 
         total = 4 * 8**3
         hdr, fields = prtcl_write_and_read(
-            tile_grid, self.outdir, n_prtcls=total * 10)
+            sim, self.outdir, n_prtcls=total * 10)
 
         self.assertEqual(hdr["n_prtcls"], total)
 
@@ -368,11 +373,11 @@ class TestMpiioParticlesWriter(unittest.TestCase):
                 tile.inject_to_each_cell(species, gen)
 
             tile_grid.add_tile(tile, idx)
-        _ = tile_grid.configure_simulation(config)
+        sim = tile_grid.configure_simulation(config)
 
         total = 4 * 8**3
         hdr, fields = prtcl_write_and_read(
-            tile_grid, self.outdir, n_prtcls=total * 10)
+            sim, self.outdir, n_prtcls=total * 10)
 
         # Each tile should contribute particles with its encoded velocity
         for i_tile in range(2):
@@ -409,10 +414,9 @@ class TestMpiioParticlesWriter(unittest.TestCase):
             # Species 1 gets no particles
 
             tile_grid.add_tile(tile, idx)
-        _ = tile_grid.configure_simulation(config)
+        sim = tile_grid.configure_simulation(config)
 
-        writer = MpiioParticlesWriter(self.outdir, 1000, 1)
-        writer.write(tile_grid._corgi_grid, 0)
+        prtcl_write(sim, self.outdir, 1000)
 
         path = find_prtcl_file(self.outdir, 1)
         hdr = read_prtcl_header(path)
@@ -423,9 +427,12 @@ class TestMpiioParticlesWriter(unittest.TestCase):
         """Verify all header fields are correct."""
         config = make_pic_config(outdir=self.outdir)
         zero = lambda x, y, z: (0, 0, 0)
-        tile_grid = setup_pic_grid_with_particles(config, zero, zero, zero, ppc=1)
+        tile_grid = runko.TileGrid(config)
+        setup_pic_grid_with_particles(
+            tile_grid, config, zero, zero, zero, ppc=1)
+        sim = tile_grid.configure_simulation(config)
 
-        hdr, _ = prtcl_write_and_read(tile_grid, self.outdir, n_prtcls=10000)
+        hdr, _ = prtcl_write_and_read(sim, self.outdir, n_prtcls=10000)
 
         self.assertEqual(hdr["magic"], MAGIC)
         self.assertEqual(hdr["version"], 3)
@@ -439,14 +446,35 @@ class TestMpiioParticlesWriter(unittest.TestCase):
         """Write with lap=3, verify header and filename."""
         config = make_pic_config(outdir=self.outdir)
         zero = lambda x, y, z: (0, 0, 0)
-        tile_grid = setup_pic_grid_with_particles(config, zero, zero, zero, ppc=1)
+        tile_grid = runko.TileGrid(config)
+        setup_pic_grid_with_particles(
+            tile_grid, config, zero, zero, zero, ppc=1)
+        sim = tile_grid.configure_simulation(config)
 
-        hdr, _ = prtcl_write_and_read(tile_grid, self.outdir, n_prtcls=10000, lap=3)
+        hdr, _ = prtcl_write_and_read(sim, self.outdir, n_prtcls=10000, lap=3)
 
         self.assertEqual(hdr["lap"], 3)
         files = os.listdir(self.outdir)
         self.assertTrue(any("3" in f for f in files),
                         f"No file with lap=3 in {files}")
+
+    def test_n_prtcls_from_config(self):
+        """Without explicit n_prtcls, io_n_sampled_prtcls from config is used."""
+        config = make_pic_config(outdir=self.outdir)
+        config.io_n_sampled_prtcls = 10 * 8**3
+        zero = lambda x, y, z: (0, 0, 0)
+        tile_grid = runko.TileGrid(config)
+        setup_pic_grid_with_particles(
+            tile_grid, config, zero, zero, zero, ppc=1)
+        sim = tile_grid.configure_simulation(config)
+
+        prog = (actions.prtcl_snapshot, actions.current_context, 0, str(self.outdir))
+        sim.for_one_lap(lambda x: x.eval(prog))
+
+        for species in range(2):
+            hdr = read_prtcl_header(find_prtcl_file(self.outdir, species))
+            self.assertEqual(hdr["n_prtcls"], 8**3)
+            self.assertEqual(hdr["species"], species)
 
 
 if __name__ == "__main__":
