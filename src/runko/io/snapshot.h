@@ -66,6 +66,15 @@ tyvi::actions::sexpr_sender prtcl_snapshot(
   long lap,
   std::optional<std::string> outdir,
   std::optional<long> n_sampled_prtcls);
-tyvi::actions::sexpr_sender spectra_snapshot(runko::simulation_context&, long lap);
+
+/// Write x-resolved particle momentum spectra to {outdir}/pspectra_{lap}.bin.
+///
+/// Binning is read from config (io_n_spectra_bins, io_spectra_umin,
+/// io_spectra_umax and io_spectra_stride, which defaults to io_grid_stride).
+/// Output directory is read from config (io_outdir), if it is not given explicitly.
+tyvi::actions::sexpr_sender spectra_snapshot(
+  runko::simulation_context&,
+  long lap,
+  std::optional<std::string> outdir);
 
 }  // namespace runko

@@ -647,6 +647,221 @@ void
   }
 }
 
+
+/// Spectra snapshot parameters parsed from the config.
+struct spectra_snapshot_params {
+  int Nx, Ny, Nz;
+  int NxMesh, NyMesh, NzMesh;
+  int stride;
+  int nbins;
+  float umin, umax;
+  int nspecies;  // number of particle species (capped at max_spectra_species)
+  int nxt;       // per-tile x output size after stride
+  int nx;        // global x output size
+
+  int num_fields() const { return nspecies * num_spectra_per_species; }
+
+  static spectra_snapshot_params from_config(const toolbox::ConfigParser& config)
+  {
+    const auto tiles = toolbox::get_extent_list(config, "n_tiles", 3);
+    const auto cells = toolbox::get_extent_list(config, "n_cells_per_tile", 3);
+
+    const auto stride =
+      config.get<std::ptrdiff_t>("io_spectra_stride")
+        .or_else([&] { return config.get<std::ptrdiff_t>("io_grid_stride"); })
+        .value_or(1);
+    if(stride <= 0) {
+      throw std::runtime_error { std::format(
+        "spectra_snapshot: io_spectra_stride has to be positive (got {})",
+        stride) };
+    }
+
+    const auto nbins = config.get<std::ptrdiff_t>("io_n_spectra_bins").value_or(200);
+    if(nbins <= 0) {
+      throw std::runtime_error { std::format(
+        "spectra_snapshot: io_n_spectra_bins has to be positive (got {})",
+        nbins) };
+    }
+
+    const auto umin = config.get<double>("io_spectra_umin").value_or(1e-4);
+    const auto umax = config.get<double>("io_spectra_umax").value_or(1e3);
+    if(not(0.0 < umin and umin < umax)) {
+      throw std::runtime_error { std::format(
+        "spectra_snapshot: 0 < io_spectra_umin < io_spectra_umax does not hold "
+        "(got {} and {})",
+        umin,
+        umax) };
+    }
+
+    auto p = spectra_snapshot_params {};
+
+    p.Nx       = checked_cast<int>(tiles[0]);
+    p.Ny       = checked_cast<int>(tiles[1]);
+    p.Nz       = checked_cast<int>(tiles[2]);
+    p.NxMesh   = checked_cast<int>(cells[0]);
+    p.NyMesh   = checked_cast<int>(cells[1]);
+    p.NzMesh   = checked_cast<int>(cells[2]);
+    p.stride   = checked_cast<int>(stride);
+    p.nbins    = checked_cast<int>(nbins);
+    p.umin     = static_cast<float>(umin);
+    p.umax     = static_cast<float>(umax);
+    p.nspecies = std::min(count_species(config), max_spectra_species);
+
+    p.nxt = std::max(1, p.NxMesh / p.stride);
+    p.nx  = p.Nx * p.nxt;
+
+    return p;
+  }
+};
+
+/// Write the 512-byte spectra snapshot header to an MPI file handle.
+///
+/// Header layout is the same as for fields snapshot (with ny = Ny, nz = Nz), and:
+///   [64:64+num_fields*16]  char[16]*num_fields  field names (s0_u, s0_bx, ...)
+///   [256:260] int32   nbins
+///   [260:264] float   umin
+///   [264:268] float   umax
+void
+  write_spectra_header(
+    MPI_File fh,
+    const spectra_snapshot_params& p,
+    const std::int32_t lap)
+{
+  auto buf        = std::array<char, header_size> {};
+  auto buf_ptr_at = [&](const auto n) { return std::ranges::next(buf.data(), n); };
+
+  auto put = [&](int offset, const auto val) {
+    std::memcpy(buf_ptr_at(offset), &val, sizeof(val));
+  };
+
+  put(0, magic);
+  put(4, version);
+  put(8, static_cast<std::uint32_t>(header_size));
+  put(12, static_cast<std::uint32_t>(p.num_fields()));
+  put(16, std::int32_t { p.nx });
+  put(20, std::int32_t { p.Ny });
+  put(24, std::int32_t { p.Nz });
+  put(28, std::int32_t { p.stride });
+  put(32, std::int32_t { p.Nx });
+  put(36, std::int32_t { p.Ny });
+  put(40, std::int32_t { p.Nz });
+  put(44, std::int32_t { p.NxMesh });
+  put(48, std::int32_t { p.NyMesh });
+  put(52, std::int32_t { p.NzMesh });
+  put(56, lap);
+  put(60, std::uint32_t { 4 });  // dtype_size = sizeof(float)
+
+  for(int s = 0; s < p.nspecies; s++) {
+    for(int q = 0; q < num_spectra_per_species; q++) {
+      const auto name = std::format("s{}_{}", s, spectra_suffixes[q]);
+      const auto f    = s * num_spectra_per_species + q;
+      const auto n    = std::ranges::min(name.size(), 15uz);
+      std::memcpy(buf_ptr_at(64 + f * 16), name.data(), n);
+    }
+  }
+
+  put(256, std::int32_t { p.nbins });
+  put(260, p.umin);
+  put(264, p.umax);
+
+  MPI_Status status;
+  if(
+    MPI_SUCCESS !=
+    MPI_File_write_at(fh, 0, buf.data(), header_size, MPI_BYTE, &status)) {
+    throw std::runtime_error { "spectra_snapshot: writing header failed!" };
+  }
+}
+
+/// Histogram particles of one tile into tile_buf ([nxt][nbins] with field
+/// species * 4 + {0=u, 1=bx, 2=by, 3=bz}).
+///
+/// The 4 spectra per species are:
+///   u      = sqrt(ux^2 + uy^2 + uz^2)  - log10 bins [umin, umax]
+///   beta_x = ux / gamma                - linear bins [-1, +1]
+///   beta_y = uy / gamma                - linear bins [-1, +1]
+///   beta_z = uz / gamma                - linear bins [-1, +1]
+/// where gamma = sqrt(1 + u^2). Out-of-range values go to the boundary bins.
+void
+  histogram_tile(
+    const pic::particle_containers* particles,
+    const double tile_xmin,
+    const spectra_snapshot_params& p,
+    runko::SpectraGrid<float>& tile_buf)
+{
+  const auto buf_mds = tile_buf.mds();
+
+  tyvi::mdgrid_work w {};
+
+  w.for_each_index(buf_mds, [=](const auto idx) {
+    for(int f = 0; f < num_spectra_per_species * max_spectra_species; f++) {
+      buf_mds[idx][f] = 0.0f;
+    }
+  });
+
+  if(not particles) {
+    w.wait();
+    return;
+  }
+
+  using vt              = pic::ParticleContainer::value_type;
+  const auto mx         = static_cast<vt>(tile_xmin);
+  const auto inv_stride = vt { 1 } / static_cast<vt>(p.stride);
+  const auto log_umin   = static_cast<vt>(std::log10(p.umin));
+  const auto inv_dlog =
+    static_cast<vt>(p.nbins) / static_cast<vt>(std::log10(p.umax) - std::log10(p.umin));
+  const auto inv_dbeta  = static_cast<vt>(p.nbins) / vt { 2 };
+  const auto last_bin_f = static_cast<vt>(p.nbins - 1);
+  // particles appended after pack_outgoing may sit exactly on the upper tile face
+  const auto last_x_f = static_cast<vt>(p.nxt - 1);
+
+  for(int s = 0; s < p.nspecies; s++) {
+    const auto species = static_cast<std::size_t>(s);
+    if(not particles->contains(species)) { continue; }
+
+    const auto& container = particles->at(species);
+    const auto pos_mds    = container.pos_mds();
+    const auto vel_mds    = container.vel_mds();
+    const auto ids_mds    = container.ids_mds();
+    const auto base       = static_cast<std::size_t>(s * num_spectra_per_species);
+
+    w.for_each_index(pos_mds, [=](const auto idx) {
+      if(ids_mds[idx][] == runko::dead_prtc_id) { return; }
+
+      const auto px = pos_mds[idx][0] - mx;
+      const auto ix =
+        static_cast<std::size_t>(sstd::min(sstd::floor(px * inv_stride), last_x_f));
+
+      const auto ux = vel_mds[idx][0];
+      const auto uy = vel_mds[idx][1];
+      const auto uz = vel_mds[idx][2];
+
+      const auto u2        = ux * ux + uy * uy + uz * uz;
+      const auto u_mag     = sstd::sqrt(u2);
+      const auto inv_gamma = vt { 1 } / sstd::sqrt(vt { 1 } + u2);
+
+      const auto bin = [=](const vt raw) {
+        return static_cast<std::size_t>(sstd::clamp(raw, vt { 0 }, last_bin_f));
+      };
+
+      const auto ib_u  = bin(sstd::floor((sstd::log10(u_mag) - log_umin) * inv_dlog));
+      const auto ib_bx = bin(sstd::floor((ux * inv_gamma + vt { 1 }) * inv_dbeta));
+      const auto ib_by = bin(sstd::floor((uy * inv_gamma + vt { 1 }) * inv_dbeta));
+      const auto ib_bz = bin(sstd::floor((uz * inv_gamma + vt { 1 }) * inv_dbeta));
+
+      const auto deposit = [=](const std::size_t ib, const std::size_t q) {
+        auto* const n = &thrust::raw_reference_cast(buf_mds[ix, ib][base + q]);
+        sstd::atomic_add(n, 1.0f);
+      };
+
+      deposit(ib_u, 0);
+      deposit(ib_bx, 1);
+      deposit(ib_by, 2);
+      deposit(ib_bz, 3);
+    });
+  }
+  w.wait();
+}
+
 }  // namespace
 
 tyvi::actions::sexpr_sender
@@ -843,8 +1058,117 @@ tyvi::actions::sexpr_sender
            return ta::null;
          });
 }
+
 tyvi::actions::sexpr_sender
-  spectra_snapshot(runko::simulation_context&, long)
-{ return te::just(ta::null); }
+  spectra_snapshot(
+    runko::simulation_context& sim,
+    const long lap,
+    std::optional<std::string> outdir_arg)
+{
+  return te::just() | te::then([&sim, lap, outdir_arg = std::move(outdir_arg)]() {
+           const auto p      = spectra_snapshot_params::from_config(sim.config);
+           const auto outdir = resolve_outdir(sim.config, outdir_arg);
+           const auto nf     = p.num_fields();
+
+           std::filesystem::create_directories(outdir);
+           const auto filename = std::format("{}/pspectra_{}.bin", outdir, lap);
+
+           auto tile_buf = runko::SpectraGrid<float>(
+             static_cast<std::size_t>(p.nxt),
+             static_cast<std::size_t>(p.nbins));
+
+           MPI_File fh;
+           if(
+             MPI_SUCCESS != MPI_File_open(
+                              MPI_COMM_WORLD,
+                              filename.c_str(),
+                              MPI_MODE_CREATE | MPI_MODE_WRONLY,
+                              MPI_INFO_NULL,
+                              &fh)) {
+             throw std::runtime_error {
+               std::format("spectra_snapshot: could not open {}", filename)
+             };
+           }
+
+           auto throw_n_close = [&](const std::string_view what) {
+             MPI_File_close(&fh);
+             throw std::runtime_error {
+               std::format("spectra_snapshot: {} failed for {}", what, filename)
+             };
+           };
+
+           int comm_rank = -1;
+           if(MPI_SUCCESS != MPI_Comm_rank(MPI_COMM_WORLD, &comm_rank)) {
+             throw_n_close("MPI_Comm_rank");
+           }
+
+           // Each field is a (Nz, Ny, nx, nbins) array.
+           const MPI_Offset field_bytes = static_cast<MPI_Offset>(p.Nz) * p.Ny * p.nx *
+                                          p.nbins *
+                                          static_cast<MPI_Offset>(sizeof(float));
+           const int tile_row_elems     = p.nxt * p.nbins;
+
+           // Pre-allocate the file to its full size
+           const MPI_Offset total_size = header_size + nf * field_bytes;
+           if(MPI_SUCCESS != MPI_File_set_size(fh, total_size)) {
+             throw_n_close("MPI_File_set_size");
+           }
+
+           if(comm_rank == 0) {
+             write_spectra_header(fh, p, checked_cast<std::int32_t>(lap));
+           }
+
+           for(auto&& [id, idx]:
+               sim.view_tiles<runko::cartesian_index<3>, runko::local_tile_tag>()) {
+             const auto* particles = sim.tiles.try_get<pic::particle_containers>(id);
+             const auto tile_xmin =
+               runko::global_coordinates(sim, idx.template as<double>().data).mins()[0];
+
+             histogram_tile(particles, tile_xmin, p, tile_buf);
+
+      // On CPU the device buffer is host-accessible; on GPU use staging.
+#if defined(TYVI_BACKEND_CPU)
+             const float* write_ptr = tile_buf.span().data();
+#elif defined(TYVI_BACKEND_HIP)
+             tyvi::mdgrid_work {}.sync_to_staging(tile_buf).wait();
+             const float* write_ptr = tile_buf.staging_span().data();
+#endif
+
+             const auto ti = static_cast<MPI_Offset>(idx[0]);
+             const auto tj = static_cast<MPI_Offset>(idx[1]);
+             const auto tk = static_cast<MPI_Offset>(idx[2]);
+
+             // One contiguous block of nxt * nbins floats per tile per field.
+             for(int f = 0; f < nf; f++) {
+               const MPI_Offset file_offset = header_size + f * field_bytes +
+                                              ((tk * p.Ny + tj) * p.nx + ti * p.nxt) *
+                                                p.nbins *
+                                                static_cast<MPI_Offset>(sizeof(float));
+
+               const auto buf_offset = f * tile_row_elems;
+
+               MPI_Status status;
+               if(
+                 MPI_SUCCESS != MPI_File_write_at(
+                                  fh,
+                                  file_offset,
+                                  std::ranges::next(write_ptr, buf_offset),
+                                  tile_row_elems,
+                                  MPI_FLOAT,
+                                  &status)) {
+                 throw_n_close("MPI_File_write_at");
+               }
+             }
+           }
+
+           if(MPI_SUCCESS != MPI_File_close(&fh)) {
+             throw std::runtime_error {
+               std::format("spectra_snapshot: could not close {}", filename)
+             };
+           }
+
+           return ta::null;
+         });
+}
 
 }  // namespace runko
