@@ -4,6 +4,7 @@
 import itertools
 import pickle
 import logging
+import math
 import pathlib
 import numpy as np
 from .simulation import Simulation
@@ -64,7 +65,9 @@ class TileGrid:
                 raise "Hilbert curve tile partition requires n_tiles to be powers of two!"
 
             from .hilbert import Hilbert3D
-            H = Hilbert3D(self._Nx, self._Ny, self._Nz)
+            H = Hilbert3D(int(math.log2(self._Nx)),
+                          int(math.log2(self._Ny)),
+                          int(math.log2(self._Nz)))
 
             skipped_tiles = sum(tiles_per_rank[:self._my_rank])
             for n in range(skipped_tiles, skipped_tiles + tiles_per_rank[self._my_rank]):
