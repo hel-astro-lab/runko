@@ -15,6 +15,7 @@ enum class symbol : std::uint8_t {
   version,
   mt_showcase,
   sequence,
+  parallel,
   comm_local,
   comm_external,
   current_context,

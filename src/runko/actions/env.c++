@@ -64,6 +64,19 @@ tyvi::actions::sexpr
            });
   };
 
+  auto parallel = [](const ta::sexpr &args, ta::procedure eval) -> ta::sexpr_sender {
+    return te::just(args) | te::let_value([eval = std::move(eval)](auto &&x) {
+             auto senders = std::vector<ta::sexpr_sender>();
+             for(const auto &x: ta::list_view(x)) {
+               senders.push_back(
+                 te::just(x) | te::continues_on(te::thread_pool_scheduler {}) |
+                 te::let_value(std::move(eval)));
+             }
+             return te::when_all_vector(std::move(senders));
+           });
+  };
+
+
   auto mt_showcase = [](const ta::sexpr &args) -> ta::sexpr_sender {
     const auto arg_list = std::get<ta::cons>(args);
     const auto arg0     = std::get<ta::atom>(arg_list.car());
@@ -89,6 +102,7 @@ tyvi::actions::sexpr
     ta::cons(symbol::format, ta::procedure { format }),
     ta::cons(symbol::version, version),
     ta::cons(symbol::sequence, ta::procedure_with_eval { sequence }),
+    ta::cons(symbol::parallel, ta::procedure_with_eval { parallel }),
     ta::cons(symbol::mt_showcase, ta::procedure { mt_showcase }));
 }
 }  // namespace runko
