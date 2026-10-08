@@ -31,3 +31,4 @@ from .moving_injector import MovingInjector
 from .postprocessing import read_config, read_timer_statistics
 
 from .auto_tile_grid import one_tile_per_rank_cube_size
+from .runko_timer import TimeMeasurement

@@ -395,7 +395,8 @@ void
   py::class_<runko::simulation_context>(m_sub, "SimulationContext")
     .def(py::init([](const py::handle &config) {
       return runko::simulation_context { .config { toolbox::ConfigParser(config) },
-                                         .tiles {} };
+                                         .tiles {},
+                                         .durations {} };
     }))
     .def(
       "eval",
@@ -467,6 +468,27 @@ void
           throw std::runtime_error(
             "error in global_coordinate_map: tile does not have cartesian_index<3>");
         }
+      })
+    .def(
+      "get_timer_data",
+      [](runko::simulation_context &sim) {
+        auto [keys, durs, metadata] = sim.durations.get_all();
+        auto r                      = py::module::import("runko");
+        auto tm                     = r.attr("TimeMeasurement");
+
+        auto v = durs | std::views::transform([&](const auto &x) {
+                   return tm(
+                     std::chrono::duration_cast<std::chrono::microseconds>(
+                       x.begin.time_since_epoch())
+                       .count(),
+                     std::chrono::duration_cast<std::chrono::microseconds>(
+                       x.end.time_since_epoch())
+                       .count());
+                 });
+
+        return std::tuple { std::move(keys),
+                            std::vector(v.begin(), v.end()),
+                            std::move(metadata) };
       })
     .def("debug_cartesian_grid", &debug_cartesian_grid);
 }
