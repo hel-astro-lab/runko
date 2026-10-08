@@ -1,4 +1,4 @@
-// Copyright 2025 - 2026, Miro Palmu, Joonas Nättilä and the runko contributors
+// Copyright 2026 - 2026, Miro Palmu, Joonas Nättilä and the runko contributors
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 #include "pybind11/functional.h"
@@ -67,7 +67,7 @@ tyvi::actions::sexpr
 
                    return std::forward<decltype(s)>(s);
                  });
-        } });
+          } });
   };
 
   // Due to hipcc compiler bug, env not be non-const.
