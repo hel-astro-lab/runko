@@ -5,6 +5,7 @@
 
 #include "entt/entt.hpp"
 #include "runko/tools/config_parser.h"
+#include "runko/tools/timer.h"
 
 #include <concepts>
 #include <functional>
@@ -65,6 +66,8 @@ struct simulation_context {
   const toolbox::ConfigParser config;
   entt::registry tiles;
   using tile_id_type = entt::registry::entity_type;
+
+  runko::duration_container durations;
 };
 
 template<typename... Ts>

@@ -14,10 +14,13 @@
 #include "runko/communication_common.h"
 #include "runko/io/snapshot.h"
 #include "runko/pic/reflector_wall.h"
+#include "runko/tools/magic_enum/magic_enum.hpp"
 #include "tyvi/actions_ast.h"
 #include "tyvi/actions_list.h"
 
+#include <format>
 #include <functional>
+#include <string_view>
 #include <variant>
 
 namespace runko {
@@ -33,26 +36,60 @@ tyvi::actions::sexpr
   namespace ta = tyvi::actions;
   namespace te = tyvi::exec;
 
+  auto timed_procedure = [&sim]<typename F>(const auto symbol, F&& f) -> ta::cons {
+    return ta::cons(
+      symbol,
+      ta::procedure {
+        [f = std::forward<F>(f), &sim, key = magic_enum::enum_name(symbol)](
+          const ta::sexpr& args) -> ta::sexpr_sender {
+          return te::just() |
+                 te::then([] { return std::chrono::system_clock::now(); }) |
+                 te::let_value([key, args, f = std::move(f)](const auto b) {
+                   if(not std::holds_alternative<ta::cons>(args)) {
+                     throw std::logic_error {
+                       "timed_procedure: args should always be cons"
+                     };
+                   }
+
+                   return te::when_all(
+                     te::just(b),
+                     te::just(std::format("{}", key)),
+                     te::just(std::format("({} . {})", key, args)),
+                     f(args));
+                 }) |
+                 te::then([&sim](
+                            const auto& b,
+                            const auto& key,
+                            const auto& metadata,
+                            auto&& s) {
+                   const auto e = std::chrono::system_clock::now();
+                   sim.durations.add(key, runko::timer_duration { b, e }, metadata);
+
+                   return std::forward<decltype(s)>(s);
+                 });
+        } });
+  };
+
   // Due to hipcc compiler bug, env not be non-const.
   // It would be better to have it be non-const and be moved into
   // std::visit(ta::list_append, ...) but this workaround propably
   // is not a performance killer even if we have to do some extra copies.
   const auto env = ta::list(
-    ta::cons(
+    timed_procedure(
       runko::symbol::set_cartesian_neighbors,
       ta::procedure { [](const ta::sexpr& args) -> ta::sexpr_sender {
         return parse_atom_args<std::reference_wrapper<simulation_context>>(args) |
                te::then(&runko::set_cartesian_neighbors<3>) |
                te::then([] { return ta::null; });
       } }),
-    ta::cons(
+    timed_procedure(
       runko::symbol::set_cartesian_comm_infos,
       ta::procedure { [](const ta::sexpr& args) -> ta::sexpr_sender {
         return parse_atom_args<std::reference_wrapper<simulation_context>>(args) |
                te::then(&runko::set_cartesian_comm_infos<3>) |
                te::then([] { return ta::null; });
       } }),
-    ta::cons(
+    timed_procedure(
       runko::symbol::ensure_constructed_yee_lattices,
       ta::procedure { [](const ta::sexpr& args) -> ta::sexpr_sender {
         return parse_atom_args<std::reference_wrapper<runko::simulation_context>>(
@@ -60,7 +97,7 @@ tyvi::actions::sexpr
                te::then(&emf::ensure_constructed_yee_lattices) |
                te::then([] { return ta::null; });
       } }),
-    ta::cons(
+    timed_procedure(
       runko::symbol::set_EBJ,
       ta::procedure { [](const ta::sexpr& args) -> ta::sexpr_sender {
         return parse_atom_args<
@@ -77,7 +114,7 @@ tyvi::actions::sexpr
                      Jh.template cast<emf::vector_field_function>());
                  });
       } }),
-    ta::cons(
+    timed_procedure(
       runko::symbol::batch_set_EBJ,
       ta::procedure { [](const ta::sexpr& args) -> ta::sexpr_sender {
         return parse_atom_args<
@@ -115,14 +152,14 @@ tyvi::actions::sexpr
                    Jzh.template cast<emf::batch_vector_field_function>());
                });
       } }),
-    ta::cons(
+    timed_procedure(
       runko::symbol::add_current,
       ta::procedure { [](const ta::sexpr& args) -> ta::sexpr_sender {
         return parse_atom_args<std::reference_wrapper<runko::simulation_context>>(
                  args) |
                te::let_value(&emf::add_current);
       } }),
-    ta::cons(
+    timed_procedure(
       runko::symbol::register_antenna,
       ta::procedure { [](const ta::sexpr& args) -> ta::sexpr_sender {
         return parse_atom_args<
@@ -130,35 +167,35 @@ tyvi::actions::sexpr
                  emf::antenna_mode>(args) |
                te::then(&emf::register_antenna) | te::then([] { return ta::null; });
       } }),
-    ta::cons(
+    timed_procedure(
       runko::symbol::deposit_antenna_current,
       ta::procedure { [](const ta::sexpr& args) -> ta::sexpr_sender {
         return parse_atom_args<std::reference_wrapper<runko::simulation_context>>(
                  args) |
                te::let_value(&emf::deposit_antenna_current);
       } }),
-    ta::cons(
+    timed_procedure(
       runko::symbol::push_e,
       ta::procedure { [](const ta::sexpr& args) -> ta::sexpr_sender {
         return parse_atom_args<std::reference_wrapper<runko::simulation_context>>(
                  args) |
                te::let_value(&emf::push_e);
       } }),
-    ta::cons(
+    timed_procedure(
       runko::symbol::push_half_b,
       ta::procedure { [](const ta::sexpr& args) -> ta::sexpr_sender {
         return parse_atom_args<std::reference_wrapper<runko::simulation_context>>(
                  args) |
                te::let_value(&emf::push_half_b);
       } }),
-    ta::cons(
+    timed_procedure(
       runko::symbol::filter_current,
       ta::procedure { [](const ta::sexpr& args) -> ta::sexpr_sender {
         return parse_atom_args<std::reference_wrapper<runko::simulation_context>>(
                  args) |
                te::let_value(&emf::filter_current);
       } }),
-    ta::cons(
+    timed_procedure(
       runko::symbol::register_edge_bc,
       ta::procedure { [](const ta::sexpr& args) -> ta::sexpr_sender {
         return parse_atom_args<
@@ -166,7 +203,7 @@ tyvi::actions::sexpr
                  emf::edge_bc>(args) |
                te::then(&emf::register_edge_bc) | te::then([] { return ta::null; });
       } }),
-    ta::cons(
+    timed_procedure(
       runko::symbol::apply_edge_bc,
       ta::procedure { [](const ta::sexpr& args) -> ta::sexpr_sender {
         return parse_atom_args<
@@ -175,7 +212,7 @@ tyvi::actions::sexpr
                  runko::comm_mode>(args) |
                te::let_value(&emf::apply_edge_bc);
       } }),
-    ta::cons(
+    timed_procedure(
       runko::symbol::apply_edge_bcs,
       ta::procedure { [](const ta::sexpr& args) -> ta::sexpr_sender {
         return parse_atom_args<
@@ -183,7 +220,7 @@ tyvi::actions::sexpr
                  runko::comm_mode>(args) |
                te::let_value(&emf::apply_edge_bcs);
       } }),
-    ta::cons(
+    timed_procedure(
       runko::symbol::clear_bcs,
       ta::procedure { [](const ta::sexpr& args) -> ta::sexpr_sender {
         return parse_atom_args<std::reference_wrapper<runko::simulation_context>>(
@@ -194,7 +231,7 @@ tyvi::actions::sexpr
                  return ta::null;
                });
       } }),
-    ta::cons(
+    timed_procedure(
       runko::symbol::ensure_constructed_particle_containers,
       ta::procedure { [](const ta::sexpr& args) -> ta::sexpr_sender {
         return parse_atom_args<std::reference_wrapper<runko::simulation_context>>(
@@ -202,7 +239,7 @@ tyvi::actions::sexpr
                te::then(&pic::ensure_constructed_particle_containers) |
                te::then([] { return ta::null; });
       } }),
-    ta::cons(
+    timed_procedure(
       runko::symbol::inject_to_each_cell,
       ta::procedure { [](const ta::sexpr& args) -> ta::sexpr_sender {
         return parse_atom_args<
@@ -217,7 +254,7 @@ tyvi::actions::sexpr
                  return ta::null;
                });
       } }),
-    ta::cons(
+    timed_procedure(
       runko::symbol::inject,
       ta::procedure { [](const ta::sexpr& args) -> ta::sexpr_sender {
         return parse_atom_args<
@@ -233,7 +270,7 @@ tyvi::actions::sexpr
                  return ta::null;
                });
       } }),
-    ta::cons(
+    timed_procedure(
       runko::symbol::batch_inject_to_cells,
       ta::procedure { [](const ta::sexpr& args) -> ta::sexpr_sender {
         return parse_atom_args<
@@ -248,7 +285,7 @@ tyvi::actions::sexpr
                  return ta::null;
                });
       } }),
-    ta::cons(
+    timed_procedure(
       runko::symbol::batch_inject_in_x_stripe,
       ta::procedure { [](const ta::sexpr& args) -> ta::sexpr_sender {
         return parse_atom_args<
@@ -272,28 +309,28 @@ tyvi::actions::sexpr
                  return ta::null;
                });
       } }),
-    ta::cons(
+    timed_procedure(
       runko::symbol::push_particles,
       ta::procedure { [](const ta::sexpr& args) -> ta::sexpr_sender {
         return parse_atom_args<std::reference_wrapper<runko::simulation_context>>(
                  args) |
                te::then(&pic::push_particles) | te::then([] { return ta::null; });
       } }),
-    ta::cons(
+    timed_procedure(
       runko::symbol::deposit_current,
       ta::procedure { [](const ta::sexpr& args) -> ta::sexpr_sender {
         return parse_atom_args<std::reference_wrapper<runko::simulation_context>>(
                  args) |
                te::then(&pic::deposit_current) | te::then([] { return ta::null; });
       } }),
-    ta::cons(
+    timed_procedure(
       runko::symbol::sort_particles,
       ta::procedure { [](const ta::sexpr& args) -> ta::sexpr_sender {
         return parse_atom_args<std::reference_wrapper<runko::simulation_context>>(
                  args) |
                te::then(&pic::sort_particles) | te::then([] { return ta::null; });
       } }),
-    ta::cons(
+    timed_procedure(
       runko::symbol::register_reflector_wall,
       ta::procedure { [](const ta::sexpr& args) -> ta::sexpr_sender {
         return parse_atom_args<
@@ -302,14 +339,14 @@ tyvi::actions::sexpr
                te::then(&pic::register_reflector_wall) |
                te::then([] { return ta::null; });
       } }),
-    ta::cons(
+    timed_procedure(
       runko::symbol::reflect_particles,
       ta::procedure { [](const ta::sexpr& args) -> ta::sexpr_sender {
         return parse_atom_args<std::reference_wrapper<runko::simulation_context>>(
                  args) |
                te::then(&pic::reflect_particles) | te::then([] { return ta::null; });
       } }),
-    ta::cons(
+    timed_procedure(
       runko::symbol::advance_reflector_walls,
       ta::procedure { [](const ta::sexpr& args) -> ta::sexpr_sender {
         return parse_atom_args<std::reference_wrapper<runko::simulation_context>>(
@@ -317,7 +354,7 @@ tyvi::actions::sexpr
                te::then(&pic::advance_reflector_walls) |
                te::then([] { return ta::null; });
       } }),
-    ta::cons(
+    timed_procedure(
       runko::symbol::emf_snapshot,
       ta::procedure { [](const ta::sexpr& args) -> ta::sexpr_sender {
         return parse_atom_args<
@@ -326,7 +363,7 @@ tyvi::actions::sexpr
                  runko::opt_arg<std::string>>(args) |
                te::let_value(&runko::emf_snapshot);
       } }),
-    ta::cons(
+    timed_procedure(
       runko::symbol::prtcl_snapshot,
       ta::procedure { [](const ta::sexpr& args) -> ta::sexpr_sender {
         return parse_atom_args<
@@ -336,7 +373,7 @@ tyvi::actions::sexpr
                  runko::opt_arg<long>>(args) |
                te::let_value(&runko::prtcl_snapshot);
       } }),
-    ta::cons(
+    timed_procedure(
       runko::symbol::spectra_snapshot,
       ta::procedure { [](const ta::sexpr& args) -> ta::sexpr_sender {
         return parse_atom_args<
@@ -346,7 +383,7 @@ tyvi::actions::sexpr
                te::let_value(&runko::spectra_snapshot);
       } }),
     ta::cons(runko::symbol::current_context, std::ref(sim)),
-    ta::cons(
+    timed_procedure(
       runko::symbol::comm_local,
       ta::procedure { [](const ta::sexpr& args) -> ta::sexpr_sender {
         return parse_atom_args<
@@ -354,7 +391,7 @@ tyvi::actions::sexpr
                  runko::comm_mode>(args) |
                te::let_value(&runko::comm_local);
       } }),
-    ta::cons(
+    timed_procedure(
       runko::symbol::comm_external,
       ta::procedure { [](const ta::sexpr& args) -> ta::sexpr_sender {
         return parse_atom_args<
@@ -362,6 +399,7 @@ tyvi::actions::sexpr
                  runko::comm_mode>(args) |
                te::let_value(&runko::comm_external);
       } }));
+
 
   return std::visit(ta::list_append, env, runko::build_std_env());
 }

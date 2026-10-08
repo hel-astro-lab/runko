@@ -65,6 +65,7 @@ class Simulation:
         self._io_config = kwargs['io_config']
 
         self._lap_timers = []
+        self._lap_sim_context_times = []
         self._lap_wall_times = []
         self._lap_finish_times = []
 
@@ -91,7 +92,7 @@ class Simulation:
             pathlib.Path(self._io_config[name]).unlink(missing_ok=True)
 
 
-        self._trace_file = pathlib.Path(f"{self._io_config['outdir']}/traces/{self._rank}.json")
+        self._trace_dir = pathlib.Path(f"{self._io_config['outdir']}/traces/")
 
         ctor_msg = "Simulation constructed with:\n"
         ctor_msg += f"\tNt = {kwargs['Nt']}\n"
@@ -255,10 +256,16 @@ class Simulation:
         lap_function(MethodWrapper(action, **pre_post))
 
         lap_wall_time_end = time.time()
+
+        # Even if these are not used, we do this every time,
+        # because it will remove them from the simulation context.
+        keys, durs, metadata = self._simulation_context.get_timer_data()
         if not disable_timing:
             self._lap_timers.append(lap_timer)
             self._lap_wall_times.append(lap_wall_time_end - lap_wall_time_begin)
             self._lap_finish_times.append(lap_wall_time_end)
+            tmp = map(lambda x: (x[0], (x[1], x[2])), zip(keys, durs, metadata))
+            self._lap_sim_context_times.append(dict(tmp))
 
 
     def prelude(self, lap_function):
@@ -301,6 +308,7 @@ class Simulation:
 
     def reset_timers(self):
         self._lap_timers = []
+        self._lap_sim_context_times = []
         self._lap_wall_times = []
         self._prev_elapsed_wall_time = self._total_interval_time
 
@@ -380,7 +388,7 @@ class Simulation:
 
         for timer in timers:
             for name, measurement in timer.time_measurements.items():
-                cat, _ = name.split("_", 1)
+                cat = name.split("_", 1)[0]
 
                 obj["traceEvents"].append({
                     "name": name,
@@ -414,8 +422,8 @@ class Simulation:
                 "dur": 1e6 * (t.end - t.begin),
             })
 
-        self._trace_file.parent.mkdir(exist_ok=True, parents=True)
-        with open(self._trace_file, "w") as f:
+        self._trace_dir.mkdir(exist_ok=True, parents=True)
+        with open(self._trace_dir / f"{self._rank}.json", "w") as f:
             json.dump(obj, f)
 
         if not combine:
@@ -433,6 +441,40 @@ class Simulation:
 
             with open(f"{self._io_config['outdir']}/traces/combined.json", "w") as f:
                 json.dump(combined, f)
+
+
+    def write_trace_csv(self):
+        """
+        Writes trace data of each process into `<outdir>/traces/<mpi-rank>.csv`
+        which can be viewed with qttl [0].
+        Configuration parameter `laps_in_timer_statistics` defines number of latest laps
+        from which the data is written. If it is not given, data from all laps is written.
+
+        Difference to `Simulation.write_trace_json` is that the times are from C++
+        and not from the method wrapper in `Simulation._execute_lap_function`.
+        Because times from C++ can arbitrarily overlap it is difficult to produce
+        json in Trace Event Fromat [1] and thus we use the more simple qttl.
+
+        [0]: https://pypi.org/project/qttl/
+        [1]: https://docs.google.com/document/d/1CvAClvFfyA5R-PhYUmn5OOQtYMH4h6I0nSsKchNAySU
+        """
+
+        n_latests = self._io_config["laps_in_timer_statistics"]
+        begin = -n_latests if n_latests else 0
+        sim_context_times = self._lap_sim_context_times[begin:]
+        lap_finish_times = self._lap_finish_times[begin:]
+
+        import csv
+        data = [["name","row-tag","start","stop","text"]]
+        for times_for_one_lap in sim_context_times:
+            for name, (measurement, metadata) in times_for_one_lap.items():
+                data.append([name, self._rank, int(measurement.begin), int(measurement.end), metadata])
+
+        for t in lap_finish_times:
+            data.append(["lap finish", self._rank, int(t * 1e6), int(t * 1e6), ""])
+
+        with open(self._trace_dir / f"{self._rank}.csv", "w", newline='') as csvfile:
+            csv.writer(csvfile).writerows(data)
 
 
     def pickle_timer_statistics(self):
