@@ -11,7 +11,7 @@ endif()
 set(CMAKE_CXX_EXTENSIONS OFF)
 project(
     runko
-    VERSION 5.0.0
+    VERSION 5.1.0
     DESCRIPTION "Modern C++/python CPU/GPU plasma toolbox."
     HOMEPAGE_URL "https://github.com/hel-astro-lab"
     LANGUAGES CXX

@@ -49,6 +49,7 @@ set (RUNKO_CPP_BINDINGS_FILES
 
 
 add_library(runko_cpp_bindings MODULE)
+target_compile_definitions(runko_cpp_bindings PRIVATE RUNKO_VERSION="${CMAKE_PROJECT_VERSION}")
 target_sources(runko_cpp_bindings PRIVATE ${RUNKO_CPP_BINDINGS_FILES})
 target_link_libraries(runko_cpp_bindings PRIVATE pybind11::module)
 

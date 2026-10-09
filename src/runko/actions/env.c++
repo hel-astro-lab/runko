@@ -3,6 +3,7 @@
 
 #include "runko/actions/env.h"
 
+#include "runko/config.h"
 #include "tyvi/actions.h"
 #include "tyvi/execution.h"
 
@@ -52,7 +53,7 @@ tyvi::actions::sexpr
            });
   };
 
-  auto version = ta::atom(std::string { "runko v6.x" });
+  auto version = ta::atom(std::string { runko::version });
 
   auto sequence = [](const ta::sexpr &args, ta::procedure eval) -> ta::sexpr_sender {
     return te::just(args) | te::then([eval = std::move(eval)](auto &&x) {
