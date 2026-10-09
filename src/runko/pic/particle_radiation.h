@@ -69,7 +69,7 @@ inline void
   [[maybe_unused]] const vt gt23 = static_cast<vt>(std::pow(params.gamma_t, 2.0 / 3.0));
   [[maybe_unused]] const vt cM   = static_cast<vt>(
     1.8899 * std::cbrt(std::numbers::pi / 4.0) * std::pow(std::max(theta_d, 1e-30), -2.0 / 3.0));
-  [[maybe_unused]] constexpr vt eps = vt { 1e-12 };  // guards divisions by 0
+  [[maybe_unused]] constexpr vt eps = static_cast<vt>(1e-12);  // guards divisions by 0
 
   tyvi::mdgrid_work {}
     .for_each_index(
