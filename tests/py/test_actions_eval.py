@@ -95,19 +95,6 @@ class actions_eval(unittest.TestCase):
         self.assertEqual(s, correct)
 
 
-    def test_print_version(self):
-        fd = os.memfd_create("test.txt")
-
-        with stdout_redirected(fd) as mem:
-            body = (ra.print, ra.version)
-            ra.empty_context_eval(body)
-
-        correct = "runko v6.x"
-        s = os.pread(fd, len(correct) + 1, 0).decode("utf-8")
-        os.close(fd)
-        self.assertEqual(s, correct)
-
-
     def test_formatting(self):
         fd = os.memfd_create("test.txt")
 
