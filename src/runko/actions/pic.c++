@@ -21,34 +21,28 @@ namespace pic {
 namespace ta = tyvi::actions;
 namespace te = tyvi::exec;
 
-class [[nodiscard]] particle_id_generator {
-  std::vector<std::size_t> ordinals_;
-  runko::prtc_id_type tag_;
+constexpr particle_id_generator::particle_id_generator(const runko::prtc_id_type tag) :
+  tag_ { tag }
+{
+  if(tag >= 2uz << 24uz) {
+    throw std::runtime_error {
+      "particle_id_generator requires tag to be less than 2^24."
+    };
+  }
+}
 
-public:
-  explicit constexpr particle_id_generator(const runko::prtc_id_type tag) : tag_ { tag }
-  {
-    if(tag >= 2uz << 24uz) {
-      throw std::runtime_error {
-        "particle_id_generator requires tag to be less than 2^24."
-      };
-    }
+constexpr runko::prtc_id_type
+  particle_id_generator::consume_next_id(const std::size_t ptype)
+{
+  if(this->ordinals_.size() <= ptype) { ordinals_.resize(ptype + 1uz); }
+  const auto ordinal = static_cast<runko::prtc_id_type>(this->ordinals_.at(ptype)++);
+
+  if(ordinal >= 2uz << 40uz) {
+    throw std::runtime_error { "PIC tile ran out of particle ids (2^40 per species)!" };
   }
 
-  [[nodiscard]] constexpr runko::prtc_id_type consume_next_id(const std::size_t ptype)
-  {
-    if(this->ordinals_.size() <= ptype) { ordinals_.resize(ptype + 1uz); }
-    const auto ordinal = static_cast<runko::prtc_id_type>(this->ordinals_.at(ptype)++);
-
-    if(ordinal >= 2uz << 40uz) {
-      throw std::runtime_error {
-        "PIC tile ran out of particle ids (2^40 per species)!"
-      };
-    }
-
-    return (this->tag_ << 40uz) | ordinal;
-  }
-};
+  return (this->tag_ << 40uz) | ordinal;
+}
 
 void
   ensure_constructed_particle_containers(runko::simulation_context& sim)
@@ -512,12 +506,11 @@ void
     });
   const auto cfl = sim.config.template get_or_throw<double>("cfl");
 
-  for(auto&& [tile_id, yee, particles, idx, id_gen]: sim.template view_tiles<
-                                                     emf::YeeLattice,
-                                                     pic::particle_containers,
-                                                     const runko::cartesian_index<3>,
-                                                     pic::particle_id_generator,
-                                                     runko::local_tile_tag>()) {
+  for(auto&& [tile_id, yee, particles, idx]: sim.template view_tiles<
+                                             emf::YeeLattice,
+                                             pic::particle_containers,
+                                             const runko::cartesian_index<3>,
+                                             runko::local_tile_tag>()) {
     yee.clear_current();
 
     using yee_value_type = emf::YeeLattice::value_type;

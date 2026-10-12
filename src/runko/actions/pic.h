@@ -16,6 +16,17 @@ namespace pic {
 
 using particle_containers = std::map<std::size_t, pic::ParticleContainer>;
 
+class [[nodiscard]] particle_id_generator {
+  std::vector<std::size_t> ordinals_;
+  runko::prtc_id_type tag_;
+
+public:
+  explicit constexpr particle_id_generator(const runko::prtc_id_type tag);
+
+  [[nodiscard]] constexpr runko::prtc_id_type consume_next_id(const std::size_t ptype);
+};
+
+
 /// Constructs ParticleContainers to each local tile if they are not.
 void ensure_constructed_particle_containers(runko::simulation_context&);
 
