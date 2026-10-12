@@ -147,6 +147,15 @@ void
 
     if(const auto p = other_sim.tiles.try_get<pic::particle_containers>(other_id)) {
       sim.tiles.emplace<pic::particle_containers>(id, std::move(*p));
+
+      if(const auto q = other_sim.tiles.try_get<pic::particle_id_generator>(other_id)) {
+        sim.tiles.emplace<pic::particle_id_generator>(id, std::move(*q));
+      } else {
+        throw std::logic_error {
+          "Trying to add tile which has particle containers but not a particle id "
+          "generator."
+        };
+      }
     }
   }
 }
