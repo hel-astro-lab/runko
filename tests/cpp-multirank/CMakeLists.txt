@@ -30,6 +30,11 @@ function(add_cpp_mpi_test name no_mpi_proc)
     add_test(NAME "cpp-multirank-${name}" COMMAND
         ${MPIEXEC} --bind-to none ${MPIEXEC_NUMPROC_FLAG} ${no_mpi_proc} "${name}.test"
     )
+
+    set_property(TEST "cpp-multirank-${name}"
+        PROPERTY ENVIRONMENT
+        "PIKA_COMMANDLINE_OPTIONS=--pika:threads=2"
+    )
 endfunction(add_cpp_mpi_test)
 
 add_cpp_mpi_test(testing_setup 2)

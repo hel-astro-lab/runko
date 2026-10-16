@@ -6,7 +6,9 @@ function(add_python_test name)
         ${Python_EXECUTABLE} "${CMAKE_CURRENT_SOURCE_DIR}/test_${name}.py"
     )
     set_property(TEST py-${name}
-        PROPERTY ENVIRONMENT PYTHONPATH=${CMAKE_BINARY_DIR}/src:${PROJECT_SOURCE_DIR}
+        PROPERTY ENVIRONMENT
+        "PYTHONPATH=${CMAKE_BINARY_DIR}/src:${PROJECT_SOURCE_DIR}"
+        "PIKA_COMMANDLINE_OPTIONS=--pika:threads=2"
     )
 endfunction(add_python_test)
 
