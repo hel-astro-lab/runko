@@ -78,6 +78,7 @@ target_link_libraries(runko_dependencies
     INTERFACE
     tyvi
     EnTT::EnTT
+    MPI::MPI_CXX
 )
 target_include_directories(runko_dependencies
     SYSTEM INTERFACE
