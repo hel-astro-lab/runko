@@ -8,7 +8,7 @@ function(add_cpp_mpi_test name no_mpi_proc)
           "test_${name}.c++"
           PROPERTIES
           LANGUAGE HIP
-          HIP_STANDARD 26
+          HIP_STANDARD 23
         )
     endif()
 

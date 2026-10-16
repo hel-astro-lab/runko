@@ -33,6 +33,6 @@ set_property(TEST cpp-unit_test_cli PROPERTY PASS_REGULAR_EXPRESSION "help")
 # Setup HIP for tests.
 if(${tyvi_BACKEND} STREQUAL "hip")
     foreach(test ${TESTS_TO_RUN})
-         set_source_files_properties("test_${test}.c++" PROPERTIES LANGUAGE HIP HIP_STANDARD 26)
+         set_source_files_properties("test_${test}.c++" PROPERTIES LANGUAGE HIP HIP_STANDARD 23)
     endforeach()
 endif()

@@ -75,7 +75,7 @@ if(${tyvi_BACKEND} STREQUAL "hip")
      foreach(file ${RUNKO_CPP_BINDINGS_FILES})
          set_source_files_properties("${file}" PROPERTIES LANGUAGE HIP)
      endforeach()
-     set_property(TARGET runko_cpp_bindings PROPERTY HIP_STANDARD 26)
+     set_property(TARGET runko_cpp_bindings PROPERTY HIP_STANDARD 23)
 endif()
 
 # Install runko_cpp_bindings.
