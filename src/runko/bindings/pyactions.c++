@@ -126,8 +126,8 @@ void
   for(const auto &tile: tiles) {
     const auto other_id =
       tile.attr("tile_id").cast<runko::simulation_context::tile_id_type>();
-    const auto &other_sim =
-      tile.attr("sim_context").cast<const runko::simulation_context &>();
+    auto other_sim_py = tile.attr("sim_context");
+    const auto &other_sim = other_sim_py.cast<const runko::simulation_context &>();
 
     using index_type   = runko::cartesian_index<3>;
     const auto idx_ptr = other_sim.tiles.try_get<index_type>(other_id);
