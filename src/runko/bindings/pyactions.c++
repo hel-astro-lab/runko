@@ -334,6 +334,35 @@ auto
   }
 }
 
+auto
+  debug_cartesian_grid_comm(const runko::simulation_context &sim)
+{
+  for(const auto [id, idx]:
+      sim.view_tiles<runko::cartesian_index<3>, runko::local_tile_tag>()) {
+    std::println("local tile at: {} {} {}", idx[0], idx[1], idx[2]);
+  }
+
+  for(const auto [id, idx, virt]:
+      sim.view_tiles<runko::cartesian_index<3>, runko::virtual_tile_tag>()) {
+    std::println(
+      "virtual tile at (rank: {}, tag: {}): {} {} {}",
+      virt.source_info.rank,
+      virt.source_info.tag,
+      idx[0],
+      idx[1],
+      idx[2]);
+  }
+
+  for(const auto [id, idx, boundary]:
+      sim.view_tiles<runko::cartesian_index<3>, runko::boundary_tile_tag>()) {
+    std::println("boundary tile at: {} {} {}", idx[0], idx[1], idx[2]);
+
+    for(const auto &x: boundary.dest_infos) {
+      std::println("rank: {}, tag: {}", x.rank, x.tag);
+    }
+  }
+}
+
 }  // namespace
 
 
@@ -501,6 +530,7 @@ void
                             std::vector(v.begin(), v.end()),
                             std::move(metadata) };
       })
+    .def("debug_cartesian_grid_comm", &debug_cartesian_grid_comm)
     .def("debug_cartesian_grid", &debug_cartesian_grid);
 }
 }  // namespace actions
