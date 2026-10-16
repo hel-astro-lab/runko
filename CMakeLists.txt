@@ -70,6 +70,7 @@ add_subdirectory(external/entt)
 
 # Required for shared libraries.
 set_target_properties(tyvi PROPERTIES POSITION_INDEPENDENT_CODE TRUE)
+set_target_properties(fmt PROPERTIES POSITION_INDEPENDENT_CODE TRUE)
 
 # Wrap dependencies so that they can be marked SYSTEM libraries (suppresses warnings from them).
 add_library(runko_dependencies INTERFACE)
