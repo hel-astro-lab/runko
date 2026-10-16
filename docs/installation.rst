@@ -378,3 +378,53 @@ Now we can test if the installed package can be imported:
 .. code:: shell
 
    python -c 'import runko'
+
+
+Configuring the pika runtime
+----------------------------
+
+Runko schedules its work on the thread pool of the `pika <https://pikacpp.org/>`_ runtime,
+which is started when runko first needs it (e.g. when a simulation is created).
+Runko does not forward the command line arguments of the python script to pika,
+so ``python <file> --pika:threads=4`` does **not** work.
+Instead, pika options are given in the ``PIKA_COMMANDLINE_OPTIONS`` environment variable,
+which pika reads when the runtime starts.
+Multiple options are separated by spaces:
+
+.. code:: shell
+
+   export PIKA_COMMANDLINE_OPTIONS="--pika:threads=4 --pika:cores=4"
+   python <file>
+
+   # or only for a single run:
+
+   PIKA_COMMANDLINE_OPTIONS="--pika:threads=4" python <file>
+
+Commonly used options:
+
+``--pika:help``
+   Print all options that pika accepts and exit.
+   Useful for checking which options are available in the installed pika version:
+
+   .. code:: shell
+
+      PIKA_COMMANDLINE_OPTIONS="--pika:help" python <file>
+
+``--pika:threads=<N>``
+   Number of worker threads in pika's thread pool.
+   By default pika uses one worker thread per core available to the process.
+   Also accepts ``all`` (one thread per processing unit, i.e. including hyperthreads)
+   and ``cores`` (one thread per core).
+
+``--pika:cores=<N>``
+   Number of cores pika is allowed to use.
+   The worker threads are distributed over these cores.
+
+.. hint::
+
+   pika respects the CPU mask of the process, so with slurm the cores
+   pika uses are the ones assigned to the MPI rank (e.g. by ``--cpus-per-task``,
+   ``--cpus-per-gpu`` or ``--cpu-bind``).
+   When running multiple MPI ranks per node without such binding,
+   limit the number of threads per rank with ``--pika:threads``
+   so that the ranks do not oversubscribe the node.
