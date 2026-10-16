@@ -113,6 +113,7 @@ Common requirements (version numbers are the ones tested to work; newer versions
          module load buildtools 
          module load cray-python 
          module load lumi-CrayPath
+         module load Boost/1.90.0-cpeCray-25.09
 
       .. include:: installation-mpi4py.rst
 
