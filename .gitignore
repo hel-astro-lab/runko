@@ -60,6 +60,7 @@ out/
 
 lib/*
 runko-venv/
+venv/
 venvs/
 build/*
 projects/ffe/*ini
