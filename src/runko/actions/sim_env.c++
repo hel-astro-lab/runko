@@ -76,10 +76,10 @@ tyvi::actions::sexpr
   // is not a performance killer even if we have to do some extra copies.
   const auto env = ta::list(
     timed_procedure(
-      runko::symbol::set_cartesian_neighbors,
+      runko::symbol::set_periodic_cartesian_neighbors,
       ta::procedure { [](const ta::sexpr& args) -> ta::sexpr_sender {
         return parse_atom_args<std::reference_wrapper<simulation_context>>(args) |
-               te::then(&runko::set_cartesian_neighbors<3>) |
+               te::then(&runko::set_periodic_cartesian_neighbors<3>) |
                te::then([] { return ta::null; });
       } }),
     timed_procedure(

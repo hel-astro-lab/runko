@@ -388,7 +388,9 @@ void
     .value("emf_snapshot", runko::symbol::emf_snapshot)
     .value("prtcl_snapshot", runko::symbol::prtcl_snapshot)
     .value("spectra_snapshot", runko::symbol::spectra_snapshot)
-    .value("set_cartesian_neighbors", runko::symbol::set_cartesian_neighbors)
+    .value(
+      "set_periodic_cartesian_neighbors",
+      runko::symbol::set_periodic_cartesian_neighbors)
     .value("set_cartesian_comm_infos", runko::symbol::set_cartesian_comm_infos)
     .value("sequence", runko::symbol::sequence)
     .value("parallel", runko::symbol::parallel)

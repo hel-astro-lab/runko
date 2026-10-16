@@ -312,7 +312,7 @@ Modifying the *values* of the components a view yields is always fine.
 Structural changes to pools that the view iterates over, including excluded types, are not.
 Either collect ids first, as ``ensure_constructed_yee_lattices`` does,
 or make sure the type added is unrelated to the view.
-``set_cartesian_neighbors`` adds ``boundary_tile_tag`` while iterating over
+``set_periodic_cartesian_neighbors`` adds ``boundary_tile_tag`` while iterating over
 ``cartesian_index<3>`` and ``local_tile_tag``, which is fine because the tag is not part of that view.
 
 Also do not keep references or pointers to components across code

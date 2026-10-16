@@ -49,7 +49,7 @@ class Simulation:
 
         self._simulation_context.add_tiles(initial_tiles)
 
-        set_neighs = (actions.set_cartesian_neighbors, actions.current_context)
+        set_neighs = (actions.set_periodic_cartesian_neighbors, actions.current_context)
         set_comm_infos = (actions.set_cartesian_comm_infos, actions.current_context)
 
         self._simulation_context.eval((actions.sequence,

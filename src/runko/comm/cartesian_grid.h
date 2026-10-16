@@ -86,8 +86,12 @@ auto wrap_cartesian_index(
 /// Adds boundary_tile_tags for the boundary tiles.
 /// However, boundary_tile_tag::dest_infos and virtual_tile_tag::source_rank
 /// are left uninitialized.
+///
+/// Periodic means that if n_tiles[i] is N, then tiles with i:th indices 0
+/// and n_tiles[i] - 1 are neighbors. If they are on the same rank,
+/// no virtual tile is needed.
 template<std::size_t rank>
-void set_cartesian_neighbors(simulation_context&);
+void set_periodic_cartesian_neighbors(simulation_context&);
 
 /// Computes cartesian tile rank info.
 ///
@@ -123,53 +127,54 @@ auto
 
 template<std::size_t rank>
 void
-  set_cartesian_neighbors(simulation_context& sim)
+  set_periodic_cartesian_neighbors(simulation_context& sim)
 {
 
   using index_type = runko::cartesian_index<rank>;
   using id_type    = decltype(sim.tiles)::entity_type;
-
-  auto index_to_id = std::map<index_type, id_type> {};
-  // Virtual tiles to be constructed.
-  auto required = std::set<index_type> {};
 
   namespace rn = std::ranges;
   namespace rv = std::views;
 
   const auto n_tiles = toolbox::get_extent_list(sim.config, "n_tiles", rank);
 
-  for(const auto& [id, index]: sim.view_tiles<const index_type>()) {
-    index_to_id[index] = id;
-  }
-
-  for(const auto& [_, index]: sim.view_tiles<const index_type, local_tile_tag>()) {
+  auto local_tile_index_to_id = std::map<index_type, id_type> {};
+  auto required = std::set<index_type> {};  // Tiles required for communication.
+  for(const auto& [id, index]: sim.view_tiles<const index_type, local_tile_tag>()) {
+    local_tile_index_to_id[index] = id;
     for(const auto& x: moore_neighs(index)) { std::ignore = required.insert(x); }
   }
 
-  auto to_be_constructed =
-    required | rv::filter([&](const auto& x) { return not index_to_id.contains(x); });
-  for(const auto& x: to_be_constructed) {
-    const auto id  = sim.tiles.create();
-    index_to_id[x] = id;
+  auto vtiles_to_be_constructed =
+    required | rv::filter([&](const auto& x) {
+      // Note that we don't need virtual tiles to communicate with other local tiles.
+      return not local_tile_index_to_id.contains(wrap_cartesian_index(x, n_tiles));
+    });
+
+  auto vtile_index_to_id = std::map<index_type, id_type> {};
+  for(const auto& x: vtiles_to_be_constructed) {
+    const auto id = sim.tiles.create();
     sim.tiles.emplace<virtual_tile_tag>(id);
     sim.tiles.emplace<index_type>(id, x);
+    vtile_index_to_id[x] = id;
   }
 
+  // Add cartesian neighbors to local tiles.
   for(const auto& [id, index]: sim.view_tiles<const index_type, local_tile_tag>()) {
     auto& neighbors =
       sim.tiles.emplace_or_replace<runko::cartesian_neighbors<rank>>(id);
-    for(const auto& [x, dir]: moore_neighs_n_dirs(index)) {
-      const auto neigh_id = index_to_id.at(x);
-      neighbors.set(dir, neigh_id);
 
-      const auto neigh_is_virtual =
-        nullptr != sim.tiles.try_get<virtual_tile_tag>(neigh_id);
-      if(neigh_is_virtual) {
+    for(const auto& [x, dir]: moore_neighs_n_dirs(index)) {
+      if(local_tile_index_to_id.contains(wrap_cartesian_index(x, n_tiles))) {
+        neighbors.set(dir, local_tile_index_to_id.at(wrap_cartesian_index(x, n_tiles)));
+      } else {
+        neighbors.set(dir, vtile_index_to_id.at(x));
         std::ignore = sim.tiles.emplace_or_replace<boundary_tile_tag>(id);
       }
     }
   }
 }
+
 template<std::size_t rank>
 auto
   wrap_cartesian_index(
@@ -331,10 +336,13 @@ void
   auto local_index_to_rank = std::map<index_type, int> {};
   {
     auto current_rank = 0;
-    for(const auto& [n, idx]: std::views::enumerate(local_indices)) {
+    // For some reason std::views::enumerate crashed clang.
+    for(auto n = 0uz; n < local_indices.size(); ++n) {
+      const auto idx = local_indices[n];
       if(
         current_rank + 1 < std::ranges::ssize(local_displs) and
-        n >= local_displs.at(static_cast<std::size_t>(current_rank + 1))) {
+        static_cast<std::ptrdiff_t>(n) >=
+          local_displs.at(static_cast<std::size_t>(current_rank + 1))) {
         current_rank += 1;
       }
       local_index_to_rank[idx] = current_rank;
@@ -345,10 +353,13 @@ void
   auto virt_index_n_rank = std::vector<std::pair<index_type, int>> {};
   {
     auto current_rank = 0;
-    for(const auto& [n, idx]: std::views::enumerate(virt_indices)) {
+    // For some reason std::views::enumerate crashed clang.
+    for(auto n = 0uz; n < virt_indices.size(); ++n) {
+      const auto idx = virt_indices[n];
       if(
         current_rank + 1 < std::ranges::ssize(virt_displs) and
-        n >= virt_displs.at(static_cast<std::size_t>(current_rank + 1))) {
+        static_cast<std::ptrdiff_t>(n) >=
+          virt_displs.at(static_cast<std::size_t>(current_rank + 1))) {
         current_rank += 1;
       }
       virt_index_n_rank.emplace_back(idx, current_rank);
