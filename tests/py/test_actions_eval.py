@@ -15,7 +15,7 @@ except ImportError:
 else:
     try:
         libc = ctypes.cdll.msvcrt # Windows
-    except OSError:
+    except Exception:
         libc = ctypes.cdll.LoadLibrary(find_library('c'))
 
 def flush(stream):
