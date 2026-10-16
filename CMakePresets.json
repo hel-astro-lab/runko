@@ -95,10 +95,8 @@
                 "tyvi_ENABLE_CLANG_TIDY": "OFF",
                 "tyvi_ENABLE_CPPCHECK": "OFF",
                 "CMAKE_CXX_COMPILER": "CC",
-                "tyvi_BACKEND": "hip",
-                "OpenMP_CXX_FLAGS": "-fopenmp",
-                "OpenMP_CXX_LIB_NAMES": "",
-                "CMAKE_HIP_FLAGS": "-O3"
+                "CMAKE_HIP_COMPILER": "CC",
+                "tyvi_BACKEND": "hip"
             }
         },
         {
