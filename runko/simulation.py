@@ -473,6 +473,7 @@ class Simulation:
         for t in lap_finish_times:
             data.append(["lap finish", self._rank, int(t * 1e6), int(t * 1e6), ""])
 
+        self._trace_dir.mkdir(exist_ok=True, parents=True)
         with open(self._trace_dir / f"{self._rank}.csv", "w", newline='') as csvfile:
             csv.writer(csvfile).writerows(data)
 
