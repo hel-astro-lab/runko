@@ -11,6 +11,7 @@ import runko_cpp_bindings.actions as actions
 import json
 import logging
 import pickle
+import copy
 import time
 import numpy as np
 import pathlib
@@ -43,7 +44,10 @@ class Simulation:
         if prevent_user_init != Simulation._im_not_user:
             raise RuntimeError("Don't instantiate this class directly!")
 
-        self._config = kwargs["config"]
+        self._config = copy.deepcopy(kwargs["config"])
+        self._io_config = kwargs['io_config']
+        self._config.io_outdir = self._io_config["outdir"]
+
         self._runtime_instance = actions.RuntimeInstance()
         self._simulation_context = actions.SimulationContext(self._config)
 
@@ -61,8 +65,6 @@ class Simulation:
         self._last_lap = kwargs['Nt']
         self._prev_elapsed_wall_time = 0
         self._total_interval_time = 0
-
-        self._io_config = kwargs['io_config']
 
         self._lap_timers = []
         self._lap_sim_context_times = []
