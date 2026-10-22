@@ -13,6 +13,7 @@
 #include "runko/comm/local.h"
 #include "runko/communication_common.h"
 #include "runko/io/snapshot.h"
+#include "runko/io/tile_dump.h"
 #include "runko/pic/reflector_wall.h"
 #include "runko/tools/magic_enum/magic_enum.hpp"
 #include "tyvi/actions_ast.h"
@@ -67,7 +68,7 @@ tyvi::actions::sexpr
 
                    return std::forward<decltype(s)>(s);
                  });
-          } });
+        } });
   };
 
   // Due to hipcc compiler bug, env not be non-const.
@@ -383,6 +384,12 @@ tyvi::actions::sexpr
                te::let_value(&runko::spectra_snapshot);
       } }),
     ta::cons(runko::symbol::current_context, std::ref(sim)),
+    timed_procedure(
+      runko::symbol::dump_emf,
+      ta::procedure { [](const ta::sexpr& args) -> ta::sexpr_sender {
+        return parse_atom_args<std::reference_wrapper<simulation_context>>(args) |
+               te::let_value(&runko::dump_emf);
+      } }),
     timed_procedure(
       runko::symbol::comm_local,
       ta::procedure { [](const ta::sexpr& args) -> ta::sexpr_sender {

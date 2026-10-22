@@ -43,6 +43,7 @@ enum class symbol : std::uint8_t {
   register_reflector_wall,
   reflect_particles,
   advance_reflector_walls,
+  dump_emf,
   emf_snapshot,
   prtcl_snapshot,
   spectra_snapshot,

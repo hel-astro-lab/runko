@@ -423,6 +423,7 @@ void
     .value("set_cartesian_comm_infos", runko::symbol::set_cartesian_comm_infos)
     .value("sequence", runko::symbol::sequence)
     .value("parallel", runko::symbol::parallel)
+    .value("dump_emf", runko::symbol::dump_emf)
     .export_values();
 
   m_sub.def("empty_context_eval", &::empty_context_eval);
