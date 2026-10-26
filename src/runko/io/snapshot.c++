@@ -184,25 +184,6 @@ struct emf_snapshot_params {
   }
 };
 
-/// Output directory from argument or from config (io_outdir).
-std::string
-  resolve_outdir(
-    const toolbox::ConfigParser& config,
-    const std::optional<std::string>& outdir)
-{
-  if(outdir) { return outdir.value(); }
-
-  const auto x = config.get<std::string>("io_outdir");
-  if(not x or x.value().empty()) { return "runko_output"; }
-  if(x.value() == "auto") {
-    throw std::runtime_error {
-      "snapshot: io_outdir = \"auto\" can not be resolved, pass the output "
-      "directory explicitly."
-    };
-  }
-  return x.value();
-}
-
 /// Pack tile field data into tile_buf using for_each_index kernels.
 ///
 /// Stride subsampling for E and B, volume-sum for J
