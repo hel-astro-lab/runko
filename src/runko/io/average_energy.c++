@@ -180,7 +180,10 @@ tyvi::actions::sexpr_sender
     const long lap,
     std::optional<std::string> outdir_arg)
 {
-  static constexpr auto filename = std::string_view { "average_kinetic_energy.txt" };
+
+  // g++-15 gives false positive about this being unused.
+  [[maybe_unused]] static constexpr auto filename =
+    std::string_view { "average_kinetic_energy.txt" };
 
   // Number of species has to be same on every rank for the reductions,
   // so it is taken from the config instead of the particle containers.
