@@ -417,6 +417,9 @@ void
     .value("emf_snapshot", runko::symbol::emf_snapshot)
     .value("prtcl_snapshot", runko::symbol::prtcl_snapshot)
     .value("spectra_snapshot", runko::symbol::spectra_snapshot)
+    .value("average_B_energy_density", runko::symbol::average_B_energy_density)
+    .value("average_E_energy_density", runko::symbol::average_E_energy_density)
+    .value("average_kinetic_energy", runko::symbol::average_kinetic_energy)
     .value(
       "set_periodic_cartesian_neighbors",
       runko::symbol::set_periodic_cartesian_neighbors)

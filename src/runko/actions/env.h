@@ -46,6 +46,9 @@ enum class symbol : std::uint8_t {
   emf_snapshot,
   prtcl_snapshot,
   spectra_snapshot,
+  average_B_energy_density,
+  average_E_energy_density,
+  average_kinetic_energy,
   set_periodic_cartesian_neighbors,
   set_cartesian_comm_infos
 };

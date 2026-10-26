@@ -14,6 +14,7 @@ endfunction(add_python_test)
 
 add_python_test(auto_outdir)
 add_python_test(auto_tile_grid)
+add_python_test(average_energy)
 add_python_test(configuration)
 add_python_test(emf_antenna)
 add_python_test(emf_antenna_time_evolution)

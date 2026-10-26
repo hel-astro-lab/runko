@@ -664,4 +664,4 @@ if __name__ == "__main__":
     pic_communication_with_empty_tiles()
     pic_conservation_of_ids()
     pic_wrap_positions()
-    # pic_kinetic_energy_reduction()
+    pic_kinetic_energy_reduction()

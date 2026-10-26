@@ -220,11 +220,11 @@ class Simulation:
                     case "spectra_snapshot":
                         prog = (actions.spectra_snapshot, actions.current_context, self.lap)
                     case "average_kinetic_energy":
-                        raise NotImplementedError("no actions port")
+                        prog = (actions.average_kinetic_energy, actions.current_context, self.lap)
                     case "average_B_energy_density":
-                        raise NotImplementedError("no actions port")
+                        prog = (actions.average_B_energy_density, actions.current_context, self.lap)
                     case "average_E_energy_density":
-                        raise NotImplementedError("no actions port")
+                        prog = (actions.average_E_energy_density, actions.current_context, self.lap)
                     case "ram_usage":
                         self._write_ram_usage()
                     case _:

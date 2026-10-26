@@ -9,6 +9,7 @@
 #include "runko/comm/cartesian_grid.h"
 #include "runko/coords.h"
 #include "runko/emf/yee_lattice.h"
+#include "runko/io/fs_utils.h"
 #include "runko/mdgrid_common.h"
 #include "runko/particles_common.h"
 #include "runko/tools/config_parser.h"
@@ -847,7 +848,7 @@ tyvi::actions::sexpr_sender
              static_cast<std::size_t>(p.nzt),
              static_cast<std::size_t>(p.nyt),
              static_cast<std::size_t>(p.nxt));
-           const auto outdir = resolve_outdir(sim.config, outdir_arg);
+           const auto outdir = runko::resolve_outdir(sim.config, outdir_arg);
 
            const auto nf = p.num_fields();
 
@@ -1018,7 +1019,7 @@ tyvi::actions::sexpr_sender
              };
            }
 
-           const auto outdir = resolve_outdir(sim.config, outdir_arg);
+           const auto outdir = runko::resolve_outdir(sim.config, outdir_arg);
            std::filesystem::create_directories(outdir);
 
            const auto nspecies = count_species(sim.config);
@@ -1038,7 +1039,7 @@ tyvi::actions::sexpr_sender
 {
   return te::just() | te::then([&sim, lap, outdir_arg = std::move(outdir_arg)]() {
            const auto p      = spectra_snapshot_params::from_config(sim.config);
-           const auto outdir = resolve_outdir(sim.config, outdir_arg);
+           const auto outdir = runko::resolve_outdir(sim.config, outdir_arg);
            const auto nf     = p.num_fields();
 
            std::filesystem::create_directories(outdir);

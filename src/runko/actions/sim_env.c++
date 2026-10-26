@@ -12,6 +12,7 @@
 #include "runko/comm/external.h"
 #include "runko/comm/local.h"
 #include "runko/communication_common.h"
+#include "runko/io/average_energy.h"
 #include "runko/io/snapshot.h"
 #include "runko/pic/reflector_wall.h"
 #include "runko/tools/magic_enum/magic_enum.hpp"
@@ -381,6 +382,33 @@ tyvi::actions::sexpr
                  long,
                  runko::opt_arg<std::string>>(args) |
                te::let_value(&runko::spectra_snapshot);
+      } }),
+    timed_procedure(
+      runko::symbol::average_B_energy_density,
+      ta::procedure { [](const ta::sexpr& args) -> ta::sexpr_sender {
+        return parse_atom_args<
+                 std::reference_wrapper<runko::simulation_context>,
+                 long,
+                 runko::opt_arg<std::string>>(args) |
+               te::let_value(&runko::average_B_energy_density);
+      } }),
+    timed_procedure(
+      runko::symbol::average_E_energy_density,
+      ta::procedure { [](const ta::sexpr& args) -> ta::sexpr_sender {
+        return parse_atom_args<
+                 std::reference_wrapper<runko::simulation_context>,
+                 long,
+                 runko::opt_arg<std::string>>(args) |
+               te::let_value(&runko::average_E_energy_density);
+      } }),
+    timed_procedure(
+      runko::symbol::average_kinetic_energy,
+      ta::procedure { [](const ta::sexpr& args) -> ta::sexpr_sender {
+        return parse_atom_args<
+                 std::reference_wrapper<runko::simulation_context>,
+                 long,
+                 runko::opt_arg<std::string>>(args) |
+               te::let_value(&runko::average_kinetic_energy);
       } }),
     ta::cons(runko::symbol::current_context, std::ref(sim)),
     timed_procedure(
