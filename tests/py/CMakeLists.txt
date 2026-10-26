@@ -3,7 +3,7 @@
 
 function(add_python_test name)
     add_test(NAME py-${name} COMMAND
-        ${Python_EXECUTABLE} "${CMAKE_CURRENT_SOURCE_DIR}/test_${name}.py"
+        ${Python_EXECUTABLE} ${py_test_wrapper} "${CMAKE_CURRENT_SOURCE_DIR}/test_${name}.py"
     )
     set_property(TEST py-${name}
         PROPERTY ENVIRONMENT
