@@ -100,19 +100,7 @@ tyvi::actions::sexpr_sender
   namespace pmpi   = pika::mpi::experimental;
   using index_type = runko::cartesian_index<3>;
 
-  const auto number_of_ptypes = [&] {
-    for(auto i = 0uz; true; ++i) {
-      const auto q_label = std::format("q{}", i);
-      const auto m_label = std::format("m{}", i);
-
-      if(x.config.contains(q_label) and x.config.contains(m_label)) {
-        continue;
-      } else {
-        return i;
-      }
-    }
-  }();
-
+  const auto number_of_ptypes = runko::count_species(x.config);
 
   const auto comm = runko::make_communicator<runko::comm_mode::pic_particle>(x).comm;
   using value_type =
@@ -217,18 +205,7 @@ tyvi::actions::sexpr_sender
   namespace ta = tyvi::actions;
   namespace te = tyvi::exec;
 
-  const auto number_of_ptypes = [&] {
-    for(auto i = 0uz; true; ++i) {
-      const auto q_label = std::format("q{}", i);
-      const auto m_label = std::format("m{}", i);
-
-      if(x.config.contains(q_label) and x.config.contains(m_label)) {
-        continue;
-      } else {
-        return i;
-      }
-    }
-  }();
+  const auto number_of_ptypes = runko::count_species(x.config);
 
   auto prep_local_comm_buffs = [number_of_ptypes](
                                  const runko::simulation_context& sim,

@@ -134,17 +134,6 @@ auto
          });
 }
 
-/// Number of particle species in the config (q0/m0, q1/m1, ...).
-int
-  count_species(const toolbox::ConfigParser& config)
-{
-  auto nspecies = 0;
-  while(config.get<double>(std::format("q{}", nspecies)) and
-        config.get<double>(std::format("m{}", nspecies))) {
-    ++nspecies;
-  }
-  return nspecies;
-}
 
 /// Snapshot parameters parsed from the config.
 struct emf_snapshot_params {
@@ -169,7 +158,8 @@ struct emf_snapshot_params {
       };
     }
 
-    const auto nspecies = std::min(count_species(config), max_species);
+    const auto nspecies =
+      std::min(static_cast<int>(count_species(config)), max_species);
 
     auto p = emf_snapshot_params {};
 
@@ -705,7 +695,7 @@ struct spectra_snapshot_params {
     p.nbins    = checked_cast<int>(nbins);
     p.umin     = static_cast<float>(umin);
     p.umax     = static_cast<float>(umax);
-    p.nspecies = std::min(count_species(config), max_spectra_species);
+    p.nspecies = std::min(static_cast<int>(count_species(config)), max_spectra_species);
 
     p.nxt = std::max(1, p.NxMesh / p.stride);
     p.nx  = p.Nx * p.nxt;
@@ -1050,7 +1040,7 @@ tyvi::actions::sexpr_sender
            const auto outdir = resolve_outdir(sim.config, outdir_arg);
            std::filesystem::create_directories(outdir);
 
-           const auto nspecies = static_cast<std::size_t>(count_species(sim.config));
+           const auto nspecies = count_species(sim.config);
            for(auto s = 0uz; s < nspecies; ++s) {
              write_prtcl_species(sim, lap, s, n_prtcls.value(), outdir);
            }

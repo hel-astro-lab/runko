@@ -4,6 +4,7 @@
 #pragma once
 
 #include "pybind11/numpy.h"
+#include "runko/tools/config_parser.h"
 #include "runko/tools/vector.h"
 
 #include <array>
@@ -71,5 +72,9 @@ constexpr bool
 
 enum class FieldInterpolator { linear_1st, linear_1st_unrolled };
 enum class CurrentDepositer { zigzag_1st, zigzag_1st_atomic };
+
+
+/// Number of particle species in the config (q0/m0, q1/m1, ...).
+std::size_t count_species(const toolbox::ConfigParser&);
 
 }  // namespace runko
