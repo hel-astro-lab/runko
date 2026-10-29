@@ -268,11 +268,11 @@ void
 
   local_displs.front() = 0;
   for(auto i = 1uz; i < local_displs.size(); ++i) {
-    local_displs[i] = local_displs[i - 1uz] + local_tile_counts[i];
+    local_displs[i] = local_displs[i - 1uz] + local_tile_counts[i - 1uz];
   }
   virt_displs.front() = 0;
   for(auto i = 1uz; i < virt_displs.size(); ++i) {
-    virt_displs[i] = virt_displs[i - 1uz] + virt_tile_counts[i];
+    virt_displs[i] = virt_displs[i - 1uz] + virt_tile_counts[i - 1uz];
   }
 
   auto local_indices = std::vector<index_type>(
