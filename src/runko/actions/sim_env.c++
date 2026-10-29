@@ -227,7 +227,7 @@ tyvi::actions::sexpr
         return parse_atom_args<std::reference_wrapper<runko::simulation_context>>(
                  args) |
                te::then([](runko::simulation_context& sim) {
-                 sim.template get_config<emf::boundary_conditions>() =
+                 sim.template get_context_variable<emf::boundary_conditions>() =
                    emf::boundary_conditions {};
                  return ta::null;
                });

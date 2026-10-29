@@ -296,7 +296,7 @@ Look at ``emf::push_half_b``:
 .. code:: c++
 
    const auto cfl  = x.config.template get_or_throw<double>("cfl");                 // built
-   const auto prop = x.get_n_set_config<emf::FieldPropagator>(&parse_field_propagator);
+   const auto prop = x.get_n_set_context_variable<emf::FieldPropagator>(&parse_field_propagator);
 
    return te::just(std::ref(x)) | te::then([prop, cfl](runko::simulation_context& sim) {
             for(auto&& [_, yee]: sim.view_tiles<...>()) { /* ... */ }                  // executed

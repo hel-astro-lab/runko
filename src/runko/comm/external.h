@@ -38,7 +38,7 @@ runko::exclusive_communicator<mode>
 {
   magic_enum::enum_for_each<runko::comm_mode>([&sim](const auto m_constant) {
     static constexpr runko::comm_mode m = m_constant;
-    sim.set_config<runko::exclusive_communicator<m>>([](auto&&) {
+    sim.set_context_variable<runko::exclusive_communicator<m>>([](auto&&) {
       MPI_Comm comm;
       const auto ret = MPI_Comm_dup(MPI_COMM_WORLD, &comm);
       if(ret != MPI_SUCCESS) {
@@ -50,7 +50,7 @@ runko::exclusive_communicator<mode>
     });
   });
 
-  return sim.get_config<runko::exclusive_communicator<mode>>();
+  return sim.get_context_variable<runko::exclusive_communicator<mode>>();
 }
 
 }  // namespace runko

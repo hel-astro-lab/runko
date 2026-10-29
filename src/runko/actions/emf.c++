@@ -572,7 +572,7 @@ ta::sexpr_sender
 {
 
   const auto cfl  = x.config.template get_or_throw<double>("cfl");
-  const auto prop = x.get_n_set_config<emf::FieldPropagator>(&parse_field_propagator);
+  const auto prop = x.get_n_set_context_variable<emf::FieldPropagator>(&parse_field_propagator);
 
   using vt = emf::YeeLattice::value_type;
 
@@ -601,10 +601,10 @@ ta::sexpr_sender
 {
 
   const auto cfl  = x.config.template get_or_throw<double>("cfl");
-  const auto prop = x.get_n_set_config<emf::FieldPropagator>(&parse_field_propagator);
+  const auto prop = x.get_n_set_context_variable<emf::FieldPropagator>(&parse_field_propagator);
 
   if(prop == emf::FieldPropagator::stencil) {
-    std::ignore = x.set_config<emf::StencilCoeffs>(&parse_stencil_coeffs);
+    std::ignore = x.set_context_variable<emf::StencilCoeffs>(&parse_stencil_coeffs);
   }
 
   using vt = emf::YeeLattice::value_type;
@@ -619,7 +619,7 @@ ta::sexpr_sender
                case FieldPropagator::stencil:
                  yee.push_b_stencil(
                    static_cast<vt>(cfl / 2),
-                   sim.get_config<emf::StencilCoeffs>());
+                   sim.get_context_variable<emf::StencilCoeffs>());
                  break;
                default:
                  throw std::logic_error {
@@ -635,7 +635,7 @@ ta::sexpr_sender
 ta::sexpr_sender
   filter_current(runko::simulation_context& x)
 {
-  const auto filter = x.get_n_set_config<emf::CurrentFilter>(&parse_current_filter);
+  const auto filter = x.get_n_set_context_variable<emf::CurrentFilter>(&parse_current_filter);
 
   return te::just(std::ref(x)) | te::then([filter](runko::simulation_context& sim) {
            for(auto&& [_, yee]:
@@ -661,8 +661,8 @@ ta::sexpr_sender
 void
   register_edge_bc(runko::simulation_context& sim, const emf::edge_bc& bc)
 {
-  std::ignore = sim.set_config(emf::boundary_conditions {});
-  auto& bcs   = sim.get_config<emf::boundary_conditions>();
+  std::ignore = sim.set_context_variable(emf::boundary_conditions {});
+  auto& bcs   = sim.get_context_variable<emf::boundary_conditions>();
   bcs.edges.push_back(bc);
 }
 
@@ -716,8 +716,13 @@ ta::sexpr_sender
 ta::sexpr_sender
   apply_edge_bcs(runko::simulation_context& x, const runko::comm_mode y)
 {
-  if(not x.has_config<emf::boundary_conditions>()) { return te::just(ta::null); }
-  return te::just(std::ref(x), y, std::cref(x.get_config<emf::boundary_conditions>())) |
+  if(not x.has_context_variable<emf::boundary_conditions>()) {
+    return te::just(ta::null);
+  }
+  return te::just(
+           std::ref(x),
+           y,
+           std::cref(x.get_context_variable<emf::boundary_conditions>())) |
          te::then([](
                     runko::simulation_context& sim,
                     const auto mode,

@@ -311,7 +311,7 @@ void
 
   using yee_value_type = emf::YeeLattice::value_type;
   const auto particle_pushers =
-    sim.get_n_set_config<std::vector<runko::ParticlePusher>>([](auto&& conf) {
+    sim.get_n_set_context_variable<std::vector<runko::ParticlePusher>>([](auto&& conf) {
       auto string_to_pusher = [](const auto& p) {
         if(p == "boris") {
           return runko::ParticlePusher::boris;
@@ -345,10 +345,11 @@ void
     std::uint64_t counter { 0 };
   };
 
-  auto& rad_rng = sim.template get_n_set_config<rad_pusher_rng>([](auto&& conf) {
-    return rad_pusher_rng { static_cast<std::uint32_t>(
-      conf.template get<std::ptrdiff_t>("rng_seed").value_or(std::ptrdiff_t { 0 })) };
-  });
+  auto& rad_rng =
+    sim.template get_n_set_context_variable<rad_pusher_rng>([](auto&& conf) {
+      return rad_pusher_rng { static_cast<std::uint32_t>(
+        conf.template get<std::ptrdiff_t>("rng_seed").value_or(std::ptrdiff_t { 0 })) };
+    });
   ++rad_rng.counter;
 
   const auto rad_params = [&] {
@@ -377,7 +378,7 @@ void
   }();
 
   const auto field_interpolator =
-    sim.get_n_set_config<runko::FieldInterpolator>([](auto&& conf) {
+    sim.get_n_set_context_variable<runko::FieldInterpolator>([](auto&& conf) {
       const auto p = conf.template get_or_throw<std::string>("field_interpolator");
       if(p == "linear_1st") {
         return runko::FieldInterpolator::linear_1st;
@@ -493,7 +494,7 @@ void
   deposit_current(runko::simulation_context& sim)
 {
   const auto current_depositer =
-    sim.get_n_set_config<runko::CurrentDepositer>([](auto&& conf) {
+    sim.get_n_set_context_variable<runko::CurrentDepositer>([](auto&& conf) {
       const auto p = conf.template get_or_throw<std::string>("current_depositer");
       if(p == "zigzag" or p == "zigzag_1st") {
         return runko::CurrentDepositer::zigzag_1st;
@@ -612,7 +613,7 @@ void
     const pic::reflector_wall& wall)
 {
   sim
-    .get_n_set_config<pic::reflectors>(
+    .get_n_set_context_variable<pic::reflectors>(
       [](auto&&) { return pic::reflectors { .walls {} }; })
     .walls.push_back(wall);
 }
@@ -621,8 +622,8 @@ void
   reflect_particles(runko::simulation_context& sim)
 {
 
-  if(not sim.has_config<pic::reflectors>()) { return; }
-  auto& reflectors = sim.get_config<pic::reflectors>();
+  if(not sim.has_context_variable<pic::reflectors>()) { return; }
+  auto& reflectors = sim.get_context_variable<pic::reflectors>();
   if(reflectors.walls.empty()) { return; }
 
   const auto e = toolbox::get_extent_list(
@@ -677,8 +678,8 @@ void
   advance_reflector_walls(runko::simulation_context& sim)
 {
 
-  if(not sim.has_config<pic::reflectors>()) { return; }
-  auto& reflectors = sim.get_config<pic::reflectors>();
+  if(not sim.has_context_variable<pic::reflectors>()) { return; }
+  auto& reflectors = sim.get_context_variable<pic::reflectors>();
   if(reflectors.walls.empty()) { return; }
 
   const auto cfl = sim.config.template get_or_throw<double>("cfl");

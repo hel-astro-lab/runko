@@ -21,6 +21,7 @@ concept compatible_config_mapper =
   std::invocable<F, const toolbox::ConfigParser&> and
   std::convertible_to<std::invoke_result_t<F, const toolbox::ConfigParser&>, T>;
 
+/// Simulation context is made of immutable config and entt::registry of tiles.
 struct simulation_context {
   template<typename... Ts>
   std::ranges::view auto view_tiles();
@@ -29,39 +30,39 @@ struct simulation_context {
   std::ranges::view auto view_tiles() const;
 
   template<typename T>
-  bool has_config() const;
+  bool has_context_variable() const;
 
   /// Returns a reference to context variable T.
   ///
   /// Throws exception if the context variable does not exists.
   template<typename T>
-  T& get_config();
+  T& get_context_variable();
 
   /// Returns a reference to context variable T.
   ///
   /// Throws exception if the context variable does not exists.
   template<typename T>
-  const T& get_config() const;
+  const T& get_context_variable() const;
 
-  /// Set config parameter using given value.
+  /// Set context variable using given value.
   ///
-  /// If the config parameter has already been set, does nothing.
+  /// If the context variable has already been set, does nothing.
   /// Returns true if the parameter is set and false if it was already set.
   template<typename T>
-  bool set_config(T&&);
+  bool set_context_variable(T&&);
 
-  /// Set config parameter using given mapper.
+  /// Set context variable using given mapper.
   ///
-  /// If the config parameter has already been set, does nothing.
+  /// If the context variable has already been set, does nothing.
   /// Returns true if the parameter is set and false if it was already set.
   template<typename T, compatible_config_mapper<T> F>
-  bool set_config(F&&);
+  bool set_context_variable(F&&);
 
   /// Returns a reference to context variable T.
   ///
   /// If context variable does not exists, potentially set it using given mapper.
   template<typename T, compatible_config_mapper<T> F>
-  T& get_n_set_config(F&&);
+  T& get_n_set_context_variable(F&&);
 
   const toolbox::ConfigParser config;
   entt::registry tiles;
@@ -82,12 +83,12 @@ std::ranges::view auto
 
 template<typename T>
 bool
-  simulation_context::has_config() const
+  simulation_context::has_context_variable() const
 { return this->tiles.ctx().contains<T>(); }
 
 template<typename T>
 T&
-  simulation_context::get_config()
+  simulation_context::get_context_variable()
 {
   if(not this->tiles.ctx().contains<T>()) {
     throw std::runtime_error { std::format(
@@ -100,7 +101,7 @@ T&
 
 template<typename T>
 const T&
-  simulation_context::get_config() const
+  simulation_context::get_context_variable() const
 {
   if(not this->tiles.ctx().contains<T>()) {
     throw std::runtime_error { std::format(
@@ -113,7 +114,7 @@ const T&
 
 template<typename T>
 bool
-  simulation_context::set_config(T&& x)
+  simulation_context::set_context_variable(T&& x)
 {
   using U = std::remove_cvref_t<T>;
   if(this->tiles.ctx().contains<U>()) { return false; }
@@ -124,7 +125,7 @@ bool
 
 template<typename T, compatible_config_mapper<T> F>
 bool
-  simulation_context::set_config(F&& mapper)
+  simulation_context::set_context_variable(F&& mapper)
 {
   if(this->tiles.ctx().contains<T>()) { return false; }
   this->tiles.ctx().emplace<T>(std::invoke(std::forward<F>(mapper), this->config));
@@ -133,7 +134,7 @@ bool
 
 template<typename T, compatible_config_mapper<T> F>
 T&
-  simulation_context::get_n_set_config(F&& mapper)
+  simulation_context::get_n_set_context_variable(F&& mapper)
 {
   if(not this->tiles.ctx().contains<T>()) {
     this->tiles.ctx().emplace<T>(std::invoke(std::forward<F>(mapper), this->config));
