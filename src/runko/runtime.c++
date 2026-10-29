@@ -41,13 +41,24 @@ RuntimeInstance::impl::impl()
   if(not static_cast<bool>(mpi_flag)) {
     int provided {}, preferred = pika::mpi::experimental::get_preferred_thread_mode();
 
-    MPI_Init_thread(nullptr, nullptr, preferred, &provided);
+    const auto ok = MPI_Init_thread(nullptr, nullptr, preferred, &provided);
+    if(ok != MPI_SUCCESS) { throw std::runtime_error { "MPI_Init_thread failed!" }; }
+
     if(provided != preferred) {
       throw std::runtime_error {
         "Provided level of thread support in MPI is not as requested."
       };
     }
     this->initialized_mpi_ = true;
+  } else {
+    int val;
+    const auto ok = MPI_Query_thread(&val);
+    if(ok != MPI_SUCCESS) { throw std::runtime_error { "MPI_Query_thread failed!" }; }
+    if(val != pika::mpi::experimental::get_preferred_thread_mode()) {
+      throw std::runtime_error {
+        "Thread level of already initialized MPI Is not as pika requires."
+      };
+    }
   }
 
   if(pika::is_runtime_initialized()) {
