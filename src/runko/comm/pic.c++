@@ -16,7 +16,9 @@
 namespace pic {
 
 void
-  ensure_constructed_pic_comm_buffs(runko::simulation_context& sim)
+  ensure_constructed_pic_comm_buffs(
+    runko::simulation_context& sim,
+    const std::size_t number_of_ptypes)
 {
   namespace ta = tyvi::actions;
   namespace te = tyvi::exec;
@@ -26,12 +28,15 @@ void
   for(const auto& [id, _]:
       sim.tiles.view<runko::virtual_tile_tag>(entt::exclude<pic::external_comm_buffs>)
         .each()) {
-    sim.tiles.template emplace<pic::external_comm_buffs>(id);
+    sim.tiles.template emplace<pic::external_comm_buffs>(id)
+      .subregion_particle_ends.resize(number_of_ptypes * 27);
   }
+
   for(const auto& [id]:
       sim.tiles.view<runko::local_tile_tag>(entt::exclude<pic::external_comm_buffs>)
         .each()) {
-    sim.tiles.template emplace<pic::external_comm_buffs>(id);
+    sim.tiles.template emplace<pic::external_comm_buffs>(id)
+      .subregion_particle_ends.resize(number_of_ptypes * 27);
   }
 
   for(const auto& [id]:
@@ -54,7 +59,6 @@ void
   const auto y_div = std::array { mins[1], maxs[1] };
   const auto z_div = std::array { mins[2], maxs[2] };
 
-  comm_buffs.subregion_particle_ends.resize(27 * pcontainers.size());
   comm_buffs.subregion_particle_buff.resize(0);
 
   // ptypes are assumed always to be contiguous 0, 1, ..., N
@@ -100,27 +104,36 @@ tyvi::actions::sexpr_sender
   namespace pmpi   = pika::mpi::experimental;
   using index_type = runko::cartesian_index<3>;
 
-  const auto number_of_ptypes = runko::count_species(x.config);
-
   const auto comm = runko::make_communicator<runko::comm_mode::pic_particle>(x).comm;
   using value_type =
     decltype(pic::external_comm_buffs::subregion_particle_buff)::value_type;
 
-  auto virt_tiles = [comm, number_of_ptypes](runko::simulation_context& sim) {
-    auto senders = std::vector<te::unique_any_sender<>> {};
-    for(auto&& [id, idx, virt, comm_buffs]: sim.view_tiles<
-                                            const index_type,
-                                            const runko::virtual_tile_tag,
-                                            pic::external_comm_buffs>()) {
+  auto virt_tiles = [comm](
+                      runko::simulation_context& sim,
+                      const auto number_of_ptypes) {
+    /* Due to: https://github.com/MiroPalmu/HPE-bug-report/blob/main/HPE-bug-report.md
+       there has to be extra syncs. */
+    auto sendersA = std::vector<te::unique_any_sender<>> {};
+    auto sendersB = std::vector<te::unique_any_sender<>> {};
+    auto sendersC = std::vector<te::unique_any_sender<>> {};
+
+    for(auto&& [_, idx, virt, comm_buffs]: sim.view_tiles<
+                                           const index_type,
+                                           const runko::virtual_tile_tag,
+                                           pic::external_comm_buffs>()) {
 
       const auto rank = virt.source_info.rank;
       const auto tag  = virt.source_info.tag;
 
-      senders.push_back(
+      sendersA.push_back(
         te::schedule(te::thread_pool_scheduler {}) |
-        te::let_value([rank, tag, comm, number_of_ptypes, &comm_buffs, id] {
-          comm_buffs.subregion_particle_ends.resize(number_of_ptypes * 27);
-          std::ignore = id;
+        te::let_value([rank, tag, comm, &comm_buffs, number_of_ptypes] {
+          if(comm_buffs.subregion_particle_ends.size() != number_of_ptypes * 27) {
+            throw std::logic_error { std::format(
+              "comm_buffs.subregion_particle_ends.size() == {} and not assumed: {}",
+              comm_buffs.subregion_particle_ends.size(),
+              number_of_ptypes * 27) };
+          }
           return te::just(
                    reinterpret_cast<void*>(comm_buffs.subregion_particle_ends.data()),
                    runko::checked_cast<int>(comm_buffs.subregion_particle_ends.size()),
@@ -129,10 +142,16 @@ tyvi::actions::sexpr_sender
                    tag,
                    comm) |
                  pmpi::transform_mpi(MPI_Irecv);
-        }) |
-        te::let_value([rank, tag, comm, &comm_buffs] {
+        }));
+
+      sendersB.push_back(
+        te::schedule(te::thread_pool_scheduler {}) | te::then([&comm_buffs] {
           comm_buffs.subregion_particle_buff.resize(
             comm_buffs.subregion_particle_ends.back());
+        }));
+      sendersC.push_back(
+        te::schedule(te::thread_pool_scheduler {}) |
+        te::let_value([&comm_buffs, rank, tag, comm] {
           // This is a bit pendantic :)
           static_assert(CHAR_BIT == 8uz);
           return te::just(
@@ -147,7 +166,13 @@ tyvi::actions::sexpr_sender
                  pmpi::transform_mpi(MPI_Irecv);
         }));
     }
-    return te::when_all_vector(std::move(senders));
+
+    auto then = []<typename T>(std::vector<T>&& senders) {
+      return te::let_value(
+        [s = std::move(senders)] mutable { return te::when_all_vector(std::move(s)); });
+    };
+    return te::when_all_vector(std::move(sendersA)) | then(std::move(sendersB)) |
+           then(std::move(sendersC));
   };
 
   auto boundary_tiles = [comm](runko::simulation_context& sim) {
@@ -189,12 +214,17 @@ tyvi::actions::sexpr_sender
     }
     return te::when_all_vector(std::move(senders));
   };
+  const auto num_of_ptypes = runko::count_species(x.config);
 
   return te::just() |
-         te::then(std::bind_front(&ensure_constructed_pic_comm_buffs, std::ref(x))) |
+         te::then(
+           std::bind_front(
+             &ensure_constructed_pic_comm_buffs,
+             std::ref(x),
+             num_of_ptypes)) |
          te::let_value(std::bind_front(&pack_outgoing_particles, std::ref(x))) |
-         te::let_value([sim = std::ref(x), virt_tiles, boundary_tiles] {
-           return te::when_all(virt_tiles(sim), boundary_tiles(sim));
+         te::let_value([sim = std::ref(x), virt_tiles, boundary_tiles, num_of_ptypes] {
+           return te::when_all(virt_tiles(sim, num_of_ptypes), boundary_tiles(sim));
          }) |
          te::then([] { return tyvi::actions::null; });
 }
