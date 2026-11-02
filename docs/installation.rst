@@ -227,7 +227,7 @@ available presets are:
 
       .. code:: shell
 
-         pip install git+https://github.com/hel-astro-lab/runko --config-settings=cmake.args=--preset=hile-gpu
+         pip install git+https://github.com/hel-astro-lab/runko --config-settings=cmake.args=--preset=hile-gpu --config-settings=cmake.define.CMAKE_HIP_ARCHITECTURES=gfx90a
 
 
 
@@ -368,9 +368,11 @@ Running
 
          chmod +x ./select_gpu
 
-         export OMP_NUM_THREADS=8
          export MPICH_GPU_SUPPORT_ENABLED=1
-         export MPICH_GPU_IPC_ENABLED=0 # fixes p2p2 gpu communication
+
+         # This makes communication slow but otherwise triggers this:
+         # https://version.helsinki.fi/it-for-science/hpc/-/work_items/858
+         export MPICH_GPU_IPC_ENABLED=0
 
          srun ./select_gpu python <args>
          rm -rf ./select_gpu
