@@ -125,7 +125,8 @@ Common requirements (version numbers are the ones tested to work; newer versions
 
       .. code-block:: shell
 
-         module use /appl/hile/modules
+         module load LUMI/26.03
+         module load partition/G
          module load PrgEnv-cray
          module load rocm
          module load craype-accel-amd-gfx90a
@@ -133,6 +134,8 @@ Common requirements (version numbers are the ones tested to work; newer versions
          module load craype-network-ofi
          module load buildtools
          module load cray-python
+         module load lumi-CrayPath
+         module load Boost/1.90.0-cpeCray-26.03
 
       .. include:: installation-mpi4py.rst
 
