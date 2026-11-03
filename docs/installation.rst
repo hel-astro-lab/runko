@@ -390,6 +390,7 @@ Configuring the pika runtime
 
 Runko schedules its work on the thread pool of the `pika <https://pikacpp.org/>`_ runtime,
 which is started when runko first needs it (e.g. when a simulation is created).
+Pika is configured either through command line arguments (or environment variables).
 Runko does not forward the command line arguments of the python script to pika,
 so ``python <file> --pika:threads=4`` does **not** work.
 Instead, pika options are given in the ``PIKA_COMMANDLINE_OPTIONS`` environment variable,
@@ -429,7 +430,9 @@ Commonly used options:
 
    pika respects the CPU mask of the process, so with slurm the cores
    pika uses are the ones assigned to the MPI rank (e.g. by ``--cpus-per-task``,
-   ``--cpus-per-gpu`` or ``--cpu-bind``).
-   When running multiple MPI ranks per node without such binding,
-   limit the number of threads per rank with ``--pika:threads``
-   so that the ranks do not oversubscribe the node.
+   ``--cpus-per-gpu`` or ``--cpu-bind``). By default, pika launched one thread
+   per physical core. When running mostly serial simulations that do not yet
+   take full advantage of the pika runtime, the idle pika threads can degrade performance
+   because they constantly compete for new work. For mostly serial simulations,
+   it is recommended to limit the number of pika threads to 2 with ``--pika:threads=2``.
+
