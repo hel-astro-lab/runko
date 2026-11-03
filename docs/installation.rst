@@ -29,11 +29,12 @@ Common requirements (version numbers are the ones tested to work; newer versions
 - Python >=3.11.7
 - CMake >=3.23
 - MPI
+- header-only Boost >= 1.77.0
+
+Consult your system's package manager for these packages.
 
 .. tabs::
    .. group-tab:: hip backend
-
-      Consult your Linux distribution's package manager for these packages.
 
       - LLVM 19-based C++ compiler with HIP support (tested with GCC 14 libstdc++)
       - ROCm 6.3.4
