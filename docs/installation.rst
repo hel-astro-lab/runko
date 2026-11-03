@@ -4,14 +4,6 @@ Installation
 This section contains installation instructions for users of runko.
 See the developer notes for a development-friendly installation.
 
-Requirements
-============
-
-The software listed below is not obtained automatically and must be made available.
-Runko is built with CMake, which is also used to locate dependencies.
-Depending on the system configuration, CMake may or may not find the correct libraries automatically.
-See the CMake documentation for instructions on how to make CMake find the dependencies.
-
 .. note::
 
    Runko offically supports installations only to a python virtual environment.
@@ -24,14 +16,41 @@ See the CMake documentation for instructions on how to make CMake find the depen
 
    Virtual environment can be deactivated with ``deactivate`` command.
 
-Common requirements (version numbers are the ones tested to work; newer versions should also work):
 
-- Python >=3.11.7
-- CMake >=3.23
-- MPI
-- header-only Boost >= 1.77.0
+Requirements
+============
 
-Consult your system's package manager for these packages.
+The software listed below is not obtained automatically and must be made available.
+Runko is built with CMake, which is also used to locate dependencies.
+Depending on the system configuration, CMake may or may not find the correct libraries automatically.
+See the CMake documentation for instructions on how to make CMake find the dependencies.
+
+Common requirements:
+
+.. tabs::
+
+   .. tab:: Generic
+
+      Version numbers are the ones tested to work. Newer versions should also work.
+
+      - git
+      - MPI
+      - CMake >= 3.23
+      - Python with dev stuff >= 3.11.7
+      - (header-only) Boost >= 1.77.0
+
+      Consult package manager of your choise on how to install these.
+
+   .. tab:: Ubuntu 24.04
+
+      .. code:: shell
+
+         apt install cmake g++-14 libopenmpi-dev python3 python3-venv pip libpython3-all-dev git libboost-all-dev
+
+      For cpu backend, CMake might not use ``g++-14`` automatically and it needs to be specified explicitly as the C++ compiler.
+
+
+Backend specific requirements:
 
 .. tabs::
    .. group-tab:: hip backend
@@ -44,7 +63,7 @@ Consult your system's package manager for these packages.
 
    .. group-tab:: cpu backend
 
-      - C++26 compiler with OpenMP support (e.g. gcc)
+      - C++23 compiler with OpenMP support (e.g. g++-14)
 
       .. include:: installation-mpi4py.rst
 
@@ -163,10 +182,6 @@ available presets are:
       .. code:: shell
 
          pip install git+https://github.com/hel-astro-lab/runko --config-settings=cmake.args=--preset=unix-hip
-
-      .. note::
-
-         ``unix-hip`` will use ``hipcc`` as the compiler by default.
 
 
    .. group-tab:: cpu backend
