@@ -7,4 +7,8 @@
 
 namespace emf {
 static constexpr std::size_t halo_size = 3;
-}
+
+enum class FieldPropagator { fdtd2, stencil };
+enum class CurrentFilter { binomial2, binomial2_unrolled };
+
+}  // namespace emf

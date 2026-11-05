@@ -7,6 +7,7 @@
 // mid-step velocity (Tamburini+10 splitting). For rad_comp_heat / rad_sync_ssa a 
 // fluctuation-dissipation kick whose diffusion follows from the drift by the Einstein relation. 
 
+#include "runko/particles_common.h"
 #include "runko/pic/particle.h"
 #include "runko/tools/math.h"
 #include "runko/tools/rng.h"
@@ -18,7 +19,7 @@
 #include <cstdint>
 #include <numbers>
 
-template<pic::ParticlePusher rad>
+template<runko::ParticlePusher rad>
 inline void
   pic::ParticleContainer::push_particles_radiation(
     const double cfl_d,
@@ -28,7 +29,7 @@ inline void
     const std::uint32_t species,
     const std::uint32_t seed)
 {
-  using enum ParticlePusher;
+  using enum runko::ParticlePusher;
 
   using toolbox::cross;
   using toolbox::dot;

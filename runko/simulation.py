@@ -4,16 +4,14 @@
 from .method_wrapper import MethodWrapper
 from .runko_logging import runko_logger, on_main_rank
 from .runko_timer import Timer, timer_statistics
-
-from runko_cpp_bindings.tools import _virtual_tile_sync_handshake_mode, comm_mode
-from runko_cpp_bindings.emf.threeD import MpiioFieldsWriter as FieldsWriter, _write_average_B_energy_density, _write_average_E_energy_density
-from runko_cpp_bindings.emf.threeD import MpiioParticlesWriter as ParticlesWriter
-from runko_cpp_bindings.emf.threeD import MpiioSpectraWriter as SpectraWriter
-from runko_cpp_bindings.pic.threeD import _write_average_kinetic_energy
+from .configuration import Configuration
+from .tiles import ProxyTile
+import runko_cpp_bindings.actions as actions
 
 import json
 import logging
 import pickle
+import copy
 import time
 import numpy as np
 import pathlib
@@ -35,7 +33,7 @@ class Simulation:
 
     _im_not_user = 42
 
-    def __init__(self, tile_grid, prevent_user_init: int, **kwargs):
+    def __init__(self, initial_tiles, prevent_user_init: int, **kwargs):
         """
         Construct runko simulation from tile grid.
 
@@ -46,19 +44,30 @@ class Simulation:
         if prevent_user_init != Simulation._im_not_user:
             raise RuntimeError("Don't instantiate this class directly!")
 
-        self._tile_grid = tile_grid
+        self._config = copy.deepcopy(kwargs["config"])
+        self._io_config = kwargs['io_config']
+        self._config.io_outdir = self._io_config["outdir"]
+
+        self._runtime_instance = actions.RuntimeInstance()
+        self._simulation_context = actions.SimulationContext(self._config)
+
+        self._simulation_context.add_tiles(initial_tiles)
+
+        set_neighs = (actions.set_periodic_cartesian_neighbors, actions.current_context)
+        set_comm_infos = (actions.set_cartesian_comm_infos, actions.current_context)
+
+        self._simulation_context.eval((actions.sequence,
+                                       (actions.quote, set_neighs),
+                                       (actions.quote, set_comm_infos)))
+
         self._lap = 0
 
         self._last_lap = kwargs['Nt']
         self._prev_elapsed_wall_time = 0
         self._total_interval_time = 0
 
-        self._io_config = kwargs['io_config']
-        self._emf_writer = None
-        self._prtcl_writers = {}  # species -> ParticlesWriter, lazily constructed
-        self._spectra_writer = None
-
         self._lap_timers = []
+        self._lap_sim_context_times = []
         self._lap_wall_times = []
         self._lap_finish_times = []
 
@@ -85,7 +94,7 @@ class Simulation:
             pathlib.Path(self._io_config[name]).unlink(missing_ok=True)
 
 
-        self._trace_file = pathlib.Path(f"{self._io_config['outdir']}/traces/{self._rank}.json")
+        self._trace_dir = pathlib.Path(f"{self._io_config['outdir']}/traces/")
 
         ctor_msg = "Simulation constructed with:\n"
         ctor_msg += f"\tNt = {kwargs['Nt']}\n"
@@ -93,66 +102,12 @@ class Simulation:
         self._logger.debug(ctor_msg)
 
 
-    def _ensure_constructed_emf_writer(self):
-        if self._emf_writer:
-            return
-
-        self._emf_writer = FieldsWriter(self._io_config["outdir"],
-                                        self._tile_grid._Nx,
-                                        self._tile_grid._NxMesh,
-                                        self._tile_grid._Ny,
-                                        self._tile_grid._NyMesh,
-                                        self._tile_grid._Nz,
-                                        self._tile_grid._NzMesh,
-                                        self._io_config["stride"],
-                                        self._io_config.get("nspecies", 2))
-
-        self._logger.debug("FieldsWriter constructed.")
-
-
-    def _ensure_constructed_prtcl_writers(self):
-        if self._prtcl_writers:
-            return
-
-        n_prtcls = self._io_config.get("n_prtcls", 0)
-        nspecies = self._io_config.get("nspecies", 2)
-        outdir   = self._io_config["outdir"]
-
-        for sp in range(nspecies):
-            self._prtcl_writers[sp] = ParticlesWriter(outdir, n_prtcls, sp)
-
-        self._logger.debug(f"ParticlesWriters constructed for {nspecies} species, n_prtcls={n_prtcls}.")
-
-
-    def _ensure_constructed_spectra_writer(self):
-        if self._spectra_writer:
-            return
-
-        io = self._io_config
-        self._spectra_writer = SpectraWriter(
-            io["outdir"],
-            self._tile_grid._Nx,
-            self._tile_grid._NxMesh,
-            self._tile_grid._Ny,
-            self._tile_grid._NyMesh,
-            self._tile_grid._Nz,
-            self._tile_grid._NzMesh,
-            io.get("spectra_stride", io["stride"]),
-            io["spectra_nbins"],
-            io["spectra_umin"],
-            io["spectra_umax"],
-            io.get("nspecies", 2))
-
-        self._logger.debug("SpectraWriter constructed.")
-
-
     def virtual_tiles(self):
         """
         Return iterable which goes through all virtual tiles in current rank.
         """
 
-        for vtile_id in self._tile_grid._corgi_grid.get_virtual_tiles():
-            yield self._tile_grid._corgi_grid.get_tile(vtile_id)
+        raise NotImplementedError()
 
 
     def local_tiles(self):
@@ -160,8 +115,8 @@ class Simulation:
         Return iterable which goes through all local tiles in current rank.
         """
 
-        for tile_id in self._tile_grid._corgi_grid.get_local_tiles():
-            yield self._tile_grid._corgi_grid.get_tile(tile_id)
+        ids = self._simulation_context.get_local_tile_ids()
+        return [ProxyTile(x, self._simulation_context) for x in ids]
 
 
     def _boundary_tiles(self):
@@ -169,8 +124,7 @@ class Simulation:
         Return iterable which goes through all boundary tiles in current rank.
         """
 
-        for tile_id in self._tile_grid._corgi_grid.get_boundary_tiles():
-            yield self._tile_grid._corgi_grid.get_tile(tile_id)
+        raise NotImplementedError()
 
 
     @property
@@ -244,81 +198,58 @@ class Simulation:
                 if method in method_mapper:
                     method = method_mapper[method]
 
-                for tile in self.local_tiles():
-                    getattr(tile, method)()
+                if method == "pack_outgoing_particles":
+                    if on_main_rank():
+                        self._logger.warn("pack_outgoing_particles is depricated and implemented as no-op.")
+                    return
+
+                symbol = getattr(actions, method)
+                self._simulation_context.eval((symbol, actions.current_context))
 
             elif method.startswith("grid_"):
-
-                for tile in self.local_tiles():
-                    getattr(tile, method[5:])(*vargs)
+                symbol = getattr(actions, method[len("grid_"):])
+                self._simulation_context.eval((symbol, actions.current_context))
 
             elif method.startswith("io_"):
+                prog = None
                 match method[3:]:
                     case "emf_snapshot":
-                        self._ensure_constructed_emf_writer()
-                        self._emf_writer.write(self._tile_grid._corgi_grid, self.lap)
+                        prog = (actions.emf_snapshot, actions.current_context, self.lap)
                     case "prtcl_snapshot":
-                        self._ensure_constructed_prtcl_writers()
-                        for writer in self._prtcl_writers.values():
-                            writer.write(self._tile_grid._corgi_grid, self.lap)
-                    case "average_kinetic_energy":
-                        _write_average_kinetic_energy(self.lap, self._io_config["kinetic_energy_path"], self._tile_grid._corgi_grid)
-                    case "average_B_energy_density":
-                        _write_average_B_energy_density(self.lap,
-                                                        self._io_config["average_B_energy_density_path"],
-                                                        self._tile_grid._corgi_grid)
-                    case "average_E_energy_density":
-                        _write_average_E_energy_density(self.lap,
-                                                        self._io_config["average_E_energy_density_path"],
-                                                        self._tile_grid._corgi_grid)
+                        prog = (actions.prtcl_snapshot, actions.current_context, self.lap)
                     case "spectra_snapshot":
-                        self._ensure_constructed_spectra_writer()
-                        self._spectra_writer.write(self._tile_grid._corgi_grid, self.lap)
+                        prog = (actions.spectra_snapshot, actions.current_context, self.lap)
+                    case "average_kinetic_energy":
+                        prog = (actions.average_kinetic_energy, actions.current_context, self.lap)
+                    case "average_B_energy_density":
+                        prog = (actions.average_B_energy_density, actions.current_context, self.lap)
+                    case "average_E_energy_density":
+                        prog = (actions.average_E_energy_density, actions.current_context, self.lap)
                     case "ram_usage":
                         self._write_ram_usage()
                     case _:
                         raise AttributeError(f"{method} is not supported IO type.")
 
+                if prog:
+                    self._simulation_context.eval(prog)
+
             elif method.startswith("comm_"):
-                comm_modes = [*vargs]
+                if method == "comm_external":
+                    symbol = actions.comm_external
+                elif method == "comm_local":
+                    symbol = actions.comm_local
+                else:
+                    raise RuntimeError(f"Unregonized communication: {method}")
 
-                for mode in comm_modes:
-                    if type(mode) != comm_mode:
-                        msg = "Communications only accept runko.comm_mode arguments.\n"
-                        msg += f"Received {mode} of type {type(mode)}."
-                        raise TypeError(msg)
+                mode_to_prog = lambda m: (actions.quote, (symbol, actions.current_context, m))
+                prog = (actions.sequence,)
+                modes = (*vargs,)
+                for mode in modes:
+                    prog = prog + (mode_to_prog(mode),)
+                self._simulation_context.eval(prog)
+            elif method == "eval":
+                self._simulation_context.eval(vargs[0])
 
-                    match method[5:]:
-                        case "local":
-                            self._tile_grid._corgi_grid.local_communication(mode.value)
-
-                        case "external":
-                            handshake_mode = _virtual_tile_sync_handshake_mode(mode)
-
-                            if handshake_mode:
-                                self._logger.debug("Starting a handshake.")
-                                self._tile_grid._corgi_grid.recv_data(handshake_mode)
-                                self._tile_grid._corgi_grid.send_data(handshake_mode)
-                                x = wait_measurement(
-                                    label="comm_external: handshake wait",
-                                    begin=time.time(),
-                                    end=None)
-                                self._tile_grid._corgi_grid.wait_data(handshake_mode)
-                                x.end = time.time()
-                                self._wait_measurements[-1].append(x)
-
-                            self._logger.debug("Starting virtual tile sync.")
-                            self._tile_grid._corgi_grid.recv_data(mode.value)
-                            self._tile_grid._corgi_grid.send_data(mode.value)
-                            x = wait_measurement(
-                                label="comm_external: data wait",
-                                begin=time.time(),
-                                end=None)
-                            self._tile_grid._corgi_grid.wait_data(mode.value)
-                            x.end = time.time()
-                            self._wait_measurements[-1].append(x)
-                        case _:
-                            raise AttributeError(f"{method} is not supported communication type.")
             else:
                 raise RuntimeError(f"{method} is not supported!")
 
@@ -327,10 +258,16 @@ class Simulation:
         lap_function(MethodWrapper(action, **pre_post))
 
         lap_wall_time_end = time.time()
+
+        # Even if these are not used, we do this every time,
+        # because it will remove them from the simulation context.
+        keys, durs, metadata = self._simulation_context.get_timer_data()
         if not disable_timing:
             self._lap_timers.append(lap_timer)
             self._lap_wall_times.append(lap_wall_time_end - lap_wall_time_begin)
             self._lap_finish_times.append(lap_wall_time_end)
+            tmp = map(lambda x: (x[0], (x[1], x[2])), zip(keys, durs, metadata))
+            self._lap_sim_context_times.append(dict(tmp))
 
 
     def prelude(self, lap_function):
@@ -373,6 +310,7 @@ class Simulation:
 
     def reset_timers(self):
         self._lap_timers = []
+        self._lap_sim_context_times = []
         self._lap_wall_times = []
         self._prev_elapsed_wall_time = self._total_interval_time
 
@@ -452,7 +390,7 @@ class Simulation:
 
         for timer in timers:
             for name, measurement in timer.time_measurements.items():
-                cat, _ = name.split("_", 1)
+                cat = name.split("_", 1)[0]
 
                 obj["traceEvents"].append({
                     "name": name,
@@ -486,8 +424,8 @@ class Simulation:
                 "dur": 1e6 * (t.end - t.begin),
             })
 
-        self._trace_file.parent.mkdir(exist_ok=True, parents=True)
-        with open(self._trace_file, "w") as f:
+        self._trace_dir.mkdir(exist_ok=True, parents=True)
+        with open(self._trace_dir / f"{self._rank}.json", "w") as f:
             json.dump(obj, f)
 
         if not combine:
@@ -505,6 +443,41 @@ class Simulation:
 
             with open(f"{self._io_config['outdir']}/traces/combined.json", "w") as f:
                 json.dump(combined, f)
+
+
+    def write_trace_csv(self):
+        """
+        Writes trace data of each process into `<outdir>/traces/<mpi-rank>.csv`
+        which can be viewed with qttl [0].
+        Configuration parameter `laps_in_timer_statistics` defines number of latest laps
+        from which the data is written. If it is not given, data from all laps is written.
+
+        Difference to `Simulation.write_trace_json` is that the times are from C++
+        and not from the method wrapper in `Simulation._execute_lap_function`.
+        Because times from C++ can arbitrarily overlap it is difficult to produce
+        json in Trace Event Fromat [1] and thus we use the more simple qttl.
+
+        [0]: https://pypi.org/project/qttl/
+        [1]: https://docs.google.com/document/d/1CvAClvFfyA5R-PhYUmn5OOQtYMH4h6I0nSsKchNAySU
+        """
+
+        n_latests = self._io_config["laps_in_timer_statistics"]
+        begin = -n_latests if n_latests else 0
+        sim_context_times = self._lap_sim_context_times[begin:]
+        lap_finish_times = self._lap_finish_times[begin:]
+
+        import csv
+        data = [["name","row-tag","start","stop","text"]]
+        for times_for_one_lap in sim_context_times:
+            for name, (measurement, metadata) in times_for_one_lap.items():
+                data.append([name, self._rank, int(measurement.begin), int(measurement.end), metadata])
+
+        for t in lap_finish_times:
+            data.append(["lap finish", self._rank, int(t * 1e6), int(t * 1e6), ""])
+
+        self._trace_dir.mkdir(exist_ok=True, parents=True)
+        with open(self._trace_dir / f"{self._rank}.csv", "w", newline='') as csvfile:
+            csv.writer(csvfile).writerows(data)
 
 
     def pickle_timer_statistics(self):

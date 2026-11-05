@@ -3,6 +3,10 @@
 
 #pragma once
 
+#include "mpi.h"
+#include "runko/tools/vector.h"
+#include "tyvi/actions_ast.h"
+#include "tyvi/actions_format.h"
 #include "tyvi/mdspan.h"
 
 #include <algorithm>
@@ -10,8 +14,10 @@
 #include <concepts>
 #include <cstddef>
 #include <format>
+#include <functional>
 #include <optional>
 #include <print>
+#include <ranges>
 #include <source_location>
 #include <stdexcept>
 #include <string_view>
@@ -37,6 +43,10 @@ enum class comm_mode : int {
   emf_J_exchange
 };
 
+template<runko::comm_mode mode>
+struct exclusive_communicator {
+  MPI_Comm comm;
+};
 
 /// Returns a communication which has to be done before given communication.
 [[nodiscard]] constexpr std::optional<comm_mode>
@@ -164,7 +174,21 @@ struct [[nodiscard]] grid_neighbor {
       return grid_neighbor((dir[I] - 1)...);
     }(std::make_index_sequence<rank>());
   }
+
+  template<typename T>
+  constexpr toolbox::VecD<T, rank> to_vec() const
+  {
+    return [&]<std::size_t... I>(std::index_sequence<I...>) {
+      return toolbox::VecD<T, rank>(static_cast<T>(direction[I])...);
+    }(std::make_index_sequence<rank>());
+  }
 };
+
+
+template<std::size_t rank>
+constexpr auto grid_neighbor_origo = []<std::size_t... I>(std::index_sequence<I...>) {
+  return grid_neighbor<rank>((I * 0)...);
+}(std::make_index_sequence<rank>());
 
 static_assert(
   grid_neighbor<2>(-1, -1) ==
@@ -179,7 +203,7 @@ static_assert(
   grid_neighbor<2>(0, -1) ==
   grid_neighbor<2>::from_index(grid_neighbor<2>(0, -1).neighbor_index()));
 static_assert(
-  grid_neighbor<2>(0, 0) ==
+  grid_neighbor_origo<2> ==
   grid_neighbor<2>::from_index(grid_neighbor<2>(0, 0).neighbor_index()));
 static_assert(
   grid_neighbor<2>(0, 1) ==
@@ -194,6 +218,17 @@ static_assert(
   grid_neighbor<2>(1, 1) ==
   grid_neighbor<2>::from_index(grid_neighbor<2>(1, 1).neighbor_index()));
 
+template<std::size_t rank>
+std::ranges::view auto
+  moore_neigh_dirs()
+{
+  namespace rv     = std::views;
+  using neigh_type = runko::grid_neighbor<rank>;
+
+  return rv::iota(0uz, std::pow(3uz, rank)) |
+         rv::transform([](const auto n) { return neigh_type::from_index(n); }) |
+         rv::filter([](const auto& x) { return x != grid_neighbor_origo<rank>; });
+}
 
 /// Throws if n is not in range of type T.
 template<std::integral T>
@@ -209,4 +244,15 @@ constexpr T
   return static_cast<T>(n);
 }
 
+
+struct simulation_context;
+
+/// Parses the 0th and 1st arguments as a rf<simulation_context> and runko::comm_mode.
+std::tuple<std::reference_wrapper<simulation_context>, runko::comm_mode>
+  args_to_sim_n_comm_mode(const tyvi::actions::sexpr& args);
+
 }  // namespace runko
+
+// Previously there was a manual formatter implementation for runko::comm_mode
+// which is now replaced by this:
+#include "runko/tools/magic_enum/magic_enum_format.hpp"

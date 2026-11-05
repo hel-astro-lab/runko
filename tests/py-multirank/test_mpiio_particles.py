@@ -16,7 +16,7 @@ import numpy as np
 from mpi4py import MPI
 
 import runko
-from runko_cpp_bindings.emf.threeD import MpiioParticlesWriter
+from runko import actions
 from runko.mpiio_prtcl_reader import read_prtcl_header, read_prtcl_snapshot
 
 
@@ -86,11 +86,11 @@ def test_multirank_constant_velocity():
         for species in range(2):
             tile.inject_to_each_cell(species, gen)
         tile_grid.add_tile(tile, idx)
-    _ = tile_grid.configure_simulation(config)
+    sim = tile_grid.configure_simulation(config)
 
     total = 8 * 8**3  # 8 tiles * 512 particles each
-    writer = MpiioParticlesWriter(outdir, total * 10, 0)
-    writer.write(tile_grid._corgi_grid, 0)
+    prog = (actions.prtcl_snapshot, actions.current_context, 0, str(outdir), total * 10)
+    sim.for_one_lap(lambda x: x.eval(prog))
 
     if rank == 0:
         path = find_prtcl_file(outdir)
@@ -153,11 +153,11 @@ def test_multirank_tile_placement():
         for species in range(2):
             tile.inject_to_each_cell(species, gen)
         tile_grid.add_tile(tile, idx)
-    _ = tile_grid.configure_simulation(config)
+    sim = tile_grid.configure_simulation(config)
 
     total = 8 * 8**3
-    writer = MpiioParticlesWriter(outdir, total * 10, 0)
-    writer.write(tile_grid._corgi_grid, 0)
+    prog = (actions.prtcl_snapshot, actions.current_context, 0, str(outdir), total * 10)
+    sim.for_one_lap(lambda x: x.eval(prog))
 
     if rank == 0:
         path = find_prtcl_file(outdir)
@@ -243,11 +243,11 @@ def test_multirank_asymmetric_mesh():
         for species in range(2):
             tile.inject_to_each_cell(species, gen)
         tile_grid.add_tile(tile, idx)
-    _ = tile_grid.configure_simulation(config)
+    sim = tile_grid.configure_simulation(config)
 
     total = 8 * 10 * 11 * 13  # 8 tiles
-    writer = MpiioParticlesWriter(outdir, total * 10, 0)
-    writer.write(tile_grid._corgi_grid, 0)
+    prog = (actions.prtcl_snapshot, actions.current_context, 0, str(outdir), total * 10)
+    sim.for_one_lap(lambda x: x.eval(prog))
 
     if rank == 0:
         path = find_prtcl_file(outdir)
@@ -273,6 +273,7 @@ def test_multirank_asymmetric_mesh():
 
 
 if __name__ == "__main__":
+    _ = runko.actions.RuntimeInstance()
     test_multirank_constant_velocity()
     test_multirank_tile_placement()
     test_multirank_asymmetric_mesh()

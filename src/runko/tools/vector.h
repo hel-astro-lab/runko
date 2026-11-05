@@ -30,6 +30,9 @@ template<arithmetic T, std::size_t D>
 struct VecD {
   std::array<T, D> data {};
 
+  constexpr std::strong_ordering operator<=>(const VecD& rhs) const
+  { return this->data <=> rhs.data; };
+
   constexpr bool operator==(const VecD& rhs) const
   {
     /* This operator can not be defaulted nor implemented with
@@ -243,6 +246,16 @@ constexpr VecD<T, D>
   for(size_t i = 0; i < D; i++) ret(i) = v1(i) - v2(i);
   return ret;
 }
+
+template<arithmetic T, std::size_t D>
+constexpr VecD<T, D>
+  operator*(const VecD<T, D>& v1, const VecD<T, D>& v2)
+{
+  VecD<T, D> ret {};
+  for(size_t i = 0; i < D; i++) ret(i) = v1(i) * v2(i);
+  return ret;
+}
+
 
 template<arithmetic T, std::size_t D>
 constexpr T

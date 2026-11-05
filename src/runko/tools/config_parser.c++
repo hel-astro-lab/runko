@@ -7,6 +7,7 @@
 
 #include <format>
 #include <ranges>
+#include <stdexcept>
 #include <utility>
 
 namespace toolbox {
@@ -93,4 +94,5 @@ ConfigParser::ConfigParser(const pybind11::handle& conf_obj)
     }
   }
 }
+
 }  // namespace toolbox

@@ -75,6 +75,14 @@ Key contributors that provided additional features and/or improvements include
 
 
 .. toctree::
+   :caption: Code explainers:
+   :maxdepth: 2
+
+   senders-and-receivers
+   actions
+   ecs
+
+.. toctree::
    :caption: Developer notes:
    :maxdepth: 2
 

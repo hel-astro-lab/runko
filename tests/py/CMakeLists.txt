@@ -3,15 +3,18 @@
 
 function(add_python_test name)
     add_test(NAME py-${name} COMMAND
-        ${Python_EXECUTABLE} "${CMAKE_CURRENT_SOURCE_DIR}/test_${name}.py"
+        ${Python_EXECUTABLE} ${py_test_wrapper} "${CMAKE_CURRENT_SOURCE_DIR}/test_${name}.py"
     )
     set_property(TEST py-${name}
-        PROPERTY ENVIRONMENT PYTHONPATH=${CMAKE_BINARY_DIR}/src:${CMAKE_BINARY_DIR}/external/corgi/pycorgi:${PROJECT_SOURCE_DIR}
+        PROPERTY ENVIRONMENT
+        "PYTHONPATH=${CMAKE_BINARY_DIR}/src:${PROJECT_SOURCE_DIR}"
+        "PIKA_COMMANDLINE_OPTIONS=--pika:threads=2"
     )
 endfunction(add_python_test)
 
 add_python_test(auto_outdir)
 add_python_test(auto_tile_grid)
+add_python_test(average_energy)
 add_python_test(configuration)
 add_python_test(emf_antenna)
 add_python_test(emf_antenna_time_evolution)
@@ -35,4 +38,5 @@ add_python_test(pic_reflector_wall)
 add_python_test(ram_usage)
 add_python_test(simulation)
 add_python_test(tile_grid)
-add_python_test(virtual_tile_specializations)
+add_python_test(actions_eval)
+add_python_test(actions_builders)

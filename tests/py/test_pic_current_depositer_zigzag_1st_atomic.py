@@ -249,4 +249,5 @@ class pic_currend_depositer_zigzag_1st_atomic(unittest.TestCase):
 
 
 if __name__ == "__main__":
+    _ = runko.actions.RuntimeInstance()
     unittest.main()
