@@ -196,7 +196,55 @@ def emf_J_exchange():
     mpi_unittest.assertDeferredResults(asserts)
 
 
+def emf_antenna_sanity_check():
+    """
+    Make sure that the added antennas to independent tiles are copied over to
+    the configured simulation.
+    """
+    conf, tile_grid = create_test_grid()
+
+    E0 = lambda x, y, z: (1, 2, 3)
+    B0 = lambda x, y, z: (4, 5, 6)
+    J0 = lambda x, y, z: (0, 0, 0)
+
+    antenna = runko.emf.threeD.antenna_mode(A=(1, 2, 3), k=(1, 2, 3))
+
+    for idx in tile_grid.local_tile_indices():
+        tile = runko.emf.threeD.Tile(idx, conf)
+        tile.set_EBJ(E0, B0, J0)
+        tile.register_antenna(antenna)
+        tile_grid.add_tile(tile, idx)
+
+    simulation = tile_grid.configure_simulation(conf)
+
+    asserts = []
+
+    def is_zero():
+        for tile in simulation.local_tiles():
+            _, _, (Jx, Jy, Jz) = tile.get_EBJ()
+            asserts.append(mpi_unittest.assertEqualDeferred(False, np.any(Jx)))
+            asserts.append(mpi_unittest.assertEqualDeferred(False, np.any(Jy)))
+            asserts.append(mpi_unittest.assertEqualDeferred(False, np.any(Jz)))
+
+
+    def is_non_zero():
+        for tile in simulation.local_tiles():
+            _, _, (Jx, Jy, Jz) = tile.get_EBJ()
+            asserts.append(mpi_unittest.assertEqualDeferred(True, np.any(Jx)))
+            asserts.append(mpi_unittest.assertEqualDeferred(True, np.any(Jy)))
+            asserts.append(mpi_unittest.assertEqualDeferred(True, np.any(Jz)))
+
+
+    is_zero()
+    simulation.for_one_lap(lambda x: x.grid_deposit_antenna_current())
+    is_non_zero()
+
+    mpi_unittest.assertDeferredResults(asserts)
+
+
+
 if __name__ == "__main__":
     _ = runko.actions.RuntimeInstance()
     emf_communication()
     emf_J_exchange()
+    emf_antenna_sanity_check()

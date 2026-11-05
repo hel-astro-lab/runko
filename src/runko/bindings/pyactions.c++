@@ -145,6 +145,11 @@ void
       sim.tiles.emplace<emf::YeeLattice>(id, std::move(*yee));
     }
 
+    if(other_sim.tiles.ctx().contains<emf::antennas>()) {
+      sim.tiles.ctx().emplace<emf::antennas>(
+        other_sim.tiles.ctx().get<emf::antennas>());
+    }
+
     if(const auto p = other_sim.tiles.try_get<pic::particle_containers>(other_id)) {
       sim.tiles.emplace<pic::particle_containers>(id, std::move(*p));
 
