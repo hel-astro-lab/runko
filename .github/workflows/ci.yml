@@ -3,8 +3,9 @@ name: CI
 on:
   push:
     branches:
-      - ecs-actions
+      - master
   pull_request:
+    types: [opened, reopened, edited]
 
 jobs:
   rocky-gcc-debug:
