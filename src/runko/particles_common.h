@@ -3,6 +3,8 @@
 
 #pragma once
 
+#include "pybind11/numpy.h"
+#include "runko/tools/config_parser.h"
 #include "runko/tools/vector.h"
 
 #include <array>
@@ -22,7 +24,7 @@ enum class particle : std::size_t {
 using prtc_id_type                 = std::uint64_t;
 static constexpr auto dead_prtc_id = std::numeric_limits<prtc_id_type>::max();
 
-template <typename T>
+template<typename T>
 struct ParticleState {
   using vec3 = std::array<T, 3>;
 
@@ -33,6 +35,13 @@ struct ParticleState {
 
 static_assert(std::is_trivially_copyable_v<ParticleState<float>>);
 
+struct ParticleStateBatch {
+  using container_type = std::array<pybind11::array_t<double>, 3>;
+
+  container_type pos;
+  container_type vel;
+};
+
 template<typename F, typename T>
 concept EB_interpolator =
   (std::is_trivially_copyable_v<F>) and std::regular_invocable<F, toolbox::Vec3<T>> and
@@ -40,5 +49,32 @@ concept EB_interpolator =
     { eb.E } -> std::convertible_to<toolbox::Vec3<T>>;
     { eb.B } -> std::convertible_to<toolbox::Vec3<T>>;
   };
+
+
+enum class ParticlePusher {
+  boris,
+  higuera_cary,
+  faraday,
+  rad_drag,       // isotropic Compton drag -A gamma^2 beta; rad_* stay last
+  rad_beam,       // + beamed radiation field
+  rad_comp_heat,  // + Compton heating (Thomson diffusion tensor)
+  rad_sync,       // synchrotron: Landau-Lifshitz reduced force
+  rad_sync_ssa,   // + self-absorption on a thermal population
+};
+
+constexpr bool
+  is_rad_pusher(const ParticlePusher x)
+{
+  using enum ParticlePusher;
+  return x == rad_drag or x == rad_beam or x == rad_comp_heat or x == rad_sync or
+         x == rad_sync_ssa;
+}
+
+enum class FieldInterpolator { linear_1st, linear_1st_unrolled };
+enum class CurrentDepositer { zigzag_1st, zigzag_1st_atomic };
+
+
+/// Number of particle species in the config (q0/m0, q1/m1, ...).
+std::size_t count_species(const toolbox::ConfigParser&);
 
 }  // namespace runko

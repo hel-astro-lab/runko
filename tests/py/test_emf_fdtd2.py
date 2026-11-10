@@ -186,4 +186,5 @@ class emf_fdtd2(unittest.TestCase):
             self.assertAlmostEqual(Ez[i, j, k], e, places=5)
 
 if __name__ == "__main__":
+    _ = runko.actions.RuntimeInstance()
     unittest.main()

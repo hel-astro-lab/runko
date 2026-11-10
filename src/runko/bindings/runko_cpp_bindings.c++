@@ -14,10 +14,6 @@
 PYBIND11_MODULE(runko_cpp_bindings, m_base) {
   m_base.doc() = "Runko Python3 bindings";
 
-  // Not used directly but required to be loaded,
-  // in order for python to know about corgi base classes.
-  std::ignore = py::module::import("pycorgi");
-
   /// auxiliary tools
   py::module m_tools = m_base.def_submodule("tools", "auxiliary tools");
   tools::bind_tools(m_tools);
@@ -29,5 +25,8 @@ PYBIND11_MODULE(runko_cpp_bindings, m_base) {
   /// pic
   py::module m_pic = m_base.def_submodule("pic", "pic module");
   pic::bind_pic(m_pic);
+
+  py::module m_actions = m_base.def_submodule("actions", "actions");
+  actions::bind_actions(m_actions);
 }
 

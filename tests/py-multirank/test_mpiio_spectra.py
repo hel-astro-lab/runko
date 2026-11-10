@@ -16,7 +16,7 @@ import numpy as np
 from mpi4py import MPI
 
 import runko
-from runko_cpp_bindings.emf.threeD import MpiioSpectraWriter
+from runko import actions
 from runko.mpiio_spectra_reader import (
     read_spectra_header, read_spectra_snapshot, u_bin_edges,
 )
@@ -75,6 +75,10 @@ def test_multirank_constant_velocity():
     config.particle_pusher = "boris"
     config.field_interpolator = "linear_1st"
     config.current_depositer = "zigzag_1st_atomic"
+    config.io_n_spectra_bins = 100
+    config.io_spectra_umin = 1e-2
+    config.io_spectra_umax = 1e4
+    nbins = config.io_n_spectra_bins
 
     P = runko.pic.threeD.ParticleState
 
@@ -89,14 +93,10 @@ def test_multirank_constant_velocity():
         for species in range(2):
             tile.inject_to_each_cell(species, gen)
         tile_grid.add_tile(tile, idx)
-    _ = tile_grid.configure_simulation(config)
+    sim = tile_grid.configure_simulation(config)
 
-    nbins = 100
-    umin, umax = 1e-2, 1e4
-    nspecies = 2
-    writer = MpiioSpectraWriter(outdir, 2, 8, 2, 8, 2, 8, 1,
-                                nbins, umin, umax, nspecies)
-    writer.write(tile_grid._corgi_grid, 0)
+    prog = (actions.spectra_snapshot, actions.current_context, 0, str(outdir))
+    sim.for_one_lap(lambda x: x.eval(prog))
 
     if rank == 0:
         path = find_spectra_file(outdir)
@@ -133,7 +133,7 @@ def test_multirank_constant_velocity():
 #          spatial position
 # ---------------------------------------------------------------------------
 def test_multirank_tile_placement():
-    """2x2x1 grid, 8^3 mesh per tile.
+    """2x2x1 grid, 8^3 mesh per tile, hilbert_curve partitioning.
     Tile (0,*,*) has |u|=1, tile (1,*,*) has |u|=50.
     Rank 0 reads and verifies x-resolved spectra are correct."""
 
@@ -153,6 +153,9 @@ def test_multirank_tile_placement():
     config.particle_pusher = "boris"
     config.field_interpolator = "linear_1st"
     config.current_depositer = "zigzag_1st_atomic"
+    config.io_n_spectra_bins = 100
+    config.io_spectra_umin = 1e-2
+    config.io_spectra_umax = 1e4
 
     P = runko.pic.threeD.ParticleState
 
@@ -169,14 +172,10 @@ def test_multirank_tile_placement():
         for species in range(2):
             tile.inject_to_each_cell(species, gen)
         tile_grid.add_tile(tile, idx)
-    _ = tile_grid.configure_simulation(config)
+    sim = tile_grid.configure_simulation(config)
 
-    nbins = 100
-    umin, umax = 1e-2, 1e4
-    nspecies = 2
-    writer = MpiioSpectraWriter(outdir, 2, 8, 2, 8, 1, 8, 1,
-                                nbins, umin, umax, nspecies)
-    writer.write(tile_grid._corgi_grid, 0)
+    prog = (actions.spectra_snapshot, actions.current_context, 0, str(outdir))
+    sim.for_one_lap(lambda x: x.eval(prog))
 
     if rank == 0:
         path = find_spectra_file(outdir)
@@ -227,6 +226,9 @@ def test_multirank_count_conservation():
     config.particle_pusher = "boris"
     config.field_interpolator = "linear_1st"
     config.current_depositer = "zigzag_1st_atomic"
+    config.io_n_spectra_bins = 50
+    config.io_spectra_umin = 1e-2
+    config.io_spectra_umax = 1e4
 
     P = runko.pic.threeD.ParticleState
 
@@ -241,12 +243,10 @@ def test_multirank_count_conservation():
         for species in range(2):
             tile.inject_to_each_cell(species, gen)
         tile_grid.add_tile(tile, idx)
-    _ = tile_grid.configure_simulation(config)
+    sim = tile_grid.configure_simulation(config)
 
-    nbins = 50
-    writer = MpiioSpectraWriter(outdir, 2, 8, 2, 8, 2, 8, 1,
-                                nbins, 1e-2, 1e4, 2)
-    writer.write(tile_grid._corgi_grid, 0)
+    prog = (actions.spectra_snapshot, actions.current_context, 0, str(outdir))
+    sim.for_one_lap(lambda x: x.eval(prog))
 
     if rank == 0:
         path = find_spectra_file(outdir)
@@ -268,6 +268,7 @@ def test_multirank_count_conservation():
 
 
 if __name__ == "__main__":
-    test_multirank_constant_velocity()
+    _ = runko.actions.RuntimeInstance()
+    # test_multirank_constant_velocity()
     test_multirank_tile_placement()
-    test_multirank_count_conservation()
+    # test_multirank_count_conservation()

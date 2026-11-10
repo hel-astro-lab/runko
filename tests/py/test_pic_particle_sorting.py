@@ -86,4 +86,5 @@ class pic_particle_sorting(unittest.TestCase):
 
 
 if __name__ == "__main__":
+    _ = runko.actions.RuntimeInstance()
     unittest.main()

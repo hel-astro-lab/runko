@@ -1,0 +1,32 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - ecs-actions
+  pull_request:
+
+jobs:
+  rocky-gcc-debug:
+    runs-on: ubuntu-latest
+
+    container:
+      image: ghcr.io/hel-astro-lab/runko-rocky-gcc:latest
+
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          submodules: 'recursive'
+
+      - name: Configure
+        run: |
+          rocthrust_DIR=$ROCTHRUST_INSTALL_PREFIX/lib/cmake/rocthrust cmake \
+          --preset unix-cpu \
+          -DCMAKE_CXX_COMPILER=/opt/rh/gcc-toolset-15/root/usr/bin/g++ \
+          -DMPI_HOME=/usr/lib64/openmpi/
+
+      - name: Build
+        run: make -j4 -C build/unix-cpu
+
+      - name: Test
+        run: ctest -j4 --test-dir build/unix-cpu --output-on-failure
