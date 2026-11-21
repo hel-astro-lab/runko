@@ -539,6 +539,7 @@ void
     switch(current_depositer) {
       case runko::CurrentDepositer::zigzag_1st:
         for(const auto& [_, pcontainer]: particles) {
+          if(pcontainer.kind() == pic::SpeciesKind::photon) { continue; }  // no current
           yee.deposit_current(pcontainer.current_zigzag_1st(origo_pos, cfl));
         }
         break;
@@ -564,6 +565,7 @@ void
           .wait();
 
         for(const auto& [_, pcontainer]: particles) {
+          if(pcontainer.kind() == pic::SpeciesKind::photon) { continue; }  // no current
           pcontainer.current_zigzag_1st(generated_J, origo_pos, cfl);
         }
 

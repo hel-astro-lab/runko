@@ -63,6 +63,22 @@ class photon_pusher(unittest.TestCase):
         tile.inject(1, [runko.pic.threeD.ParticleState(pos=(3.0, 3.0, 3.0), vel=(0.1, 0, 0))])
         np.testing.assert_allclose(tile.get_weights(1), [1.0])
 
+    def test_photons_deposit_no_current(self):
+        """the mass decides: a massless species deposits nothing, even if given a charge"""
+        for depositer in ("zigzag_1st", "zigzag_1st_atomic"):
+            config = make_config()
+            config.q2 = 1
+            config.current_depositer = depositer
+            _, tile = make_tile(config)
+            rng = np.random.default_rng(2)
+            tile.inject(2, [runko.pic.threeD.ParticleState(pos=tuple(rng.uniform(2, 6, 3)),
+                                                           vel=tuple(rng.normal(size=3)), wgt=1.0)
+                            for _ in range(200)])
+            tile.push_particles()
+            tile.deposit_current()
+            _, _, (jx, jy, jz) = tile.get_EBJ()
+            self.assertEqual(float(np.abs(jx).max() + np.abs(jy).max() + np.abs(jz).max()), 0.0)
+
 
 if __name__ == "__main__":
     _ = runko.actions.RuntimeInstance()
