@@ -229,6 +229,7 @@ class qed_layout(unittest.TestCase):
             tile_grid.add_tile(tile, idx)
             tiles[idx] = tile
         simulation = tile_grid.configure_simulation(config)
+        tiles = {tuple(tile.index): tile for tile in simulation.local_tiles()}  # the tiles as the simulation holds them
         for tile in simulation.local_tiles():
             tile.sort_particles()
         def lap(x):
@@ -276,4 +277,5 @@ class qed_layout(unittest.TestCase):
 
 
 if __name__ == "__main__":
+    _ = runko.actions.RuntimeInstance()
     unittest.main()

@@ -8,6 +8,7 @@
 #include "runko/actions/emf.h"
 #include "runko/actions/env.h"
 #include "runko/actions/pic.h"
+#include "runko/actions/qed.h"
 #include "runko/bindings/runko_cpp_bindings.h"
 #include "runko/comm/cartesian_grid.h"
 #include "runko/comm/pic.h"
@@ -162,6 +163,10 @@ void
           "generator."
         };
       }
+    }
+
+    if(const auto q = other_sim.tiles.try_get<qed::tile_state>(other_id)) {
+      sim.tiles.emplace<qed::tile_state>(id, std::move(*q));
     }
   }
 }
@@ -432,6 +437,12 @@ void
       "set_periodic_cartesian_neighbors",
       runko::symbol::set_periodic_cartesian_neighbors)
     .value("set_cartesian_comm_infos", runko::symbol::set_cartesian_comm_infos)
+    .value("ensure_constructed_qed", runko::symbol::ensure_constructed_qed)
+    .value("interact", runko::symbol::interact)
+    .value("inject_pairs_plaw", runko::symbol::inject_pairs_plaw)
+    .value("inject_photons", runko::symbol::inject_photons)
+    .value("heat_diffusive", runko::symbol::heat_diffusive)
+    .value("escape_photons", runko::symbol::escape_photons)
     .value("sequence", runko::symbol::sequence)
     .value("parallel", runko::symbol::parallel)
     .export_values();

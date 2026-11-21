@@ -8,10 +8,11 @@
 
 # cpp kernel bindings defined in bindings/
 from runko_cpp_bindings import *
-from .tiles import make_independent_tile
+from .tiles import make_independent_tile, make_independent_qed_tile
 
 emf.threeD.Tile = make_independent_tile
 pic.threeD.Tile = make_independent_tile
+qed.threeD.Tile = make_independent_qed_tile
 
 # Helper scripts to initialize the simulation 
 from .configuration import Configuration

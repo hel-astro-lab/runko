@@ -8,6 +8,7 @@
 #include "runko/actions/emf.h"
 #include "runko/actions/env.h"
 #include "runko/actions/pic.h"
+#include "runko/actions/qed.h"
 #include "runko/comm/cartesian_grid.h"
 #include "runko/comm/external.h"
 #include "runko/comm/local.h"
@@ -329,7 +330,99 @@ tyvi::actions::sexpr
       ta::procedure { [](const ta::sexpr& args) -> ta::sexpr_sender {
         return parse_atom_args<std::reference_wrapper<runko::simulation_context>>(
                  args) |
-               te::then(&pic::sort_particles) | te::then([] { return ta::null; });
+               te::then([](runko::simulation_context& sim) {
+                 pic::sort_particles(sim);
+                 qed::for_each_tile(sim, qed::layout);
+                 return ta::null;
+               });
+      } }),
+    timed_procedure(
+      runko::symbol::ensure_constructed_qed,
+      ta::procedure { [](const ta::sexpr& args) -> ta::sexpr_sender {
+        return parse_atom_args<std::reference_wrapper<runko::simulation_context>>(
+                 args) |
+               te::then(&qed::ensure_constructed_qed) | te::then([] { return ta::null; });
+      } }),
+    timed_procedure(
+      runko::symbol::interact,
+      ta::procedure { [](const ta::sexpr& args) -> ta::sexpr_sender {
+        return parse_atom_args<std::reference_wrapper<runko::simulation_context>>(
+                 args) |
+               te::then([](runko::simulation_context& sim) {
+                 qed::for_each_tile(sim, qed::interact);
+                 return ta::null;
+               });
+      } }),
+    timed_procedure(
+      runko::symbol::inject_pairs_plaw,
+      ta::procedure { [](const ta::sexpr& args) -> ta::sexpr_sender {
+        return parse_atom_args<
+                 std::reference_wrapper<runko::simulation_context>,
+                 double,
+                 double,
+                 double,
+                 double>(args) |
+               te::then([](
+                          runko::simulation_context& sim,
+                          const double ell,
+                          const double p,
+                          const double gmin,
+                          const double gmax) {
+                 qed::for_each_tile(sim, [&](auto& s, const auto id) {
+                   qed::inject_pairs_plaw(s, id, ell, p, gmin, gmax);
+                 });
+                 return ta::null;
+               });
+      } }),
+    timed_procedure(
+      runko::symbol::inject_photons,
+      ta::procedure { [](const ta::sexpr& args) -> ta::sexpr_sender {
+        return parse_atom_args<
+                 std::reference_wrapper<runko::simulation_context>,
+                 double,
+                 double,
+                 double,
+                 runko::opt_arg<long>>(args) |
+               te::then([](
+                          runko::simulation_context& sim,
+                          const double ell,
+                          const double theta,
+                          const double w,
+                          const std::optional<long> planck) {
+                 qed::for_each_tile(sim, [&](auto& s, const auto id) {
+                   qed::inject_photons(s, id, ell, theta, w, planck.value_or(1) != 0);
+                 });
+                 return ta::null;
+               });
+      } }),
+    timed_procedure(
+      runko::symbol::heat_diffusive,
+      ta::procedure { [](const ta::sexpr& args) -> ta::sexpr_sender {
+        return parse_atom_args<std::reference_wrapper<runko::simulation_context>, double>(
+                 args) |
+               te::then([](runko::simulation_context& sim, const double ell) {
+                 qed::for_each_tile(sim, [&](auto& s, const auto id) {
+                   qed::heat_diffusive(s, id, ell);
+                 });
+                 return ta::null;
+               });
+      } }),
+    timed_procedure(
+      runko::symbol::escape_photons,
+      ta::procedure { [](const ta::sexpr& args) -> ta::sexpr_sender {
+        return parse_atom_args<
+                 std::reference_wrapper<runko::simulation_context>,
+                 runko::opt_arg<double>,
+                 runko::opt_arg<double>>(args) |
+               te::then([](
+                          runko::simulation_context& sim,
+                          const std::optional<double> tau_T,
+                          const std::optional<double> dt_esc) {
+                 qed::for_each_tile(sim, [&](auto& s, const auto id) {
+                   qed::escape_photons(s, id, tau_T.value_or(-1.0), dt_esc.value_or(-1.0));
+                 });
+                 return ta::null;
+               });
       } }),
     timed_procedure(
       runko::symbol::register_reflector_wall,

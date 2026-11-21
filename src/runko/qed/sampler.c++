@@ -1130,7 +1130,7 @@ void
     if(tot[s] > 0) {
       // grow once by the exact copy total; the layout follows with tail keys
       c.t->con[s]->grow(tot[s]);
-      c.t->pop[s]->grown(*c.t->con[s], static_cast<std::size_t>(tail_base[s]));
+      c.t->pop[s]->grown(*c.t->con[s]);
     }
   }
   c.refresh_all();   // the containers were resized

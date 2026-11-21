@@ -19,6 +19,7 @@ set (TOOLS_FILES
      ./runko/actions/sim_env.c++
      ./runko/actions/emf.c++
      ./runko/actions/pic.c++
+     ./runko/actions/qed.c++
      )
 
 set (EMF_FILES
@@ -36,11 +37,8 @@ set (PIC_FILES
      ./runko/pic/reflector_wall.c++
      )
 
-# parked until the v5.1 port of qed: QED_FILES is not in RUNKO_CPP_BINDINGS_FILES
 set (QED_FILES
      ./runko/bindings/pyqed.c++
-     ./runko/qed/tile.c++
-     ./runko/qed/virtual_tile.c++
      ./runko/qed/layout.c++
      ./runko/qed/sampler.c++
      )
@@ -56,6 +54,7 @@ set (RUNKO_CPP_BINDINGS_FILES
      ${TOOLS_FILES}
      ${EMF_FILES}
      ${PIC_FILES}
+     ${QED_FILES}
      ${IO_FILES}
     )
 

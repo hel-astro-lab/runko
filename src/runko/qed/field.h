@@ -11,15 +11,16 @@
 // envelope needs one field per tile, takes the tile's median |B| along the lepton's pitch
 // angle to the tile's mean field (within 10-20 % of the local-field opacity in turbulence).
 
-#include "runko/pic/tile.h"
+#include "runko/emf/yee_lattice.h"
 #include "runko/qed/interactions/qed_kinematics.h"
 #include "runko/tools/math.h"
 #include "runko/tools/vector.h"
 
 namespace qed {
 
-/// the tile's linear interpolator of E and B at a global position (a trivially copyable closure)
-using Interp = decltype(std::declval<const pic::Tile<3>&>().EB_linear_1st_interpolator());
+/// the lattice's linear interpolator of E and B at a global position (a trivially copyable closure)
+using Interp = decltype(std::declval<const emf::YeeLattice&>().interpolate_EB_linear_1st(
+  std::declval<std::array<emf::YeeLattice::value_type, 3>>()));
 
 struct [[nodiscard]] FieldView {
   bool uniform;   // no lattice: every particle sees b0

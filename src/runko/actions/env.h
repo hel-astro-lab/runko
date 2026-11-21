@@ -50,7 +50,13 @@ enum class symbol : std::uint8_t {
   average_E_energy_density,
   average_kinetic_energy,
   set_periodic_cartesian_neighbors,
-  set_cartesian_comm_infos
+  set_cartesian_comm_infos,
+  ensure_constructed_qed,
+  interact,
+  inject_pairs_plaw,
+  inject_photons,
+  heat_diffusive,
+  escape_photons
 };
 
 [[nodiscard]]

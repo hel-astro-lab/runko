@@ -4,6 +4,7 @@
 import numpy as np
 import itertools
 import runko_cpp_bindings.actions as actions
+import runko_cpp_bindings.qed as qed
 from .runko_logging import runko_logger, on_main_rank
 from runko_cpp_bindings.emf.threeD import antenna_mode
 from runko_cpp_bindings.pic.threeD import ParticleState, ParticleStateBatch
@@ -176,6 +177,82 @@ class ProxyTile:
             self._logger.warn("pack_outgoing_particles is depricated and implemented as no-op.")
 
 
+    # ---- the QED Monte Carlo of this tile (a tile of runko.qed.threeD.Tile); species are
+    # named "ph", "e-", "e+"
+    def species(self, s: str) -> int:
+        """the container index of a QED species"""
+        return qed.species(self.sim_context, self.tile_id, s)
+
+    def box(self):
+        return qed.box(self.sim_context, self.tile_id)
+
+    def step(self):
+        return qed.step(self.sim_context, self.tile_id)
+
+    def laid(self):
+        return qed.laid(self.sim_context, self.tile_id)
+
+    def interact(self):
+        qed.interact(self.sim_context, self.tile_id)
+
+    def set_particles(self, s: str, u, w):
+        qed.set_particles(self.sim_context, self.tile_id, s, u, w)
+
+    def reset_momenta(self, s: str, u):
+        qed.reset_momenta(self.sim_context, self.tile_id, s, u)
+
+    def get_slot_keys(self, s: str):
+        return qed.get_slot_keys(self.sim_context, self.tile_id, s)
+
+    def get_tables(self, s: str):
+        return qed.get_tables(self.sim_context, self.tile_id, s)
+
+    def totals(self, s: str):
+        return qed.totals(self.sim_context, self.tile_id, s)
+
+    def tau_T(self):
+        return qed.tau_T(self.sim_context, self.tile_id)
+
+    def tau_ssa(self, x: float):
+        return qed.tau_ssa(self.sim_context, self.tile_id, x)
+
+    def pair_sum(self, channel: str, weight: bool = False):
+        return qed.pair_sum(self.sim_context, self.tile_id, channel, weight)
+
+    def counts(self):
+        return qed.counts(self.sim_context, self.tile_id)
+
+    def moved(self):
+        return qed.moved(self.sim_context, self.tile_id)
+
+    def report(self):
+        return qed.report(self.sim_context, self.tile_id)
+
+    def inject_pairs_plaw(self, ell: float, p: float, gmin: float, gmax: float):
+        qed.inject_pairs_plaw(self.sim_context, self.tile_id, ell, p, gmin, gmax)
+
+    def inject_photons(self, ell: float, theta: float, w: float, planck: bool = True):
+        qed.inject_photons(self.sim_context, self.tile_id, ell, theta, w, planck)
+
+    def heat_diffusive(self, ell: float):
+        qed.heat_diffusive(self.sim_context, self.tile_id, ell)
+
+    def escape_photons(self, tau_T: float = -1.0, dt_esc: float = -1.0):
+        qed.escape_photons(self.sim_context, self.tile_id, tau_T, dt_esc)
+
+    def budget(self):
+        return qed.budget(self.sim_context, self.tile_id)
+
+    def reset_budget(self):
+        qed.reset_budget(self.sim_context, self.tile_id)
+
+    def escaped_spectrum(self):
+        return qed.escaped_spectrum(self.sim_context, self.tile_id)
+
+    def escaped_mu_spectrum(self):
+        return qed.escaped_mu_spectrum(self.sim_context, self.tile_id)
+
+
 
 
 def make_independent_tile(idx, conf) -> ProxyTile:
@@ -201,3 +278,14 @@ def make_independent_tile(idx, conf) -> ProxyTile:
         raise Exception("runko internal logic error")
 
     return ProxyTile(ids[0], sim, runtime)
+
+
+def make_independent_qed_tile(idx, conf) -> ProxyTile:
+    """
+    The tile of make_independent_tile whose species react through the QED Monte Carlo:
+    its lattice, particle containers and QED state built from conf.
+    """
+
+    tile = make_independent_tile(idx, conf)
+    tile.sim_context.eval((actions.ensure_constructed_qed, actions.current_context))
+    return tile

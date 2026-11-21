@@ -28,5 +28,4 @@ add_python_mpi_test(pic_simulation 4)
 add_python_mpi_test(mpiio_fields 4)
 add_python_mpi_test(mpiio_particles 4)
 add_python_mpi_test(mpiio_spectra 4)
-# parked until the v5.1 port of qed
-# add_python_mpi_test(qed_simulation 4)
+add_python_mpi_test(qed_simulation 4)

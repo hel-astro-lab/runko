@@ -12,7 +12,7 @@ namespace tools{ void bind_tools(py::module& m); }
 namespace emf  { void bind_emf(  py::module& m); }
 namespace pic  { void bind_pic(  py::module& m); }
 namespace actions { void bind_actions(py::module& m); }
-namespace qed  { void bind_qed(  py::module& m); }  // parked until the v5.1 port of qed
+namespace qed  { void bind_qed(  py::module& m); }
 
 
 #include <pybind11/numpy.h>

@@ -193,7 +193,8 @@ class Simulation:
                                   "prtcl_pack_outgoing" : "pack_outgoing_particles",
                                   "prtcl_deposit_current" : "deposit_current",
                                   "prtcl_reflect_particles" : "reflect_particles",
-                                  "prtcl_advance_reflector_walls" : "advance_reflector_walls" }
+                                  "prtcl_advance_reflector_walls" : "advance_reflector_walls",
+                                  "prtcl_interact" : "interact" }
 
                 if method in method_mapper:
                     method = method_mapper[method]

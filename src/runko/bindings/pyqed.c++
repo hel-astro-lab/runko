@@ -1,6 +1,7 @@
 // Copyright 2026 - 2026, Miro Palmu, Joonas Nättilä and the runko contributors
 // SPDX-License-Identifier: GPL-3.0-or-later
 
+#include "runko/actions/qed.h"
 #include "runko/bindings/runko_cpp_bindings.h"
 #include "runko/qed/interactions/qed1_bw.h"
 #include "runko/qed/interactions/qed1_syn.h"
@@ -8,14 +9,11 @@
 #include "runko/qed/interactions/qed2_comp.h"
 #include "runko/qed/interactions/qed2_gg.h"
 #include "runko/qed/interactions/qed2_ssa.h"
-#include "runko/qed/tile.h"
-#include "runko/qed/virtual_tile.h"
-#include "runko/tools/config_parser.h"
 #include "pybind11/numpy.h"
 #include "pybind11/pybind11.h"
 #include "pybind11/stl.h"
 
-#include <memory>
+#include <string>
 #include <vector>
 
 namespace {
@@ -122,155 +120,108 @@ void
 void
   bind_qed(py::module& m_sub)
 {
-  py::module m_3d = m_sub.def_submodule("threeD", "3D specializations");
+  // runko.qed.threeD.Tile is the python factory of a single QED tile (runko/__init__.py)
+  m_sub.def_submodule("threeD", "3D specializations");
   py::module m_ph = m_sub.def_submodule("physics", "the QED process functions, vectorized");
   bind_physics(m_ph);
   m_sub.attr("LAMC_CM")   = qed::LAMC_CM;
   m_sub.attr("ESC_EDGES") = to_ndarray(esc_edges());   // log bins of the escaping spectrum
   m_sub.attr("MU_EDGES")  = to_ndarray(mu_edges());    // linear bins of its direction cosine
 
-  // ---- the virtual (halo) tile: the pic one, registered so that the grid can build it
-  py::class_<
-    qed::VirtualTile<3>,
-    pic::VirtualTile<3>,
-    emf::VirtualTile<3>,
-    corgi::Tile<3>,
-    std::shared_ptr<qed::VirtualTile<3>>>(m_3d, "VirtualTile")
-    .def(
-      py::init([](const std::array<std::size_t, 3> tile_grid_idx, const py::handle& h) {
-        return qed::VirtualTile<3>(tile_grid_idx, toolbox::ConfigParser(h));
-      }))
-    .def_static("canonical_type", []() { return py::type::of<qed::Tile<3>>(); });
+  // ---- one tile of a simulation context, by its id: the per-tile methods of runko.ProxyTile
+  using sim_t = runko::simulation_context;
+  using id_t  = qed::tile_id;
+  const auto sampler = [](sim_t& sim, const id_t id) -> qed::Sampler& { return qed::state(sim, id).sampler; };
 
-  // ---- the qed tile: the sampler step, its layout, its populations and its diagnostics
-  py::class_<
-    qed::Tile<3>,
-    pic::Tile<3>,
-    emf::Tile<3>,
-    corgi::Tile<3>,
-    std::shared_ptr<qed::Tile<3>>>(m_3d, "Tile")
-    .def_static("canonical_type", []() { return py::type::of<qed::Tile<3>>(); })
-    .def_static(
-      "virtual_tile_specialization",
-      []() { return py::type::of<qed::VirtualTile<3>>(); })
-    .def(
-      py::init([](const std::array<std::size_t, 3> tile_grid_idx, const py::handle& h) {
-        return qed::Tile<3>(tile_grid_idx, toolbox::ConfigParser(h));
-      }))
-    // layout: the padded sort, its state, the species roles and the box clocks
-    .def("sort_particles", &qed::Tile<3>::sort_particles)
-    .def("laid", &qed::Tile<3>::laid)
-    .def("step", &qed::Tile<3>::step)
-    .def(
-      "species",
-      [](const qed::Tile<3>& t, const std::string& s) { return t.species(species_of(s)); })
-    .def(
-      "box",
-      [](const qed::Tile<3>& t) {
-        const auto& b = t.box();
-        py::dict d;
-        d["H_lamC"] = b.H_lamC;
-        d["dt"]     = b.dt;
-        d["w_lep"]  = b.w_lep;
-        d["ell_B"]  = b.ell_B;
-        d["x_min"]  = b.x_min;
-        d["N1"]     = b.N1();
-        d["N2"]     = b.N2();
-        d["b_perp"] = b.b_perp();
-        return d;
-      })
-    // population IO (host round trips): replace, inspect the layout tables and keys
-    .def(
-      "set_particles",
-      [](
-        qed::Tile<3>& t,
-        const std::string& s,
-        const std::vector<std::array<double, 3>>& u,
-        const std::vector<double>& w) { t.set_particles(species_of(s), u, w); })
-    .def(
-      "get_slot_keys",
-      [](qed::Tile<3>& t, const std::string& s) {
-        return to_ndarray(t.get_slot_keys(species_of(s)));
-      })
-    .def(
-      "get_tables",
-      [](qed::Tile<3>& t, const std::string& s) {
-        const auto tb = t.get_tables(species_of(s));
-        py::dict d;
-        d["b"]    = to_ndarray(tb.b);
-        d["cap"]  = to_ndarray(tb.cap);
-        d["fill"] = to_ndarray(tb.fill);
-        d["prod"] = to_ndarray(tb.prod);
-        d["wmax"] = to_ndarray(tb.wmax);
-        d["emin"] = to_ndarray(tb.emin);
-        d["emax"] = to_ndarray(tb.emax);
-        d["llo"]  = tb.llo;
-        d["dl"]   = tb.dl;
-        return d;
-      })
-    // diagnostics: totals, pair depth, the sampler step and its counters
-    .def(
-      "totals",
-      [](const qed::Tile<3>& t, const std::string& s) {
-        const auto tt = t.totals(species_of(s));
-        py::dict d;
-        d["N"] = tt.N;
-        d["W"] = tt.W;
-        d["E"] = tt.E;
-        d["P"] = tt.P;
-        return d;
-      })
-    .def("tau_T", &qed::Tile<3>::tau_T)
-    .def("interact", &qed::Tile<3>::interact)
-    .def("counts", &qed::Tile<3>::counts)
-    .def("moved", &qed::Tile<3>::moved)
-    .def("report", &qed::Tile<3>::report)
-    .def(
-      "pair_sum",
-      [](qed::Tile<3>& t, const std::string& channel, const bool weight) {
-        return t.pair_sum(channel, weight);
-      },
-      py::arg("channel"),
-      py::arg("weight") = false)
-    // the open box: sources, the sink, its budgets and the escaping spectrum
-    .def("inject_pairs_plaw", &qed::Tile<3>::inject_pairs_plaw, py::arg("ell"), py::arg("p"), py::arg("gmin"), py::arg("gmax"))
-    .def("inject_photons", &qed::Tile<3>::inject_photons, py::arg("ell"), py::arg("theta"), py::arg("w"), py::arg("planck") = true)
-    .def("heat_diffusive", &qed::Tile<3>::heat_diffusive, py::arg("ell"))
-    .def("escape_photons", &qed::Tile<3>::escape_photons, py::arg("tau_T") = -1.0, py::arg("dt_esc") = -1.0)
-    .def(
-      "escaped_mu_spectrum",
-      [](const qed::Tile<3>& t) {
-        // (log x bins, mu bins) as a (NESC, NMU) array of x ell_x sums
-        const auto h = t.escaped_mu_spectrum();
-        auto a       = to_ndarray(h);
-        return a.reshape({ static_cast<py::ssize_t>(qed::Sampler::NESC), static_cast<py::ssize_t>(qed::Sampler::NMU) });
-      })
-    .def("reset_budget", &qed::Tile<3>::reset_budget)
-    .def("tau_ssa", &qed::Tile<3>::tau_ssa, py::arg("x"))
-    .def(
-      "budget",
-      [](const qed::Tile<3>& t) {
-        const auto& b = t.budget();
-        py::dict d;
-        d["inj_E"]  = b.inj_E;
-        d["inj_W"]  = b.inj_W;
-        d["heat_E"] = b.heat_E;
-        d["esc_E"]  = b.esc_E;
-        d["esc_W"]  = b.esc_W;
-        return d;
-      })
-    .def(
-      "escaped_spectrum",
-      [](const qed::Tile<3>& t) {
-        // (bin edges, x ell_x per bin) -- the sums are in energy units, the caller divides by steps
-        return py::make_tuple(to_ndarray(esc_edges()), to_ndarray(t.escaped_spectrum()));
-      })
-    // in-place momentum reset of the live LPs (thermostats of the tests)
-    .def(
-      "reset_momenta",
-      [](qed::Tile<3>& t, const std::string& s, const std::vector<std::array<double, 3>>& u) {
-        t.reset_momenta(species_of(s), u);
-      });
+  // layout: its state, the species roles and the box clocks
+  m_sub.def("laid", &qed::laid);
+  m_sub.def("step", [=](sim_t& sim, const id_t id) { return sampler(sim, id).step(); });
+  m_sub.def("species", [](sim_t& sim, const id_t id, const std::string& s) {
+    return qed::state(sim, id).sp[static_cast<std::size_t>(species_of(s))];
+  });
+  m_sub.def("box", [=](sim_t& sim, const id_t id) {
+    const auto& b = sampler(sim, id).box;
+    py::dict d;
+    d["H_lamC"] = b.H_lamC;
+    d["dt"]     = b.dt;
+    d["w_lep"]  = b.w_lep;
+    d["ell_B"]  = b.ell_B;
+    d["x_min"]  = b.x_min;
+    d["N1"]     = b.N1();
+    d["N2"]     = b.N2();
+    d["b_perp"] = b.b_perp();
+    return d;
+  });
+  // population IO (host round trips): replace, inspect the layout tables and keys
+  m_sub.def(
+    "set_particles",
+    [](sim_t& sim, const id_t id, const std::string& s, const std::vector<std::array<double, 3>>& u, const std::vector<double>& w) {
+      qed::set_particles(sim, id, species_of(s), u, w);
+    });
+  m_sub.def("get_slot_keys", [](sim_t& sim, const id_t id, const std::string& s) {
+    return to_ndarray(qed::get_slot_keys(sim, id, species_of(s)));
+  });
+  m_sub.def("get_tables", [](sim_t& sim, const id_t id, const std::string& s) {
+    const auto tb = qed::state(sim, id).pops[static_cast<std::size_t>(species_of(s))].get_tables();
+    py::dict d;
+    d["b"]    = to_ndarray(tb.b);
+    d["cap"]  = to_ndarray(tb.cap);
+    d["fill"] = to_ndarray(tb.fill);
+    d["prod"] = to_ndarray(tb.prod);
+    d["wmax"] = to_ndarray(tb.wmax);
+    d["emin"] = to_ndarray(tb.emin);
+    d["emax"] = to_ndarray(tb.emax);
+    d["llo"]  = tb.llo;
+    d["dl"]   = tb.dl;
+    return d;
+  });
+  // diagnostics: totals, pair depth, the sampler step and its counters
+  m_sub.def("totals", [](sim_t& sim, const id_t id, const std::string& s) {
+    const auto tt = qed::totals(sim, id, species_of(s));
+    py::dict d;
+    d["N"] = tt.N;
+    d["W"] = tt.W;
+    d["E"] = tt.E;
+    d["P"] = tt.P;
+    return d;
+  });
+  m_sub.def("tau_T", &qed::tau_T);
+  m_sub.def("interact", &qed::interact);
+  m_sub.def("layout", &qed::layout);
+  m_sub.def("counts", [=](sim_t& sim, const id_t id) { return sampler(sim, id).counts(); });
+  m_sub.def("moved", [=](sim_t& sim, const id_t id) { return sampler(sim, id).moved(); });
+  m_sub.def("report", [=](sim_t& sim, const id_t id) { return sampler(sim, id).report(); });
+  m_sub.def("pair_sum", &qed::pair_sum, py::arg("sim"), py::arg("id"), py::arg("channel"), py::arg("weight") = false);
+  // the open box: sources, the sink, its budgets and the escaping spectrum
+  m_sub.def("inject_pairs_plaw", &qed::inject_pairs_plaw, py::arg("sim"), py::arg("id"), py::arg("ell"), py::arg("p"), py::arg("gmin"), py::arg("gmax"));
+  m_sub.def("inject_photons", &qed::inject_photons, py::arg("sim"), py::arg("id"), py::arg("ell"), py::arg("theta"), py::arg("w"), py::arg("planck") = true);
+  m_sub.def("heat_diffusive", &qed::heat_diffusive, py::arg("sim"), py::arg("id"), py::arg("ell"));
+  m_sub.def("escape_photons", &qed::escape_photons, py::arg("sim"), py::arg("id"), py::arg("tau_T") = -1.0, py::arg("dt_esc") = -1.0);
+  m_sub.def("escaped_mu_spectrum", [=](sim_t& sim, const id_t id) {
+    // (log x bins, mu bins) as a (NESC, NMU) array of x ell_x sums
+    auto a = to_ndarray(sampler(sim, id).escaped_mu_spectrum());
+    return a.reshape({ static_cast<py::ssize_t>(qed::Sampler::NESC), static_cast<py::ssize_t>(qed::Sampler::NMU) });
+  });
+  m_sub.def("reset_budget", [=](sim_t& sim, const id_t id) { sampler(sim, id).reset_budget(); });
+  m_sub.def("tau_ssa", &qed::tau_ssa, py::arg("sim"), py::arg("id"), py::arg("x"));
+  m_sub.def("budget", [=](sim_t& sim, const id_t id) {
+    const auto& b = sampler(sim, id).budget;
+    py::dict d;
+    d["inj_E"]  = b.inj_E;
+    d["inj_W"]  = b.inj_W;
+    d["heat_E"] = b.heat_E;
+    d["esc_E"]  = b.esc_E;
+    d["esc_W"]  = b.esc_W;
+    return d;
+  });
+  m_sub.def("escaped_spectrum", [=](sim_t& sim, const id_t id) {
+    // (bin edges, x ell_x per bin) -- the sums are in energy units, the caller divides by steps
+    return py::make_tuple(to_ndarray(esc_edges()), to_ndarray(sampler(sim, id).escaped_spectrum()));
+  });
+  // in-place momentum reset of the live LPs (thermostats of the tests)
+  m_sub.def("reset_momenta", [](sim_t& sim, const id_t id, const std::string& s, const std::vector<std::array<double, 3>>& u) {
+    qed::reset_momenta(sim, id, species_of(s), u);
+  });
 }
 
 }  // namespace qed

@@ -8,6 +8,9 @@ import numpy as np
 import runko
 
 ph = runko.qed.physics
+# one runko runtime for the process: a tile's own ends with the tile, and the runtime cannot
+# start a second time
+_runtime = runko.actions.RuntimeInstance()
 
 WL = 1e-3          # lepton LP weight, Thomson depths
 H = 4.111e9        # tile edge in Compton wavelengths: ell_B = 10 -> b_perp = 1e-3

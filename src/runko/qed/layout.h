@@ -57,8 +57,8 @@ struct [[nodiscard]] LayoutView {
   float mass;           // rest mass of the species
   double llo;           // log of the lowest kinetic energy of the epoch
   double dl;            // log width of an energy bin
-  std::array<float, 3> mins;  // tile extent, for the reaction cell of a position
-  std::array<float, 3> maxs;  // (positions are in the tile's own coordinates)
+  std::array<float, 3> mins;  // tile extent in global coordinates, for the reaction cell of a position
+  std::array<float, 3> maxs;
 
   /// reaction cell of a position
   [[nodiscard]] constexpr int cell_of(const float x, const float y, const float z) const
@@ -118,12 +118,11 @@ class [[nodiscard]] Pop {
 public:
   Pop(bool keyed, double mass);
 
-  /// whether the tables describe this container: built, and the container at the size they were
-  /// built or grown for (pic's append writes behind the last alive slot and truncates the trailing
-  /// slack, so any other size means the tables are stale)
+  /// whether the tables describe this container: built, the container still placed (a sort or an
+  /// injection drops the layout) and at the size they were built or grown for
   [[nodiscard]] bool laid(const pic::ParticleContainer& con) const
   {
-    return laid_ and skey_.size() == con.size();
+    return laid_ and con.placed() and skey_.size() == con.size();
   }
   void invalidate() { laid_ = false; }
 
@@ -138,8 +137,9 @@ public:
   /// the tables as the kernels read them (valid while laid)
   [[nodiscard]] LayoutView view();
 
-  /// the container grew from `old` slots (products placed, arrivals): the new slots are tail (-1)
-  void grown(const pic::ParticleContainer& con, std::size_t old);
+  /// the container grew at its tail since the tables were built or last grown (products placed,
+  /// arrivals appended): the new slots are tail (-1)
+  void grown(const pic::ParticleContainer& con);
 
   /// widen the bounds of every key by every live LP it holds, on the caller's queue (the
   /// caller waits)

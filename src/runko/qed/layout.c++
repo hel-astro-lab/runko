@@ -270,11 +270,12 @@ LayoutView
 }
 
 void
-  Pop::grown(const pic::ParticleContainer& con, const std::size_t old)
+  Pop::grown(const pic::ParticleContainer& con)
 {
-  // a growth from any other size than the tables' means they were stale already
-  if(old != skey_.size()) { laid_ = false; }
-  if(laid_) { skey_.resize(con.size(), std::int32_t { -1 }); }
+  // a placed container only grows at its tail, so the tables still describe its head
+  if(laid_ and con.placed() and con.size() > skey_.size()) {
+    skey_.resize(con.size(), std::int32_t { -1 });
+  }
 }
 
 Pop::Totals

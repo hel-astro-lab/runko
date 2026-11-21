@@ -29,8 +29,7 @@ PYBIND11_MODULE(runko_cpp_bindings, m_base) {
   py::module m_actions = m_base.def_submodule("actions", "actions");
   actions::bind_actions(m_actions);
 
-  // parked until the v5.1 port of qed:
-  // py::module m_qed = m_base.def_submodule("qed", "qed module");
-  // qed::bind_qed(m_qed);
+  py::module m_qed = m_base.def_submodule("qed", "qed module");
+  qed::bind_qed(m_qed);
 }
 
