@@ -22,9 +22,9 @@ def make_config(cfl=0.45):
     return config
 
 
-def make_tile(config=None):
+def make_tile(config=None, idx=(0, 0, 0)):
     config = config or make_config()
-    tile = runko.pic.threeD.Tile((0, 0, 0), config)
+    tile = runko.pic.threeD.Tile(idx, config)
     zero = lambda x, y, z: (0, 0, 0)
     tile.set_EBJ(zero, zero, zero)
     return config, tile
@@ -134,6 +134,42 @@ class photon_pusher(unittest.TestCase):
         order = np.argsort(k[:, 0])
         got = np.argsort(vx)
         np.testing.assert_allclose(np.asarray(ws)[got], w[order], rtol=1e-6)
+
+    def test_weights_survive_tile_communication(self):
+        """photons crossing into the neighbouring tile keep their weights"""
+        import tempfile
+        config = make_config()
+        config.tile_partitioning = "catepillar_track"
+        config.catepillar_track_length = 1
+        config.n_laps = 1
+        config.n_tiles = [2, 1, 1]
+        config.io_outdir = tempfile.mkdtemp(prefix="runko-photon-comm-")
+        tile_grid = runko.TileGrid(config)
+        rng = np.random.default_rng(3)
+        n = 200
+        w = rng.uniform(0.1, 5.0, n)
+        for idx in tile_grid.local_tile_indices():
+            _, tile = make_tile(config, idx)
+            if tuple(idx) == (0, 0, 0):
+                # at the +x edge of the first tile, flying +x: one push moves them into the second
+                tile.inject(2, [runko.pic.threeD.ParticleState(pos=(7.8, 2.0 + 4.0 * rng.random(), 2.0 + 4.0 * rng.random()),
+                                                              vel=(1.0, 0.0, 0.0), wgt=ww) for ww in w])
+            tile_grid.add_tile(tile, idx)
+        simulation = tile_grid.configure_simulation(config)
+        def lap(x):
+            x.prtcl_push()
+            x.comm_external(runko.tools.comm_mode.pic_particle)
+            x.comm_local(runko.tools.comm_mode.pic_particle)
+        simulation.for_each_lap(lap)
+        got = {}
+        for tile in simulation.local_tiles():
+            xs = np.asarray(tile.get_positions(2)[0]); ws = np.asarray(tile.get_weights(2))
+            got[tuple(tile.index)] = (xs, ws)
+        x1, w1 = got[(1, 0, 0)]
+        self.assertEqual(len(w1), n)
+        self.assertEqual(len(got[(0, 0, 0)][1]), 0)
+        self.assertTrue(np.all(x1 >= 8.0))
+        np.testing.assert_allclose(np.sort(w1), np.sort(w), rtol=1e-6)
 
 
 if __name__ == "__main__":

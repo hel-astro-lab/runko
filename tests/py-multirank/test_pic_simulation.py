@@ -656,6 +656,55 @@ def pic_wrap_positions():
     mpi_unittest.assertDeferredResults(asserts)
 
 
+def pic_photon_weights_communication():
+    """
+    Photons (per-particle weights) placed in every halo subregion of every tile
+    keep their own weights through tile and rank exchange. The weight encodes the
+    sending tile and the direction, the velocity carries the direction along.
+    """
+
+    from mpi4py import MPI
+
+    conf, tile_grid = make_test_grid()
+    conf.q2, conf.m2 = 0, 0
+
+    dirs = list(itertools.product([-1, 0, 1], repeat=3))
+    def weight(idx, d):
+        tile_lin = (idx[0] * 2 + idx[1]) * 2 + idx[2]
+        return 100.0 * tile_lin + dirs.index(tuple(d)) + 1.0
+
+    for idx in tile_grid.local_tile_indices():
+        tile = runko.pic.threeD.Tile(idx, conf)
+        photons = make_test_particles(tile)
+        for p in photons:
+            p.wgt = weight(idx, np.rint(p.vel).astype(int))
+        tile.inject(2, photons)
+        tile_grid.add_tile(tile, idx)
+
+    simulation = tile_grid.configure_simulation(conf)
+
+    def f(x):
+        x.comm_external(runko.tools.comm_mode.pic_particle)
+        x.comm_local(runko.tools.comm_mode.pic_particle)
+
+    simulation.for_one_lap(f)
+
+    asserts = []
+    local_w = []
+    for tile in simulation.local_tiles():
+        vx, vy, vz = tile.get_velocities(2)
+        ws = np.asarray(tile.get_weights(2))
+        for w, v in zip(ws, zip(vx, vy, vz)):
+            d = tuple(int(round(c)) for c in v)
+            asserts.append(mpi_unittest.assertEqualDeferred(int(w) % 100 - 1, dirs.index(d)))
+        local_w.extend(ws.tolist())
+
+    all_w = np.sort(np.concatenate(MPI.COMM_WORLD.allgather(local_w)))
+    expected = np.sort([weight(idx, d) for idx in itertools.product([0, 1], repeat=3) for d in dirs])
+    asserts.append(mpi_unittest.assertEqualDeferred(all_w.tolist(), expected.tolist()))
+    mpi_unittest.assertDeferredResults(asserts)
+
+
 if __name__ == "__main__":
     _ = runko.actions.RuntimeInstance()
     pic_noop_communication()
@@ -665,3 +714,4 @@ if __name__ == "__main__":
     pic_conservation_of_ids()
     pic_wrap_positions()
     pic_kinetic_energy_reduction()
+    pic_photon_weights_communication()
