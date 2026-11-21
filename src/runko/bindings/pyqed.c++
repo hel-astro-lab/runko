@@ -187,7 +187,6 @@ void
   });
   m_sub.def("tau_T", &qed::tau_T);
   m_sub.def("interact", &qed::interact);
-  m_sub.def("layout", &qed::layout);
   m_sub.def("counts", [=](sim_t& sim, const id_t id) { return sampler(sim, id).counts(); });
   m_sub.def("moved", [=](sim_t& sim, const id_t id) { return sampler(sim, id).moved(); });
   m_sub.def("report", [=](sim_t& sim, const id_t id) { return sampler(sim, id).report(); });
