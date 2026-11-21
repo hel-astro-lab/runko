@@ -208,7 +208,7 @@ class Simulation:
 
             elif method.startswith("grid_"):
                 symbol = getattr(actions, method[len("grid_"):])
-                self._simulation_context.eval((symbol, actions.current_context))
+                self._simulation_context.eval((symbol, actions.current_context, *vargs))
 
             elif method.startswith("io_"):
                 prog = None
