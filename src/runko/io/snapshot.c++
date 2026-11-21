@@ -802,6 +802,9 @@ void
     const auto pos_mds    = container.pos_mds();
     const auto vel_mds    = container.vel_mds();
     const auto ids_mds    = container.ids_mds();
+    const auto wgt_mds    = container.wgt_mds();
+    const auto weighted   = container.has_particle_weights();
+    const auto w0         = static_cast<float>(container.weight());
     const auto base       = static_cast<std::size_t>(s * num_spectra_per_species);
 
     w.for_each_index(pos_mds, [=](const auto idx) {
@@ -828,9 +831,11 @@ void
       const auto ib_by = bin(sstd::floor((uy * inv_gamma + vt { 1 }) * inv_dbeta));
       const auto ib_bz = bin(sstd::floor((uz * inv_gamma + vt { 1 }) * inv_dbeta));
 
+      // the particle's weight: the species weight unless it carries its own
+      const auto dep     = weighted ? wgt_mds[idx][] : w0;
       const auto deposit = [=](const std::size_t ib, const std::size_t q) {
         auto* const n = &thrust::raw_reference_cast(buf_mds[ix, ib][base + q]);
-        sstd::atomic_add(n, 1.0f);
+        sstd::atomic_add(n, dep);
       };
 
       deposit(ib_u, 0);

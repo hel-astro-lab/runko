@@ -222,6 +222,32 @@ class TestMpiioSpectraWriter(unittest.TestCase):
         u_total = fields["s0_u"].sum()
         self.assertAlmostEqual(u_total, total_particles, delta=1)
 
+    def test_spectra_are_weighted(self):
+        """a particle deposits its weight; dead slots of a preallocated container deposit nothing"""
+        config = make_spectra_config(
+            outdir=self.outdir, nbins=100, umin=1e-4, umax=1e4)
+        config.w0 = 0.25                      # species weight
+        config.q2, config.m2 = 0, 0           # photons: their own weights
+        config.prealloc_per_species = 100
+        P = runko.pic.threeD.ParticleState
+        gen = lambda x, y, z: [P(pos=(x + 0.5, y + 0.5, z + 0.5), vel=(1.0, 2.0, 3.0), wgt=2.0)]
+        tile_grid = runko.TileGrid(config)
+        for idx in tile_grid.local_tile_indices():
+            tile = runko.pic.threeD.Tile(idx, config)
+            zero = lambda x, y, z: (0, 0, 0)
+            tile.set_EBJ(zero, zero, zero)
+            for species in range(3):
+                tile.inject_to_each_cell(species, gen)
+            tile_grid.add_tile(tile, idx)
+        sim = tile_grid.configure_simulation(config)
+        hdr, fields = spectra_write_and_read(sim, self.outdir)
+
+        n = 8**3
+        for q in ("u", "bx", "by", "bz"):
+            self.assertAlmostEqual(fields[f"s0_{q}"].sum(), 0.25 * n, places=2)
+            self.assertAlmostEqual(fields[f"s1_{q}"].sum(), 1.0 * n, places=2)
+            self.assertAlmostEqual(fields[f"s2_{q}"].sum(), 2.0 * n, places=2)
+
     def test_bin_edge_helpers(self):
         """Verify bin edge helper functions."""
         hdr = {"nbins": 10, "umin": 0.01, "umax": 100.0}
