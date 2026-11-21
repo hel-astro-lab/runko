@@ -49,11 +49,18 @@ void
   using PSB = runko::ParticleStateBatch;
   py::class_<PSB>(m_3d, "ParticleStateBatch")
     .def(
-      py::init<PSB::container_type, PSB::container_type>(),
+      py::init([](
+                 PSB::container_type pos,
+                 PSB::container_type vel,
+                 std::optional<py::array_t<double>> wgt) {
+        return PSB { .pos = std::move(pos), .vel = std::move(vel), .wgt = std::move(wgt) };
+      }),
       py::arg("pos"),
-      py::arg("vel"))
+      py::arg("vel"),
+      py::arg("wgt") = py::none())
     .def_readwrite("pos", &PSB::pos)
-    .def_readwrite("vel", &PSB::vel);
+    .def_readwrite("vel", &PSB::vel)
+    .def_readwrite("wgt", &PSB::wgt);
 
   // reflector wall data structure
   using RW = pic::reflector_wall;

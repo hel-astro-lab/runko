@@ -9,6 +9,7 @@
 
 #include <array>
 #include <concepts>
+#include <optional>
 #include <type_traits>
 
 namespace runko {
@@ -43,6 +44,8 @@ struct ParticleStateBatch {
 
   container_type pos;
   container_type vel;
+  /// Per-particle weights; ignored by species that carry the species weight.
+  std::optional<pybind11::array_t<double>> wgt {};
 };
 
 template<typename F, typename T>

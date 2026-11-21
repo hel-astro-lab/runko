@@ -288,6 +288,7 @@ void
       assert_shapes(state_batch.vel[0]);
       assert_shapes(state_batch.vel[1]);
       assert_shapes(state_batch.vel[2]);
+      if(state_batch.wgt) { assert_shapes(*state_batch.wgt); }
     }
 
     const auto posx_view = state_batch.pos[0].template unchecked<1>();
@@ -307,7 +308,8 @@ void
         runko::ParticleState<double> {
           .pos = { posx_view(n), posy_view(n), posz_view(n) },
           .vel = { velx_view(n), vely_view(n), velz_view(n) },
-          .id  = id_gen.consume_next_id(particle_type) });
+          .id  = id_gen.consume_next_id(particle_type),
+          .wgt = state_batch.wgt ? state_batch.wgt->at(n) : 1.0 });
     }
 
     particles.at(particle_type).add_particles(states);

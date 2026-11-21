@@ -91,6 +91,30 @@ class photon_pusher(unittest.TestCase):
         self.assertLess(tile.get_velocities(2)[0][0], 0)      # the photon is not
         self.assertLess(tile.get_positions(2)[0][0], 4.0)
 
+    def test_batch_inject_with_weights(self):
+        config, tile = make_tile()
+        def pgen(x, y, z):
+            n = len(x)
+            vel = [np.full(n, 0.01), np.zeros(n), np.zeros(n)]
+            return runko.pic.threeD.ParticleStateBatch(pos=[x, y, z], vel=vel, wgt=np.arange(n, dtype=float))
+        tile.batch_inject_to_cells(2, pgen)
+        w = np.sort(tile.get_weights(2))
+        np.testing.assert_allclose(w, np.arange(len(w), dtype=float))
+        # leptons ignore a given weight array
+        tile.batch_inject_to_cells(0, pgen)
+        np.testing.assert_allclose(tile.get_weights(0), np.full(len(w), 1e-3), rtol=1e-6)
+
+    def test_batch_weights_follow_the_stripe_cut(self):
+        """entries dropped outside the stripe take their weights with them"""
+        config, tile = make_tile()
+        def pgen(x, y, z):
+            vel = [np.full(len(x), 0.01), np.zeros(len(x)), np.zeros(len(x))]
+            return runko.pic.threeD.ParticleStateBatch(pos=[x + 0.5, y, z], vel=vel, wgt=x + 0.5)
+        tile.batch_inject_in_x_stripe(2, pgen, 2.0, 4.0)
+        xs, _, _ = tile.get_positions(2)
+        np.testing.assert_allclose(tile.get_weights(2), xs, rtol=1e-6)
+        self.assertTrue(np.all((np.asarray(xs) >= 2.0) & (np.asarray(xs) < 4.0)))
+
 
 if __name__ == "__main__":
     _ = runko.actions.RuntimeInstance()
