@@ -209,7 +209,9 @@ if __name__ == "__main__":
                         f"N_LP={[int(n) for n in S['N'][-1]]} ell_esc={S['ell_esc'][-1]:.3g} ({time.time()-t_start:.0f}s)")
 
     simulation.for_each_lap(corona_step)
-    diag.record(conf.n_laps, conf.n_laps - last_record)
+    # the laps 0 .. n_laps - 1 ran: n_laps - 1 - last_record of them since the last record
+    if conf.n_laps - 1 > last_record:
+        diag.record(conf.n_laps, conf.n_laps - 1 - last_record)
     diag.save_series()
     if runko.on_main_rank():
         tile = next(iter(simulation.local_tiles()))
