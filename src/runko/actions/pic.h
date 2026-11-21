@@ -23,7 +23,10 @@ class [[nodiscard]] particle_id_generator {
 public:
   explicit constexpr particle_id_generator(const runko::prtc_id_type tag);
 
-  [[nodiscard]] constexpr runko::prtc_id_type consume_next_id(const std::size_t ptype);
+  [[nodiscard]] runko::prtc_id_type consume_next_id(const std::size_t ptype);
+
+  /// Reserve n consecutive ids of a species; returns the first (n = 0: the next free one).
+  runko::prtc_id_type reserve_ids(std::size_t ptype, std::size_t n);
 };
 
 

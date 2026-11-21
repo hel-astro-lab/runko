@@ -31,17 +31,24 @@ constexpr particle_id_generator::particle_id_generator(const runko::prtc_id_type
   }
 }
 
-constexpr runko::prtc_id_type
-  particle_id_generator::consume_next_id(const std::size_t ptype)
+runko::prtc_id_type
+  particle_id_generator::reserve_ids(const std::size_t ptype, const std::size_t n)
 {
   if(this->ordinals_.size() <= ptype) { ordinals_.resize(ptype + 1uz); }
-  const auto ordinal = static_cast<runko::prtc_id_type>(this->ordinals_.at(ptype)++);
+  const auto ordinal = static_cast<runko::prtc_id_type>(this->ordinals_.at(ptype));
+  this->ordinals_.at(ptype) += n;
 
-  if(ordinal >= 2uz << 40uz) {
+  if(ordinal + n > 2uz << 40uz) {
     throw std::runtime_error { "PIC tile ran out of particle ids (2^40 per species)!" };
   }
 
   return (this->tag_ << 40uz) | ordinal;
+}
+
+runko::prtc_id_type
+  particle_id_generator::consume_next_id(const std::size_t ptype)
+{
+  return this->reserve_ids(ptype, 1uz);
 }
 
 void
