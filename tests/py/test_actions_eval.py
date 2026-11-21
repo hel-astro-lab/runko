@@ -31,6 +31,7 @@ def flush(stream):
 # Retrieved 2026-03-22, License - CC BY-SA 4.0
 import os
 import sys
+import tempfile
 from contextlib import contextmanager
 
 def fileno(file_or_fd):
@@ -63,12 +64,18 @@ def stdout_redirected(to=os.devnull, stdout=None):
             flush(stdout_fd)
             os.dup2(copied.fileno(), stdout_fd)  # $ exec >&copied
 
+def anonymous_fd():
+    """Unlinked temporary file; os.memfd_create is Linux-only."""
+    fd, path = tempfile.mkstemp()
+    os.unlink(path)
+    return fd
+
 ra = runko.actions
 
 class actions_eval(unittest.TestCase):
 
     def test_print(self):
-        fd = os.memfd_create("test.txt")
+        fd = anonymous_fd()
 
         with stdout_redirected(fd) as mem:
             strings = (ra.quote, ("foo", "bar"))
@@ -82,7 +89,7 @@ class actions_eval(unittest.TestCase):
 
 
     def test_println(self):
-        fd = os.memfd_create("test.txt")
+        fd = anonymous_fd()
 
         with stdout_redirected(fd) as mem:
             strings = (ra.quote, ("foo", "bar"))
@@ -96,7 +103,7 @@ class actions_eval(unittest.TestCase):
 
 
     def test_formatting(self):
-        fd = os.memfd_create("test.txt")
+        fd = anonymous_fd()
 
         with stdout_redirected(fd) as mem:
             body = (ra.print, (ra.format, (ra.quote, ("foo", 42)), "bar"))
@@ -109,7 +116,7 @@ class actions_eval(unittest.TestCase):
 
 
     def test_sequence(self):
-        fd = os.memfd_create("test.txt")
+        fd = anonymous_fd()
 
         with stdout_redirected(fd) as mem:
             body = (ra.sequence, (ra.quote, (ra.print, "foo")), (ra.quote, (ra.print, "bar")))
