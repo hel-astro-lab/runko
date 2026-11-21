@@ -32,6 +32,24 @@ def make_tile(config=None):
 
 class photon_pusher(unittest.TestCase):
 
+    def test_moves_at_c_along_k(self):
+        config, tile = make_tile()
+        k = [(1e-3, 0, 0), (0, 3.0, 4.0), (-2.0, 2.0, -1.0)]
+        w = [0.5, 2.0, 7.0]
+        tile.inject(2, [runko.pic.threeD.ParticleState(pos=(4.0, 4.0, 4.0), vel=kk, wgt=ww)
+                        for kk, ww in zip(k, w)])
+        x0, y0, z0 = tile.get_positions(2)
+        tile.push_particles()
+        x1, y1, z1 = tile.get_positions(2)
+        vx, vy, vz = tile.get_velocities(2)
+        for i, kk in enumerate(k):
+            n = np.linalg.norm(kk)
+            d = np.array([x1[i] - x0[i], y1[i] - y0[i], z1[i] - z0[i]])
+            self.assertAlmostEqual(np.linalg.norm(d), config.cfl, places=5)
+            np.testing.assert_allclose(d, config.cfl * np.array(kk) / n, rtol=1e-5, atol=1e-6)
+            np.testing.assert_allclose([vx[i], vy[i], vz[i]], kk, rtol=1e-6)
+        np.testing.assert_allclose(tile.get_weights(2), w, rtol=1e-6)
+
     def test_lepton_weight_is_the_container_weight(self):
         config, tile = make_tile()
         tile.inject(0, [runko.pic.threeD.ParticleState(pos=(3.0, 3.0, 3.0), vel=(0.1, 0, 0))

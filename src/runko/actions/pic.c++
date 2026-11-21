@@ -421,6 +421,11 @@ void
 
     auto push_impl = [&](const auto& interpolator) {
       for(auto& [i, pbuff]: particles) {
+        // photons move at c along their momentum, whatever the pusher
+        if(pbuff.kind() == pic::SpeciesKind::photon) {
+          pbuff.push_particles_photon(cfl);
+          continue;
+        }
         const auto pusher_index = particle_pushers.size() == 1 ? 0uz : i;
         const auto pusher       = particle_pushers[pusher_index];
 
