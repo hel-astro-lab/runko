@@ -11,11 +11,30 @@ endif()
 set(CMAKE_CXX_EXTENSIONS OFF)
 project(
     runko
-    VERSION 5.0.0
+    VERSION 5.1.0
     DESCRIPTION "Modern C++/python CPU/GPU plasma toolbox."
     HOMEPAGE_URL "https://github.com/hel-astro-lab"
     LANGUAGES CXX
 )
+
+# Pika defines option(BUILD_SHARED_LIBS ...) which also makes tyvi a shared library.
+# However, for the python module we want them to be included into runko_cpp_bindings.so
+# otherwise it would not know where to find libtyvi.so or libpika.so.
+#
+# This has to be set with option(BUILD_SHARED_LIBS ...) as cmake docs state:
+#
+# > Note that if bringing external dependencies directly into the build,
+# > such as with FetchContent or a direct call to add_subdirectory(),
+# > and one of those dependencies has such a call to option(BUILD_SHARED_LIBS ...),
+# > the top level project must also call option(BUILD_SHARED_LIBS ...)
+# > before bringing in its dependencies. Failure to do so can lead to
+# > different behavior between the first and subsequent CMake runs.
+option(BUILD_SHARED_LIBS "Don't touch! Otherwise breaks python install." OFF)
+
+if(${tyvi_BACKEND} STREQUAL "hip")
+    message(STATUS "runko: enabling hip")
+    enable_language(HIP)
+endif()
 
 find_package(OpenMP REQUIRED)
 find_package(MPI REQUIRED)
@@ -46,22 +65,23 @@ target_compile_options(runko_warnings
     -Werror
 )
 
-add_subdirectory(external/corgi)
 add_subdirectory(external/tyvi)
+add_subdirectory(external/entt)
 
 # Required for shared libraries.
 set_target_properties(tyvi PROPERTIES POSITION_INDEPENDENT_CODE TRUE)
+set_target_properties(fmt PROPERTIES POSITION_INDEPENDENT_CODE TRUE)
 
 # Wrap dependencies so that they can be marked SYSTEM libraries (suppresses warnings from them).
 add_library(runko_dependencies INTERFACE)
 target_link_libraries(runko_dependencies
     INTERFACE
-    corgi
     tyvi
+    EnTT::EnTT
+    MPI::MPI_CXX
 )
 target_include_directories(runko_dependencies
     SYSTEM INTERFACE
-    $<TARGET_PROPERTY:corgi,INTERFACE_INCLUDE_DIRECTORIES>
     $<TARGET_PROPERTY:tyvi,INTERFACE_INCLUDE_DIRECTORIES>
 )
 

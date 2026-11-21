@@ -22,6 +22,7 @@
 #include <algorithm>
 #include <any>
 #include <array>
+#include <cstdint>
 #include <concepts>
 #include <cstddef>
 #include <format>
@@ -46,6 +47,16 @@ namespace pic {
 /// What a species is: photons move at c along their momentum, deposit no current and carry
 /// individual weights; everything else is a charged massive species.
 enum class SpeciesKind { charged, photon };
+
+/// Radiation pusher inputs in code units; each closure reads only what it needs.
+struct RadParams {
+  // clang-format off
+  double drag { 0 };                        // A dt of the closure: A_c dt (Compton) or A_s dt (sync)
+  std::array<double, 3> beam { 0, 0, 0 };  // A_b dt n, beam strength times direction (rad_beam)
+  double rad_temp { 0 };                    // Theta_r (rad_comp_heat, rad_sync_ssa)
+  double gamma_t { 1 };                     // gamma where tau_nu = 1 (rad_sync_ssa)
+  // clang-format on
+};
 
 struct ParticleContainerArgs {
   std::size_t N;
@@ -263,6 +274,17 @@ public:
   inline void push_particles_higuera_cary(
     double cfl,
     runko::EB_interpolator<value_type> auto interpolator);
+
+  /// Higuera-Cary Lorentz push followed by a radiative stage (Tamburini+10 splitting).
+  /// `cntr`, `species` and `seed` key the counter-based noise of the stochastic closures.
+  template<runko::ParticlePusher rad>
+  inline void push_particles_radiation(
+    double cfl,
+    runko::EB_interpolator<value_type> auto interpolator,
+    RadParams params,
+    std::uint64_t cntr,
+    std::uint32_t species,
+    std::uint32_t seed);
 
   /// Push particles velocities and positions using Faraday-Cayley scheme.
   inline void push_particles_faraday(
@@ -801,3 +823,4 @@ inline void
 #include "runko/pic/particle_faraday.h"
 #include "runko/pic/particle_higuera_cary.h"
 #include "runko/pic/particle_photon.h"
+#include "runko/pic/particle_radiation.h"

@@ -4,14 +4,6 @@ Installation
 This section contains installation instructions for users of runko.
 See the developer notes for a development-friendly installation.
 
-Requirements
-============
-
-The software listed below is not obtained automatically and must be made available.
-Runko is built with CMake, which is also used to locate dependencies.
-Depending on the system configuration, CMake may or may not find the correct libraries automatically.
-See the CMake documentation for instructions on how to make CMake find the dependencies.
-
 .. note::
 
    Runko offically supports installations only to a python virtual environment.
@@ -24,16 +16,44 @@ See the CMake documentation for instructions on how to make CMake find the depen
 
    Virtual environment can be deactivated with ``deactivate`` command.
 
-Common requirements (version numbers are the ones tested to work; newer versions should also work):
 
-- Python >=3.11.7
-- CMake >=3.23
-- MPI
+Requirements
+============
+
+The software listed below is not obtained automatically and must be made available.
+Runko is built with CMake, which is also used to locate dependencies.
+Depending on the system configuration, CMake may or may not find the correct libraries automatically.
+See the CMake documentation for instructions on how to make CMake find the dependencies.
+
+Common requirements:
+
+.. tabs::
+
+   .. tab:: Generic
+
+      Version numbers are the ones tested to work. Newer versions should also work.
+
+      - git
+      - MPI
+      - CMake >= 3.23
+      - Python with dev stuff >= 3.11.7
+      - (header-only) Boost >= 1.77.0
+
+      Consult package manager of your choise on how to install these.
+
+   .. tab:: Ubuntu 24.04
+
+      .. code:: shell
+
+         apt install cmake g++-14 libopenmpi-dev python3 python3-venv pip libpython3-all-dev git libboost-all-dev
+
+      For cpu backend, CMake might not use ``g++-14`` automatically and it needs to be specified explicitly as the C++ compiler.
+
+
+Backend specific requirements:
 
 .. tabs::
    .. group-tab:: hip backend
-
-      Consult your Linux distribution's package manager for these packages.
 
       - LLVM 19-based C++ compiler with HIP support (tested with GCC 14 libstdc++)
       - ROCm 6.3.4
@@ -43,7 +63,7 @@ Common requirements (version numbers are the ones tested to work; newer versions
 
    .. group-tab:: cpu backend
 
-      - C++26 compiler with OpenMP support (e.g. gcc)
+      - C++23 compiler with OpenMP support (e.g. g++-14)
 
       .. include:: installation-mpi4py.rst
 
@@ -51,11 +71,13 @@ Common requirements (version numbers are the ones tested to work; newer versions
 
    .. group-tab:: cpu backend on macos
 
-      Install the toolchain and Xcode command-line tools:
+      Install the toolchain, the Boost and hwloc libraries needed by pika
+      (fetched at configure time; on macOS it uses Boost.Context),
+      and Xcode command-line tools:
 
       .. code-block:: bash
 
-         brew install llvm cmake wget python3
+         brew install llvm cmake wget python3 boost hwloc
          xcode-select --install
 
       Homebrew's ``open-mpi`` formula builds against AppleClang and fails.
@@ -113,10 +135,34 @@ Common requirements (version numbers are the ones tested to work; newer versions
          module load buildtools 
          module load cray-python 
          module load lumi-CrayPath
+         module load Boost/1.90.0-cpeCray-25.09
 
       .. include:: installation-mpi4py.rst
 
       .. hint:: On LUMI ``<mpi-aware C compiler>`` is ``cc``.
+
+   .. group-tab:: hip backend on HILE
+
+      Obtain the required dependencies by loading modules as shown:
+
+      .. code-block:: shell
+
+         module load LUMI/26.03
+         module load partition/G
+         module load PrgEnv-cray
+         module load rocm
+         module load craype-accel-amd-gfx90a
+         module load cray-mpich
+         module load craype-network-ofi
+         module load buildtools
+         module load cray-python
+         module load lumi-CrayPath
+         module load Boost/1.90.0-cpeCray-26.03
+
+      .. include:: installation-mpi4py.rst
+
+      .. hint:: On HILE ``<mpi-aware C compiler>`` is ``cc``.
+
 
 .. _building:
 
@@ -138,10 +184,6 @@ available presets are:
       .. code:: shell
 
          pip install git+https://github.com/hel-astro-lab/runko --config-settings=cmake.args=--preset=unix-hip
-
-      .. note::
-
-         ``unix-hip`` will use ``hipcc`` as the compiler by default.
 
 
    .. group-tab:: cpu backend
@@ -170,12 +212,24 @@ available presets are:
 
    .. group-tab:: cpu backend on macos
 
-      With ``$ROCTHRUST_INSTALL_PREFIX`` set per Requirements above and
-      Homebrew's ``mpic++`` on PATH, build and install runko with:
+      With ``$ROCTHRUST_INSTALL_PREFIX`` exported per Requirements above and
+      the ``mpic++`` of the Open MPI built above first on PATH, build and install runko with:
 
       .. code:: shell
 
-         pip install git+https://github.com/hel-astro-lab/runko --config-settings=cmake.args=--preset=macos-cpu
+         pip install git+https://github.com/hel-astro-lab/runko \
+           --config-settings=cmake.args=--preset=macos-cpu \
+           --config-settings=cmake.define.rocthrust_DIR=$ROCTHRUST_INSTALL_PREFIX/lib/cmake/rocthrust
+
+      .. hint::
+
+         Without the ``rocthrust_DIR`` define the ``macos-cpu`` preset uses
+         ``cmake/rocthrust-cpu``, which takes the rocThrust headers from a sparse
+         checkout of ``rocm-libraries`` at ``external/tyvi/rocm-libraries`` of a
+         cloned runko (configuring without it prints the clone command);
+         no rocThrust install is then needed.
+         The same choice applies to the manual CMake build, where the define is passed as
+         ``-Drocthrust_DIR=$ROCTHRUST_INSTALL_PREFIX/lib/cmake/rocthrust``.
 
    .. group-tab:: hip backend on LUMI
 
@@ -192,6 +246,19 @@ available presets are:
       .. code:: shell
 
          pip install git+https://github.com/hel-astro-lab/runko --config-settings=cmake.args=--preset=lumi-gpu
+
+
+   .. group-tab:: hip backend on HILE
+
+      After loading the modules given above, runko can be built and installed with:
+
+      .. note::
+         HILE compute nodes do not have access to internet, so we have to compile on a login node.
+
+      .. code:: shell
+
+         pip install git+https://github.com/hel-astro-lab/runko --config-settings=cmake.args=--preset=hile-gpu --config-settings=cmake.define.CMAKE_HIP_ARCHITECTURES=gfx90a
+
 
 
 .. hint::
@@ -277,7 +344,6 @@ Running
          CPU_BIND="${CPU_BIND},7e,7e00"
          CPU_BIND="${CPU_BIND},7e00000000,7e0000000000"
 
-         export OMP_NUM_THREADS=6
          export MPICH_GPU_SUPPORT_ENABLED=1
 
          srun --cpu-bind=${CPU_BIND} ./select_gpu python <file>
@@ -293,8 +359,110 @@ Running
            it can be worked around by adding
            ``import matplotlib.pyplot`` before ``import runko``.
 
+
+   .. group-tab:: hip backend on HILE
+
+      The HIP backend uses GPU-aware MPI, which has to be enabled:
+
+      .. code:: shell
+
+         export MPICH_GPU_SUPPORT_ENABLED=1
+
+      Example slurm job script:
+
+      .. code:: shell
+
+         #!/bin/bash -l
+         #SBATCH --job-name=examplejob
+         #SBATCH --partition=hile
+         #SBATCH --nodes=2
+         #SBATCH --gpus-per-node=4       # 4x AMD MI210x per node
+         #SBATCH --ntasks-per-node=4     # needs to be same as gpu's
+         #SBATCH --time=1-12:00:00       # Run time (d-hh:mm:ss)
+         #SBATCH --cpus-per-gpu=8
+
+         # copy-paste module loads from requirements here:
+         #
+         #     module load ...
+         #
+         # or source a file that contains them:
+         #
+         #    source runko-modules.sh
+
+         cat << EOF > select_gpu
+         #!/bin/bash
+
+         export ROCR_VISIBLE_DEVICES=\$SLURM_LOCALID
+         exec \$*
+         EOF
+
+         chmod +x ./select_gpu
+
+         export MPICH_GPU_SUPPORT_ENABLED=1
+
+         # This makes communication slow but otherwise triggers this:
+         # https://version.helsinki.fi/it-for-science/hpc/-/work_items/858
+         export MPICH_GPU_IPC_ENABLED=0
+
+         srun ./select_gpu python <args>
+         rm -rf ./select_gpu
+
+
 Now we can test if the installed package can be imported:
 
 .. code:: shell
 
    python -c 'import runko'
+
+
+Configuring the pika runtime
+----------------------------
+
+Runko schedules its work on the thread pool of the `pika <https://pikacpp.org/>`_ runtime,
+which is started when runko first needs it (e.g. when a simulation is created).
+Pika is configured either through command line arguments (or environment variables).
+Runko does not forward the command line arguments of the python script to pika,
+so ``python <file> --pika:threads=4`` does **not** work.
+Instead, pika options are given in the ``PIKA_COMMANDLINE_OPTIONS`` environment variable,
+which pika reads when the runtime starts.
+Multiple options are separated by spaces:
+
+.. code:: shell
+
+   export PIKA_COMMANDLINE_OPTIONS="--pika:threads=4 --pika:cores=4"
+   python <file>
+
+   # or only for a single run:
+
+   PIKA_COMMANDLINE_OPTIONS="--pika:threads=4" python <file>
+
+Commonly used options:
+
+``--pika:help``
+   Print all options that pika accepts and exit.
+   Useful for checking which options are available in the installed pika version:
+
+   .. code:: shell
+
+      PIKA_COMMANDLINE_OPTIONS="--pika:help" python <file>
+
+``--pika:threads=<N>``
+   Number of worker threads in pika's thread pool.
+   By default pika uses one worker thread per core available to the process.
+   Also accepts ``all`` (one thread per processing unit, i.e. including hyperthreads)
+   and ``cores`` (one thread per core).
+
+``--pika:cores=<N>``
+   Number of cores pika is allowed to use.
+   The worker threads are distributed over these cores.
+
+.. hint::
+
+   pika respects the CPU mask of the process, so with slurm the cores
+   pika uses are the ones assigned to the MPI rank (e.g. by ``--cpus-per-task``,
+   ``--cpus-per-gpu`` or ``--cpu-bind``). By default, pika launched one thread
+   per physical core. When running mostly serial simulations that do not yet
+   take full advantage of the pika runtime, the idle pika threads can degrade performance
+   because they constantly compete for new work. For mostly serial simulations,
+   it is recommended to limit the number of pika threads to 2 with ``--pika:threads=2``.
+

@@ -380,4 +380,5 @@ class emf_antenna(unittest.TestCase):
 
 
 if __name__ == "__main__":
+    _ = runko.actions.RuntimeInstance()
     unittest.main()

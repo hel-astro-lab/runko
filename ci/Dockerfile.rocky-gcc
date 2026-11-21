@@ -1,0 +1,17 @@
+FROM ghcr.io/hel-astro-lab/tyvi-rocky-gcc:latest
+LABEL org.opencontainers.image.source="https://github.com/hel-astro-lab/runko"
+
+RUN dnf -y install \
+        openmpi-devel \
+        python3-devel \
+        python3-numpy \ 
+        python3-scipy \ 
+        python3-scikit-build-core \ 
+        python3-pybind11 && \
+    dnf clean all && \
+    source /etc/profile.d/modules.sh && \
+    module load mpi && \
+    MPI4PY_BUILD_MPICC=mpicc python3 -m pip install --no-cache-dir --no-binary=mpi4py mpi4py
+
+
+WORKDIR /workspace

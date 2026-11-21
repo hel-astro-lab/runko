@@ -12,7 +12,7 @@ anyio==4.14.2
     #   watchfiles
 babel==2.18.0
     # via sphinx
-certifi==2026.6.17
+certifi==2026.10.19
     # via requests
 charset-normalizer==3.4.9
     # via requests
@@ -88,7 +88,7 @@ typing-extensions==4.16.0
     # via
     #   anyio
     #   starlette
-urllib3==2.7.0
+urllib3==2.8.0
     # via requests
 uvicorn==0.51.0
     # via sphinx-autobuild

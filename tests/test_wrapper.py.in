@@ -1,0 +1,17 @@
+# Copyright 2026 - 2026, Miro Palmu, Joonas Nättilä and the runko contributors
+# SPDX-License-Identifier: GPL-3.0-or-later
+
+
+import sys
+import subprocess
+
+
+for f in sys.meta_path:
+    m = type(f).__module__
+    if "runko_editable" in m:
+        raise RuntimeError("""Editable runko install found.
+        This means that the tests will use it instead of: @CMAKE_BINARY_DIR@
+        Please uninstall the editable runko and try again.
+        """)
+
+exit(subprocess.run([sys.executable] + sys.argv[1:]).returncode)

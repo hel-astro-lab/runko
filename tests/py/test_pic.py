@@ -323,4 +323,5 @@ class pic_tile(unittest.TestCase):
         tile.batch_inject_to_cells(ptype, pgen)
 
 if __name__ == "__main__":
+    _ = runko.actions.RuntimeInstance()
     unittest.main()

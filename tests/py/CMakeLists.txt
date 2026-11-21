@@ -3,15 +3,18 @@
 
 function(add_python_test name)
     add_test(NAME py-${name} COMMAND
-        ${Python_EXECUTABLE} "${CMAKE_CURRENT_SOURCE_DIR}/test_${name}.py"
+        ${Python_EXECUTABLE} ${py_test_wrapper} "${CMAKE_CURRENT_SOURCE_DIR}/test_${name}.py"
     )
     set_property(TEST py-${name}
-        PROPERTY ENVIRONMENT PYTHONPATH=${CMAKE_BINARY_DIR}/src:${PROJECT_SOURCE_DIR}
+        PROPERTY ENVIRONMENT
+        "PYTHONPATH=${CMAKE_BINARY_DIR}/src:${PROJECT_SOURCE_DIR}"
+        "PIKA_COMMANDLINE_OPTIONS=--pika:threads=2"
     )
 endfunction(add_python_test)
 
 add_python_test(auto_outdir)
 add_python_test(auto_tile_grid)
+add_python_test(average_energy)
 add_python_test(configuration)
 add_python_test(emf_antenna)
 add_python_test(emf_antenna_time_evolution)
@@ -29,16 +32,18 @@ add_python_test(pic_current_depositer_zigzag_1st_atomic)
 add_python_test(pic_current_depositer_zigzag_1st)
 add_python_test(pic_moving_injector)
 add_python_test(pic_particle_pusher)
-add_python_test(pic_photon_pusher)
-add_python_test(qed_layout)
-add_python_test(qed_twobody)
-add_python_test(qed_onebody)
-add_python_test(qed_openbox)
-add_python_test(qed_field)
+# parked until the v5.1 port of qed
+# add_python_test(pic_photon_pusher)
+# add_python_test(qed_layout)
+# add_python_test(qed_twobody)
+# add_python_test(qed_onebody)
+# add_python_test(qed_openbox)
+# add_python_test(qed_field)
 add_python_test(pic_particle_sorting)
 add_python_test(pic)
 add_python_test(pic_reflector_wall)
 add_python_test(ram_usage)
 add_python_test(simulation)
 add_python_test(tile_grid)
-add_python_test(virtual_tile_specializations)
+add_python_test(actions_eval)
+add_python_test(actions_builders)

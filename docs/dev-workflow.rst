@@ -110,3 +110,21 @@ Flag               Description
 ------------------ ------------------------------------------
 ``--rerun-failed`` Run only the tests that failed previously.
 ================== ==========================================
+
+Tips and Tricks
+===============
+
+``CPM_SOURCE_CACHE``
+====================
+
+If you are creating a new build directory often
+defining ``CPM_SOURCE_CACHE`` can speed up the process.
+
+Tyvi uses `CPM <https://github.com/cpm-cmake/CPM.cmake>`_ package manager to clone dependencies.
+Cloning the dependencies is slow and can be sped up by caching the dependencies.
+To enable this feature, export ``CPM_SOURCE_CACHE=<path-to-cache>``.
+Recommended way to set is with (e.g. add it to your ``.bashrc`` or ``.bash_profile``):
+
+.. code:: shell
+
+   export CPM_SOURCE_CACHE="${XDG_CACHE_HOME:-${HOME}/.cache}"

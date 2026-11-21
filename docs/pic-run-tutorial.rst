@@ -303,7 +303,7 @@ The prelude step is defined using a function that takes a single parameter.
 
 The main simulation loop is executed with :python:`simulation.for_each_lap`.
 It runs the given lap function while :python:`simulation.lap` is less than
-the config parameter :python:`Nt`
+the config parameter :python:`n_laps`
 (there is also :python:`simulation.for_one_lap` for running just a single lap).
 
 The simulation automatically measures the execution time of each step/method in the loop.

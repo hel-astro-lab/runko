@@ -11,7 +11,7 @@ R̯̥͎̺͚̙͈̖̝̩̘ͅu̖̩̹̤n̪̰͚̭̬̮̼͎̥͓ͅk̲̟͎͓̭̝o͔͙̗͓�
 
 Runko is an open-source simulation framework written in modern C++/Python to simulate astrophysical plasmas. Technologically, the framework is composed of separate physics modules that can be used independently or combined together to create multi-physics simulations. Low-level computing "kernels" are implemented in modern C++, allowing to write modular and high-performance code. High-level usage of the code is controlled with Python scripts exposing the C++ code to Python objects. The hybrid design ensures efficient code, rapid prototyping, and ease of use.
 
-Under the hood, the framework uses the massively parallel grid infrastructure library [corgi](https://github.com/hel-astro-lab/corgi) to decompose the grid into subregions, called tiles. The framework is made hardware-agnostic by [tyvi](https://github.com/hel-astro-lab/tyvi) portability library that allows compiling same C++ code to SIMD-vectorized-CPU code or native-HIP-based GPU code.
+The framework is made hardware-agnostic by [tyvi](https://github.com/hel-astro-lab/tyvi) portability library that allows compiling same C++ code to SIMD-vectorized-CPU code or native-HIP-based GPU code.
 
 Documentation is available at [runko.readthedocs.io](https://runko.readthedocs.io/en/latest/?badge=latest). 
 

@@ -37,5 +37,23 @@ class tile_grid(unittest.TestCase):
         with self.assertRaisesRegex(RuntimeError, r"catepillar_track_length"):
             runko.TileGrid(conf)
 
+    def test_hilbert_curve(self):
+        conf = runko.Configuration(None)
+        conf.tile_partitioning = "hilbert_curve"
+        conf.n_tiles = [2, 2, 1]
+        conf.n_cells_per_tile = [10, 11, 13]
+
+        tile_grid = runko.TileGrid(conf)
+        seen = []
+        for idx in tile_grid.local_tile_indices():
+            seen.append(idx)
+
+        self.assertEqual(len(seen), 4)
+        self.assertTrue((0, 0, 0) in seen)
+        self.assertTrue((0, 1, 0) in seen)
+        self.assertTrue((1, 0, 0) in seen)
+        self.assertTrue((1, 1, 0) in seen)
+
+
 if __name__ == "__main__":
     unittest.main()

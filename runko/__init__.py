@@ -8,6 +8,10 @@
 
 # cpp kernel bindings defined in bindings/
 from runko_cpp_bindings import *
+from .tiles import make_independent_tile
+
+emf.threeD.Tile = make_independent_tile
+pic.threeD.Tile = make_independent_tile
 
 # Helper scripts to initialize the simulation 
 from .configuration import Configuration
@@ -27,3 +31,5 @@ from .moving_injector import MovingInjector
 from .postprocessing import read_config, read_timer_statistics
 
 from .auto_tile_grid import one_tile_per_rank_cube_size
+from .runko_timer import TimeMeasurement
+from .actions_builders import sequence_builder, parallel_builder

@@ -37,7 +37,7 @@
                 "tyvi_ENABLE_CPPCHECK": "OFF",
                 "CMAKE_CXX_COMPILER": "mpic++",
                 "tyvi_BACKEND": "cpu",
-                "rocthrust_DIR": "$env{ROCTHRUST_INSTALL_PREFIX}/lib/cmake/rocthrust",
+                "rocthrust_DIR": "${sourceDir}/cmake/rocthrust-cpu",
                 "CMAKE_CXX_FLAGS": "-O3 -march=native -mllvm -force-vector-width=4 -Wno-error=unused-command-line-argument -Wno-error=pass-failed -Wno-error=sign-conversion"
             }
         },
@@ -50,7 +50,6 @@
                 "tyvi_ENABLE_IPO": "OFF",
                 "tyvi_ENABLE_CLANG_TIDY": "OFF",
                 "tyvi_ENABLE_CPPCHECK": "OFF",
-                "CMAKE_CXX_COMPILER": "hipcc",
                 "tyvi_BACKEND": "hip",
                 "OpenMP_CXX_FLAGS": "-fopenmp",
                 "OpenMP_CXX_LIB_NAMES": "",
@@ -69,7 +68,7 @@
                 "CMAKE_CXX_COMPILER": "CC",
                 "tyvi_BACKEND": "cpu",
                 "rocthrust_DIR": "$env{ROCTHRUST_INSTALL_PREFIX}/lib/cmake/rocthrust",
-                "CMAKE_CXX_FLAGS": "-O3"
+                "CMAKE_CXX_FLAGS": "-O3 -Wno-error=pass-failed"
             }
         },
         {
@@ -81,10 +80,9 @@
                 "tyvi_ENABLE_IPO": "OFF",
                 "tyvi_ENABLE_CLANG_TIDY": "OFF",
                 "tyvi_ENABLE_CPPCHECK": "OFF",
-                "CMAKE_CXX_COMPILER": "hipcc",
                 "tyvi_BACKEND": "cpu",
                 "rocthrust_DIR": "$env{ROCTHRUST_INSTALL_PREFIX}/lib/cmake/rocthrust",
-                "CMAKE_CXX_FLAGS": "-O3 -march=znver3 -mtune=znver3 -funroll-loops -ffp-contract=fast -fno-math-errno"
+                "CMAKE_HIP_FLAGS": "-O3 -march=znver3 -mtune=znver3 -funroll-loops -ffp-contract=fast -fno-math-errno"
             }
         },
         {
@@ -97,10 +95,8 @@
                 "tyvi_ENABLE_CLANG_TIDY": "OFF",
                 "tyvi_ENABLE_CPPCHECK": "OFF",
                 "CMAKE_CXX_COMPILER": "CC",
-                "tyvi_BACKEND": "hip",
-                "OpenMP_CXX_FLAGS": "-fopenmp",
-                "OpenMP_CXX_LIB_NAMES": "",
-                "CMAKE_CXX_FLAGS": "-O3"
+                "CMAKE_HIP_COMPILER": "CC",
+                "tyvi_BACKEND": "hip"
             }
         },
         {
@@ -112,12 +108,9 @@
                 "tyvi_ENABLE_IPO": "OFF",
                 "tyvi_ENABLE_CLANG_TIDY": "OFF",
                 "tyvi_ENABLE_CPPCHECK": "OFF",
-                "tyvi_BACKEND": "hip",
-                "OpenMP_CXX_FLAGS": "-fopenmp",
-                "OpenMP_CXX_LIB_NAMES": "",
-                "CMAKE_CXX_FLAGS": "-O3",
-                "CMAKE_CXX_COMPILER": "hipcc",
-                "MPI_CXX_COMPILER": "CC"
+                "CMAKE_CXX_COMPILER": "CC",
+                "CMAKE_HIP_COMPILER": "CC",
+                "tyvi_BACKEND": "hip"
             }
         }
     ]

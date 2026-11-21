@@ -42,6 +42,12 @@ public:
         return static_cast<T>(value);
       } else if constexpr(std::same_as<U, none_tag_type>) {
         return {};
+      } else if constexpr(std::same_as<T, std::vector<U>>) {
+        return T { value };  // scalar promotes to one-element list
+      } else if constexpr(
+        std::same_as<T, std::vector<double>> and
+        std::same_as<U, std::vector<std::ptrdiff_t>>) {
+        return T(value.begin(), value.end());  // int list promotes to double list
       } else {
         throw std::runtime_error {
           "Accessed value is not convertible to requested type."
@@ -64,7 +70,57 @@ public:
       };
     }
   }
+
+  [[nodiscard]] bool contains(const std::string& key) const
+  { return this->config_.contains(key); }
 };
 
+template<std::size_t halo_size>
+struct with_halo_type {};
+
+template<std::size_t halo_size>
+static constexpr auto with_halo = with_halo_type<halo_size> {};
+
+/// Gets given parameter from the config parses.
+///
+/// Throws if any of the numbers are non-positive
+/// or if the list is not of expected_length.
+template<std::size_t halo_size = 0uz>
+std::vector<std::ptrdiff_t>
+  get_extent_list(
+    const toolbox::ConfigParser& p,
+    const std::string& name,
+    const std::size_t expected_length,
+    with_halo_type<halo_size> = {})
+{
+  auto x = p.get<std::vector<std::ptrdiff_t>>(name);
+  if(not x) {
+    throw std::runtime_error { std::format("Config does not contain: {}", name) };
+  }
+
+  auto v = std::move(x).value();
+  if(v.size() != expected_length) {
+    throw std::runtime_error { std::format(
+      "Config parameter {} is list of length {} which is not the expected length {}.",
+      name,
+      v.size(),
+      expected_length) };
+  }
+
+  for(const auto val: v) {
+    if(val <= 0) {
+      throw std::runtime_error { std::format(
+        "{} is expected to only contain positive integers ({} found)",
+        name,
+        val) };
+    }
+  }
+
+  if constexpr(halo_size != 0uz) {
+    for(auto& val: v) { val += static_cast<std::ptrdiff_t>(2 * halo_size); }
+  }
+
+  return v;
+}
 
 }  // namespace toolbox

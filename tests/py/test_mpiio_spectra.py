@@ -5,11 +5,12 @@ import unittest
 import tempfile
 import shutil
 import os
+import itertools
 
 import numpy as np
 
 import runko
-from runko_cpp_bindings.emf.threeD import MpiioSpectraWriter
+actions = runko.actions
 from runko.mpiio_spectra_reader import (
     read_spectra_header, read_spectra_snapshot,
     u_bin_edges, u_bin_centers, beta_bin_edges, beta_bin_centers,
@@ -26,8 +27,18 @@ def find_spectra_file(outdir):
     return os.path.join(outdir, files[0])
 
 
-def make_grid_with_velocity(config, vx=0.0, vy=0.0, vz=0.0, ppc=1, nspecies=2):
-    """Create a PIC grid where every cell has ppc particles with given velocity."""
+def make_spectra_config(nbins=50, umin=1e-2, umax=1e2, stride=1, **kwargs):
+    """Create a PIC test configuration with spectra parameters."""
+    config = make_pic_config(**kwargs)
+    config.io_n_spectra_bins = nbins
+    config.io_spectra_umin = umin
+    config.io_spectra_umax = umax
+    config.io_spectra_stride = stride
+    return config
+
+
+def make_sim_with_velocity(config, vx=0.0, vy=0.0, vz=0.0, ppc=1, nspecies=2):
+    """Create a PIC simulation where every cell has ppc particles with given velocity."""
     P = runko.pic.threeD.ParticleState
 
     def particle_gen(x, y, z):
@@ -43,35 +54,17 @@ def make_grid_with_velocity(config, vx=0.0, vy=0.0, vz=0.0, ppc=1, nspecies=2):
             tile.inject_to_each_cell(species, particle_gen)
         tile_grid.add_tile(tile, idx)
 
-    _ = tile_grid.configure_simulation(config)
-    return tile_grid
+    return tile_grid.configure_simulation(config)
 
 
-def spectra_write_and_read(tile_grid, outdir, config, nbins=50,
-                           umin=1e-2, umax=1e2, stride=1, nspecies=2, lap=0):
+def spectra_write_and_read(sim, outdir, lap=0):
     """Write spectra and read back via Python reader."""
-    writer = MpiioSpectraWriter(
-        outdir,
-        config.n_tiles[0], config.n_cells_per_tile[0],
-        config.n_tiles[1], config.n_cells_per_tile[1],
-        config.n_tiles[2], config.n_cells_per_tile[2],
-        stride, nbins, umin, umax, nspecies)
-    writer.write(tile_grid._corgi_grid, lap)
+    prog = (actions.spectra_snapshot, actions.current_context, int(lap), str(outdir))
+    sim.for_one_lap(lambda x: x.eval(prog))
     path = find_spectra_file(outdir)
     hdr = read_spectra_header(path)
     fields = read_spectra_snapshot(path)
     return hdr, fields
-
-
-class TestMpiioSpectraWriterConstruction(unittest.TestCase):
-
-    def test_construction(self):
-        """Create MpiioSpectraWriter and verify no crash."""
-        outdir = tempfile.mkdtemp()
-        try:
-            writer = MpiioSpectraWriter(outdir, 1, 8, 1, 8, 1, 8, 1, 50, 1e-2, 1e2)
-        finally:
-            shutil.rmtree(outdir)
 
 
 class TestMpiioSpectraWriter(unittest.TestCase):
@@ -84,9 +77,9 @@ class TestMpiioSpectraWriter(unittest.TestCase):
 
     def test_header_fields(self):
         """Verify header magic, version, field names, nbins, umin, umax."""
-        config = make_pic_config(outdir=self.outdir)
-        tile_grid = make_grid_with_velocity(config, vx=1.0, vy=2.0, vz=3.0)
-        hdr, _ = spectra_write_and_read(tile_grid, self.outdir, config)
+        config = make_spectra_config(outdir=self.outdir)
+        sim = make_sim_with_velocity(config, vx=1.0, vy=2.0, vz=3.0)
+        hdr, _ = spectra_write_and_read(sim, self.outdir)
 
         self.assertEqual(hdr["magic"], MAGIC)
         self.assertEqual(hdr["num_fields"], 8)  # 2 species * 4
@@ -98,33 +91,53 @@ class TestMpiioSpectraWriter(unittest.TestCase):
 
     def test_output_shape(self):
         """Verify output shape is (Nz, Ny, nx_global, nbins)."""
-        config = make_pic_config(outdir=self.outdir)
-        tile_grid = make_grid_with_velocity(config, vx=1.0, vy=2.0, vz=3.0)
-        hdr, fields = spectra_write_and_read(tile_grid, self.outdir, config, nbins=30)
+        config = make_spectra_config(outdir=self.outdir, nbins=30)
+        sim = make_sim_with_velocity(config, vx=1.0, vy=2.0, vz=3.0)
+        hdr, fields = spectra_write_and_read(sim, self.outdir)
 
         for name, arr in fields.items():
             self.assertEqual(arr.shape, (1, 1, 8, 30))  # Nz=1, Ny=1, nx=8, nbins=30
 
     def test_stride_reduces_x(self):
         """stride=2 should produce nx_global = Nx * (NxMesh/2)."""
-        config = make_pic_config(outdir=self.outdir)
-        tile_grid = make_grid_with_velocity(config, vx=1.0, vy=1.0, vz=1.0)
-        hdr, fields = spectra_write_and_read(
-            tile_grid, self.outdir, config, stride=2)
+        config = make_spectra_config(outdir=self.outdir, stride=2)
+        sim = make_sim_with_velocity(config, vx=1.0, vy=1.0, vz=1.0)
+        hdr, fields = spectra_write_and_read(sim, self.outdir)
 
         self.assertEqual(hdr["nx"], 4)  # 8/2 = 4
+        self.assertEqual(hdr["stride"], 2)
         for name, arr in fields.items():
             self.assertEqual(arr.shape[2], 4)
+
+    def test_stride_defaults_to_grid_stride(self):
+        """Without io_spectra_stride, io_grid_stride is used."""
+        config = make_spectra_config(outdir=self.outdir, stride=None)
+        config.io_grid_stride = 4
+        sim = make_sim_with_velocity(config, vx=1.0)
+        hdr, fields = spectra_write_and_read(sim, self.outdir)
+
+        self.assertEqual(hdr["stride"], 4)
+        self.assertEqual(hdr["nx"], 2)  # 8/4 = 2
+        self.assertEqual(fields["s0_u"].sum(), 8**3)
+
+    def test_outdir_from_config(self):
+        """Without explicit outdir argument, io_outdir is used."""
+        config = make_spectra_config(outdir=self.outdir)
+        sim = make_sim_with_velocity(config, vx=1.0)
+        prog = (actions.spectra_snapshot, actions.current_context, 3)
+        sim.for_one_lap(lambda x: x.eval(prog))
+
+        self.assertTrue(os.path.exists(os.path.join(self.outdir, "pspectra_3.bin")))
 
     def test_known_velocity_u_spectrum(self):
         """Inject particles with ux=3, uy=4, uz=0 => |u|=5.
         All particles should land in the bin containing u=5."""
-        config = make_pic_config(outdir=self.outdir)
-        tile_grid = make_grid_with_velocity(config, vx=3.0, vy=4.0, vz=0.0)
         nbins = 100
         umin, umax = 1e-2, 1e4
-        hdr, fields = spectra_write_and_read(
-            tile_grid, self.outdir, config, nbins=nbins, umin=umin, umax=umax)
+        config = make_spectra_config(
+            outdir=self.outdir, nbins=nbins, umin=umin, umax=umax)
+        sim = make_sim_with_velocity(config, vx=3.0, vy=4.0, vz=0.0)
+        hdr, fields = spectra_write_and_read(sim, self.outdir)
 
         edges = u_bin_edges(hdr)
         expected_bin = np.searchsorted(edges, 5.0) - 1
@@ -144,11 +157,11 @@ class TestMpiioSpectraWriter(unittest.TestCase):
         """Inject particles with ux=1, uy=0, uz=0.
         gamma = sqrt(1+1) = sqrt(2), beta_x = 1/sqrt(2) ~ 0.707.
         Check that the peak lands in the correct linear bin."""
-        config = make_pic_config(outdir=self.outdir)
-        tile_grid = make_grid_with_velocity(config, vx=1.0, vy=0.0, vz=0.0)
         nbins = 100
-        hdr, fields = spectra_write_and_read(
-            tile_grid, self.outdir, config, nbins=nbins, umin=1e-2, umax=1e2)
+        config = make_spectra_config(
+            outdir=self.outdir, nbins=nbins, umin=1e-2, umax=1e2)
+        sim = make_sim_with_velocity(config, vx=1.0, vy=0.0, vz=0.0)
+        hdr, fields = spectra_write_and_read(sim, self.outdir)
 
         edges = beta_bin_edges(hdr)
         beta_x = 1.0 / np.sqrt(2.0)
@@ -165,10 +178,10 @@ class TestMpiioSpectraWriter(unittest.TestCase):
     def test_beta_particle_count_conserved(self):
         """Sum over all beta_x bins should equal total particles
         (all particles have well-defined beta)."""
-        config = make_pic_config(outdir=self.outdir)
-        tile_grid = make_grid_with_velocity(config, vx=1.0, vy=2.0, vz=3.0)
-        hdr, fields = spectra_write_and_read(
-            tile_grid, self.outdir, config, nbins=100, umin=1e-4, umax=1e4)
+        config = make_spectra_config(
+            outdir=self.outdir, nbins=100, umin=1e-4, umax=1e4)
+        sim = make_sim_with_velocity(config, vx=1.0, vy=2.0, vz=3.0)
+        hdr, fields = spectra_write_and_read(sim, self.outdir)
 
         total_particles = 8**3
         # beta_x is always in [-1, 1], so all particles are counted
@@ -178,7 +191,6 @@ class TestMpiioSpectraWriter(unittest.TestCase):
     def test_u_out_of_range_clamped_to_boundary_bins(self):
         """Particles outside [umin, umax] are clamped: above to last bin,
         below to first bin. Total count is always conserved."""
-        config = make_pic_config(outdir=self.outdir)
         nbins = 50
 
         for label, vx, umin, umax, expected_bin in [
@@ -186,10 +198,10 @@ class TestMpiioSpectraWriter(unittest.TestCase):
             ("below umin", 0.001, 1.0, 1e4,   0),
         ]:
             with self.subTest(case=label):
-                tile_grid = make_grid_with_velocity(config, vx=vx, vy=0.0, vz=0.0)
-                hdr, fields = spectra_write_and_read(
-                    tile_grid, self.outdir, config,
-                    nbins=nbins, umin=umin, umax=umax)
+                config = make_spectra_config(
+                    outdir=self.outdir, nbins=nbins, umin=umin, umax=umax)
+                sim = make_sim_with_velocity(config, vx=vx, vy=0.0, vz=0.0)
+                hdr, fields = spectra_write_and_read(sim, self.outdir)
 
                 total_particles = 8**3
                 total = fields["s0_u"].sum(axis=(0, 1, 2))
@@ -200,11 +212,11 @@ class TestMpiioSpectraWriter(unittest.TestCase):
     def test_u_particle_count_conserved(self):
         """Sum over all u bins should equal total particles
         (out-of-range particles go to last bin)."""
-        config = make_pic_config(outdir=self.outdir)
+        config = make_spectra_config(
+            outdir=self.outdir, nbins=100, umin=1e-4, umax=1e4)
         # ux=1, uy=2, uz=3 => |u| = sqrt(14) ~ 3.74
-        tile_grid = make_grid_with_velocity(config, vx=1.0, vy=2.0, vz=3.0)
-        hdr, fields = spectra_write_and_read(
-            tile_grid, self.outdir, config, nbins=100, umin=1e-4, umax=1e4)
+        sim = make_sim_with_velocity(config, vx=1.0, vy=2.0, vz=3.0)
+        hdr, fields = spectra_write_and_read(sim, self.outdir)
 
         total_particles = 8**3
         u_total = fields["s0_u"].sum()
@@ -231,11 +243,17 @@ class TestMpiioSpectraWriter(unittest.TestCase):
         self.assertEqual(len(b_cents), 10)
         self.assertAlmostEqual(b_cents[5], 0.1, places=5)  # midpoint ~ 0
 
-    def test_multi_tile_x_resolved(self):
-        """2x1x1 grid, each tile with different velocity.
-        Verify the x-resolved spectra have peaks at different bins for each tile."""
-        config = make_pic_config(Nx=2, Ny=1, Nz=1, outdir=self.outdir)
+    def test_multi_tile_resolved(self):
+        """2x2x2 grid, each tile with a different velocity.
+        Verify every tile's particles land in its own (z, y, x-range) slot and u bin."""
+        nbins = 100
+        umin, umax = 1e-2, 1e4
+        config = make_spectra_config(
+            Nx=2, Ny=2, Nz=2, outdir=self.outdir, nbins=nbins, umin=umin, umax=umax)
         P = runko.pic.threeD.ParticleState
+
+        def tile_u(i, j, k):
+            return 2.0**(i + 2*j + 4*k)  # |u| = 1, 2, ..., 128; one per tile
 
         tile_grid = runko.TileGrid(config)
         for idx in tile_grid.local_tile_indices():
@@ -243,44 +261,58 @@ class TestMpiioSpectraWriter(unittest.TestCase):
             zero = lambda x, y, z: (0, 0, 0)
             tile.set_EBJ(zero, zero, zero)
 
-            # Tile 0: |u|=1, tile 1: |u|=50
-            vx = 1.0 if idx[0] == 0 else 50.0
-
-            def gen(x, y, z, _vx=vx):
+            def gen(x, y, z, _vx=tile_u(*idx)):
                 return [P(pos=(x + 0.5, y + 0.5, z + 0.5), vel=(_vx, 0, 0))]
             for species in range(2):
                 tile.inject_to_each_cell(species, gen)
             tile_grid.add_tile(tile, idx)
-        _ = tile_grid.configure_simulation(config)
+        sim = tile_grid.configure_simulation(config)
 
-        nbins = 100
-        umin, umax = 1e-2, 1e4
-        hdr, fields = spectra_write_and_read(
-            tile_grid, self.outdir, config, nbins=nbins, umin=umin, umax=umax)
+        hdr, fields = spectra_write_and_read(sim, self.outdir)
 
-        # Output shape: (Nz=1, Ny=1, nx=16, nbins)
-        self.assertEqual(fields["s0_u"].shape, (1, 1, 16, nbins))
+        # Output shape: (Nz=2, Ny=2, nx=16, nbins)
+        self.assertEqual(fields["s0_u"].shape, (2, 2, 16, nbins))
 
         edges = u_bin_edges(hdr)
-        bin_u1 = np.searchsorted(edges, 1.0) - 1
-        bin_u50 = np.searchsorted(edges, 50.0) - 1
-        self.assertNotEqual(bin_u1, bin_u50)
+        for i, j, k in itertools.product(range(2), repeat=3):
+            spectrum = fields["s0_u"][k, j, 8*i:8*(i + 1), :].sum(axis=0)
+            expected = np.zeros(nbins)
+            expected[np.searchsorted(edges, tile_u(i, j, k)) - 1] = 8**3
+            np.testing.assert_array_equal(spectrum, expected)
 
-        # Tile 0 x-columns [0:8] should have peak at u=1
-        tile0_spectrum = fields["s0_u"][0, 0, 0:8, :].sum(axis=0)
-        self.assertGreater(tile0_spectrum[bin_u1], 0)
-        self.assertEqual(tile0_spectrum[bin_u50], 0)
+    def test_tile_face_particles(self):
+        """Particles exactly on tile (0,0,0)'s upper x face (x = maxs), as left by
+        wrap/injection rounding, are counted in that tile's last x-bin."""
+        config = make_spectra_config(Nx=2, Ny=2, Nz=2, outdir=self.outdir)
+        P = runko.pic.threeD.ParticleState
 
-        # Tile 1 x-columns [8:16] should have peak at u=50
-        tile1_spectrum = fields["s0_u"][0, 0, 8:16, :].sum(axis=0)
-        self.assertGreater(tile1_spectrum[bin_u50], 0)
-        self.assertEqual(tile1_spectrum[bin_u1], 0)
+        tile_grid = runko.TileGrid(config)
+        for idx in tile_grid.local_tile_indices():
+            tile = runko.pic.threeD.Tile(idx, config)
+            zero = lambda x, y, z: (0, 0, 0)
+            tile.set_EBJ(zero, zero, zero)
+            if tuple(idx) == (0, 0, 0):
+                tile.inject(0, [P(pos=p, vel=(1, 0, 0))
+                                for p in ((8.0, 4.5, 4.5), (8.0, 8.0, 8.0), (4.5, 4.5, 8.0))])
+            tile_grid.add_tile(tile, idx)
+        sim = tile_grid.configure_simulation(config)
+
+        hdr, fields = spectra_write_and_read(sim, self.outdir)
+
+        s0_u = fields["s0_u"]
+        self.assertEqual(s0_u.sum(), 3)
+        self.assertEqual(s0_u[0, 0, 7, :].sum(), 2)  # x = 8 -> last x-bin of tile 0
+        self.assertEqual(s0_u[0, 0, 4, :].sum(), 1)
+        self.assertEqual(fields["s1_u"].sum(), 0)
 
     def test_two_species_distinct_spectra(self):
         """Inject species 0 with |u|=1 and species 1 with |u|=100.
         Verify s0_u and s1_u peak at different bins."""
         P = runko.pic.threeD.ParticleState
-        config = make_pic_config(outdir=self.outdir)
+        nbins = 100
+        umin, umax = 1e-2, 1e4
+        config = make_spectra_config(
+            outdir=self.outdir, nbins=nbins, umin=umin, umax=umax)
 
         tile_grid = runko.TileGrid(config)
         for idx in tile_grid.local_tile_indices():
@@ -297,12 +329,9 @@ class TestMpiioSpectraWriter(unittest.TestCase):
             tile.inject_to_each_cell(1, gen1)
 
             tile_grid.add_tile(tile, idx)
-        _ = tile_grid.configure_simulation(config)
+        sim = tile_grid.configure_simulation(config)
 
-        nbins = 100
-        umin, umax = 1e-2, 1e4
-        hdr, fields = spectra_write_and_read(
-            tile_grid, self.outdir, config, nbins=nbins, umin=umin, umax=umax)
+        hdr, fields = spectra_write_and_read(sim, self.outdir)
 
         edges = u_bin_edges(hdr)
         bin_u1 = np.searchsorted(edges, 1.0) - 1
@@ -321,10 +350,9 @@ class TestMpiioSpectraWriter(unittest.TestCase):
 
     def test_single_species(self):
         """nspecies=1 should produce 4 output fields."""
-        config = make_pic_config(outdir=self.outdir, nspecies=1)
-        tile_grid = make_grid_with_velocity(config, vx=1.0, nspecies=1)
-        hdr, fields = spectra_write_and_read(
-            tile_grid, self.outdir, config, nspecies=1)
+        config = make_spectra_config(outdir=self.outdir, nspecies=1)
+        sim = make_sim_with_velocity(config, vx=1.0, nspecies=1)
+        hdr, fields = spectra_write_and_read(sim, self.outdir)
 
         self.assertEqual(hdr["num_fields"], 4)
         self.assertEqual(hdr["field_names"], ["s0_u", "s0_bx", "s0_by", "s0_bz"])
@@ -332,10 +360,9 @@ class TestMpiioSpectraWriter(unittest.TestCase):
 
     def test_three_species(self):
         """nspecies=3 (max for spectra) should produce 12 output fields."""
-        config = make_pic_config(outdir=self.outdir, nspecies=3)
-        tile_grid = make_grid_with_velocity(config, vx=1.0, nspecies=3)
-        hdr, fields = spectra_write_and_read(
-            tile_grid, self.outdir, config, nspecies=3)
+        config = make_spectra_config(outdir=self.outdir, nspecies=3)
+        sim = make_sim_with_velocity(config, vx=1.0, nspecies=3)
+        hdr, fields = spectra_write_and_read(sim, self.outdir)
 
         self.assertEqual(hdr["num_fields"], 12)
         expected_names = []
@@ -344,16 +371,25 @@ class TestMpiioSpectraWriter(unittest.TestCase):
         self.assertEqual(hdr["field_names"], expected_names)
         self.assertEqual(len(fields), 12)
 
+    def test_species_capped_at_three(self):
+        """More than 3 species in config: only first 3 are written."""
+        config = make_spectra_config(outdir=self.outdir, nspecies=4)
+        sim = make_sim_with_velocity(config, vx=1.0, nspecies=4)
+        hdr, fields = spectra_write_and_read(sim, self.outdir)
+
+        self.assertEqual(hdr["num_fields"], 12)
+        self.assertEqual(len(fields), 12)
+
     def test_beta_y_and_z(self):
         """Inject particles with uy-only and uz-only velocities.
         Verify s0_by and s0_bz peaks are correct."""
-        config = make_pic_config(outdir=self.outdir)
         nbins = 100
+        config = make_spectra_config(
+            outdir=self.outdir, nbins=nbins, umin=1e-2, umax=1e2)
 
         # Test beta_y: inject uy=1 => gamma=sqrt(2), beta_y=1/sqrt(2)
-        tile_grid = make_grid_with_velocity(config, vx=0.0, vy=1.0, vz=0.0)
-        hdr, fields = spectra_write_and_read(
-            tile_grid, self.outdir, config, nbins=nbins, umin=1e-2, umax=1e2)
+        sim = make_sim_with_velocity(config, vx=0.0, vy=1.0, vz=0.0)
+        hdr, fields = spectra_write_and_read(sim, self.outdir)
 
         edges = beta_bin_edges(hdr)
         beta_y = 1.0 / np.sqrt(2.0)
@@ -370,9 +406,9 @@ class TestMpiioSpectraWriter(unittest.TestCase):
 
     def test_header_completeness(self):
         """Verify all header fields."""
-        config = make_pic_config(outdir=self.outdir)
-        tile_grid = make_grid_with_velocity(config, vx=1.0)
-        hdr, _ = spectra_write_and_read(tile_grid, self.outdir, config)
+        config = make_spectra_config(outdir=self.outdir)
+        sim = make_sim_with_velocity(config, vx=1.0)
+        hdr, _ = spectra_write_and_read(sim, self.outdir)
 
         self.assertEqual(hdr["magic"], MAGIC)
         self.assertEqual(hdr["version"], 3)
@@ -389,13 +425,13 @@ class TestMpiioSpectraWriter(unittest.TestCase):
 
     def test_nonzero_lap(self):
         """Write with lap=7, verify header contains correct lap."""
-        config = make_pic_config(outdir=self.outdir)
-        tile_grid = make_grid_with_velocity(config, vx=1.0)
-        hdr, _ = spectra_write_and_read(
-            tile_grid, self.outdir, config, lap=7)
+        config = make_spectra_config(outdir=self.outdir)
+        sim = make_sim_with_velocity(config, vx=1.0)
+        hdr, _ = spectra_write_and_read(sim, self.outdir, lap=7)
 
         self.assertEqual(hdr["lap"], 7)
 
 
 if __name__ == "__main__":
+    _ = runko.actions.RuntimeInstance()
     unittest.main()
