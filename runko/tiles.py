@@ -114,6 +114,11 @@ class ProxyTile:
         return self.sim_context.get_ids(self.tile_id, ptype)
 
 
+    def get_weights(self, ptype: int):
+        self.sim_context.eval(self._ensure_prtcls)
+        return self.sim_context.get_weights(self.tile_id, ptype)
+
+
     def inject_to_each_cell(self, ptype: int, pgen):
         prg = (actions.inject_to_each_cell, actions.current_context, ptype, pgen)
         self.sim_context.eval((actions.sequence,

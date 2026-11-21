@@ -291,6 +291,21 @@ auto
   }
 }
 
+auto
+  get_weights(
+    runko::simulation_context &sim,
+    const runko::simulation_context::tile_id_type id,
+    const std::size_t ptype)
+{
+  if(const auto p = sim.tiles.try_get<pic::particle_containers>(id)) {
+    return to_ndarray(p->at(ptype).get_weights());
+  } else {
+    throw std::runtime_error(
+      "internal logic error: Trying to invoke get_weights of a tile which does not "
+      "have pic::particle_containers.");
+  }
+}
+
 
 auto
   debug_cartesian_grid(const runko::simulation_context &sim)
@@ -455,6 +470,7 @@ void
     .def("get_positions", &get_positions)
     .def("get_velocities", &get_velocities)
     .def("get_ids", &get_ids)
+    .def("get_weights", &get_weights)
     .def(
       "index",
       [](

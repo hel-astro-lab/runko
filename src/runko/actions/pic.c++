@@ -58,8 +58,11 @@ void
   using opt_args_t = std::optional<pic::ParticleContainerArgs>;
 
   // Return optional containing the arguments if q and m are found in conf.
-  const auto make_opt_args =
-    [&](const std::string& q_label, const std::string& m_label) -> opt_args_t {
+  // The species weight w is optional (1); a massless species is the photons.
+  const auto make_opt_args = [&](
+                               const std::string& q_label,
+                               const std::string& m_label,
+                               const std::string& w_label) -> opt_args_t {
     const auto q_to_qm_tuple = [&](const auto q) {
       return sim.config.get<double>(m_label).transform(
         [&](const auto m) { return std::tuple { q, m }; });
@@ -67,8 +70,13 @@ void
 
     const auto qm_tuple_to_args = [&](const auto qm) {
       const auto [q, m] = qm;
+      const auto kind   = m == 0.0 ? pic::SpeciesKind::photon : pic::SpeciesKind::charged;
 
-      return pic::ParticleContainerArgs { .N = 0, .charge = q, .mass = m };
+      return pic::ParticleContainerArgs { .N      = 0,
+                                          .charge = q,
+                                          .mass   = m,
+                                          .weight = sim.config.get<double>(w_label).value_or(1.0),
+                                          .kind   = kind };
     };
 
     return sim.config.get<double>(q_label)
@@ -108,8 +116,9 @@ void
     for(auto i = 0uz; true; ++i) {
       const auto q_label = std::format("q{}", i);
       const auto m_label = std::format("m{}", i);
+      const auto w_label = std::format("w{}", i);
 
-      const auto pcontainer_args = make_opt_args(q_label, m_label);
+      const auto pcontainer_args = make_opt_args(q_label, m_label, w_label);
       if(not pcontainer_args) { break; }
 
       auto container = pic::ParticleContainer { pcontainer_args.value() };
