@@ -69,11 +69,13 @@ auto
 
     auto handle_atom = [&]<std::size_t n, typename U>() {
       if constexpr(is_opt_arg<U>) {
-        if(n < atoms.size()) {
-          return tyvi::actions::atom_cast<typename U::type>(atoms[n]);
-        } else {
-          return std::optional<typename U::type> {};
-        }
+        if(n >= atoms.size()) { return std::optional<typename U::type> {}; }
+        // a given optional argument of another type is an error, not an absent one
+        if(auto x = tyvi::actions::atom_cast<typename U::type>(atoms[n])) { return x; }
+        throw std::runtime_error { std::format(
+          "atom at optional argument {} does not hold object of type: '{}'",
+          n,
+          typeid(typename U::type).name()) };
       } else {
         if(auto x = tyvi::actions::atom_cast<U>(atoms[n])) {
           return std::move(x).value();

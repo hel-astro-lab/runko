@@ -35,12 +35,8 @@ const auto s = [] {
         expect(m.value() == 43);
       }));
 
-    tyvi::this_thread::sync_wait(
-      runko::parse_atom_args<int, runko::opt_arg<int>>(ta::list(42, "43")) |
-      te::then([](const int n, const std::optional<int> m) {
-        expect(n == 42);
-        expect(not m);
-      }));
+    // given but of another type: an error, not an absent argument
+    expect(throws([] { std::ignore = runko::parse_atom_args<int, runko::opt_arg<int>>(ta::list(42, "43")); }));
 
     tyvi::this_thread::sync_wait(
       runko::parse_atom_args<int, runko::opt_arg<int>>(ta::list(42)) |
@@ -57,9 +53,8 @@ const auto s = [] {
     tyvi::this_thread::sync_wait(
       runko::parse_atom_args<runko::opt_arg<int>>(ta::list()) |
       te::then([](const std::optional<int> n) { expect(not n); }));
-    tyvi::this_thread::sync_wait(
-      runko::parse_atom_args<runko::opt_arg<int>>(ta::list("42")) |
-      te::then([](const std::optional<int> n) { expect(not n); }));
+    expect(throws([] { std::ignore = runko::parse_atom_args<runko::opt_arg<int>>(ta::list("42")); }));
+    expect(throws([] { std::ignore = runko::parse_atom_args<runko::opt_arg<double>>(ta::list(42)); }));
   };
 
   "two optional args"_test = [] {
@@ -71,14 +66,10 @@ const auto s = [] {
         expect(m.value() == 43);
         expect(l.value() == 44);
       }));
-    tyvi::this_thread::sync_wait(
-      runko::parse_atom_args<int, runko::opt_arg<int>, runko::opt_arg<int>>(
-        ta::list(42, "43", 44)) |
-      te::then([](const int n, const std::optional<int> m, const std::optional<int> l) {
-        expect(n == 42);
-        expect(not m);
-        expect(l.value() == 44);
-      }));
+    expect(throws([] {
+      std::ignore = runko::parse_atom_args<int, runko::opt_arg<int>, runko::opt_arg<int>>(
+        ta::list(42, "43", 44));
+    }));
     tyvi::this_thread::sync_wait(
       runko::parse_atom_args<int, runko::opt_arg<int>, runko::opt_arg<int>>(
         ta::list(42, 43)) |
