@@ -16,8 +16,11 @@ particle count stays adaptive.
 Species and weights
 -------------------
 
-A ``qed::Tile`` is a ``pic::Tile`` whose species play three roles found from their mass and
-charge: a massless species (``m = 0``) holds the photons, a species of unit mass the leptons —
+A QED tile is a tile of the simulation that carries a ``qed::tile_state`` (the layouts of its
+species and the sampler) next to its Yee lattice and particle containers.
+``runko.qed.threeD.Tile(idx, conf)`` builds one in a context of its own, as
+``runko.pic.threeD.Tile`` does, and a ``TileGrid`` takes it like any other tile. Its species play
+three roles found from their mass and charge: a massless species (``m = 0``) holds the photons, a species of unit mass the leptons —
 electrons by a negative charge, positrons by a positive one — and any heavier species
 (``m > 1``: protons, ions) takes no part in the reactions::
 
@@ -90,7 +93,8 @@ The step
 
 Every ``qed_nsort`` steps each species is laid out by a counting sort on its key — the reaction
 cell, the energy bin and, for photons, a random bit — with slack behind every key for the
-products of the coming steps; this layout is the tile's ``sort_particles()``. The channels then
+products of the coming steps; this layout is the sort of a QED tile (``prtcl_sort`` lays QED
+tiles out instead of sorting them by cell). The channels then
 run in a random order. A two-body channel proposes, per pair of energy bins, an envelope of
 events from the bin tables alone, pairs particles by two-level stratified sampling, thins each
 proposal against the true rate with a single uniform, and realizes the accepted events with
@@ -103,28 +107,33 @@ In a lap the driver calls ``x.prtcl_interact()`` for the reactions and, for an o
 ``x.grid_heat_diffusive(ell)``, ``x.grid_inject_pairs_plaw(ell, p, gmin, gmax)``,
 ``x.grid_inject_photons(ell, theta, w)`` and ``x.grid_escape_photons(tau_T, dt)`` — the slab
 escape against the pair depth ``tau_T`` and the step ``dt`` in crossings of the slab, by default
-the tile's own; the tile keeps the budgets (``budget()``), the escaping spectrum
-(``escaped_spectrum()``) and its angular distribution (``escaped_mu_spectrum()``), the channel
-counts (``counts()``, ``moved()``) and a kernel report (``report()``).
+the tile's own. Each is an action (``interact``, ``heat_diffusive``, ...) over every local QED
+tile; the arguments are floats. Every tile keeps its budgets, the escaping spectrum and its
+angular distribution, the channel counts and a kernel report, which the ``ProxyTile`` of the tile
+reads (``tile.budget()``, ``tile.escaped_spectrum()``, ``tile.escaped_mu_spectrum()``,
+``tile.counts()``, ``tile.moved()``, ``tile.report()``, ``tile.totals("e-")``, ...). The same
+``ProxyTile`` methods (``tile.interact()``, ``tile.escape_photons()``, ``tile.set_particles(s, u, w)``,
+...) act on that one tile only; the species are named ``"ph"``, ``"e-"`` and ``"e+"``.
 
 Inside PIC
 ----------
 
-A ``qed::Tile`` takes the place of the ``pic::Tile`` in an otherwise ordinary PIC lap. The
-reactions run first, when every particle is inside its tile (the last thing that moved them was
+QED tiles take part in an otherwise ordinary PIC lap. The reactions run first, when every particle is inside its tile (the last thing that moved them was
 the exchange of the previous lap), so that the products, born at their parents' positions, take
 the push and the exchange of the lap like any particle; the layout replaces ``prtcl_sort``::
 
     x.prtcl_interact()
     x.grid_escape_photons(tau_box, dt_box)    # tau_box: the lepton weight of all ranks / n_t^2
     x.grid_push_half_b(); comm B
-    x.prtcl_push(); x.prtcl_pack_outgoing(); comm particles
+    x.prtcl_push(); comm particles
     x.prtcl_deposit_current(); comm and filter J
     x.grid_push_half_b(); comm B
     x.grid_push_e(); x.grid_deposit_antenna_current(); x.grid_add_current(); comm E
 
-Particles arriving from other tiles are appended to the tail of the layout, inert until the
-next sort, so the layout survives the exchange. Photons move at `c` along their momentum,
+A laid-out container is *placed*: the particle exchange appends the arrivals behind its last slot
+rather than into the slack of its last key, and the layout keys them as tail, inert until the
+next sort, so the layout survives the exchange. An injection through the pic path
+(``tile.inject``) or a pic sort drops the layout, and the next step lays the species out again. Photons move at `c` along their momentum,
 deposit no current and carry their weight through the exchange; the particle snapshots carry
 it as a 13th field ``wgt`` and the spectra are weighted by it. With `n_t` tiles per edge the
 weight unit is that of the tile, so the depth of the box is `\sum w / n_t^2` and
