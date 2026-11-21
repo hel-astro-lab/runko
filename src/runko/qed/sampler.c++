@@ -362,6 +362,15 @@ Sampler::Sampler(const Box& b, const Params& p, const std::vector<std::string>& 
   dbudget_.assign(2, 0.0);
 }
 
+// The random streams are rng_key(seed, step, sub, kernel), one kernel id per use, so that no
+// two uses draw the same uniforms:
+//   0                  layout: photon sub-range bit per slot (sub = species)
+//   1+4l, 2+4l, 3+4l   two-body channel l: cell kernels, thinning, react (sub = sub-step)
+//   100+2l, 101+2l     one-body channel l: firing, products
+//   300 .. 305         sources and sinks (304: sub = species)
+//   400 + site         seeds of the carries of systematic rounding (step 0)
+//   500                order of the channels in a step
+
 // the per-cell remainders of one decision site, created on first use
 thrust::device_vector<double>&
   Sampler::carry(const Decision d, const Species s, const int ncell)
@@ -491,7 +500,7 @@ void
   for(auto i = 0uz; i < N_CHANNELS; ++i) {
     if(enabled[i]) { order.push_back(static_cast<int>(i)); }
   }
-  auto rng = runko::Rng { runko::rng_key(par.seed, istep_, 0, 0), 0 };
+  auto rng = runko::Rng { runko::rng_key(par.seed, istep_, 0, 500), 0 };
   // Fisher-Yates shuffle on the step's own stream
   for(auto i = order.size(); i > 1; --i) {
     const auto j = static_cast<std::size_t>(rng.integer(i));
