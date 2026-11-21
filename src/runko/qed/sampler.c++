@@ -370,6 +370,7 @@ Sampler::Sampler(const Box& b, const Params& p, const std::vector<std::string>& 
 //   300 .. 305         sources and sinks (304: sub = species)
 //   400 + site         seeds of the carries of systematic rounding (step 0)
 //   500                order of the channels in a step
+//   501                positions of qed::set_particles (sub = species)
 
 // the per-cell remainders of one decision site, created on first use
 thrust::device_vector<double>&

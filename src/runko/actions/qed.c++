@@ -365,7 +365,8 @@ void
   auto args      = con.args();
   args.N         = 0;   // args().N is the old size, and fresh slots carry no dead tag
   con            = pic::ParticleContainer { args };  // empty, same species
-  auto rng       = runko::Rng { runko::rng_key(st.sampler.par.seed, st.sampler.step(), 7, 0), 0 };
+  // the species' own stream: species set in one step must not share positions
+  auto rng       = runko::Rng { runko::rng_key(st.sampler.par.seed, st.sampler.step(), static_cast<std::uint64_t>(s), 501), 0 };
   auto states    = std::vector<runko::ParticleState<double>>(u.size());
   const auto gc  = coordinates(sim, id);
   const auto lo  = gc.mins();  // tile extent, for the random positions

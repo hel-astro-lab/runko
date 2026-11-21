@@ -264,6 +264,14 @@ class qed_layout(unittest.TestCase):
         same = np.mean([bits[0][o] == bits[1][o] for o in common])
         self.assertLess(same, 0.6, f"independent bits agree on half, these on {same:.3f}")
 
+    def test_species_set_together_do_not_share_positions(self):
+        """set_particles draws the positions of every species from its own stream"""
+        config, tile = make_tile()
+        populate(tile, np.random.default_rng(10), nph=1000, nlep=1000)
+        pos = {s: np.stack([np.asarray(a) for a in tile.get_positions(tile.species(s))], 1) for s in ("ph", "e-", "e+")}
+        for a, b in (("ph", "e-"), ("e-", "e+")):
+            self.assertEqual(np.count_nonzero(np.all(pos[a] == pos[b], axis=1)), 0, f"{a} and {b} co-located")
+
     def test_qed_actions_need_a_qed_tile(self):
         """the qed lap actions on a plain pic tile raise instead of doing nothing; the sort still works"""
         config, _ = make_tile()
