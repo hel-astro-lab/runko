@@ -264,6 +264,17 @@ class qed_layout(unittest.TestCase):
         same = np.mean([bits[0][o] == bits[1][o] for o in common])
         self.assertLess(same, 0.6, f"independent bits agree on half, these on {same:.3f}")
 
+    def test_qed_actions_need_a_qed_tile(self):
+        """the qed lap actions on a plain pic tile raise instead of doing nothing; the sort still works"""
+        config, _ = make_tile()
+        tile = runko.pic.threeD.Tile((0, 0, 0), config)
+        a = runko.actions
+        for sym, args in ((a.interact, ()), (a.escape_photons, ()), (a.heat_diffusive, (1.0,)),
+                          (a.inject_pairs_plaw, (1.0, 2.0, 2.0, 10.0)), (a.inject_photons, (1.0, 0.1, WL))):
+            with self.assertRaises(RuntimeError):
+                tile.sim_context.eval((sym, a.current_context, *args))
+        tile.sort_particles()
+
     def test_empty_species(self):
         config, tile = make_tile()
         rng = np.random.default_rng(8)

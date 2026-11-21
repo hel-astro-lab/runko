@@ -332,7 +332,10 @@ tyvi::actions::sexpr
                  args) |
                te::then([](runko::simulation_context& sim) {
                  pic::sort_particles(sim);
-                 qed::for_each_tile(sim, qed::layout);
+                 // QED tiles sort by their layout; plain PIC runs have none
+                 for(auto&& [id, _]: sim.view_tiles<qed::tile_state, runko::local_tile_tag>()) {
+                   qed::layout(sim, id);
+                 }
                  return ta::null;
                });
       } }),

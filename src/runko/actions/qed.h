@@ -17,6 +17,7 @@
 #include <array>
 #include <cstddef>
 #include <cstdint>
+#include <stdexcept>
 #include <string>
 #include <vector>
 
@@ -52,12 +53,22 @@ struct tile_state {
 /// The lepton weight of the box is the electron container's `w{i}`.
 void ensure_constructed_qed(runko::simulation_context&);
 
-/// f(sim, id) on every local tile with a QED state.
+/// f(sim, id) on every local tile with a QED state. A QED action on local tiles none of which
+/// carries one (tiles built as runko.pic.threeD.Tile) is a driver error, not a no-op.
 template<typename F>
 void
   for_each_tile(runko::simulation_context& sim, F&& f)
 {
-  for(auto&& [id, _]: sim.view_tiles<tile_state, runko::local_tile_tag>()) { f(sim, id); }
+  auto any = false;
+  for(auto&& [id, _]: sim.view_tiles<tile_state, runko::local_tile_tag>()) {
+    f(sim, id);
+    any = true;
+  }
+  if(not any and not sim.tiles.view<runko::local_tile_tag>().empty()) {
+    throw std::runtime_error {
+      "qed: no local tile carries a QED state (build the tiles with runko.qed.threeD.Tile)."
+    };
+  }
 }
 
 // ---- one tile: the step, its layout, the sources and sinks of the open box
