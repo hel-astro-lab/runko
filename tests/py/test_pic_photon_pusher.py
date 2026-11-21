@@ -115,6 +115,26 @@ class photon_pusher(unittest.TestCase):
         np.testing.assert_allclose(tile.get_weights(2), xs, rtol=1e-6)
         self.assertTrue(np.all((np.asarray(xs) >= 2.0) & (np.asarray(xs) < 4.0)))
 
+    def test_sort_keeps_weights_paired(self):
+        config, tile = make_tile()
+        rng = np.random.default_rng(1)
+        n = 300
+        pos = rng.uniform(0.5, 7.5, (n, 3))
+        k = rng.normal(size=(n, 3))
+        w = rng.uniform(0.1, 5.0, n)
+        tile.inject(2, [runko.pic.threeD.ParticleState(pos=tuple(p), vel=tuple(kk), wgt=ww)
+                        for p, kk, ww in zip(pos, k, w)])
+        x_before = np.asarray(tile.get_positions(2)[0])
+        tile.sort_particles()
+        self.assertFalse(np.array_equal(np.asarray(tile.get_positions(2)[0]), x_before))  # reordered
+        vx, vy, vz = tile.get_velocities(2)
+        ws = tile.get_weights(2)
+        self.assertEqual(len(ws), n)
+        # weight must follow its own momentum through the permutation
+        order = np.argsort(k[:, 0])
+        got = np.argsort(vx)
+        np.testing.assert_allclose(np.asarray(ws)[got], w[order], rtol=1e-6)
+
 
 if __name__ == "__main__":
     _ = runko.actions.RuntimeInstance()
