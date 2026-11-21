@@ -33,7 +33,7 @@ static constexpr auto io_field_element =
 
 template<typename T>
 static constexpr auto prtcl_io_element =
-  tyvi::mdgrid_element_descriptor<T> { .rank = 1, .dim = 12 };
+  tyvi::mdgrid_element_descriptor<T> { .rank = 1, .dim = 13 };
 
 template<typename T>
 static constexpr auto spectra_element =

@@ -63,7 +63,7 @@ class TestMpiioParticlesWriter(unittest.TestCase):
         hdr, _ = prtcl_write_and_read(sim, self.outdir, n_prtcls=100)
 
         self.assertEqual(hdr["magic"], MAGIC)
-        self.assertEqual(hdr["num_fields"], 12)
+        self.assertEqual(hdr["num_fields"], 13)
         self.assertEqual(hdr["field_names"], PRTCL_FIELD_NAMES)
         self.assertEqual(hdr["species"], 0)
         self.assertGreater(hdr["n_prtcls"], 0)
@@ -440,7 +440,7 @@ class TestMpiioParticlesWriter(unittest.TestCase):
         self.assertEqual(hdr["dtype_size"], 4)
         self.assertEqual(hdr["species"], 0)
         self.assertEqual(hdr["lap"], 0)
-        self.assertEqual(hdr["num_fields"], 12)
+        self.assertEqual(hdr["num_fields"], 13)
 
     def test_nonzero_lap(self):
         """Write with lap=3, verify header and filename."""
@@ -475,6 +475,54 @@ class TestMpiioParticlesWriter(unittest.TestCase):
             hdr = read_prtcl_header(find_prtcl_file(self.outdir, species))
             self.assertEqual(hdr["n_prtcls"], 8**3)
             self.assertEqual(hdr["species"], species)
+
+
+class TestMpiioParticlesWeights(unittest.TestCase):
+    """the weight field: the species weight for leptons, the particle's own for photons"""
+
+    def setUp(self):
+        self.outdir = tempfile.mkdtemp()
+
+    def tearDown(self):
+        shutil.rmtree(self.outdir)
+
+    def test_weights_written(self):
+        config = make_pic_config(outdir=self.outdir, nspecies=2)
+        config.w0 = 0.25
+        config.q2, config.m2 = 0, 0          # photons: massless, per-particle weights
+        tile_grid = runko.TileGrid(config)
+        w = np.linspace(1.0, 5.0, 40)
+        P = runko.pic.threeD.ParticleState
+        zero = lambda x, y, z: (0, 0, 0)
+        for idx in tile_grid.local_tile_indices():
+            tile = runko.pic.threeD.Tile(idx, config)
+            tile.set_EBJ(zero, zero, zero)
+            tile.inject(0, [P(pos=(1.0 + 0.1 * i, 2.0, 3.0), vel=(0.1, 0, 0)) for i in range(20)])
+            tile.inject(2, [P(pos=(1.0 + 0.1 * i, 2.0, 3.0), vel=(1.0, 0, 0), wgt=ww)
+                            for i, ww in enumerate(w)])
+            tile_grid.add_tile(tile, idx)
+        sim = tile_grid.configure_simulation(config)
+        hdr, fields = prtcl_write_and_read(sim, self.outdir, 1000, species=0)
+        np.testing.assert_allclose(fields["wgt"], 0.25, rtol=1e-6)
+        hdr, fields = prtcl_write_and_read(sim, self.outdir, 1000, species=2)
+        self.assertEqual(hdr["n_prtcls"], 40)
+        np.testing.assert_allclose(np.sort(fields["wgt"]), w, rtol=1e-6)
+
+    def test_dead_particles_not_sampled(self):
+        config = make_pic_config(outdir=self.outdir, nspecies=2)
+        config.prealloc_per_species = 500   # dead slots ahead of the live ones
+        tile_grid = runko.TileGrid(config)
+        P = runko.pic.threeD.ParticleState
+        zero = lambda x, y, z: (0, 0, 0)
+        for idx in tile_grid.local_tile_indices():
+            tile = runko.pic.threeD.Tile(idx, config)
+            tile.set_EBJ(zero, zero, zero)
+            tile.inject(0, [P(pos=(1.0 + 0.1 * i, 2.0, 3.0), vel=(0.5, 0, 0)) for i in range(30)])
+            tile_grid.add_tile(tile, idx)
+        sim = tile_grid.configure_simulation(config)
+        hdr, fields = prtcl_write_and_read(sim, self.outdir, 1000, species=0)
+        self.assertEqual(hdr["n_prtcls"], 30)
+        np.testing.assert_allclose(fields["ux"], 0.5, atol=1e-6)
 
 
 if __name__ == "__main__":

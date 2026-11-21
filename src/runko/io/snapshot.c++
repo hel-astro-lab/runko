@@ -344,6 +344,10 @@ void
   }
 }
 
+static_assert(
+  static_cast<std::int32_t>(runko::detail::prtcl_io_element<float>.dim) == num_prtcl_fields,
+  "the particle snapshot element carries one value per snapshot field");
+
 /// Every stride:th particle slot holding a live particle is sampled.
 auto
   is_sampled(const pic::ParticleContainer& container, const runko::index_t stride)
@@ -511,6 +515,9 @@ void
     const auto slots_mds    = sampled_slots.mds();
     const auto pos_mds      = t.container->pos_mds();
     const auto vel_mds      = t.container->vel_mds();
+    const auto wgt_mds      = t.container->wgt_mds();
+    const auto weighted     = t.container->has_particle_weights();
+    const auto w0           = static_cast<float>(t.container->weight());
     const auto interpolator = t.yee->interpolate_EB_linear_1st(t.lattice_origo);
 
     const auto dst_range = std::array { tile_buf_offset, tile_buf_offset + n_s };
@@ -536,6 +543,7 @@ void
       dst_mds[idx][9]  = EB.B[0];
       dst_mds[idx][10] = EB.B[1];
       dst_mds[idx][11] = EB.B[2];
+      dst_mds[idx][12] = weighted ? wgt_mds[n][] : w0;  // the species weight unless its own
     });
 
     tile_buf_offset += n_s;
