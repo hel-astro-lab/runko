@@ -113,7 +113,12 @@ angular distribution, the channel counts and a kernel report, which the ``ProxyT
 reads (``tile.budget()``, ``tile.escaped_spectrum()``, ``tile.escaped_mu_spectrum()``,
 ``tile.counts()``, ``tile.moved()``, ``tile.report()``, ``tile.totals("e-")``, ...). The same
 ``ProxyTile`` methods (``tile.interact()``, ``tile.escape_photons()``, ``tile.set_particles(s, u, w)``,
-...) act on that one tile only; the species are named ``"ph"``, ``"e-"`` and ``"e+"``.
+...) act on that one tile only; the species are named ``"ph"``, ``"e-"`` and ``"e+"``. The
+``ProxyTile`` methods that runko's pic and emf layers provide (``tile.sort_particles()``,
+``tile.push_particles()``, ``tile.inject(...)``, ``tile.set_EBJ(...)``, ...) instead evaluate an
+action over every local tile of the context the proxy belongs to: the tile alone for a tile of
+``runko.qed.threeD.Tile``, but all local tiles for one of ``simulation.local_tiles()``, where
+``tile.sort_particles()`` lays out every QED tile of the rank.
 
 Inside PIC
 ----------
