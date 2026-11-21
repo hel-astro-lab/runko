@@ -101,6 +101,10 @@ private:
   double mass_;
   double weight_;
   SpeciesKind kind_;
+  /// The slots are a layout built by place(): append grows the container at its tail
+  /// instead of reusing the dead slots behind the last alive one, so the padding of the
+  /// layout survives arrivals. sort, set and add_particles drop the layout.
+  bool placed_ { false };
 
   /// Reusable buffer for particle trackers.
   thrust::device_vector<runko::index_t> tracker_cache_;
@@ -154,6 +158,9 @@ public:
 
   /// Append n dead slots at the end.
   void grow(std::size_t n);
+
+  /// Whether the slots are still the layout of the last place().
+  [[nodiscard]] bool placed() const { return placed_; }
 
   /// Pre-allocate N dead-particle slots on an empty container.
   ///
@@ -355,6 +362,10 @@ template<std::ranges::forward_range R>
                                 .wgt = static_cast<value_type>(state.wgt) };
     });
 
+  // an injection is no part of a layout: the particles take the slots after the last
+  // alive one, as in any container
+  this->placed_ = false;
+
   const auto new_states_h = thrust::host_vector<value_state_type>(
     casted_new_particles.begin(),
     casted_new_particles.end());
@@ -394,6 +405,7 @@ template<std::ranges::forward_range R>
     // because there is no charge and mass specified.
     throw std::runtime_error { "Trying to set ParticleContainer from zero spans." };
   }
+  this->placed_ = false;
 
   /* Due to limitation of tyvi::when_all taking only statically known
      amount of tyvi::mdgrid_work, we have to wait for the copies in batches.
@@ -562,7 +574,8 @@ inline void
 
   if(rn::empty(spans)) { return; }
 
-  // 1. find last alive particle P
+  // 1. find last alive particle P (a placed container: its end, so that its layout
+  //    keeps every slot)
   // 2. resizes containers to fit appended particles (with tyvi::mdsegments this should
   // be cheap)
   // 3. copy appended particles to dead particles after P
@@ -587,7 +600,9 @@ inline void
     });
 
   const auto dead_particles_at_end = rn::distance(rev_particle_ordinals_begin, Piter);
-  const auto Pnum = static_cast<std::size_t>(this->ssize() - dead_particles_at_end);
+  const auto Pnum                  = this->placed_
+                                       ? this->size()
+                                       : static_cast<std::size_t>(this->ssize() - dead_particles_at_end);
 
   const auto span_sizes = spans | rv::transform(rn::size);
 
@@ -685,6 +700,8 @@ inline void
 
      Without it we could write:
      const auto pos0 = this->pos_.component_span<0>(); */
+
+  this->placed_ = false;  // the permutation breaks any layout
 
   using I                    = runko::index_t;
   static constexpr auto zero = std::array { I { 0 } };
