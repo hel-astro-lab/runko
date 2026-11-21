@@ -520,7 +520,7 @@ ParticleContainer&
   tyvi::copy_d2d(other.pos_, this->pos_);
   tyvi::copy_d2d(other.vel_, this->vel_);
   tyvi::copy_d2d(other.ids_, this->ids_);
-  if(other.has_particle_weights()) { tyvi::copy_d2d(other.wgt_, this->wgt_); }
+  tyvi::copy_d2d(other.wgt_, this->wgt_);  // empty for an unweighted species
 
   this->charge_               = other.charge_;
   this->mass_                 = other.mass_;
