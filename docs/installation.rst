@@ -71,9 +71,7 @@ Backend specific requirements:
 
    .. group-tab:: cpu backend on macos
 
-      Install the toolchain, the Boost and hwloc libraries needed by pika
-      (fetched at configure time; on macOS it uses Boost.Context),
-      and Xcode command-line tools:
+      Install the toolchain, Boost and hwloc libraries needed by pika and Xcode command-line tools:
 
       .. code-block:: bash
 
@@ -220,16 +218,6 @@ available presets are:
          pip install git+https://github.com/hel-astro-lab/runko \
            --config-settings=cmake.args=--preset=macos-cpu \
            --config-settings=cmake.define.rocthrust_DIR=$ROCTHRUST_INSTALL_PREFIX/lib/cmake/rocthrust
-
-      .. hint::
-
-         Without the ``rocthrust_DIR`` define the ``macos-cpu`` preset uses
-         ``cmake/rocthrust-cpu``, which takes the rocThrust headers from a sparse
-         checkout of ``rocm-libraries`` at ``external/tyvi/rocm-libraries`` of a
-         cloned runko (configuring without it prints the clone command);
-         no rocThrust install is then needed.
-         The same choice applies to the manual CMake build, where the define is passed as
-         ``-Drocthrust_DIR=$ROCTHRUST_INSTALL_PREFIX/lib/cmake/rocthrust``.
 
    .. group-tab:: hip backend on LUMI
 
