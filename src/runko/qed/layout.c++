@@ -24,7 +24,11 @@ namespace qed {
 
 using I = runko::index_t;
 
-Pop::Pop(const bool keyed, const double mass) : keyed_ { keyed }, mass_ { static_cast<float>(mass) } {}
+Pop::Pop(const bool keyed, const double mass) :
+  keyed_ { keyed },
+  mass_ { static_cast<float>(mass) }
+{
+}
 
 void
   Pop::layout(
@@ -34,29 +38,33 @@ void
     const std::array<float, 3> maxs,
     const std::uint64_t rng_key)
 {
-  // The only kernel of the scheme that runs over the particles; it is amortized over the sort
-  // epoch and shared with the sort the particle pusher needs anyway. The bins are log-spaced
-  // in the kinetic energy between the extremes of the live population, so every bound is
-  // equally tight in every bin, and a sparse tail costs nothing: an empty bin launches no lane.
+  // The only kernel of the scheme that runs over the particles; it is amortized over
+  // the sort epoch and shared with the sort the particle pusher needs anyway. The bins
+  // are log-spaced in the kinetic energy between the extremes of the live population,
+  // so every bound is equally tight in every bin, and a sparse tail costs nothing: an
+  // empty bin launches no lane.
   par_  = par;  // the bin count, cell count and slack rule of this epoch
   mins_ = mins;
   maxs_ = maxs;
   // reaction sub-cells of the tile
   const auto ncell = par.ncell_edge * par.ncell_edge * par.ncell_edge;
   // keys: cells x bins, x 2 photon bits
-  nkeys_           = (keyed_ ? 2 : 1) * ncell * par.nbin;
+  nkeys_ = (keyed_ ? 2 : 1) * ncell * par.nbin;
 
   const auto n = con.size();
   const auto w = tyvi::mdgrid_work {};
 
-  // ---- device views of the container and the two per-slot predicates the kernels share
+  // ---- device views of the container and the two per-slot predicates the kernels
+  // share
   const auto ids_mds = con.ids_mds();
   const auto vel_mds = con.vel_mds();
   const auto pos_mds = con.pos_mds();
   const auto m       = mass_;  // rest mass of the species: 0 for photons
 
   // energy of slot i
-  const auto energy = [=](const I i) { return energy_of(m, vel_mds[i][0], vel_mds[i][1], vel_mds[i][2]); };
+  const auto energy = [=](const I i) {
+    return energy_of(m, vel_mds[i][0], vel_mds[i][1], vel_mds[i][2]);
+  };
   // a slot holds a live LP unless its id is the dead marker
   const auto alive = [=](const I i) { return ids_mds[i][] != runko::dead_prtc_id; };
 
@@ -65,14 +73,10 @@ void
 
   // ---- energy extremes of the live population fix the bins of the epoch
   // sentinel: dead slots take no part in the extremes
-  const auto inf  = std::numeric_limits<float>::infinity();
+  const auto inf = std::numeric_limits<float>::infinity();
   // kinetic energy of a live slot, +inf (min) or -inf (max) for a dead one
-  const auto kin  = [=](const I i) {
-    return alive(i) ? energy(i) - m : inf;
-  };
-  const auto kin_hi = [=](const I i) {
-    return alive(i) ? energy(i) - m : -inf;
-  };
+  const auto kin    = [=](const I i) { return alive(i) ? energy(i) - m : inf; };
+  const auto kin_hi = [=](const I i) { return alive(i) ? energy(i) - m : -inf; };
   // smallest and largest kinetic energy of the live population (two reductions)
   const auto lo = thrust::reduce(
     w.on_this(),
@@ -86,13 +90,14 @@ void
     thrust::make_transform_iterator(ordN, kin_hi),
     -inf,
     thrust::maximum<float> {});
-  // log-spaced bin edges between the extremes, widened so the maximum falls inside the last bin
+  // log-spaced bin edges between the extremes, widened so the maximum falls inside the
+  // last bin
   if(par.nbin > 1 and lo < hi) {
-      // floor against a lepton exactly at rest
+    // floor against a lepton exactly at rest
     const auto vlo = sstd::max(static_cast<double>(lo), 1e-30);
     auto vhi       = static_cast<double>(hi) * (1.0 + 1e-6);
     vhi            = sstd::max(vhi, vlo * (1.0 + 1e-6));
-    llo_           = sstd::log(vlo);  // log of the lower edge
+    llo_           = sstd::log(vlo);                      // log of the lower edge
     dl_            = (sstd::log(vhi) - llo_) / par.nbin;  // log width of one bin
   } else {
     llo_ = -1e300;  // everything in bin 0
@@ -105,15 +110,17 @@ void
   v.llo  = llo_;
   v.dl   = dl_;
   keys_.resize(n);  // key per slot
-  ord_.resize(n);  // slot index per key, the permutation the sort produces
+  ord_.resize(n);   // slot index per key, the permutation the sort produces
   const auto sentinel = static_cast<I>(nkeys_);  // dead slots sort past every key
   const auto keyed    = keyed_;
-  // one lane per slot: its key from the reaction cell, the energy bin and a fresh photon bit
+  // one lane per slot: its key from the reaction cell, the energy bin and a fresh
+  // photon bit
   thrust::transform(w.on_this(), ord0, ordN, keys_.begin(), [=](const I i) -> I {
     if(not alive(i)) { return sentinel; }
     const auto cell = v.cell_of(pos_mds[i][0], pos_mds[i][1], pos_mds[i][2]);
     const auto ebin = v.bin_of(static_cast<double>(energy(i)));
-    const auto bit  = keyed ? static_cast<int>(runko::Rng { rng_key, i }.uniform() < 0.5) : 0;
+    const auto bit =
+      keyed ? static_cast<int>(runko::Rng { rng_key, i }.uniform() < 0.5) : 0;
     return static_cast<I>(v.key_of(cell, ebin, bit));
   });
   // sort the slot indices by key: ord_ then lists the live slots key by key
@@ -124,7 +131,8 @@ void
   const auto nk = static_cast<std::size_t>(nkeys_);  // number of keys
   cnt_.resize(nk + 1);  // starts of every key in the sorted list, plus the end
   const auto key0 = thrust::counting_iterator<I>(0);
-  // first sorted position of every key (a vectorized binary search over the sorted keys)
+  // first sorted position of every key (a vectorized binary search over the sorted
+  // keys)
   thrust::lower_bound(
     w.on_this(),
     keys_.begin(),
@@ -135,14 +143,12 @@ void
   // starts[k+1] - starts[k] = live LPs of key k
   const auto starts = thrust::raw_pointer_cast(cnt_.data());
   // the product demand of the previous epoch, zero on the first layout
-  if(prod_.size() != nk) {
-    prod_.assign(nk, I { 0 });
-  }
-  cap_.resize(nk);  // slots of every key: live + slack
-  b_.resize(nk);  // first slot of every key
+  if(prod_.size() != nk) { prod_.assign(nk, I { 0 }); }
+  cap_.resize(nk);   // slots of every key: live + slack
+  b_.resize(nk);     // first slot of every key
   fill_.resize(nk);  // live LPs of every key, later live + appended
   const auto prod_p = thrust::raw_pointer_cast(prod_.data());
-  const auto slack  = par.slack;  // slack as a fraction of the live LPs
+  const auto slack  = par.slack;                 // slack as a fraction of the live LPs
   const auto smin   = static_cast<I>(par.smin);  // and its floor
   // one lane per key: its capacity
   thrust::transform(
@@ -151,11 +157,13 @@ void
     key0 + static_cast<std::ptrdiff_t>(nk),
     cap_.begin(),
     [=](const I k) -> I {
-      // slack: a fraction of the live LPs, a floor, and what the key took in the previous
-      // epoch with room to spare, so that a key that fills fast gets the slots it will need
-      const auto c    = starts[k + 1] - starts[k];
-      const auto need = static_cast<I>(sstd::ceil(1.5 * static_cast<double>(prod_p[k])));
-      const auto sl   = static_cast<I>(sstd::ceil(slack * static_cast<double>(c)));
+      // slack: a fraction of the live LPs, a floor, and what the key took in the
+      // previous epoch with room to spare, so that a key that fills fast gets the slots
+      // it will need
+      const auto c = starts[k + 1] - starts[k];
+      const auto need =
+        static_cast<I>(sstd::ceil(1.5 * static_cast<double>(prod_p[k])));
+      const auto sl = static_cast<I>(sstd::ceil(slack * static_cast<double>(c)));
       return c + sstd::max(sstd::max(sl, smin), need);
     });
   // offsets from the capacities; the total is the padded size of the container
@@ -178,11 +186,12 @@ void
   const auto b_p     = thrust::raw_pointer_cast(b_.data());
   const auto slots_p = thrust::raw_pointer_cast(slots_.data());
   // live LPs, the head of the sorted list
-  const auto nlive   = static_cast<std::ptrdiff_t>(cnt_.back());
-  // one lane per live LP in sorted order: rank j - starts[k] inside its key, after the key's offset
+  const auto nlive = static_cast<std::ptrdiff_t>(cnt_.back());
+  // one lane per live LP in sorted order: rank j - starts[k] inside its key, after the
+  // key's offset
   thrust::for_each(w.on_this(), ord0, ord0 + nlive, [=](const I j) {
-    const auto k       = keys_p[j];
-    slots_p[ord_p[j]]  = b_p[k] + (j - starts[k]);
+    const auto k      = keys_p[j];
+    slots_p[ord_p[j]] = b_p[k] + (j - starts[k]);
   });
   // scatter the container into the padded layout; every other slot becomes dead slack
   // (the wait: place() reads slots_ on its own streams, unordered against w)
@@ -213,15 +222,17 @@ void
   wmax_.assign(nk, 0.0f);
   emin_.assign(nk, inf);
   emax_.assign(nk, 0.0f);
-  laid_ = true;  // the tables are valid for the current container
-  this->touch_all(con, w);   // behind the key writers on the same queue
+  laid_ = true;             // the tables are valid for the current container
+  this->touch_all(con, w);  // behind the key writers on the same queue
   w.wait();
 }
 
 void
   Pop::touch_all(pic::ParticleContainer& con, const tyvi::mdgrid_work& w)
 {
-  if(not this->laid(con)) { return; }  // no tables to widen; the next layout builds them
+  if(not this->laid(con)) {
+    return;
+  }  // no tables to widen; the next layout builds them
   // slots appended since the layout are tail (key -1) and widen nothing
   const auto ids_mds = con.ids_mds();
   const auto vel_mds = con.vel_mds();
@@ -231,7 +242,8 @@ void
   const auto w0       = static_cast<float>(con.weight());  // weight of a lepton species
   const auto m        = mass_;
   const auto v        = this->view();
-  // one lane per slot: a live LP with a key widens the weight and energy bounds of that key
+  // one lane per slot: a live LP with a key widens the weight and energy bounds of that
+  // key
   w.for_each_index(ids_mds, [=](const auto idx) {
     if(ids_mds[idx][] == runko::dead_prtc_id) { return; }
     const auto k = v.skey[idx[0]];
@@ -281,21 +293,22 @@ void
 Pop::Totals
   Pop::totals(const pic::ParticleContainer& con)
 {
-  // ---- one reduction over the slots of (count, weight, energy, momentum) of the live LPs
-  const auto ids_mds = con.ids_mds();
-  const auto vel_mds = con.vel_mds();
-  const auto wgt_mds = con.wgt_mds();
+  // ---- one reduction over the slots of (count, weight, energy, momentum) of the live
+  // LPs
+  const auto ids_mds  = con.ids_mds();
+  const auto vel_mds  = con.vel_mds();
+  const auto wgt_mds  = con.wgt_mds();
   const auto weighted = con.has_particle_weights();
   const auto w0       = static_cast<double>(con.weight());
   const auto m        = con.args().mass;
   using V6            = toolbox::VecD<double, 6>;  // N, W, E, Px, Py, Pz of one slot
   const auto ord0     = thrust::counting_iterator<I>(0);
   // the six sums a live slot contributes, zero for a dead one
-  const auto f        = [=](const I i) {
+  const auto f = [=](const I i) {
     if(ids_mds[i][] == runko::dead_prtc_id) { return V6 {}; }
     const double vx = vel_mds[i][0], vy = vel_mds[i][1], vz = vel_mds[i][2];
-    const auto e    = sstd::sqrt(m * m + vx * vx + vy * vy + vz * vz);
-    const auto wg   = weighted ? static_cast<double>(wgt_mds[i][]) : w0;
+    const auto e  = sstd::sqrt(m * m + vx * vx + vy * vy + vz * vz);
+    const auto wg = weighted ? static_cast<double>(wgt_mds[i][]) : w0;
     return V6(1.0, wg, wg * e, wg * vx, wg * vy, wg * vz);
   };
   const auto w = tyvi::mdgrid_work {};
@@ -314,11 +327,14 @@ std::vector<std::int32_t>
 {
   const auto n       = con.size();
   const auto ids_mds = con.ids_mds();
-  if(not this->laid(con)) { return std::vector<std::int32_t>(con.number_alive(), -1); }  // no keys
-  // compact the keys of the alive slots on the device, then copy the short list to the host
-  auto out           = thrust::device_vector<std::int32_t>(n);
-  const auto w       = tyvi::mdgrid_work {};
-  const auto end     = thrust::copy_if(
+  if(not this->laid(con)) {
+    return std::vector<std::int32_t>(con.number_alive(), -1);
+  }  // no keys
+  // compact the keys of the alive slots on the device, then copy the short list to the
+  // host
+  auto out       = thrust::device_vector<std::int32_t>(n);
+  const auto w   = tyvi::mdgrid_work {};
+  const auto end = thrust::copy_if(
     w.on_this(),
     skey_.begin(),
     skey_.begin() + static_cast<std::ptrdiff_t>(n),

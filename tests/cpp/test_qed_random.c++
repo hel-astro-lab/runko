@@ -1,13 +1,12 @@
 // Copyright 2026 - 2026, Miro Palmu, Joonas Nättilä and the runko contributors
 // SPDX-License-Identifier: GPL-3.0-or-later
 
-#include <boost/ut.hpp>
+#include "runko/tools/random.h"
 
 #include <array>
+#include <boost/ut.hpp>
 #include <cmath>
 #include <vector>
-
-#include "runko/tools/random.h"
 
 namespace {
 
@@ -16,8 +15,8 @@ using namespace boost::ut;
 [[maybe_unused]]
 const suite<"counter-based rng"> _ = [] {
   "uniform moments and bins"_test = [] {
-    const auto key = runko::rng_key(1, 2, 0, 3);
-    auto rng       = runko::Rng { key, 0 };
+    const auto key   = runko::rng_key(1, 2, 0, 3);
+    auto rng         = runko::Rng { key, 0 };
     constexpr auto n = 1000000;
     auto sum = 0.0, sum2 = 0.0, corr = 0.0, prev = 0.5;
     auto bins = std::array<int, 16> {};
@@ -52,7 +51,7 @@ const suite<"counter-based rng"> _ = [] {
 
   "lanes are independent"_test = [] {
     // the first draws of consecutive lanes look like one uniform sample
-    const auto key = runko::rng_key(3, 0, 0, 0);
+    const auto key   = runko::rng_key(3, 0, 0, 0);
     constexpr auto n = 200000;
     auto sum = 0.0, corr = 0.0, prev = 0.5;
     for(auto lane = 0; lane < n; ++lane) {
@@ -92,6 +91,4 @@ const suite<"counter-based rng"> _ = [] {
 
 int
   main(int argc, const char** argv)
-{
-  return static_cast<int>(cfg<override>.run(run_cfg { .argc = argc, .argv = argv }));
-}
+{ return static_cast<int>(cfg<override>.run(run_cfg { .argc = argc, .argv = argv })); }

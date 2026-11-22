@@ -1,14 +1,13 @@
 // Copyright 2026 - 2026, Miro Palmu, Joonas Nättilä and the runko contributors
 // SPDX-License-Identifier: GPL-3.0-or-later
 
-#include <boost/ut.hpp>
-
-#include <cmath>
-
 #include "runko/qed/interactions/qed1_bw.h"
 #include "runko/qed/interactions/qed1_syn.h"
 #include "runko/qed/interactions/qed2_ssa.h"
 #include "runko/tools/random.h"
+
+#include <boost/ut.hpp>
+#include <cmath>
 
 namespace {
 
@@ -17,9 +16,7 @@ using qed::Vec3;
 
 constexpr bool
   close(const double a, const double b, const double rtol, const double atol = 0.0)
-{
-  return std::abs(a - b) <= rtol * std::abs(b) + atol;
-}
+{ return std::abs(a - b) <= rtol * std::abs(b) + atol; }
 
 [[maybe_unused]]
 const suite<"one-body and self-absorption physics"> _ = [] {
@@ -58,8 +55,9 @@ const suite<"one-body and self-absorption physics"> _ = [] {
   };
 
   "the closed-form mean above a floor follows the moment of the cumulative"_test = [] {
-    // the reference: the tail integral of the cumulative by Simpson's rule in ln r from a few
-    // decades below the spectrum's scale, the sliver below the first node in closed form
+    // the reference: the tail integral of the cumulative by Simpson's rule in ln r from
+    // a few decades below the spectrum's scale, the sliver below the first node in
+    // closed form
     const auto ref = [](const double chi, const double rmin) {
       const auto s    = qed::syn::shape(chi);
       const auto P0   = qed::syn::P(s, rmin);
@@ -74,16 +72,21 @@ const suite<"one-body and self-absorption physics"> _ = [] {
         sum += w * (1.0 - qed::syn::P(s, r)) * r;
       }
       const auto h = -lr0 / n;
-      return rmin + (h / 3.0 * sum + (r_lo - rmin) * (1.0 - qed::syn::P(s, r_lo))) / (1.0 - P0);
+      return rmin + (h / 3.0 * sum + (r_lo - rmin) * (1.0 - qed::syn::P(s, r_lo))) /
+                      (1.0 - P0);
     };
-    // over the fitted range and every floor that leaves the channel open (1 - P0 >= FMIN)
+    // over the fitted range and every floor that leaves the channel open (1 - P0 >=
+    // FMIN)
     for(const auto chi: { 1e-8, 1e-6, 1e-4, 1e-3, 1e-2, 0.1, 1.0, 10.0 }) {
       const auto s   = qed::syn::shape(chi);
       const auto tol = chi <= 1e-2 ? 3e-3 : (chi <= 1.0 ? 5e-3 : 8e-3);
       for(auto z = 0.0; z <= 9.0; z += 0.5) {
-        const auto rmin = std::pow(1.0 - std::exp(-z / (4.0 * s.n)), 3.0);   // the floor of tail exponent z
-        if(qed::syn::frac(chi, rmin) <= 0.0) { continue; }                    // closed
-        expect(close(qed::syn::rmean(s, rmin), ref(chi, rmin), tol)) << "chi " << chi << " z " << z;
+        const auto rmin = std::pow(
+          1.0 - std::exp(-z / (4.0 * s.n)),
+          3.0);  // the floor of tail exponent z
+        if(qed::syn::frac(chi, rmin) <= 0.0) { continue; }  // closed
+        expect(close(qed::syn::rmean(s, rmin), ref(chi, rmin), tol))
+          << "chi " << chi << " z " << z;
       }
     }
   };
@@ -91,7 +94,8 @@ const suite<"one-body and self-absorption physics"> _ = [] {
   "synchrotron inversion round-trips and the sampler conserves energy"_test = [] {
     auto rng = runko::Rng { runko::rng_key(11, 0, 0, 0), 0 };
     // The inversion round-trips to round-off except where the quartic degenerates (the
-    // prototype's inversion has the same points, e.g. chi ~ 2.6): count those as outliers.
+    // prototype's inversion has the same points, e.g. chi ~ 2.6): count those as
+    // outliers.
     auto bad = 0;
     for(auto n = 0; n < 20000; ++n) {
       const auto chi = std::exp(-12.0 + 16.0 * rng.uniform());
@@ -112,11 +116,12 @@ const suite<"one-body and self-absorption physics"> _ = [] {
       const auto g1  = std::sqrt(1.0 + toolbox::dot(P.u1, P.u1));
       expect(x >= 0.0);
       if(x > 0.0) {
-        expect(close(toolbox::dot(P.k, u) / (x * toolbox::norm(u)), 1.0, 1e-9)) << "collinear";
+        expect(close(toolbox::dot(P.k, u) / (x * toolbox::norm(u)), 1.0, 1e-9))
+          << "collinear";
       }
       expect(close(g1 + x, gam, 1e-9) or g1 == 1.0) << "energy";
-      // the floor is honoured where the channel is open (the tail above it is drawable):
-      // the inversion of the Pade cumulative is exact to its round-off only
+      // the floor is honoured where the channel is open (the tail above it is
+      // drawable): the inversion of the Pade cumulative is exact to its round-off only
       if(qed::syn::rate(u, b, xm, false) > 0.0) {
         open += 1.0;
         worst = std::min(worst, x / xm);
@@ -137,7 +142,8 @@ const suite<"one-body and self-absorption physics"> _ = [] {
     expect(close(qed::bw::P(0.5, 0.6), 0.7578413698673724, 1e-10));
     expect(close(qed::bw::P(1.0, 0.9), 0.9987354700762969, 1e-10));
     expect(close(qed::bw::P(10.0, 0.75), 0.7446145277556716, 1e-10));
-    expect(close(qed::bw::P(0.3, 0.6), 0.7578413698673724, 1e-10));  // clamped to chi = 0.5
+    expect(
+      close(qed::bw::P(0.3, 0.6), 0.7578413698673724, 1e-10));  // clamped to chi = 0.5
     expect(close(qed::bw::P(1.0, 0.2), 0.029197882807714626, 1e-10));
     expect(close(qed::bw::r_of(0.6, 0.5), 0.5362842612233096, 1e-8));
     expect(close(qed::bw::r_of(0.95, 1.0), 0.772002212294584, 1e-8));
@@ -159,10 +165,10 @@ const suite<"one-body and self-absorption physics"> _ = [] {
     }
     auto rsum = 0.0;
     for(auto n = 0; n < 20000; ++n) {
-      const auto x = 2.0 + 100.0 * rng.uniform();
-      const auto k = x * qed::iso_dir(rng);
-      const auto b = std::exp(-4.0 + 4.0 * rng.uniform());
-      const auto P = qed::bw::sample(k, b, rng);
+      const auto x  = 2.0 + 100.0 * rng.uniform();
+      const auto k  = x * qed::iso_dir(rng);
+      const auto b  = std::exp(-4.0 + 4.0 * rng.uniform());
+      const auto P  = qed::bw::sample(k, b, rng);
       const auto gm = std::sqrt(1.0 + toolbox::dot(P.um, P.um));
       const auto gp = std::sqrt(1.0 + toolbox::dot(P.up, P.up));
       expect(close(gm + gp, x, 1e-9)) << "energy";
@@ -196,7 +202,11 @@ const suite<"one-body and self-absorption physics"> _ = [] {
   "self-absorption rate against the tabulated prototype"_test = [] {
     constexpr auto b = 1e-3;
     const auto at    = [&](const double g, const double x) {
-      return qed::ssa::rate(Vec3(x, 0.0, 0.0), Vec3(std::sqrt(g * g - 1.0), 0.0, 0.0), b, 0.0);
+      return qed::ssa::rate(
+        Vec3(x, 0.0, 0.0),
+        Vec3(std::sqrt(g * g - 1.0), 0.0, 0.0),
+        b,
+        0.0);
     };
     expect(close(at(5.0, 1e-3), 3919.6465542179676, 5e-2)) << at(5.0, 1e-3);
     expect(close(at(20.0, 1e-3), 378.76502927171197, 5e-2)) << at(20.0, 1e-3);
@@ -240,7 +250,9 @@ const suite<"one-body and self-absorption physics"> _ = [] {
       const auto g1 = std::sqrt(1.0 + toolbox::dot(u1, u1));
       expect(close(g1, g + toolbox::norm(k), 1e-12));
     }
-    expect(qed::ssa::bound(1e-3, 0.0, std::numeric_limits<double>::infinity(), 3.0, 10.0) == 0.0);
+    expect(
+      qed::ssa::bound(1e-3, 0.0, std::numeric_limits<double>::infinity(), 3.0, 10.0) ==
+      0.0);
   };
 };
 
@@ -248,6 +260,4 @@ const suite<"one-body and self-absorption physics"> _ = [] {
 
 int
   main(int argc, const char** argv)
-{
-  return static_cast<int>(cfg<override>.run(run_cfg { .argc = argc, .argv = argv }));
-}
+{ return static_cast<int>(cfg<override>.run(run_cfg { .argc = argc, .argv = argv })); }

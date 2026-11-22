@@ -1,15 +1,14 @@
 // Copyright 2026 - 2026, Miro Palmu, Joonas Nättilä and the runko contributors
 // SPDX-License-Identifier: GPL-3.0-or-later
 
-#include <boost/ut.hpp>
-
-#include <cmath>
-
 #include "runko/qed/interactions/qed2_ann.h"
 #include "runko/qed/interactions/qed2_comp.h"
 #include "runko/qed/interactions/qed2_gg.h"
 #include "runko/qed/interactions/qed_kinematics.h"
 #include "runko/tools/random.h"
+
+#include <boost/ut.hpp>
+#include <cmath>
 
 namespace {
 
@@ -18,9 +17,7 @@ using qed::Vec3;
 
 constexpr bool
   close(const double a, const double b, const double rtol, const double atol = 0.0)
-{
-  return std::abs(a - b) <= rtol * std::abs(b) + atol;
-}
+{ return std::abs(a - b) <= rtol * std::abs(b) + atol; }
 
 Vec3
   random_u(runko::Rng& rng, const double pmax)
@@ -31,16 +28,17 @@ Vec3
 
 double
   gam(const Vec3& u)
-{
-  return std::sqrt(1.0 + toolbox::dot(u, u));
-}
+{ return std::sqrt(1.0 + toolbox::dot(u, u)); }
 
 [[maybe_unused]]
 const suite<"two-body qed physics"> _ = [] {
   "pinned values from the python modules"_test = [] {
     expect(close(qed::comp::sigma_kn(1e-4), 0.9998000519867, 1e-11));
     expect(close(qed::comp::sigma_kn(5e-3), 0.9901283375, 1e-12));
-    expect(close(qed::comp::sigma_kn(0.02), 0.9619785920554768, 1e-9));  // closed form cancels here
+    expect(close(
+      qed::comp::sigma_kn(0.02),
+      0.9619785920554768,
+      1e-9));  // closed form cancels here
     expect(close(qed::comp::sigma_kn(0.5), 0.5627857603804511, 1e-12));
     expect(close(qed::comp::sigma_kn(2.0), 0.3141151957093031, 1e-12));
     expect(close(qed::comp::sigma_kn(50.0), 0.03755080938713749, 1e-12));
@@ -84,12 +82,12 @@ const suite<"two-body qed physics"> _ = [] {
   "boost inverts and preserves the invariant mass"_test = [] {
     auto rng = runko::Rng { runko::rng_key(2, 0, 0, 0), 0 };
     for(auto n = 0; n < 1000; ++n) {
-      const auto u  = random_u(rng, 5.0);
-      const auto p  = random_u(rng, 3.0);
-      const auto e  = std::sqrt(0.25 + toolbox::dot(p, p));
-      const auto b  = u / gam(u);
-      const auto A  = qed::boost(b, e, p);
-      const auto B  = qed::boost((-1.0) * b, A.e, A.p);
+      const auto u = random_u(rng, 5.0);
+      const auto p = random_u(rng, 3.0);
+      const auto e = std::sqrt(0.25 + toolbox::dot(p, p));
+      const auto b = u / gam(u);
+      const auto A = qed::boost(b, e, p);
+      const auto B = qed::boost((-1.0) * b, A.e, A.p);
       expect(close(B.e, e, 1e-12));
       for(auto i = 0uz; i < 3uz; ++i) { expect(close(B.p[i], p[i], 1e-12, 1e-14)); }
       expect(close(A.e * A.e - toolbox::dot(A.p, A.p), 0.25, 1e-10, 1e-12));
@@ -114,9 +112,9 @@ const suite<"two-body qed physics"> _ = [] {
   };
 
   "compton sampler conserves four-momentum, few trips"_test = [] {
-    auto rng   = runko::Rng { runko::rng_key(4, 0, 0, 0), 0 };
-    auto trips = 0.0;
-    auto worst = 0;
+    auto rng         = runko::Rng { runko::rng_key(4, 0, 0, 0), 0 };
+    auto trips       = 0.0;
+    auto worst       = 0;
     constexpr auto n = 20000;
     for(auto m = 0; m < n; ++m) {
       const auto k = std::exp(-6.0 + 8.0 * rng.uniform()) * qed::iso_dir(rng);
@@ -124,7 +122,7 @@ const suite<"two-body qed physics"> _ = [] {
       auto ntry    = 0;
       const auto P = qed::comp::sample(k, u, rng, ntry);
       trips += ntry;
-      worst = std::max(worst, ntry);
+      worst         = std::max(worst, ntry);
       const auto e0 = toolbox::norm(k) + gam(u);
       const auto e1 = toolbox::norm(P.k1) + gam(P.u1);
       expect(close(e1, e0, 1e-9)) << "energy";
@@ -137,13 +135,13 @@ const suite<"two-body qed physics"> _ = [] {
 
   "compton reduces to Thomson: <mu^2> = 2/5 for a soft photon on a lepton at rest"_test =
     [] {
-      auto rng = runko::Rng { runko::rng_key(5, 0, 0, 0), 0 };
-      auto s2  = 0.0;
+      auto rng         = runko::Rng { runko::rng_key(5, 0, 0, 0), 0 };
+      auto s2          = 0.0;
       constexpr auto n = 200000;
-      const auto k = Vec3(1e-4, 0.0, 0.0);
+      const auto k     = Vec3(1e-4, 0.0, 0.0);
       for(auto m = 0; m < n; ++m) {
-        auto ntry    = 0;
-        const auto P = qed::comp::sample(k, Vec3(0.0, 0.0, 0.0), rng, ntry);
+        auto ntry     = 0;
+        const auto P  = qed::comp::sample(k, Vec3(0.0, 0.0, 0.0), rng, ntry);
         const auto mu = P.k1[0] / toolbox::norm(P.k1);
         s2 += mu * mu;
       }
@@ -151,13 +149,13 @@ const suite<"two-body qed physics"> _ = [] {
     };
 
   "annihilation sampler conserves four-momentum"_test = [] {
-    auto rng   = runko::Rng { runko::rng_key(6, 0, 0, 0), 0 };
-    auto trips = 0.0;
+    auto rng         = runko::Rng { runko::rng_key(6, 0, 0, 0), 0 };
+    auto trips       = 0.0;
     constexpr auto n = 20000;
     for(auto m = 0; m < n; ++m) {
       const auto um = random_u(rng, 20.0), up = random_u(rng, 20.0);
-      auto ntry     = 0;
-      const auto P  = qed::ann::sample(um, up, rng, ntry);
+      auto ntry    = 0;
+      const auto P = qed::ann::sample(um, up, rng, ntry);
       trips += ntry;
       expect(close(toolbox::norm(P.k0) + toolbox::norm(P.k1), gam(um) + gam(up), 1e-9));
       const auto p0 = um + up, p1 = P.k0 + P.k1;
@@ -173,7 +171,8 @@ const suite<"two-body qed physics"> _ = [] {
       const auto P = qed::ann::sample(0.3 * d, (-0.3) * d, rng, ntry);
       expect(close(toolbox::norm(P.k0), std::sqrt(1.09), 1e-12));
       expect(close(toolbox::norm(P.k0 + P.k1), 0.0, 0.0, 1e-12));
-      const auto Q = qed::ann::sample(Vec3(0.0, 0.0, 0.0), Vec3(0.0, 0.0, 0.0), rng, ntry);
+      const auto Q =
+        qed::ann::sample(Vec3(0.0, 0.0, 0.0), Vec3(0.0, 0.0, 0.0), rng, ntry);
       expect(close(toolbox::norm(Q.k0), 1.0, 1e-12));
       c2 += Q.k0[2] * Q.k0[2];
     }
@@ -199,17 +198,17 @@ const suite<"two-body qed physics"> _ = [] {
   "bin bounds dominate the rate"_test = [] {
     auto rng = runko::Rng { runko::rng_key(8, 0, 0, 0), 0 };
     for(auto b = 0; b < 2000; ++b) {
-      const auto xlo = std::exp(-8.0 + 10.0 * rng.uniform());
-      const auto xhi = xlo * std::exp(rng.uniform() * 2.0);
-      const auto glo = 1.0 + 30.0 * rng.uniform() * rng.uniform();
-      const auto ghi = glo * std::exp(rng.uniform());
+      const auto xlo  = std::exp(-8.0 + 10.0 * rng.uniform());
+      const auto xhi  = xlo * std::exp(rng.uniform() * 2.0);
+      const auto glo  = 1.0 + 30.0 * rng.uniform() * rng.uniform();
+      const auto ghi  = glo * std::exp(rng.uniform());
       const auto x2lo = std::exp(-8.0 + 10.0 * rng.uniform());
       const auto x2hi = x2lo * std::exp(rng.uniform() * 2.0);
       const auto g2lo = 1.0 + 30.0 * rng.uniform() * rng.uniform();
       const auto g2hi = g2lo * std::exp(rng.uniform());
-      const auto bc = qed::comp::bound(xlo, xhi, glo, ghi);
-      const auto ba = qed::ann::bound(glo, ghi, g2lo, g2hi);
-      const auto bg = qed::gg::bound(xlo, xhi, x2lo, x2hi);
+      const auto bc   = qed::comp::bound(xlo, xhi, glo, ghi);
+      const auto ba   = qed::ann::bound(glo, ghi, g2lo, g2hi);
+      const auto bg   = qed::gg::bound(xlo, xhi, x2lo, x2hi);
       for(auto m = 0; m < 50; ++m) {
         const auto x  = xlo * std::pow(xhi / xlo, rng.uniform());
         const auto g  = glo * std::pow(ghi / glo, rng.uniform());
@@ -236,6 +235,4 @@ const suite<"two-body qed physics"> _ = [] {
 
 int
   main(int argc, const char** argv)
-{
-  return static_cast<int>(cfg<override>.run(run_cfg { .argc = argc, .argv = argv }));
-}
+{ return static_cast<int>(cfg<override>.run(run_cfg { .argc = argc, .argv = argv })); }

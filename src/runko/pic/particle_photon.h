@@ -28,12 +28,14 @@ inline void
         if(ids_mds[idx][] == runko::dead_prtc_id) { return; }
 
         using Vec3    = toolbox::Vec3<value_type>;
-        const Vec3 k  = Vec3(vel_mds[idx]);       // photon momentum
-        const auto kk = toolbox::dot(k, k);       // |k|^2
-        if(kk <= value_type { 0 }) { return; }    // no direction to move along
-        const auto step = cfl / sstd::sqrt(kk);   // c dt per unit of k
+        const Vec3 k  = Vec3(vel_mds[idx]);      // photon momentum
+        const auto kk = toolbox::dot(k, k);      // |k|^2
+        if(kk <= value_type { 0 }) { return; }   // no direction to move along
+        const auto step = cfl / sstd::sqrt(kk);  // c dt per unit of k
 
-        for(auto i = 0uz; i < 3uz; ++i) { pos_mds[idx][i] = pos_mds[idx][i] + k[i] * step; }
+        for(auto i = 0uz; i < 3uz; ++i) {
+          pos_mds[idx][i] = pos_mds[idx][i] + k[i] * step;
+        }
       })
     .wait();
 }
