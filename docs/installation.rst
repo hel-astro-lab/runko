@@ -71,11 +71,11 @@ Backend specific requirements:
 
    .. group-tab:: cpu backend on macos
 
-      Install the toolchain and Xcode command-line tools:
+      Install the toolchain, Boost and hwloc libraries needed by pika and Xcode command-line tools:
 
       .. code-block:: bash
 
-         brew install llvm cmake wget python3
+         brew install llvm cmake wget python3 boost hwloc
          xcode-select --install
 
       Homebrew's ``open-mpi`` formula builds against AppleClang and fails.
@@ -210,12 +210,14 @@ available presets are:
 
    .. group-tab:: cpu backend on macos
 
-      With ``$ROCTHRUST_INSTALL_PREFIX`` set per Requirements above and
-      Homebrew's ``mpic++`` on PATH, build and install runko with:
+      With ``$ROCTHRUST_INSTALL_PREFIX`` exported per Requirements above and
+      the ``mpic++`` of the Open MPI built above first on PATH, build and install runko with:
 
       .. code:: shell
 
-         pip install git+https://github.com/hel-astro-lab/runko --config-settings=cmake.args=--preset=macos-cpu
+         pip install git+https://github.com/hel-astro-lab/runko \
+           --config-settings=cmake.args=--preset=macos-cpu \
+           --config-settings=cmake.define.rocthrust_DIR=$ROCTHRUST_INSTALL_PREFIX/lib/cmake/rocthrust
 
    .. group-tab:: hip backend on LUMI
 
