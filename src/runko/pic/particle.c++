@@ -5,6 +5,7 @@
 
 #include "runko/mdgrid_common.h"
 #include "runko/tools/vector.h"
+#include "thrust/copy.h"
 #include "thrust/count.h"
 #include "thrust/device_vector.h"
 #include "thrust/execution_policy.h"
@@ -14,12 +15,14 @@
 #include "thrust/iterator/transform_iterator.h"
 #include "thrust/reduce.h"
 #include "thrust/sort.h"
+#include "thrust/transform.h"
 #include "thrust/unique.h"
 #include "tyvi/mdgrid.h"
 #include "tyvi/mdspan.h"
 
 #include <algorithm>
 #include <cmath>
+#include <cstdint>
 #include <iterator>
 #include <stdexcept>
 #include <type_traits>
@@ -262,6 +265,70 @@ void
   this->ids_ = std::move(ids_new);
   this->wgt_ = std::move(wgt_new);
   this->placed_ = true;
+}
+
+void
+  ParticleContainer::reorder(const thrust::device_vector<runko::index_t>& src)
+{
+  /* The component views are spelled out because of a bug in gcc:
+     https://gcc.gnu.org/bugzilla/show_bug.cgi?id=12526 */
+  using I                    = runko::index_t;
+  static constexpr auto zero = std::array { I { 0 } };
+  static constexpr auto one  = std::array { I { 1 } };
+  static constexpr auto two  = std::array { I { 2 } };
+
+  const auto n_old      = this->size();
+  const auto n_new      = src.size();
+  const auto resize_all = [&](const std::size_t n) {
+    this->pos_.resize(n);
+    this->vel_.resize(n);
+    this->ids_.resize(n);
+    if(this->has_particle_weights()) { this->wgt_.resize(n); }
+  };
+  if(n_new > n_old) { resize_all(n_new); }
+
+  // Sized once for the widest component, so no reallocation while work is in flight.
+  this->generic_cache_.resize(
+    std::max(sizeof(value_type), sizeof(runko::prtc_id_type)) * n_old);
+
+  const auto w = tyvi::mdgrid_work {};
+  // Copy the first n_old values of one component aside, then write slot j from old slot
+  // src[j]. The components share the cache, so their work is sequenced on w.
+  const auto move = [&]<typename T>(const auto comp, const T fill) {
+    const auto p =
+      reinterpret_cast<T*>(thrust::raw_pointer_cast(this->generic_cache_.data()));
+    if(reinterpret_cast<std::uintptr_t>(p) % alignof(T)) {
+      throw std::runtime_error { "ParticleContainer::reorder: misaligned cache." };
+    }
+    const auto first = comp.begin();
+    std::ignore      = thrust::copy(
+      w.on_this(),
+      first,
+      std::ranges::next(first, static_cast<std::ptrdiff_t>(n_old)),
+      p);
+    std::ignore = thrust::transform(
+      w.on_this(),
+      src.begin(),
+      src.end(),
+      first,
+      [=](const I s) { return s == no_source ? fill : p[s]; });
+  };
+
+  // pos/vel/wgt of a dead slot are never read: only the id distinguishes it.
+  move(this->pos_.component_view<zero>(), value_type { 0 });
+  move(this->pos_.component_view<one>(), value_type { 0 });
+  move(this->pos_.component_view<two>(), value_type { 0 });
+  move(this->vel_.component_view<zero>(), value_type { 0 });
+  move(this->vel_.component_view<one>(), value_type { 0 });
+  move(this->vel_.component_view<two>(), value_type { 0 });
+  if(this->has_particle_weights()) {
+    move(this->wgt_.component_view<>(), value_type { 0 });
+  }
+  move(this->ids_.component_view<>(), runko::dead_prtc_id);
+  w.wait();
+
+  if(n_new < n_old) { resize_all(n_new); }
+  ++this->reorder_count_;
 }
 
 void
@@ -508,6 +575,7 @@ ParticleContainer::ParticleContainer(const ParticleContainer& other)
   this->mass_                 = other.mass_;
   this->weight_               = other.weight_;
   this->placed_ = other.placed_;
+  this->reorder_count_ = other.reorder_count_;
 }
 
 
@@ -523,6 +591,7 @@ ParticleContainer&
   this->mass_                 = other.mass_;
   this->weight_               = other.weight_;
   this->placed_ = other.placed_;
+  this->reorder_count_ = other.reorder_count_;
 
   return *this;
 }

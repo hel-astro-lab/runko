@@ -7,6 +7,7 @@ set(TESTS_TO_RUN
     qed_random
     qed2
     qed1
+    pic_particle
 )
 
 foreach(test ${TESTS_TO_RUN})
@@ -29,6 +30,12 @@ foreach(test ${TESTS_TO_RUN})
     add_test(NAME "cpp-${test}" COMMAND "${test}.test")
 endforeach()
 
+# The container is compiled into the python module only, so its test builds it itself
+# (its headers include pybind11).
+target_sources(pic_particle.test
+               PRIVATE "${PROJECT_SOURCE_DIR}/src/runko/pic/particle.c++")
+target_link_libraries(pic_particle.test PRIVATE pybind11::pybind11)
+
 # Provide a simple smoke test to make sure that the CLI works and can display a --help message.
 add_test(NAME cpp-unit_test_cli COMMAND unit_testing.test --help)
 set_property(TEST cpp-unit_test_cli PROPERTY PASS_REGULAR_EXPRESSION "help")
@@ -38,4 +45,6 @@ if(${tyvi_BACKEND} STREQUAL "hip")
     foreach(test ${TESTS_TO_RUN})
          set_source_files_properties("test_${test}.c++" PROPERTIES LANGUAGE HIP HIP_STANDARD 23)
     endforeach()
+    set_source_files_properties("${PROJECT_SOURCE_DIR}/src/runko/pic/particle.c++"
+                                PROPERTIES LANGUAGE HIP HIP_STANDARD 23)
 endif()

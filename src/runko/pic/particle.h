@@ -12,7 +12,6 @@
 #include "thrust/count.h"
 #include "thrust/device_vector.h"
 #include "thrust/find.h"
-#include "thrust/gather.h"
 #include "thrust/iterator/counting_iterator.h"
 #include "thrust/iterator/transform_iterator.h"
 #include "thrust/iterator/zip_iterator.h"
@@ -25,7 +24,6 @@
 #include <cstdint>
 #include <concepts>
 #include <cstddef>
-#include <format>
 #include <functional>
 #include <iterator>
 #include <limits>
@@ -33,7 +31,6 @@
 #include <numeric>
 #include <optional>
 #include <ranges>
-#include <source_location>
 #include <span>
 #include <stdexcept>
 #include <thrust/iterator/reverse_iterator.h>
@@ -99,6 +96,7 @@ private:
   /// instead of reusing the dead slots behind the last alive one, so the padding of the
   /// layout survives arrivals. sort, set and add_particles drop the layout.
   bool placed_ { false };
+  std::uint64_t reorder_count_ { 0 };
 
   /// Reusable buffer for particle trackers.
   thrust::device_vector<runko::index_t> tracker_cache_;
@@ -149,6 +147,17 @@ public:
   /// fresh buffer of `total` slots whose other slots are dead. The layout of a
   /// binned, padded reaction table is built with this.
   void place(const thrust::device_vector<runko::index_t>& slots, std::size_t total);
+
+  /// The src entry of a slot that takes no particle in reorder().
+  static constexpr auto no_source = std::numeric_limits<runko::index_t>::max();
+
+  /// Reorder the slots: new slot j takes the particle of old slot src[j]; a src[j]
+  /// equal to no_source leaves slot j dead. The container ends with src.size()
+  /// slots (it may grow or shrink). In place, one component at a time.
+  void reorder(const thrust::device_vector<runko::index_t>& src);
+
+  /// Number of reorders so far: whoever caches slot indices compares it.
+  [[nodiscard]] std::uint64_t reorder_count() const { return reorder_count_; }
 
   /// Append n dead slots at the end.
   void grow(std::size_t n);
@@ -686,27 +695,7 @@ inline void
 inline void
   ParticleContainer::sort(pic::score_function<value_type> auto&& f)
 {
-  /* This is overly verbose due to bug in gcc:
-     https://gcc.gnu.org/bugzilla/show_bug.cgi?id=12526
-
-     Without it we could write:
-     const auto pos0 = this->pos_.component_span<0>(); */
-
   this->placed_ = false;  // the permutation breaks any layout
-
-  using I                    = runko::index_t;
-  static constexpr auto zero = std::array { I { 0 } };
-  static constexpr auto one  = std::array { I { 1 } };
-  static constexpr auto two  = std::array { I { 2 } };
-
-  const auto pos0 = this->pos_.component_view<zero>();
-  const auto pos1 = this->pos_.component_view<one>();
-  const auto pos2 = this->pos_.component_view<two>();
-  const auto vel0 = this->vel_.component_view<zero>();
-  const auto vel1 = this->vel_.component_view<one>();
-  const auto vel2 = this->vel_.component_view<two>();
-  const auto ids  = this->ids_.component_view<>();
-  const auto wgt  = this->wgt_.component_view<>();
 
   namespace rn                       = std::ranges;
   const auto particle_ordinals_begin = thrust::counting_iterator<runko::index_t>(0uz);
@@ -744,86 +733,9 @@ inline void
     scores_cache.end(),
     this->tracker_cache_.begin());
 
-  this->generic_cache_.resize(sizeof(value_type) * this->size());
-
-  auto assert_alignment = []<typename T>(
-                            const T* p,
-                            const std::source_location loc =
-                              std::source_location::current()) {
-    if(reinterpret_cast<std::uintptr_t>(p) % alignof(T)) {
-      const auto str = std::format("Incorrect alignment at line: {}", loc.line());
-      throw std::runtime_error { str };
-    }
-  };
-
-  const auto p = reinterpret_cast<value_type*>(
-    thrust::raw_pointer_cast(this->generic_cache_.data()));
-  assert_alignment(p);
-
-  std::ignore = thrust::copy(w.on_this(), pos0.begin(), pos0.end(), p);
-  std::ignore = thrust::gather(
-    w.on_this(),
-    this->tracker_cache_.begin(),
-    this->tracker_cache_.end(),
-    p,
-    pos0.begin());
-  std::ignore = thrust::copy(w.on_this(), pos1.begin(), pos1.end(), p);
-  std::ignore = thrust::gather(
-    w.on_this(),
-    this->tracker_cache_.begin(),
-    this->tracker_cache_.end(),
-    p,
-    pos1.begin());
-  std::ignore = thrust::copy(w.on_this(), pos2.begin(), pos2.end(), p);
-  std::ignore = thrust::gather(
-    w.on_this(),
-    this->tracker_cache_.begin(),
-    this->tracker_cache_.end(),
-    p,
-    pos2.begin());
-  std::ignore = thrust::copy(w.on_this(), vel0.begin(), vel0.end(), p);
-  std::ignore = thrust::gather(
-    w.on_this(),
-    this->tracker_cache_.begin(),
-    this->tracker_cache_.end(),
-    p,
-    vel0.begin());
-  std::ignore = thrust::copy(w.on_this(), vel1.begin(), vel1.end(), p);
-  std::ignore = thrust::gather(
-    w.on_this(),
-    this->tracker_cache_.begin(),
-    this->tracker_cache_.end(),
-    p,
-    vel1.begin());
-  std::ignore = thrust::copy(w.on_this(), vel2.begin(), vel2.end(), p);
-  std::ignore = thrust::gather(
-    w.on_this(),
-    this->tracker_cache_.begin(),
-    this->tracker_cache_.end(),
-    p,
-    vel2.begin());
-  if(this->has_particle_weights()) {
-    std::ignore = thrust::copy(w.on_this(), wgt.begin(), wgt.end(), p);
-    std::ignore = thrust::gather(
-      w.on_this(),
-      this->tracker_cache_.begin(),
-      this->tracker_cache_.end(),
-      p,
-      wgt.begin());
-  }
-
-  this->generic_cache_.resize(sizeof(runko::prtc_id_type) * this->size());
-  const auto pt = reinterpret_cast<runko::prtc_id_type*>(
-    thrust::raw_pointer_cast(this->generic_cache_.data()));
-  assert_alignment(pt);
-  std::ignore = thrust::copy(w.on_this(), ids.begin(), ids.end(), pt);
-  std::ignore = thrust::gather(
-    w.on_this(),
-    this->tracker_cache_.begin(),
-    this->tracker_cache_.end(),
-    pt,
-    ids.begin());
   w.wait();
+
+  this->reorder(this->tracker_cache_);
 }
 }  // namespace pic
 
