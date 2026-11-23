@@ -16,7 +16,7 @@ def make_config(cfl=0.45):
     config.q0, config.m0, config.w0 = -1, 1, 1e-3
     config.q1, config.m1, config.w1 = 1, 1, 1e-3
     config.q2, config.m2 = 0, 0
-    config.particle_pusher = "boris"
+    config.particle_pusher = ["boris", "boris", "ballistic"]
     config.field_interpolator = "linear_1st"
     config.current_depositer = "zigzag_1st"
     return config
@@ -78,6 +78,13 @@ class photon_pusher(unittest.TestCase):
             tile.deposit_current()
             _, _, (jx, jy, jz) = tile.get_EBJ()
             self.assertEqual(float(np.abs(jx).max() + np.abs(jy).max() + np.abs(jz).max()), 0.0)
+
+    def test_neutral_species_needs_the_ballistic_pusher(self):
+        config = make_config()
+        config.particle_pusher = "boris"
+        _, tile = make_tile(config)
+        with self.assertRaises(RuntimeError):
+            tile.push_particles()
 
     def test_batch_inject_with_weights(self):
         config, tile = make_tile()

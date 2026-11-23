@@ -61,6 +61,7 @@ enum class ParticlePusher {
   boris,
   higuera_cary,
   faraday,
+  ballistic,      // at c along the momentum, no force: the neutral massless species
   rad_drag,       // isotropic Compton drag -A gamma^2 beta; rad_* stay last
   rad_beam,       // + beamed radiation field
   rad_comp_heat,  // + Compton heating (Thomson diffusion tensor)

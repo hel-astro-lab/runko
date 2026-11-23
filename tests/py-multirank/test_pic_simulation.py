@@ -667,6 +667,7 @@ def pic_photon_weights_communication():
 
     conf, tile_grid = make_test_grid()
     conf.q2, conf.m2 = 0, 0
+    conf.particle_pusher = ["boris", "boris", "ballistic"]
 
     dirs = list(itertools.product([-1, 0, 1], repeat=3))
     def weight(idx, d):

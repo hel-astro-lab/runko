@@ -32,10 +32,12 @@ electrons by a negative charge, positrons by a positive one — and any heavier 
     w1: 1e-3
     q2: 0        # photons: massless, a weight per particle
     m2: 0
+    particle_pusher: ["boris", "boris", "ballistic"]
 
 Leptons (and any other massive species) carry one weight per species, ``w{i}``; photons carry a
-weight per particle, which the resolution function of the sampler adapts. Photons move at the
-speed of light along their momentum and deposit no current.
+weight per particle, which the resolution function of the sampler adapts. Photons deposit no
+current, and take the ``ballistic`` pusher, which moves them at the speed of light along their
+momentum; a neutral species under any other pusher is refused when the pushers are loaded.
 
 Normalization
 -------------

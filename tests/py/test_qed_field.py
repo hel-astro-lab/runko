@@ -70,7 +70,7 @@ class qed_field(CheckMixin, unittest.TestCase):
         c = runko.Configuration(None)
         c.n_tiles = [1, 1, 1]; c.n_cells_per_tile = [NC, NC, NC]; c.cfl = dt * NC; c.field_propagator = "fdtd2"
         c.q0, c.m0, c.w0 = -1, 1, WL; c.q1, c.m1, c.w1 = 1, 1, WL; c.q2, c.m2 = 0, 0
-        c.particle_pusher = "boris"; c.field_interpolator = "linear_1st"; c.current_depositer = "zigzag_1st"
+        c.particle_pusher = ["boris", "boris", "ballistic"]; c.field_interpolator = "linear_1st"; c.current_depositer = "zigzag_1st"
         c.qed_H_lamC = H; c.qed_ell_B = ell_B; c.qed_B0 = B0
         c.qed_nbin, c.qed_nsort, c.qed_slack, c.qed_smin = 8, 1, 0.1, 4; c.qed_a_res = 0.0; c.qed_seed = 9
         c.qed_channels = ["bw"]

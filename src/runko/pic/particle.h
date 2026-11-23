@@ -299,7 +299,7 @@ public:
     runko::EB_interpolator<value_type> auto interpolator);
 
   /// Push massless particles along their momentum at the speed of light.
-  inline void push_particles_photon(double cfl);
+  inline void push_particles_ballistic(double cfl);
 
   emf::YeeLattice::CurrentContributions current_zigzag_1st(
     const std::array<value_type, 3> lattice_origo_coordinates,
@@ -836,8 +836,8 @@ inline void
 }
 }  // namespace pic
 
+#include "runko/pic/particle_ballistic.h"
 #include "runko/pic/particle_boris.h"
 #include "runko/pic/particle_faraday.h"
 #include "runko/pic/particle_higuera_cary.h"
-#include "runko/pic/particle_photon.h"
 #include "runko/pic/particle_radiation.h"

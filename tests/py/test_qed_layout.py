@@ -36,7 +36,7 @@ def make_tile(positron_first=False, proton=False, bad_mass=None, idx=(0, 0, 0)):
         config.q2, config.m2 = 0, 0
     if bad_mass is not None:
         config.q0, config.m0 = -1, bad_mass
-    config.particle_pusher = "boris"
+    config.particle_pusher = ["boris"] * (3 if proton else 2) + ["ballistic"]
     config.field_interpolator = "linear_1st"
     config.current_depositer = "zigzag_1st"
     config.qed_H_lamC = 2.33e17
@@ -201,7 +201,7 @@ class qed_layout(unittest.TestCase):
         config.q0, config.m0, config.w0 = -1, 1, WL
         config.q1, config.m1, config.w1 = 1, 1, WL
         config.q2, config.m2 = 0, 0
-        config.particle_pusher = "boris"
+        config.particle_pusher = ["boris", "boris", "ballistic"]
         config.field_interpolator = "linear_1st"
         config.current_depositer = "zigzag_1st"
         config.qed_H_lamC = 2.33e17

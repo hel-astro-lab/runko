@@ -339,6 +339,8 @@ void
           return runko::ParticlePusher::higuera_cary;
         } else if(p == "faraday") {
           return runko::ParticlePusher::faraday;
+        } else if(p == "ballistic") {
+          return runko::ParticlePusher::ballistic;
         } else if(p == "rad_drag") {
           return runko::ParticlePusher::rad_drag;
         } else if(p == "rad_beam") {
@@ -355,9 +357,24 @@ void
         }
       };
 
-      return conf.template get_or_throw<std::vector<std::string>>("particle_pusher") |
-             std::views::transform(string_to_pusher) |
-             std::ranges::to<std::vector<runko::ParticlePusher>>();
+      const auto pushers =
+        conf.template get_or_throw<std::vector<std::string>>("particle_pusher") |
+        std::views::transform(string_to_pusher) |
+        std::ranges::to<std::vector<runko::ParticlePusher>>();
+
+      // a neutral species feels no Lorentz force: only the ballistic pusher moves it
+      for(auto i = 0uz; const auto q = conf.template get<double>(std::format("q{}", i));
+          ++i) {
+        if(pushers.size() != 1 and i >= pushers.size()) { break; }  // reported at the push
+        const auto pusher = pushers[pushers.size() == 1 ? 0uz : i];
+        if(q.value() == 0.0 and pusher != runko::ParticlePusher::ballistic) {
+          throw std::runtime_error { std::format(
+            "species {} is neutral (q{} = 0): its particle_pusher has to be \"ballistic\".",
+            i,
+            i) };
+        }
+      }
+      return pushers;
     });
 
   struct rad_pusher_rng {
@@ -432,11 +449,6 @@ void
 
     auto push_impl = [&](const auto& interpolator) {
       for(auto& [i, pbuff]: particles) {
-        // photons move at c along their momentum, whatever the pusher
-        if(pbuff.kind() == pic::SpeciesKind::photon) {
-          pbuff.push_particles_photon(cfl);
-          continue;
-        }
         const auto pusher_index = particle_pushers.size() == 1 ? 0uz : i;
         const auto pusher       = particle_pushers[pusher_index];
 
@@ -447,6 +459,7 @@ void
             pbuff.push_particles_higuera_cary(cfl, interpolator);
             break;
           case faraday: pbuff.push_particles_faraday(cfl, interpolator); break;
+          case ballistic: pbuff.push_particles_ballistic(cfl); break;
           case rad_drag:
             pbuff.template push_particles_radiation<rad_drag>(
               cfl,

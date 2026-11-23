@@ -490,6 +490,7 @@ class TestMpiioParticlesWeights(unittest.TestCase):
         config = make_pic_config(outdir=self.outdir, nspecies=2)
         config.w0 = 0.25
         config.q2, config.m2 = 0, 0          # photons: massless, per-particle weights
+        config.particle_pusher = ["boris", "boris", "ballistic"]
         tile_grid = runko.TileGrid(config)
         w = np.linspace(1.0, 5.0, 40)
         P = runko.pic.threeD.ParticleState

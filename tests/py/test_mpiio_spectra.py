@@ -228,6 +228,7 @@ class TestMpiioSpectraWriter(unittest.TestCase):
             outdir=self.outdir, nbins=100, umin=1e-4, umax=1e4)
         config.w0 = 0.25                      # species weight
         config.q2, config.m2 = 0, 0           # photons: their own weights
+        config.particle_pusher = ["boris", "boris", "ballistic"]
         config.prealloc_per_species = 100
         P = runko.pic.threeD.ParticleState
         gen = lambda x, y, z: [P(pos=(x + 0.5, y + 0.5, z + 0.5), vel=(1.0, 2.0, 3.0), wgt=2.0)]
