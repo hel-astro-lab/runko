@@ -127,7 +127,7 @@ void
       if(not pcontainer_args) { break; }
 
       auto container = pic::ParticleContainer { pcontainer_args.value() };
-      if(prealloc_per_species > 0uz) { container.prealloc_dead(prealloc_per_species); }
+      if(prealloc_per_species > 0uz) { container.append_dead(prealloc_per_species); }
 
       // insert_or_assign and not operator[], because if element is missing,
       // then operator[] will default construct it.

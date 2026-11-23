@@ -159,20 +159,16 @@ public:
   /// Number of reorders so far: whoever caches slot indices compares it.
   [[nodiscard]] std::uint64_t reorder_count() const { return reorder_count_; }
 
-  /// Append n dead slots at the end.
-  void grow(std::size_t n);
+  /// Append n dead-particle slots at the end of the container.
+  ///
+  /// Grows pos_/vel_/ids_ (and wgt_) by n and tags the new ids with
+  /// runko::dead_prtc_id; the existing particles are kept. pos_ and vel_ of
+  /// the new slots are left uninitialized, since dead particles are identified
+  /// by their id alone.
+  void append_dead(std::size_t n);
 
   /// Whether the slots are still the layout of the last place().
   [[nodiscard]] bool placed() const { return placed_; }
-
-  /// Pre-allocate N dead-particle slots on an empty container.
-  ///
-  /// Sizes pos_/vel_/ids_ to N and tags every id with runko::dead_prtc_id.
-  /// pos_ and vel_ are left uninitialized — dead particles are identified
-  /// by their id alone and their position/velocity are never read. Must be
-  /// called on a container where size() == 0. No temporary buffer is
-  /// allocated, so peak memory during this call equals the final size.
-  void prealloc_dead(std::size_t N);
 
   /// Returns the number of particles dead or alive.
   std::size_t size() const;

@@ -1393,7 +1393,7 @@ void
     tail_base[s] = static_cast<I>(c.t->con[s]->size());
     if(tot[s] > 0) {
       // grow once by the exact copy total; the layout follows with tail keys
-      c.t->con[s]->grow(tot[s]);
+      c.t->con[s]->append_dead(tot[s]);
       c.t->pop[s]->grown(*c.t->con[s]);
     }
   }

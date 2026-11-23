@@ -41,30 +41,6 @@ ParticleContainer::ParticleContainer(const ParticleContainerArgs args) :
 {
 }
 
-void
-  ParticleContainer::prealloc_dead(const std::size_t N)
-{
-  if(this->size() != 0uz) {
-    throw std::runtime_error {
-      "ParticleContainer::prealloc_dead must be called on an empty container."
-    };
-  }
-  if(N == 0uz) { return; }
-
-  this->pos_.resize(N);
-  this->vel_.resize(N);
-  this->ids_.resize(N);
-  if(this->has_particle_weights()) { this->wgt_.resize(N); }
-
-  // Only the id distinguishes a dead slot. Pushers, depositors, and reflectors
-  // early-return on id == dead_prtc_id, so pos_ and vel_ are never read for
-  // dead particles and are left uninitialized.
-  const auto w        = tyvi::mdgrid_work {};
-  const auto ids_span = this->ids_.component_view<>();
-  thrust::fill(w.on_this(), ids_span.begin(), ids_span.end(), runko::dead_prtc_id);
-  w.wait();
-}
-
 std::size_t
 ParticleContainer::size() const
 {
@@ -332,7 +308,7 @@ void
 }
 
 void
-  ParticleContainer::grow(const std::size_t n)
+  ParticleContainer::append_dead(const std::size_t n)
 {
   if(n == 0uz) { return; }
   const auto old = this->size();
@@ -341,6 +317,9 @@ void
   this->ids_.resize(old + n);
   if(this->has_particle_weights()) { this->wgt_.resize(old + n); }
 
+  // Only the id distinguishes a dead slot. Pushers, depositors, and reflectors
+  // early-return on id == dead_prtc_id, so pos_ and vel_ are never read for
+  // dead particles and are left uninitialized.
   const auto w        = tyvi::mdgrid_work {};
   const auto ids_span = this->ids_.component_view<>();
   thrust::fill(
