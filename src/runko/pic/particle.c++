@@ -350,19 +350,24 @@ std::map<runko::grid_neighbor<3>, std::pair<std::size_t, std::size_t>>
 
   // The slots of the leaving particles, ordered by subregion and within one by slot.
   tyvi::mdgrid_work w {};
+  const auto is_leaving = [=](const auto n) {
+    return ids_mds[n][] != runko::dead_prtc_id and
+           slot_to_subregion_index(n) != subregion_index(0, 0, 0);
+  };
+  // counted first: the buffer holds the few that leave, not a slot per particle
+  const auto leaving_particles = thrust::count_if(
+    w.on_this(),
+    particle_ordinals_begin,
+    particle_ordinals_end,
+    is_leaving);
   auto& leaving_slots = this->tracker_cache_;
-  leaving_slots.resize(this->size());
-  const auto leaving_end = thrust::copy_if(
+  leaving_slots.resize(static_cast<std::size_t>(leaving_particles));
+  std::ignore = thrust::copy_if(
     w.on_this(),
     particle_ordinals_begin,
     particle_ordinals_end,
     leaving_slots.begin(),
-    [=](const auto n) {
-      return ids_mds[n][] != runko::dead_prtc_id and
-             slot_to_subregion_index(n) != subregion_index(0, 0, 0);
-    });
-  const auto leaving_particles = rn::distance(leaving_slots.begin(), leaving_end);
-  leaving_slots.resize(static_cast<std::size_t>(leaving_particles));
+    is_leaving);
 
   thrust::stable_sort(
     w.on_this(),
