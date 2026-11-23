@@ -287,27 +287,13 @@ LayoutView
 }
 
 void
-  Pop::resized(const pic::ParticleContainer& con)
+  Pop::resized(pic::ParticleContainer& con)
 {
   // a container that was not reordered changed only at its end, so the tables still
   // describe its head
-  if(not laid_ or con.reorder_count() != reorders_ or con.size() == skey_.size()) {
-    return;
-  }
-  const auto n = static_cast<I>(con.size());
-  if(con.size() < skey_.size()) {
-    // the dropped slots were dead: no key may reach past the container
-    const auto b_p = thrust::raw_pointer_cast(b_.data());
-    const auto w   = tyvi::mdgrid_work {};
-    thrust::transform(
-      w.on_this(),
-      cap_.begin(),
-      cap_.end(),
-      thrust::counting_iterator<I>(0),
-      cap_.begin(),
-      [=](const I c, const I k) { return n > b_p[k] ? sstd::min(c, n - b_p[k]) : I { 0 }; });
-    w.wait();
-  }
+  if(not laid_ or con.reorder_count() != reorders_) { return; }
+  // the dropped slots were dead slack: the keys get them back
+  if(con.size() < skey_.size()) { con.append_dead(skey_.size() - con.size()); }
   skey_.resize(con.size(), std::int32_t { -1 });
 }
 

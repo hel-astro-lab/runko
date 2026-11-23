@@ -163,8 +163,8 @@ public:
   /// follow the container's size since the tables were built or last resized: slots it
   /// grew by (products placed, arrivals appended) are tail (-1); slots it shrank by (an
   /// append reuses the dead slots behind the last alive one, and drops the rest) were
-  /// dead, and the keys that held them are clipped to the container
-  void resized(const pic::ParticleContainer& con);
+  /// dead slack, and are appended again so that every key keeps its slots
+  void resized(pic::ParticleContainer& con);
 
   /// widen the bounds of every key by every live LP it holds, on the caller's queue
   /// (the caller waits)

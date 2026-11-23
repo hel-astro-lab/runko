@@ -285,18 +285,19 @@ class qed_layout(unittest.TestCase):
             return dict(zip(np.asarray(tile.get_ids(sp)), zip(map(tuple, u), np.asarray(tile.get_weights(sp)))))
 
         before = photons()
+        cap0 = tile.get_tables("ph")["cap"]
         tile.inject(sp, [runko.pic.threeD.ParticleState(pos=(1.0, 2.0, 3.0), vel=(0.5, 0, 0))
                          for _ in range(k)], payload=[7e-3] * k)
         self.assertTrue(tile.laid(), "an injection keeps the layout")
         state = photons()
         new = sorted(set(state) - set(before))
         self.assertEqual(len(new), k)
-        # the injected LPs took the last key's slack, and the container shrank to them
+        # the injected LPs took the first slack slots of the last key, which keeps the rest
         keys = np.asarray(tile.get_slot_keys("ph"))
         np.testing.assert_array_equal(keys[-k:], 1)
         tb = tile.get_tables("ph")
-        self.assertEqual(tb["cap"][1], np.count_nonzero(keys == 1))
-        self.assertEqual(tb["fill"][1] + k, tb["cap"][1])
+        self.assertEqual(tb["fill"][1] + k, np.count_nonzero(keys == 1))
+        np.testing.assert_array_equal(tb["cap"], cap0)
         held = 0.0
         for _ in range(3):
             tile.interact()
