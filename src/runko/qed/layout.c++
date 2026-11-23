@@ -179,24 +179,25 @@ void
   // the demand of the new epoch starts from zero
   thrust::fill(w.on_this(), prod_.begin(), prod_.end(), I { 0 });
 
-  // ---- slot of every live LP: its key's offset plus its rank inside the key
-  slots_.resize(n);  // target slot of every current slot (dead ones unused)
-  const auto keys_p  = thrust::raw_pointer_cast(keys_.data());
-  const auto ord_p   = thrust::raw_pointer_cast(ord_.data());
-  const auto b_p     = thrust::raw_pointer_cast(b_.data());
-  const auto slots_p = thrust::raw_pointer_cast(slots_.data());
+  // ---- source of every slot of the padded layout: a live LP lands at its key's offset
+  // plus its rank inside the key, every other slot is dead slack
+  src_.resize(static_cast<std::size_t>(total));
+  thrust::fill(w.on_this(), src_.begin(), src_.end(), pic::ParticleContainer::no_source);
+  const auto keys_p = thrust::raw_pointer_cast(keys_.data());
+  const auto ord_p  = thrust::raw_pointer_cast(ord_.data());
+  const auto b_p    = thrust::raw_pointer_cast(b_.data());
+  const auto src_p  = thrust::raw_pointer_cast(src_.data());
   // live LPs, the head of the sorted list
   const auto nlive = static_cast<std::ptrdiff_t>(cnt_.back());
   // one lane per live LP in sorted order: rank j - starts[k] inside its key, after the
   // key's offset
   thrust::for_each(w.on_this(), ord0, ord0 + nlive, [=](const I j) {
-    const auto k      = keys_p[j];
-    slots_p[ord_p[j]] = b_p[k] + (j - starts[k]);
+    const auto k                   = keys_p[j];
+    src_p[b_p[k] + (j - starts[k])] = ord_p[j];
   });
-  // scatter the container into the padded layout; every other slot becomes dead slack
-  // (the wait: place() reads slots_ on its own streams, unordered against w)
+  // (the wait: reorder() reads src_ on its own queue, unordered against w)
   w.wait();
-  con.place(slots_, static_cast<std::size_t>(total));
+  con.reorder(src_);
 
   // ---- key of every slot, and the bounds of every key from what it holds
   // key of every slot of the padded layout

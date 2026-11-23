@@ -189,61 +189,6 @@ std::vector<ParticleContainer::value_type>
 }
 
 void
-  ParticleContainer::place(
-    const thrust::device_vector<runko::index_t>& slots,
-    const std::size_t total)
-{
-  if(slots.size() != this->size()) {
-    throw std::runtime_error {
-      "ParticleContainer::place: one slot per particle is needed."
-    };
-  }
-
-  auto pos_new = runko::device_vec_segments<value_type>(total);
-  auto vel_new = runko::device_vec_segments<value_type>(total);
-  auto ids_new = runko::device_scalar_segments<runko::prtc_id_type>(total);
-  auto wgt_new =
-    runko::device_scalar_segments<value_type>(this->has_particle_weights() ? total : 0uz);
-
-  const auto w        = tyvi::mdgrid_work {};
-  const auto ids_span = ids_new.component_view<>();
-  thrust::fill(w.on_this(), ids_span.begin(), ids_span.end(), runko::dead_prtc_id);
-  w.wait();
-
-  const auto pos_mds  = this->pos_.mds();
-  const auto vel_mds  = this->vel_.mds();
-  const auto ids_mds  = this->ids_.mds();
-  const auto wgt_mds  = this->wgt_.mds();
-  const auto pos_out  = pos_new.mds();
-  const auto vel_out  = vel_new.mds();
-  const auto ids_out  = ids_new.mds();
-  const auto wgt_out  = wgt_new.mds();
-  const auto weighted = this->has_particle_weights();
-  const auto slot_p   = thrust::raw_pointer_cast(slots.data());
-
-  tyvi::mdgrid_work {}
-    .for_each_index(
-      ids_mds,
-      [=](const auto idx) {
-        if(ids_mds[idx][] == runko::dead_prtc_id) { return; }
-        const auto j = slot_p[idx[0]];
-        for(auto i = 0uz; i < 3uz; ++i) {
-          pos_out[j][i] = pos_mds[idx][i];
-          vel_out[j][i] = vel_mds[idx][i];
-        }
-        ids_out[j][] = ids_mds[idx][];
-        if(weighted) { wgt_out[j][] = wgt_mds[idx][]; }
-      })
-    .wait();
-
-  this->pos_ = std::move(pos_new);
-  this->vel_ = std::move(vel_new);
-  this->ids_ = std::move(ids_new);
-  this->wgt_ = std::move(wgt_new);
-  ++this->reorder_count_;
-}
-
-void
   ParticleContainer::reorder(const thrust::device_vector<runko::index_t>& src)
 {
   /* The component views are spelled out because of a bug in gcc:

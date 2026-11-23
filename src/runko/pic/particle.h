@@ -139,11 +139,6 @@ public:
     std::optional<std::array<value_type, 3>> wrap_mins = {},
     std::optional<std::array<value_type, 3>> wrap_maxs = {});
 
-  /// Scatter the alive particles to the slots given per particle index, into a
-  /// fresh buffer of `total` slots whose other slots are dead. The layout of a
-  /// binned, padded reaction table is built with this.
-  void place(const thrust::device_vector<runko::index_t>& slots, std::size_t total);
-
   /// The src entry of a slot that takes no particle in reorder().
   static constexpr auto no_source = std::numeric_limits<runko::index_t>::max();
 
@@ -152,7 +147,7 @@ public:
   /// slots (it may grow or shrink). In place, one component at a time.
   void reorder(const thrust::device_vector<runko::index_t>& src);
 
-  /// Number of reorders so far (sort, reorder, place, set): whoever caches slot indices
+  /// Number of reorders so far (sort, reorder, set): whoever caches slot indices
   /// compares it.
   [[nodiscard]] std::uint64_t reorder_count() const { return reorder_count_; }
 

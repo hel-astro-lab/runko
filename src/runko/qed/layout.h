@@ -117,9 +117,9 @@ class [[nodiscard]] Pop {
   thrust::device_vector<runko::index_t> b_, cap_, fill_, prod_;
   // ---- per key: the weight and energy bounds the envelopes read
   thrust::device_vector<float> wmax_, emin_, emax_;
-  // ---- scratch of a layout, per slot (key, sort permutation, target slot) and per key
-  // + 1 (key starts); the high-water mark is kept between epochs
-  thrust::device_vector<runko::index_t> keys_, ord_, cnt_, slots_;
+  // ---- scratch of a layout: per old slot (key, sort permutation), per key + 1 (key
+  // starts) and per new slot (its source); the high-water mark is kept between epochs
+  thrust::device_vector<runko::index_t> keys_, ord_, cnt_, src_;
 
 
 public:
@@ -133,7 +133,8 @@ public:
   }
   void invalidate() { laid_ = false; }
 
-  /// group the live LPs by key, reserve slack behind each group, build the tables
+  /// group the live LPs by key and reserve slack behind each group (one reorder of the
+  /// container), build the tables
   void layout(
     pic::ParticleContainer& con,
     const LayoutParams& par,
