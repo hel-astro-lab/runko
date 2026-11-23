@@ -28,7 +28,7 @@ def make_conf(seed, dt, H_lamC=H, w_lep=WL, ell_B=0.0, x_min=0.0, channels=None,
     c.field_propagator = "fdtd2"
     c.q0, c.m0, c.w0 = -1, 1, w_lep
     c.q1, c.m1, c.w1 = 1, 1, w_lep
-    c.q2, c.m2 = 0, 0
+    c.q2, c.m2, c.n_payload2 = 0, 0, 1   # photons: the weight is payload component 0
     c.particle_pusher = ["boris", "boris", "ballistic"]
     c.field_interpolator = "linear_1st"
     c.current_depositer = "zigzag_1st"

@@ -478,7 +478,7 @@ class TestMpiioParticlesWriter(unittest.TestCase):
 
 
 class TestMpiioParticlesWeights(unittest.TestCase):
-    """the weight field: the species weight for leptons, the particle's own for photons"""
+    """the weight field: the species weight w{i}, or payload component 0 of a species with one"""
 
     def setUp(self):
         self.outdir = tempfile.mkdtemp()
@@ -489,7 +489,7 @@ class TestMpiioParticlesWeights(unittest.TestCase):
     def test_weights_written(self):
         config = make_pic_config(outdir=self.outdir, nspecies=2)
         config.w0 = 0.25
-        config.q2, config.m2 = 0, 0          # photons: massless, per-particle weights
+        config.q2, config.m2, config.n_payload2 = 0, 0, 1   # photons: the weight per particle
         config.particle_pusher = ["boris", "boris", "ballistic"]
         tile_grid = runko.TileGrid(config)
         w = np.linspace(1.0, 5.0, 40)
@@ -499,8 +499,8 @@ class TestMpiioParticlesWeights(unittest.TestCase):
             tile = runko.pic.threeD.Tile(idx, config)
             tile.set_EBJ(zero, zero, zero)
             tile.inject(0, [P(pos=(1.0 + 0.1 * i, 2.0, 3.0), vel=(0.1, 0, 0)) for i in range(20)])
-            tile.inject(2, [P(pos=(1.0 + 0.1 * i, 2.0, 3.0), vel=(1.0, 0, 0), wgt=ww)
-                            for i, ww in enumerate(w)])
+            tile.inject(2, [P(pos=(1.0 + 0.1 * i, 2.0, 3.0), vel=(1.0, 0, 0)) for i in range(len(w))],
+                        payload=w)
             tile_grid.add_tile(tile, idx)
         sim = tile_grid.configure_simulation(config)
         hdr, fields = prtcl_write_and_read(sim, self.outdir, 1000, species=0)

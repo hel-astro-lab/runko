@@ -69,7 +69,7 @@ class qed_field(CheckMixin, unittest.TestCase):
         n = 20000
         c = runko.Configuration(None)
         c.n_tiles = [1, 1, 1]; c.n_cells_per_tile = [NC, NC, NC]; c.cfl = dt * NC; c.field_propagator = "fdtd2"
-        c.q0, c.m0, c.w0 = -1, 1, WL; c.q1, c.m1, c.w1 = 1, 1, WL; c.q2, c.m2 = 0, 0
+        c.q0, c.m0, c.w0 = -1, 1, WL; c.q1, c.m1, c.w1 = 1, 1, WL; c.q2, c.m2, c.n_payload2 = 0, 0, 1
         c.particle_pusher = ["boris", "boris", "ballistic"]; c.field_interpolator = "linear_1st"; c.current_depositer = "zigzag_1st"
         c.qed_H_lamC = H; c.qed_ell_B = ell_B; c.qed_B0 = B0
         c.qed_nbin, c.qed_nsort, c.qed_slack, c.qed_smin = 8, 1, 0.1, 4; c.qed_a_res = 0.0; c.qed_seed = 9
@@ -81,7 +81,7 @@ class qed_field(CheckMixin, unittest.TestCase):
         # photons two cells away from the half-boundary, where the interpolated field is pure
         xs = np.where(rng.random(n) < 0.5, rng.uniform(2.0, NC / 2 - 2.0, n), rng.uniform(NC / 2 + 2.0, NC - 2.0, n))
         t.inject(t.species("ph"), [runko.pic.threeD.ParticleState(pos=(x, rng.uniform(1, NC - 1), rng.uniform(1, NC - 1)),
-                                                                    vel=(0.0, 0.0, x0), wgt=WL) for x in xs])
+                                                                    vel=(0.0, 0.0, x0)) for x in xs], payload=np.full(n, WL))
         empty(t, ["e-", "e+"])
         right = xs >= NC / 2
         lam = float(ph.rate_bw(0.0, 0.0, x0, b0)) / N1

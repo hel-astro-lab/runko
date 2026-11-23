@@ -206,6 +206,9 @@ void
       const std::vector<double>& w) {
       qed::set_particles(sim, id, species_of(s), u, w);
     });
+  m_sub.def("get_weights", [](sim_t& sim, const id_t id, const std::size_t ptype) {
+    return to_ndarray(qed::get_weights(sim, id, ptype));
+  });
   m_sub.def("get_slot_keys", [](sim_t& sim, const id_t id, const std::string& s) {
     return to_ndarray(qed::get_slot_keys(sim, id, species_of(s)));
   });

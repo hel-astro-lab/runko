@@ -117,12 +117,10 @@ void
   using opt_args_t = std::optional<pic::ParticleContainerArgs>;
 
   // Return optional containing the arguments if q and m are found in conf.
-  // The species weight w is optional (1), as is the payload size n_payload (0).
   const auto make_opt_args = [&](
-                               const std::size_t i,
                                const std::string& q_label,
                                const std::string& m_label,
-                               const std::string& w_label) -> opt_args_t {
+                               const std::size_t n_payload) -> opt_args_t {
     const auto q_to_qm_tuple = [&](const auto q) {
       return sim.config.get<double>(m_label).transform(
         [&](const auto m) { return std::tuple { q, m }; });
@@ -131,13 +129,10 @@ void
     const auto qm_tuple_to_args = [&](const auto qm) {
       const auto [q, m] = qm;
 
-      return pic::ParticleContainerArgs {
-        .N         = 0,
-        .charge    = q,
-        .mass      = m,
-        .weight    = sim.config.get<double>(w_label).value_or(1.0),
-        .n_payload = runko::species_n_payload(sim.config, i)
-      };
+      return pic::ParticleContainerArgs { .N         = 0,
+                                          .charge    = q,
+                                          .mass      = m,
+                                          .n_payload = n_payload };
     };
 
     return sim.config.get<double>(q_label)
@@ -177,9 +172,9 @@ void
     for(auto i = 0uz; true; ++i) {
       const auto q_label = std::format("q{}", i);
       const auto m_label = std::format("m{}", i);
-      const auto w_label = std::format("w{}", i);
 
-      const auto pcontainer_args = make_opt_args(i, q_label, m_label, w_label);
+      const auto pcontainer_args =
+        make_opt_args(q_label, m_label, runko::species_n_payload(sim.config, i));
       if(not pcontainer_args) { break; }
 
       auto container = pic::ParticleContainer { pcontainer_args.value() };
@@ -371,7 +366,6 @@ void
       assert_shapes(state_batch.vel[0]);
       assert_shapes(state_batch.vel[1]);
       assert_shapes(state_batch.vel[2]);
-      if(state_batch.wgt) { assert_shapes(*state_batch.wgt); }
     }
 
     auto& pcontainer = particles.at(particle_type);
@@ -397,8 +391,7 @@ void
         runko::ParticleState<double> {
           .pos = { posx_view(n), posy_view(n), posz_view(n) },
           .vel = { velx_view(n), vely_view(n), velz_view(n) },
-          .id  = id_gen.consume_next_id(particle_type),
-          .wgt = state_batch.wgt ? state_batch.wgt->at(n) : 1.0 });
+          .id  = id_gen.consume_next_id(particle_type) });
       const auto p = std::next(batch_payload.begin(), std::ptrdiff_t(n * np));
       payload.insert(payload.end(), p, std::next(p, std::ptrdiff_t(np)));
     }

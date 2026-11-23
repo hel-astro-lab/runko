@@ -54,8 +54,6 @@ struct RadParams {
 struct ParticleContainerArgs {
   std::size_t N;
   double charge, mass;
-  /// Common weight of the species (leptons, ions); 1 unless configured.
-  double weight { 1 };
   /// Opaque floats every particle carries along (config n_payload{i}).
   std::size_t n_payload { 0 };
 };
@@ -88,15 +86,12 @@ private:
   runko::device_vec_segments<value_type> vel_;
   /// Id for each particle.
   runko::device_scalar_segments<runko::prtc_id_type> ids_;
-  /// Weight of each particle; empty unless the species carries per-particle weights.
-  runko::device_scalar_segments<value_type> wgt_;
   /// Payload of each particle, one array per component: opaque floats that follow the
   /// particle through every reorder, append and exchange.
   std::vector<runko::device_scalar_segments<value_type>> payload_;
 
   double charge_;
   double mass_;
-  double weight_;
   std::uint64_t reorder_count_ { 0 };
 
   /// Reusable buffer for particle trackers.
@@ -162,7 +157,7 @@ public:
 
   /// Append n dead-particle slots at the end of the container.
   ///
-  /// Grows pos_/vel_/ids_ (and wgt_, payload_) by n and tags the new ids with
+  /// Grows pos_/vel_/ids_ (and payload_) by n and tags the new ids with
   /// runko::dead_prtc_id; the existing particles are kept. pos_ and vel_ of
   /// the new slots are left uninitialized, since dead particles are identified
   /// by their id alone.
@@ -182,16 +177,9 @@ public:
   std::array<std::vector<value_type>, 3> get_positions();
   std::array<std::vector<value_type>, 3> get_velocities();
   std::vector<runko::prtc_id_type> get_ids();
-  /// Weights of the alive particles; the common weight repeated for species without
-  /// per-particle weights.
-  std::vector<value_type> get_weights();
 
   /// Payload component c of the alive particles.
   std::vector<value_type> get_payload(std::size_t c);
-
-  [[nodiscard]] double weight() const { return weight_; }
-  /// a massless species carries a weight per particle; the others share the species weight
-  [[nodiscard]] bool has_particle_weights() const { return mass_ == 0.0; }
 
   [[nodiscard]]
   auto pos_mds() const
@@ -209,12 +197,6 @@ public:
   auto ids_mds() const
   {
     return ids_.mds();
-  }
-
-  [[nodiscard]]
-  auto wgt_mds() const
-  {
-    return wgt_.mds();
   }
 
   [[nodiscard]] std::size_t n_payload() const { return payload_.size(); }
@@ -241,12 +223,6 @@ public:
   auto ids_mds()
   {
     return ids_.mds();
-  }
-
-  [[nodiscard]]
-  auto wgt_mds()
-  {
-    return wgt_.mds();
   }
 
   [[nodiscard]]
@@ -379,8 +355,7 @@ template<std::ranges::forward_range R>
                                 .vel { static_cast<value_type>(state.vel[0]),
                                        static_cast<value_type>(state.vel[1]),
                                        static_cast<value_type>(state.vel[2]) },
-                                .id  = state.id,
-                                .wgt = static_cast<value_type>(state.wgt) };
+                                .id  = state.id };
     });
 
   const auto new_states_h = thrust::host_vector<value_state_type>(
@@ -448,17 +423,16 @@ template<std::ranges::forward_range R>
   }
 
   {
-    const auto args             = rn::begin(spans)->container->args();
-    this->charge_               = args.charge;
-    this->mass_                 = args.mass;
-    this->weight_               = args.weight;
+    const auto args = rn::begin(spans)->container->args();
+    this->charge_   = args.charge;
+    this->mass_     = args.mass;
     this->payload_.resize(args.n_payload);
 
     const auto consistent_given_charge_n_mass =
       rn::all_of(spans, [this](const auto& span) {
         const auto args = span.container->args();
         return this->charge_ == args.charge and this->mass_ == args.mass and
-               this->weight_ == args.weight and this->n_payload() == args.n_payload;
+               this->n_payload() == args.n_payload;
       });
     if(not consistent_given_charge_n_mass) {
       throw std::runtime_error {
@@ -494,14 +468,11 @@ template<std::ranges::forward_range R>
   this->pos_.resize(Ntotal);
   this->vel_.resize(Ntotal);
   this->ids_.resize(Ntotal);
-  if(this->has_particle_weights()) { this->wgt_.resize(Ntotal); }
   for(auto& p: this->payload_) { p.resize(Ntotal); }
 
   const auto pos_mds = this->pos_.mds();
   const auto vel_mds = this->vel_.mds();
   const auto ids_mds = this->ids_.mds();
-  const auto wgt_mds = this->wgt_.mds();
-  const auto weighted = this->has_particle_weights();
 
   const auto handle_span = [&](
                              tyvi::mdgrid_work& w,
@@ -527,14 +498,6 @@ template<std::ranges::forward_range R>
     w.for_each_index(ids_submds, [=](const auto idx) {
       ids_submds[idx][] = other_ids_submds[idx][];
     });
-    if(weighted) {
-      const auto other_wgt_mds    = span.container->wgt_.mds();
-      const auto other_wgt_submds = std::submdspan(other_wgt_mds, s);
-      const auto wgt_submds       = std::submdspan(wgt_mds, location_in_this);
-      w.for_each_index(wgt_submds, [=](const auto idx) {
-        wgt_submds[idx][] = other_wgt_submds[idx][];
-      });
-    }
     for(auto c = 0uz; c < this->n_payload(); ++c) {
       const auto other_submds = std::submdspan(span.container->payload_mds(c), s);
       const auto submds       = std::submdspan(this->payload_mds(c), location_in_this);
@@ -665,15 +628,12 @@ inline void
   this->pos_.resize(Pnum + Ntotal);
   this->vel_.resize(Pnum + Ntotal);
   this->ids_.resize(Pnum + Ntotal);
-  if(this->has_particle_weights()) { this->wgt_.resize(Pnum + Ntotal); }
   for(auto& p: this->payload_) { p.resize(Pnum + Ntotal); }
 
   // 3.
   const auto pos_mds  = this->pos_.mds();
   const auto vel_mds  = this->vel_.mds();
   const auto ids_mds  = this->ids_.mds();
-  const auto wgt_mds  = this->wgt_.mds();
-  const auto weighted = this->has_particle_weights();
 
   for(auto n = 0uz; n < spans.size(); ++n) {
     const auto n_span   = spans[n];
@@ -708,7 +668,6 @@ inline void
         vel_mds[j][2] = state.vel[2];
 
         ids_mds[j][] = state.id;
-        if(weighted) { wgt_mds[j][] = state.wgt; }
       });
 
     } else {
@@ -727,7 +686,6 @@ inline void
         vel_mds[j][2] = state.vel[2];
 
         ids_mds[j][] = state.id;
-        if(weighted) { wgt_mds[j][] = state.wgt; }
       });
     }
 

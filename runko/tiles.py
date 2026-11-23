@@ -114,11 +114,6 @@ class ProxyTile:
         return self.sim_context.get_ids(self.tile_id, ptype)
 
 
-    def get_weights(self, ptype: int):
-        self.sim_context.eval(self._ensure_prtcls)
-        return self.sim_context.get_weights(self.tile_id, ptype)
-
-
     def get_payload(self, ptype: int, c: int = 0):
         """payload component c of the alive particles of a species"""
         self.sim_context.eval(self._ensure_prtcls)
@@ -209,6 +204,11 @@ class ProxyTile:
 
     def interact(self):
         qed.interact(self.sim_context, self.tile_id)
+
+    def get_weights(self, ptype: int):
+        """the weights of the live particles of container ptype: payload component 0 of a
+        species with a payload (the photons), the species weight w{i} of one without"""
+        return qed.get_weights(self.sim_context, self.tile_id, ptype)
 
     def set_particles(self, s: str, u, w):
         qed.set_particles(self.sim_context, self.tile_id, s, u, w)

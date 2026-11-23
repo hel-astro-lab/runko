@@ -34,38 +34,20 @@ void
   // object for storing single particle data
   using PS = runko::ParticleState<double>;
   py::class_<PS>(m_3d, "ParticleState")
-    .def(
-      py::init([](const PS::vec3 pos, const PS::vec3 vel, const double wgt) {
-        return PS { .pos = pos, .vel = vel, .id = 0, .wgt = wgt };
-      }),
-      py::arg("pos"),
-      py::arg("vel"),
-      py::arg("wgt") = 1.0)
+    .def(py::init<PS::vec3, PS::vec3>(), py::arg("pos"), py::arg("vel"))
     .def_readwrite("pos", &PS::pos)
-    .def_readwrite("vel", &PS::vel)
-    .def_readwrite("wgt", &PS::wgt);
+    .def_readwrite("vel", &PS::vel);
 
   // object for storing a batch of multiple particle's data
   using PSB = runko::ParticleStateBatch;
   py::class_<PSB>(m_3d, "ParticleStateBatch")
     .def(
-      py::init([](
-                 PSB::container_type pos,
-                 PSB::container_type vel,
-                 std::optional<py::array_t<double>> wgt,
-                 py::object payload) {
-        return PSB { .pos     = std::move(pos),
-                     .vel     = std::move(vel),
-                     .wgt     = std::move(wgt),
-                     .payload = std::move(payload) };
-      }),
+      py::init<PSB::container_type, PSB::container_type, py::object>(),
       py::arg("pos"),
       py::arg("vel"),
-      py::arg("wgt")     = py::none(),
       py::arg("payload") = py::none())
     .def_readwrite("pos", &PSB::pos)
     .def_readwrite("vel", &PSB::vel)
-    .def_readwrite("wgt", &PSB::wgt)
     .def_readwrite("payload", &PSB::payload);
 
   // reflector wall data structure

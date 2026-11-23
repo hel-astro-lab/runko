@@ -32,12 +32,17 @@ electrons by a negative charge, positrons by a positive one — and any heavier 
     w1: 1e-3
     q2: 0        # photons: massless, a weight per particle
     m2: 0
+    n_payload2: 1
     particle_pusher: ["boris", "boris", "ballistic"]
 
-Leptons (and any other massive species) carry one weight per species, ``w{i}``; photons carry a
-weight per particle, which the resolution function of the sampler adapts. Photons deposit no
-current, and take the ``ballistic`` pusher, which moves them at the speed of light along their
-momentum; a neutral species under any other pusher is refused when the pushers are loaded.
+Leptons carry one weight per species, ``w{i}`` (1 if absent), equal for both signs; photons
+carry a weight per particle, which the resolution function of the sampler adapts. It is the
+first float of the per-particle payload of the species, so the photon species needs
+``n_payload{i}: 1`` (a tile without it, or with a payload on a lepton species, is refused).
+``tile.get_weights(i)`` returns the weights of the live particles of species ``i`` either way.
+Photons deposit no current, and take the ``ballistic`` pusher, which moves them at the speed of
+light along their momentum; a neutral species under any other pusher is refused when the pushers
+are loaded.
 
 Normalization
 -------------
@@ -146,9 +151,10 @@ goes to the tail, the key's bounds taking the arrival in. An arrival inside a ke
 with the key at once (every step widens the bounds by the live slots of every key before any
 channel runs), one in the slack once the fill reaches it, a tail one from the next sort on.
 Photons move at `c` along their momentum,
-deposit no current and carry their weight through the exchange; the particle snapshots carry
-it as a 13th field ``wgt`` and the spectra are weighted by it. With `n_t` tiles per edge the
-weight unit is that of the tile, so the depth of the box is `\sum w / n_t^2` and
+deposit no current and carry their weight through the exchange as their payload; the particle
+snapshots carry the weight as a 13th field ``wgt`` and the spectra are weighted by it (for any
+species: payload component 0 when the species has a payload, its ``w{i}`` otherwise). With
+`n_t` tiles per edge the weight unit is that of the tile, so the depth of the box is `\sum w / n_t^2` and
 ``qed_ell_B`` is defined on the box edge with ``qed_H_lamC`` the tile edge.
 
 Example

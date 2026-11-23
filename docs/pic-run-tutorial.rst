@@ -228,7 +228,9 @@ and a list of :python:`runko.ParticleState` objects.
 
 A species configured with :python:`n_payloadN > 0` carries that many floats per particle,
 which follow the particle through sorting and tile exchange and are read back with
-:python:`tile.get_payload(N, c)`. Injecting into it requires the payload:
+:python:`tile.get_payload(N, c)`; component 0 is the particle's weight in the particle and
+spectra snapshots, where a species without a payload weighs :python:`wN` (default 1).
+Injecting into it requires the payload:
 :python:`tile.inject(N, states, payload)` and
 :python:`runko.ParticleStateBatch(pos, vel, payload=...)` take an array of shape
 :python:`(n_payload, len(states))` (or :python:`(len(states),)` when :python:`n_payload` is 1),

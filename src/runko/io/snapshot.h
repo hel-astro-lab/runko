@@ -36,7 +36,9 @@ inline constexpr int32_t num_emf_fields = 9;
 inline constexpr const char* emf_field_names[9] = { "ex", "ey", "ez", "bx", "by",
                                                     "bz", "jx", "jy", "jz" };
 
-/// Number of particle snapshot fields (x,y,z,ux,uy,uz,ex,ey,ez,bx,by,bz,wgt)
+/// Number of particle snapshot fields (x,y,z,ux,uy,uz,ex,ey,ez,bx,by,bz,wgt); wgt,
+/// which also weights the spectra, is payload component 0 of a species with a payload
+/// and the species weight w{i} of one without.
 inline constexpr int32_t num_prtcl_fields = 13;
 
 /// Particle field names in canonical order

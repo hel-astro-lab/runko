@@ -24,9 +24,10 @@ namespace qed {
 
 using I = runko::index_t;
 
-Pop::Pop(const bool keyed, const double mass) :
+Pop::Pop(const bool keyed, const double mass, const double w0) :
   keyed_ { keyed },
-  mass_ { static_cast<float>(mass) }
+  mass_ { static_cast<float>(mass) },
+  w0_ { w0 }
 {
 }
 
@@ -238,10 +239,10 @@ void
   // slots appended since the layout are tail (key -1) and widen nothing
   const auto ids_mds = con.ids_mds();
   const auto vel_mds = con.vel_mds();
-  const auto wgt_mds = con.wgt_mds();
+  const auto wgt_mds = weight_mds(con);
   // ---- views and constants the bounds kernel needs
-  const auto weighted = con.has_particle_weights();
-  const auto w0       = static_cast<float>(con.weight());  // weight of a lepton species
+  const auto weighted = con.n_payload() > 0uz;
+  const auto w0       = static_cast<float>(w0_);  // weight of a lepton species
   const auto m        = mass_;
   const auto v        = this->view();
   // one lane per slot: a live LP with a key widens the weight and energy bounds of that
@@ -309,15 +310,15 @@ void
 }
 
 Pop::Totals
-  Pop::totals(const pic::ParticleContainer& con)
+  Pop::totals(const pic::ParticleContainer& con) const
 {
   // ---- one reduction over the slots of (count, weight, energy, momentum) of the live
   // LPs
   const auto ids_mds  = con.ids_mds();
   const auto vel_mds  = con.vel_mds();
-  const auto wgt_mds  = con.wgt_mds();
-  const auto weighted = con.has_particle_weights();
-  const auto w0       = static_cast<double>(con.weight());
+  const auto wgt_mds  = weight_mds(con);
+  const auto weighted = con.n_payload() > 0uz;
+  const auto w0       = w0_;
   const auto m        = con.args().mass;
   using V6            = toolbox::VecD<double, 6>;  // N, W, E, Px, Py, Pz of one slot
   const auto ord0     = thrust::counting_iterator<I>(0);

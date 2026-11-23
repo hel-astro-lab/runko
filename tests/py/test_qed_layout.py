@@ -26,15 +26,15 @@ def make_tile(positron_first=False, proton=False, bad_mass=None, idx=(0, 0, 0), 
         config.q0, config.m0 = 1, 1836
         config.q1, config.m1, config.w1 = 1, 1, WL
         config.q2, config.m2, config.w2 = -1, 1, WL
-        config.q3, config.m3 = 0, 0
+        config.q3, config.m3, config.n_payload3 = 0, 0, 1
     elif positron_first:
         config.q0, config.m0, config.w0 = 1, 1, WL
         config.q1, config.m1, config.w1 = -1, 1, WL
-        config.q2, config.m2 = 0, 0
+        config.q2, config.m2, config.n_payload2 = 0, 0, 1
     else:
         config.q0, config.m0, config.w0 = -1, 1, WL
         config.q1, config.m1, config.w1 = 1, 1, WL
-        config.q2, config.m2 = 0, 0
+        config.q2, config.m2, config.n_payload2 = 0, 0, 1
     if bad_mass is not None:
         config.q0, config.m0 = -1, bad_mass
     config.particle_pusher = ["boris"] * (3 if proton else 2) + ["ballistic"]
@@ -139,6 +139,10 @@ class qed_layout(unittest.TestCase):
         # a charged species of fractional mass is neither a lepton nor an ion
         with self.assertRaises(RuntimeError):
             make_tile(bad_mass=0.5)
+        # the photon weight is payload component 0; the leptons carry the species weight
+        for payloads in ({"n_payload2": 0}, {"n_payload0": 1}):
+            with self.assertRaises(RuntimeError):
+                make_tile(**payloads)
 
     def test_layout_tables(self):
         config, tile = make_tile()
@@ -177,8 +181,8 @@ class qed_layout(unittest.TestCase):
         populate(tile, rng)
         tile.layout()
         n0 = int(tile.totals("ph")["N"])
-        tile.inject(tile.species("ph"), [runko.pic.threeD.ParticleState(pos=(1.0, 2.0, 3.0), vel=(0.5, 0, 0), wgt=1e-3)
-                                          for _ in range(50)])
+        tile.inject(tile.species("ph"), [runko.pic.threeD.ParticleState(pos=(1.0, 2.0, 3.0), vel=(0.5, 0, 0))
+                                          for _ in range(50)], payload=[1e-3] * 50)
         self.assertEqual(tile.totals("ph")["N"], n0 + 50)
         # pic's append writes behind the last alive slot, into the slack of the keys there and
         # past them: the tables follow the container, and the injected LPs are no members of a key
@@ -206,7 +210,7 @@ class qed_layout(unittest.TestCase):
         config.field_propagator = "fdtd2"
         config.q0, config.m0, config.w0 = -1, 1, WL
         config.q1, config.m1, config.w1 = 1, 1, WL
-        config.q2, config.m2 = 0, 0
+        config.q2, config.m2, config.n_payload2 = 0, 0, 1
         config.particle_pusher = ["boris", "boris", "ballistic"]
         config.field_interpolator = "linear_1st"
         config.current_depositer = "zigzag_1st"
@@ -224,14 +228,17 @@ class qed_layout(unittest.TestCase):
             tile.set_EBJ(zero, zero, zero)
             if idx == (0, 0, 0):
                 # photons at the +x edge flying +x cross in one push; the rest stay
+                w_cross = rng.uniform(0.1, 5.0, n_cross) * WL
                 cross = [runko.pic.threeD.ParticleState(pos=(NC - 0.2, 1 + (NC - 2) * rng.random(), 1 + (NC - 2) * rng.random()),
-                                                       vel=(1.0, 0, 0), wgt=w) for w in rng.uniform(0.1, 5.0, n_cross) * WL]
+                                                       vel=(1.0, 0, 0)) for _ in w_cross]
+                w_stay = rng.uniform(0.1, 5.0, n_stay) * WL
                 stay = [runko.pic.threeD.ParticleState(pos=(1 + (NC - 3) * rng.random(), 1 + (NC - 2) * rng.random(), 1 + (NC - 2) * rng.random()),
-                                                      vel=tuple(rng.normal(size=3)), wgt=w) for w in rng.uniform(0.1, 5.0, n_stay) * WL]
-                tile.inject(2, cross + stay)
+                                                      vel=tuple(rng.normal(size=3))) for _ in w_stay]
+                tile.inject(2, cross + stay, payload=np.concatenate([w_cross, w_stay]))
             else:
+                w_stay = rng.uniform(0.1, 5.0, n_stay) * WL
                 tile.inject(2, [runko.pic.threeD.ParticleState(pos=(NC + 1 + (NC - 3) * rng.random(), 1 + (NC - 2) * rng.random(), 1 + (NC - 2) * rng.random()),
-                                                               vel=tuple(rng.normal(size=3)), wgt=w) for w in rng.uniform(0.1, 5.0, n_stay) * WL])
+                                                               vel=tuple(rng.normal(size=3))) for _ in w_stay], payload=w_stay)
             tile_grid.add_tile(tile, idx)
             tiles[idx] = tile
         simulation = tile_grid.configure_simulation(config)
@@ -278,8 +285,8 @@ class qed_layout(unittest.TestCase):
             return dict(zip(np.asarray(tile.get_ids(sp)), zip(map(tuple, u), np.asarray(tile.get_weights(sp)))))
 
         before = photons()
-        tile.inject(sp, [runko.pic.threeD.ParticleState(pos=(1.0, 2.0, 3.0), vel=(0.5, 0, 0), wgt=7e-3)
-                         for _ in range(k)])
+        tile.inject(sp, [runko.pic.threeD.ParticleState(pos=(1.0, 2.0, 3.0), vel=(0.5, 0, 0))
+                         for _ in range(k)], payload=[7e-3] * k)
         self.assertTrue(tile.laid(), "an injection keeps the layout")
         state = photons()
         new = sorted(set(state) - set(before))

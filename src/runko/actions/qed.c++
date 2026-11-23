@@ -95,6 +95,18 @@ tile_state
       "charge signs."
     };
   }
+  // a photon carries its weight as payload component 0, a lepton the species weight
+  if(pc.at(sp[0]).n_payload() < 1uz) {
+    throw std::runtime_error { std::format(
+      "qed tile: the photons carry their weights as payload: set n_payload{}: 1 for "
+      "the photon species.",
+      sp[0]) };
+  }
+  if(pc.at(sp[1]).n_payload() != 0uz or pc.at(sp[2]).n_payload() != 0uz) {
+    throw std::runtime_error {
+      "qed tile: the leptons carry the species weight w{i}, not a payload."
+    };
+  }
 
   // ---- the box: tile edge in Compton wavelengths, step in light crossings
   const auto cells = conf.get_or_throw<std::vector<std::ptrdiff_t>>("n_cells_per_tile");
@@ -112,10 +124,10 @@ tile_state
           .H_box_lamC = H_tile * static_cast<double>(
                                    tiles[0]),  // the compactness is defined on the box
           .dt         = cfl / static_cast<double>(cells[0]),
-          .w_lep      = pc.at(sp[1]).weight(),
+          .w_lep      = runko::species_weight(conf, sp[1]),
           .ell_B      = conf.get<double>("qed_ell_B").value_or(0.0),
           .x_min      = conf.get<double>("qed_x_min").value_or(0.0) };
-  if(pc.at(sp[2]).weight() != box.w_lep) {
+  if(runko::species_weight(conf, sp[2]) != box.w_lep) {
     throw std::runtime_error { "qed tile: electron and positron weights must agree." };
   }
 
@@ -171,9 +183,9 @@ tile_state
   // only
   return tile_state {
     .sp      = sp,
-    .pops    = { Pop { true, 0.0 },
-                 Pop { false, pc.at(sp[1]).args().mass },
-                 Pop { false, pc.at(sp[2]).args().mass } },
+    .pops    = { Pop { true, 0.0, runko::species_weight(conf, sp[0]) },
+                 Pop { false, pc.at(sp[1]).args().mass, box.w_lep },
+                 Pop { false, pc.at(sp[2]).args().mass, box.w_lep } },
     .sampler = Sampler { box, par, channels },
     .B0      = conf.get<double>("qed_B0").value_or(0.0)
   };  // set by a PIC driver: the field of ell_B in code units
@@ -442,6 +454,8 @@ void
                                  501),
                                0 };
   auto states   = std::vector<runko::ParticleState<double>>(u.size());
+  const auto np = con.n_payload();  // photons: the weight is component 0
+  auto payload  = std::vector<pic::ParticleContainer::value_type>(u.size() * np, 0.0f);
   const auto gc = coordinates(sim, id);
   const auto lo = gc.mins();  // tile extent, for the random positions
   const auto hi = gc.maxs();
@@ -453,13 +467,13 @@ void
                                               lo[1] + (hi[1] - lo[1]) * rng.uniform(),
                                               lo[2] + (hi[2] - lo[2]) * rng.uniform() },
                                      .vel = u[i],
-                                     .id  = 0,
-                                     .wgt = w[i] };
+                                     .id  = 0 };
+    if(np > 0uz) { payload[i * np] = static_cast<float>(w[i]); }
   }
   for(auto& p: states) {
     p.id = gen.consume_next_id(sp);
   }  // the pic path: ids assigned, appended
-  con.add_particles(states);
+  con.add_particles(states, payload);
   st.pops[static_cast<std::size_t>(s)].invalidate();  // laid out again at the next step
 }
 
@@ -539,8 +553,20 @@ std::vector<std::int32_t>
 Pop::Totals
   totals(runko::simulation_context& sim, const tile_id id, const Species s)
 {
-  return Pop::totals(
-    containers(sim, id).at(state(sim, id).sp[static_cast<std::size_t>(s)]));
+  auto& st = state(sim, id);
+  return st.pops[static_cast<std::size_t>(s)].totals(
+    containers(sim, id).at(st.sp[static_cast<std::size_t>(s)]));
+}
+
+std::vector<pic::ParticleContainer::value_type>
+  get_weights(runko::simulation_context& sim, const tile_id id, const std::size_t ptype)
+{
+  auto& con = containers(sim, id).at(ptype);
+  if(con.n_payload() > 0uz) { return con.get_payload(0); }
+  return std::vector(
+    con.number_alive(),
+    static_cast<pic::ParticleContainer::value_type>(
+      runko::species_weight(sim.config, ptype)));
 }
 
 double

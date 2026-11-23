@@ -97,6 +97,16 @@ struct [[nodiscard]] LayoutView {
   { return (keyed ? k / 2 : k) % nbin; }
 };
 
+/// Payload component 0 of a container, the weight of each LP of a species with a
+/// payload (the photons); an empty view of one without (the leptons).
+template<typename Container>
+[[nodiscard]] auto
+  weight_mds(Container& con)
+{
+  using M = decltype(con.payload_mds(0));
+  return con.n_payload() > 0uz ? con.payload_mds(0) : M {};
+}
+
 class [[nodiscard]] Pop {
   // The layout of one species; the container itself belongs to the tile, which passes
   // it to every call, so that a tile may be copied or moved without a pointer going
@@ -104,6 +114,7 @@ class [[nodiscard]] Pop {
   // ---- what the species is and what the current epoch fixed
   bool keyed_;                              // photons carry the sub-range bit
   float mass_;                              // rest mass: 0 photons, 1 leptons
+  double w0_;                               // LP weight without payload: leptons
   LayoutParams par_ {};                     // bins, cells and slack rule of the epoch
   std::array<float, 3> mins_ {}, maxs_ {};  // tile extent
   double llo_ { 0.0 }, dl_ { 1.0 };         // log bin edges: lowest edge and bin width
@@ -123,7 +134,11 @@ class [[nodiscard]] Pop {
 
 
 public:
-  Pop(bool keyed, double mass);
+  /// w0: the weight of every LP of a species without payload; a species with one
+  /// carries the weight of each LP as payload component 0
+  Pop(bool keyed, double mass, double w0);
+
+  [[nodiscard]] double w0() const { return w0_; }
 
   /// whether the tables describe this container: built, not reordered since (a sort
   /// drops the layout) and at the size they were built or resized for
@@ -160,7 +175,7 @@ public:
     double N, W, E;           // live LPs, their weight and energy
     std::array<double, 3> P;  // their momentum
   };
-  [[nodiscard]] static Totals totals(const pic::ParticleContainer& con);
+  [[nodiscard]] Totals totals(const pic::ParticleContainer& con) const;
 
   // ---- host copies for IO and tests
   [[nodiscard]] std::vector<std::int32_t>

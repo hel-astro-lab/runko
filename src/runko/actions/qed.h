@@ -52,7 +52,9 @@ struct tile_state {
 /// allows if absent) `qed_B0`: the field of ell_B in code units, set by a PIC driver
 /// (0: the uniform field)
 ///
-/// The lepton weight of the box is the electron container's `w{i}`.
+/// The photon species needs `n_payload{i}: 1`: a photon carries its weight as payload
+/// component 0. The lepton weight of the box is the electron species' `w{i}`, which
+/// the positrons share; the leptons carry no payload.
 void ensure_constructed_qed(runko::simulation_context&);
 
 /// f(sim, id) on every local tile with a QED state. A QED action on local tiles none of
@@ -126,6 +128,10 @@ void reset_momenta(
 [[nodiscard]] std::vector<std::int32_t>
   get_slot_keys(runko::simulation_context&, tile_id, Species);
 [[nodiscard]] Pop::Totals totals(runko::simulation_context&, tile_id, Species);
+/// The weights of the live LPs of container ptype in slot order: payload component 0
+/// of a species with a payload (the photons), the species weight w{i} of one without.
+[[nodiscard]] std::vector<pic::ParticleContainer::value_type>
+  get_weights(runko::simulation_context&, tile_id, std::size_t ptype);
 /// pair depth: the lepton weight
 [[nodiscard]] double tau_T(runko::simulation_context&, tile_id);
 /// exact expectation of a channel in one step (events, or the weight they move)

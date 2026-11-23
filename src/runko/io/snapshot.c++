@@ -35,6 +35,7 @@
 #include <stdexcept>
 #include <string>
 #include <string_view>
+#include <utility>
 #include <vector>
 
 namespace runko {
@@ -369,6 +370,26 @@ std::int64_t
     is_sampled(container, stride)));
 }
 
+/// The weight of a particle in the output: payload component 0 of a species with a
+/// payload, the species weight w{i} of one without.
+struct output_weight {
+  using payload_mds =
+    decltype(std::declval<const pic::ParticleContainer&>().payload_mds(0));
+  payload_mds payload;
+  bool has_payload;
+  float species_weight;
+
+  output_weight(const pic::ParticleContainer& con, const double w) :
+    payload { con.n_payload() > 0 ? con.payload_mds(0) : payload_mds {} },
+    has_payload { con.n_payload() > 0 },
+    species_weight { static_cast<float>(w) }
+  {
+  }
+
+  [[nodiscard]] constexpr float operator()(const std::size_t n) const
+  { return has_payload ? payload[n][] : species_weight; }
+};
+
 /// Sampling of particles of one species in one local tile.
 struct prtcl_tile_sample {
   const pic::ParticleContainer* container;
@@ -515,9 +536,8 @@ void
     const auto slots_mds    = sampled_slots.mds();
     const auto pos_mds      = t.container->pos_mds();
     const auto vel_mds      = t.container->vel_mds();
-    const auto wgt_mds      = t.container->wgt_mds();
-    const auto weighted     = t.container->has_particle_weights();
-    const auto w0           = static_cast<float>(t.container->weight());
+    const auto weight =
+      output_weight(*t.container, runko::species_weight(sim.config, species));
     const auto interpolator = t.yee->interpolate_EB_linear_1st(t.lattice_origo);
 
     const auto dst_range = std::array { tile_buf_offset, tile_buf_offset + n_s };
@@ -543,7 +563,7 @@ void
       dst_mds[idx][9]  = EB.B[0];
       dst_mds[idx][10] = EB.B[1];
       dst_mds[idx][11] = EB.B[2];
-      dst_mds[idx][12] = weighted ? wgt_mds[n][] : w0;  // the species weight unless its own
+      dst_mds[idx][12] = weight(n);
     });
 
     tile_buf_offset += n_s;
@@ -636,6 +656,7 @@ struct spectra_snapshot_params {
   int nbins;
   float umin, umax;
   int nspecies;  // number of particle species (capped at max_spectra_species)
+  std::array<double, max_spectra_species> weight;  // species weights w{i}
   int nxt;       // per-tile x output size after stride
   int nx;        // global x output size
 
@@ -686,6 +707,9 @@ struct spectra_snapshot_params {
     p.umin     = static_cast<float>(umin);
     p.umax     = static_cast<float>(umax);
     p.nspecies = std::min(static_cast<int>(count_species(config)), max_spectra_species);
+    for(auto s = 0uz; s < static_cast<std::size_t>(p.nspecies); ++s) {
+      p.weight[s] = species_weight(config, s);
+    }
 
     p.nxt = std::max(1, p.NxMesh / p.stride);
     p.nx  = p.Nx * p.nxt;
@@ -802,9 +826,7 @@ void
     const auto pos_mds    = container.pos_mds();
     const auto vel_mds    = container.vel_mds();
     const auto ids_mds    = container.ids_mds();
-    const auto wgt_mds    = container.wgt_mds();
-    const auto weighted   = container.has_particle_weights();
-    const auto w0         = static_cast<float>(container.weight());
+    const auto weight     = output_weight(container, p.weight[species]);
     const auto base       = static_cast<std::size_t>(s * num_spectra_per_species);
 
     w.for_each_index(pos_mds, [=](const auto idx) {
@@ -831,8 +853,7 @@ void
       const auto ib_by = bin(sstd::floor((uy * inv_gamma + vt { 1 }) * inv_dbeta));
       const auto ib_bz = bin(sstd::floor((uz * inv_gamma + vt { 1 }) * inv_dbeta));
 
-      // the particle's weight: the species weight unless it carries its own
-      const auto dep     = weighted ? wgt_mds[idx][] : w0;
+      const auto dep     = weight(idx[0]);
       const auto deposit = [=](const std::size_t ib, const std::size_t q) {
         auto* const n = &thrust::raw_reference_cast(buf_mds[ix, ib][base + q]);
         sstd::atomic_add(n, dep);

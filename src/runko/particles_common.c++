@@ -22,3 +22,9 @@ std::size_t
 {
   return config.get<std::size_t>(std::format("n_payload{}", i)).value_or(0uz);
 }
+
+double
+  runko::species_weight(const toolbox::ConfigParser& config, const std::size_t i)
+{
+  return config.get<double>(std::format("w{}", i)).value_or(1.0);
+}

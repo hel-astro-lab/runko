@@ -227,18 +227,19 @@ class TestMpiioSpectraWriter(unittest.TestCase):
         config = make_spectra_config(
             outdir=self.outdir, nbins=100, umin=1e-4, umax=1e4)
         config.w0 = 0.25                      # species weight
-        config.q2, config.m2 = 0, 0           # photons: their own weights
+        config.q2, config.m2, config.n_payload2 = 0, 0, 1   # photons: their own weights
         config.particle_pusher = ["boris", "boris", "ballistic"]
         config.prealloc_per_species = 100
         P = runko.pic.threeD.ParticleState
-        gen = lambda x, y, z: [P(pos=(x + 0.5, y + 0.5, z + 0.5), vel=(1.0, 2.0, 3.0), wgt=2.0)]
+        gen = lambda x, y, z: [P(pos=(x + 0.5, y + 0.5, z + 0.5), vel=(1.0, 2.0, 3.0))]
+        gen2 = lambda x, y, z: (gen(x, y, z), [2.0])   # with the payload: the weight
         tile_grid = runko.TileGrid(config)
         for idx in tile_grid.local_tile_indices():
             tile = runko.pic.threeD.Tile(idx, config)
             zero = lambda x, y, z: (0, 0, 0)
             tile.set_EBJ(zero, zero, zero)
             for species in range(3):
-                tile.inject_to_each_cell(species, gen)
+                tile.inject_to_each_cell(species, gen2 if species == 2 else gen)
             tile_grid.add_tile(tile, idx)
         sim = tile_grid.configure_simulation(config)
         hdr, fields = spectra_write_and_read(sim, self.outdir)

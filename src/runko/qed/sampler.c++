@@ -116,15 +116,15 @@ struct ChSSA {
 // the mdspan views a container hands out, captured by value into the kernels
 using VecMds = decltype(std::declval<pic::ParticleContainer&>().vel_mds());
 using IdMds  = decltype(std::declval<pic::ParticleContainer&>().ids_mds());
-using WgtMds = decltype(std::declval<pic::ParticleContainer&>().wgt_mds());
+using WgtMds = decltype(weight_mds(std::declval<pic::ParticleContainer&>()));
 
 /// one species as the kernels see it
 struct PView {
   VecMds pos, vel;  // positions (cells) and momenta (m_e c; k for photons)
   IdMds ids;        // dead_prtc_id marks a free slot
-  WgtMds wgt;       // per-particle weights, empty for leptons
-  bool weighted;    // whether wgt is used (photons) or w0 (leptons)
-  float w0;         // the common weight of an unweighted species
+  WgtMds wgt;       // per-particle weights (payload component 0), empty for leptons
+  bool weighted;    // whether the species has a payload, wgt (photons), or w0 (leptons)
+  float w0;         // the common weight of a species without payload
   float mass;       // 0 for photons, 1 for leptons
   LayoutView lay;   // the key tables of the species, for touch()
 
@@ -175,16 +175,17 @@ struct PView {
   }
 };
 
-// the view of a container alone: what the sources, the sinks and the pair sum read
+// the view of a container alone, w0 the weight of a species without payload: what the
+// sources, the sinks and the pair sum read
 PView
-  make_view(pic::ParticleContainer& con)
+  make_view(pic::ParticleContainer& con, const double w0)
 {
   return PView { .pos      = con.pos_mds(),
                  .vel      = con.vel_mds(),
                  .ids      = con.ids_mds(),
-                 .wgt      = con.wgt_mds(),
-                 .weighted = con.has_particle_weights(),
-                 .w0       = static_cast<float>(con.weight()),
+                 .wgt      = weight_mds(con),
+                 .weighted = con.n_payload() > 0uz,
+                 .w0       = static_cast<float>(w0),
                  .mass     = static_cast<float>(con.args().mass),
                  .lay      = {} };
 }
@@ -193,7 +194,7 @@ PView
 PView
   make_view(pic::ParticleContainer& con, Pop& pop)
 {
-  auto v = make_view(con);
+  auto v = make_view(con, pop.w0());
   v.lay  = pop.view();
   return v;
 }
@@ -1967,8 +1968,9 @@ void
   Ctx c { t, par.nbin };
   // the pair depth the escape sees: the whole slab's, given by the driver, or this
   // tile's own
-  const auto tau_T =
-    tau_ext >= 0.0 ? tau_ext : Pop::totals(*t.con[1]).W + Pop::totals(*t.con[2]).W;
+  const auto tau_T = tau_ext >= 0.0 ? tau_ext
+                                     : t.pop[1]->totals(*t.con[1]).W +
+                                         t.pop[2]->totals(*t.con[2]).W;
   const auto dt_esc =
     dt_ext > 0.0 ? dt_ext : box.dt;  // the step in crossings of that slab
   if(esc_hist_.size() != static_cast<std::size_t>(NESC)) {
@@ -2065,7 +2067,7 @@ double
   // sum w 2 sigma-hat F over the live leptons of both species
   for(auto s = 1uz; s <= 2uz; ++s) {
     auto& con     = *t.con[s];
-    const auto v  = make_view(con);
+    const auto v  = make_view(con, box.w_lep);
     const auto n  = con.size();
     const auto i0 = thrust::counting_iterator<I>(0);
     out += thrust::transform_reduce(
@@ -2098,8 +2100,8 @@ double
     const auto i2 = static_cast<std::size_t>(ch.t2);
     auto& c1      = *t.con[i1];
     auto& c2      = *t.con[i2];
-    const auto v1 = make_view(c1);
-    const auto v2 = make_view(c2);
+    const auto v1 = make_view(c1, box.w_lep);  // the photons carry their own
+    const auto v2 = make_view(c2, box.w_lep);
     const auto n1 = c1.size(), n2 = c2.size();
     const auto r0 = thrust::counting_iterator<I>(0);
     // one lane per incident slot, looping over every partner slot

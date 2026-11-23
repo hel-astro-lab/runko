@@ -9,7 +9,6 @@
 
 #include <array>
 #include <concepts>
-#include <optional>
 #include <type_traits>
 
 namespace runko {
@@ -32,20 +31,16 @@ struct ParticleState {
   vec3 pos;
   vec3 vel;
   prtc_id_type id;
-  /// Statistical weight. Species without per-particle weights carry 1 here and the
-  /// common weight of their container instead.
-  T wgt { 1 };
 };
 
 static_assert(std::is_trivially_copyable_v<ParticleState<float>>);
+static_assert(sizeof(ParticleState<float>) == 32);
 
 struct ParticleStateBatch {
   using container_type = std::array<pybind11::array_t<double>, 3>;
 
   container_type pos;
   container_type vel;
-  /// Per-particle weights; ignored by species that carry the species weight.
-  std::optional<pybind11::array_t<double>> wgt {};
   /// Payload of the species: n_payload arrays (or an (n_payload, N) array); None for a
   /// species without one.
   pybind11::object payload {};
@@ -89,5 +84,9 @@ std::size_t count_species(const toolbox::ConfigParser&);
 
 /// Payload floats per particle of species i: config n_payload{i}, or 0.
 std::size_t species_n_payload(const toolbox::ConfigParser&, std::size_t i);
+
+/// Weight of the particles of species i without a payload: config w{i}, or 1. A
+/// species with a payload carries its weight per particle as payload component 0.
+double species_weight(const toolbox::ConfigParser&, std::size_t i);
 
 }  // namespace runko
