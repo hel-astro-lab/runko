@@ -698,7 +698,6 @@ void
       if(!wall_is_in_tile(wall)) { continue; }
 
       for(auto& [_, pbuff]: particles) {
-        if(pbuff.kind() == pic::SpeciesKind::photon) { continue; }  // they pass through
         pbuff.reflect_at_wall(wall, corr_J_ptr->J, origo_pos, cfl);
       }
     }

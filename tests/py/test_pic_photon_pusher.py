@@ -79,18 +79,6 @@ class photon_pusher(unittest.TestCase):
             _, _, (jx, jy, jz) = tile.get_EBJ()
             self.assertEqual(float(np.abs(jx).max() + np.abs(jy).max() + np.abs(jz).max()), 0.0)
 
-    def test_photons_pass_the_reflector_wall(self):
-        config, tile = make_tile()
-        tile.register_reflector_wall(runko.pic.threeD.reflector_wall(walloc=4.0))
-        P = runko.pic.threeD.ParticleState
-        tile.inject(0, [P(pos=(4.2, 4.0, 4.0), vel=(-1.0, 0.0, 0.0))])
-        tile.inject(2, [P(pos=(4.2, 4.0, 4.0), vel=(-1.0, 0.0, 0.0), wgt=1.0)])
-        tile.push_particles()
-        tile.reflect_particles()
-        self.assertGreater(tile.get_velocities(0)[0][0], 0)   # the lepton is reflected
-        self.assertLess(tile.get_velocities(2)[0][0], 0)      # the photon is not
-        self.assertLess(tile.get_positions(2)[0][0], 4.0)
-
     def test_batch_inject_with_weights(self):
         config, tile = make_tile()
         def pgen(x, y, z):
