@@ -13,14 +13,12 @@ import numpy as np
 import argparse
 import os
 import time
-from mpi4py import MPI
 
 from qed_diagnostics import QedDiagnostics
 
 
 if __name__ == "__main__":
-    comm = MPI.COMM_WORLD
-    rank = comm.Get_rank()
+    runtime = runko.default_runtime()
     logger = runko.runko_logger()
 
     parser = argparse.ArgumentParser(description="QED Monte Carlo pair corona in PIC turbulence")
@@ -153,7 +151,7 @@ if __name__ == "__main__":
     def global_tau():
         """the pair depth of the whole box: the lepton weight summed over every rank"""
         loc = sum(tile.totals("e-")["W"] + tile.totals("e+")["W"] for tile in simulation.local_tiles())
-        return comm.allreduce(loc, op=MPI.SUM) / n_t ** 2
+        return sum(runtime.mpi_bcast(runtime.mpi_gather(loc))) / n_t ** 2
 
     def corona_step(x):
         lap = simulation.lap

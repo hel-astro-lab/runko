@@ -8,7 +8,6 @@ arrivals. Checks conservation across the exchange, unique ids, and every particl
 import mpi_unittest
 import tempfile
 import numpy as np
-from mpi4py import MPI
 
 import runko
 from tests.qed_test_helpers import WL, make_conf, rows, iso_dirs, mj_momenta, spread
@@ -17,9 +16,9 @@ NC = 8
 
 
 def broadcast_outdir():
-    comm = MPI.COMM_WORLD
-    outdir = tempfile.mkdtemp(prefix="runko-qed-mpi-") if comm.rank == 0 else None
-    return comm.bcast(outdir, root=0)
+    runtime = runko.default_runtime()
+    outdir = tempfile.mkdtemp(prefix="runko-qed-mpi-") if runtime.mpi_rank() == 0 else None
+    return runtime.mpi_bcast(outdir, root=0)
 
 
 def make_grid(seed=1):
@@ -39,12 +38,13 @@ def totals(simulation):
     for tile in simulation.local_tiles():
         for i, s in enumerate(("ph", "e-", "e+")):
             tt = tile.totals(s); loc[i] += tt["W"]; loc[3 + i] += tt["N"]
-    return MPI.COMM_WORLD.allreduce(loc, op=MPI.SUM)
+    runtime = runko.default_runtime()
+    return np.sum(runtime.mpi_bcast(runtime.mpi_gather(loc)), axis=0)
 
 
 def test_qed_across_tiles():
     conf, tile_grid = make_grid()
-    rank = MPI.COMM_WORLD.rank
+    rank = runko.default_runtime().mpi_rank()
     rng = np.random.default_rng(100 + rank)
     for idx in tile_grid.local_tile_indices():
         tile = runko.qed.threeD.Tile(idx, conf)
@@ -89,7 +89,7 @@ def test_qed_across_tiles():
     # ids unique per species over the whole grid
     for s in (0, 1, 2):
         ids = np.concatenate([np.asarray(tile.get_ids(s)) for tile in simulation.local_tiles()] or [np.zeros(0)])
-        all_ids = MPI.COMM_WORLD.gather(ids, root=0)
+        all_ids = runko.default_runtime().mpi_gather(ids, root=0)
         if rank == 0:
             a = np.concatenate(all_ids)
             mpi_unittest.assertEqual(len(a), len(np.unique(a)))

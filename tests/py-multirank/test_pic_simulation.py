@@ -663,8 +663,6 @@ def pic_photon_weights_communication():
     sending tile and the direction, the velocity carries the direction along.
     """
 
-    from mpi4py import MPI
-
     conf, tile_grid = make_test_grid()
     conf.q2, conf.m2 = 0, 0
     conf.particle_pusher = ["boris", "boris", "ballistic"]
@@ -700,7 +698,8 @@ def pic_photon_weights_communication():
             asserts.append(mpi_unittest.assertEqualDeferred(int(w) % 100 - 1, dirs.index(d)))
         local_w.extend(ws.tolist())
 
-    all_w = np.sort(np.concatenate(MPI.COMM_WORLD.allgather(local_w)))
+    runtime = runko.default_runtime()
+    all_w = np.sort(np.concatenate(runtime.mpi_bcast(runtime.mpi_gather(local_w))))
     expected = np.sort([weight(idx, d) for idx in itertools.product([0, 1], repeat=3) for d in dirs])
     asserts.append(mpi_unittest.assertEqualDeferred(all_w.tolist(), expected.tolist()))
     mpi_unittest.assertDeferredResults(asserts)

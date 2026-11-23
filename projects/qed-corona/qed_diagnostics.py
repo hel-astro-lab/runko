@@ -8,7 +8,6 @@ root, which writes qed_<lap>.npz and, at the end, qed_timeseries.npz."""
 
 import os
 import numpy as np
-from mpi4py import MPI
 import runko
 
 SPECIES = ("ph", "e-", "e+")
@@ -22,7 +21,7 @@ class QedDiagnostics:
 
     def __init__(self, simulation, dt_box, n_tiles_edge, outdir):
         self.sim, self.dt, self.nt, self.outdir = simulation, dt_box, n_tiles_edge, outdir
-        self.comm = MPI.COMM_WORLD
+        self.runtime = runko.default_runtime()
         self.series = {k: [] for k in ("lap", "t", "tau", "tau_min", "tau_max", "W", "E", "N", "ell_esc", "esc_W", "heat_E",
                                        "counts", "moved", "n_ev")}
         self.prev = None
@@ -71,19 +70,24 @@ class QedDiagnostics:
                 h["lep_pn"] += np.histogram(p, P_BINS)[0]
         return h
 
+    def reduce(self, v, op=np.sum):
+        """v of every rank folded on the root; None on the others"""
+        g = self.runtime.mpi_gather(v, root=0)
+        return None if g is None else op(g, axis=0)
+
     def record(self, lap, budget_span):
         """reduce this record to the root and write it; budget_span = laps since the last record.
         tau is the depth of the box, tau_min/max the depth the box would have at the least and
         the most loaded tile's pair density"""
         loc, taus, counts, moved = self.tile_sums()
-        tot = self.comm.reduce(loc, op=MPI.SUM, root=0)
-        tau_min = self.comm.reduce(taus.min() if len(taus) else np.inf, op=MPI.MIN, root=0)
-        tau_max = self.comm.reduce(taus.max() if len(taus) else -np.inf, op=MPI.MAX, root=0)
-        counts = self.comm.reduce(counts, op=MPI.SUM, root=0)
-        moved = self.comm.reduce(moved, op=MPI.SUM, root=0)
+        tot = self.reduce(loc)
+        tau_min = self.reduce(taus.min() if len(taus) else np.inf, np.min)
+        tau_max = self.reduce(taus.max() if len(taus) else -np.inf, np.max)
+        counts = self.reduce(counts)
+        moved = self.reduce(moved)
         h = self.histograms()
-        hs = {k: self.comm.reduce(v, op=MPI.SUM, root=0) for k, v in h.items()}
-        if self.comm.rank != 0:
+        hs = {k: self.reduce(v) for k, v in h.items()}
+        if self.runtime.mpi_rank() != 0:
             return
         span = max(budget_span, 1) * self.dt
         nt2 = self.nt ** 2
@@ -102,7 +106,7 @@ class QedDiagnostics:
                             lep_pw=hs["lep_pw"] / nt2, lep_pn=hs["lep_pn"], names=np.array(self.names))
 
     def save_series(self):
-        if self.comm.rank != 0:
+        if self.runtime.mpi_rank() != 0:
             return
         S = {k: np.array(v) for k, v in self.series.items()}
         S["names"] = np.array(self.names)
