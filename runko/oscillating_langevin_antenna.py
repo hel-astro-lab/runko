@@ -1,14 +1,12 @@
 # Copyright 2025 - 2026, Miro Palmu, Joonas Nättilä and the runko contributors
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-import numpy as np
-
 def sample_oscillating_langevin_antenna(size: int,
                                         characteristic_freq: float,
                                         decorrelation_rate: float,
                                         a0: complex = 1,
                                         dt: float = 1,
-                                        gen = np.random.default_rng()):
+                                        gen = None):
     """
     Generates `size` amount of complex values
     according to oscillating Langevin antenna (TenBarge et al. 2014 eq. 10).
@@ -16,6 +14,11 @@ def sample_oscillating_langevin_antenna(size: int,
     Generated values can be used to drive antenna_mode time evolution,
     by giving them to lap_coeffs argument of antenna_mode.
     """
+
+    import numpy as np
+    if gen is None:
+        gen = np.random.default_rng()
+
     if size == 0:
         return np.array([])
 
@@ -38,6 +41,7 @@ def sample_oscillating_langevin_antenna(size: int,
 
 
 if __name__ == "__main__":
+    import numpy as np
     def plot_oscillating_langevin_antenna_sample():
         import matplotlib.pyplot as plt
 

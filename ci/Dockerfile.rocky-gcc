@@ -8,10 +8,7 @@ RUN dnf -y install \
         python3-scipy \ 
         python3-scikit-build-core \ 
         python3-pybind11 && \
-    dnf clean all && \
-    source /etc/profile.d/modules.sh && \
-    module load mpi && \
-    MPI4PY_BUILD_MPICC=mpicc python3 -m pip install --no-cache-dir --no-binary=mpi4py mpi4py
+    dnf clean all
 
 
 WORKDIR /workspace

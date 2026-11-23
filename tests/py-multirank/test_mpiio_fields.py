@@ -13,16 +13,14 @@ import shutil
 import tempfile
 import numpy as np
 
-from mpi4py import MPI
-
 import runko
 from runko import actions
 from tests.mpiio_test_helpers import EMF_FIELD_NAMES, make_config, find_output_file
 from runko.mpiio_reader import read_header, read_field_snapshot
 
 
-comm = MPI.COMM_WORLD
-rank = comm.Get_rank()
+runtime = runko.default_runtime()
+rank = runtime.mpi_rank()
 
 
 def broadcast_outdir():
@@ -31,7 +29,7 @@ def broadcast_outdir():
     outdir = None
     if rank == 0:
         outdir = tempfile.mkdtemp(prefix="runko-mpiio-test-")
-    outdir = comm.bcast(outdir, root=0)
+    outdir = runtime.mpi_bcast(outdir, root=0)
     return outdir
 
 
@@ -88,7 +86,7 @@ def test_multirank_constant_fields():
         np.testing.assert_allclose(fields["jy"], 8.0, atol=1e-5)
         np.testing.assert_allclose(fields["jz"], 9.0, atol=1e-5)
 
-    comm.Barrier()
+    runtime.mpi_barrier()
     mpi_unittest.assertEqual(True, True)
 
     cleanup_outdir(outdir)
@@ -148,7 +146,7 @@ def test_multirank_tile_placement(collective=False):
                             err_msg=f"Tile ({i_tile},{j_tile},{k_tile}) {fname} mismatch: "
                                     f"expected {expected_val}")
 
-    comm.Barrier()
+    runtime.mpi_barrier()
     mpi_unittest.assertEqual(True, True)
 
     cleanup_outdir(outdir)
@@ -205,7 +203,7 @@ def test_multirank_asymmetric_mesh(collective=False):
         np.testing.assert_allclose(fields["jy"], 14.0, atol=1e-5)
         np.testing.assert_allclose(fields["jz"], 15.0, atol=1e-5)
 
-    comm.Barrier()
+    runtime.mpi_barrier()
     mpi_unittest.assertEqual(True, True)
 
     cleanup_outdir(outdir)

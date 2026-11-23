@@ -2,7 +2,6 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import time
-import numpy as np
 from dataclasses import dataclass
 from .runko_logging import runko_logger
 
@@ -90,6 +89,8 @@ class Timer:
 @dataclass
 class TimerStatistics:
     def __init__(self, data, measured_laps: int):
+        import numpy as np
+
         self.data = np.array(data)
         self.measured_laps = measured_laps
 

@@ -3,8 +3,6 @@
 
 # -*- coding: utf-8 -*- 
 
-import numpy as np
-import scipy
 from runko.hilbert import Hilbert2D, Hilbert3D
 
 
@@ -27,6 +25,7 @@ def balance_mpi(n, conf, comm_size=None, do_print=True):
 
 #load nodes to be in stripe formation (splitted in X=horizontal direction)
 def balance_mpi_1D(n, comm_size):
+    import numpy as np
     if n.rank() == 0: #only master initializes; then sends
         if comm_size == None:
             comm_size = n.size()
@@ -38,7 +37,7 @@ def balance_mpi_1D(n, comm_size):
 
 # load nodes using 2D Hilbert curve
 def balance_mpi_2D(n, comm_size=None):
-
+    import numpy as np
     if n.rank() == 0:  # only master initializes; then sends
         if comm_size == None:
             comm_size = n.size()
@@ -91,6 +90,7 @@ def balance_mpi_2D(n, comm_size=None):
 
 # load nodes using 3D Hilbert curve
 def balance_mpi_3D(n, comm_size=None, mpi_task_mode=False, do_print=True):
+    import numpy as np
 
     if n.rank() == 0:  # only master initializes; then sends
         if comm_size == None:
@@ -172,7 +172,7 @@ def balance_mpi_3D(n, comm_size=None, mpi_task_mode=False, do_print=True):
 # Leaves i_drop_rank first ranks to be empty. In addition, prints analysis of the grid state.
 # Can be used to balance the memory impact of the first node that has rank0 (which can have large arrays due to IO).
 def balance_mpi_3D_rootmem(n, i_drop_rank, comm_size=None, do_print=True):
-
+    import numpy as np
     if n.rank() == 0:  # only master initializes; then sends
         if comm_size == None:
             comm_size = n.size()
@@ -259,6 +259,7 @@ def balance_mpi_3D_rootmem(n, i_drop_rank, comm_size=None, do_print=True):
                 mask[ii] = 1
 
                 # convolve
+                import scipy
                 c = scipy.signal.convolve(val, kernel, mode='same')
                 ns = np.sum( c[:,:,:]*mask[:,:,:] ) # sum over values that are inside the rank
 

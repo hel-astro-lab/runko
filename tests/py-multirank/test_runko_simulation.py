@@ -2,7 +2,6 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import mpi_unittest as mpiut
-from mpi4py import MPI
 import runko
 
 
@@ -14,7 +13,7 @@ def single_tile_on_multiple_ranks():
     when there less tiles than ranks.
     """
 
-    mpiut.assertEqual(True, 2 <= MPI.COMM_WORLD.Get_size())
+    mpiut.assertEqual(True, 2 <= runko.default_runtime().mpi_size())
 
     config = runko.Configuration(None)
     config.tile_partitioning = "catepillar_track"

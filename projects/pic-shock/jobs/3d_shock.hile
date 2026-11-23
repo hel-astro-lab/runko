@@ -23,7 +23,7 @@ echo $PYTHONPATH
 
 #--------------------------------------------------
 # on-the-fly script to select gpu and preload GTL per task
-# LD_PRELOAD is needed because mpi4py does not link GTL; without it
+# LD_PRELOAD makes sure GTL is loaded; without it
 # GPU-aware MPI fails at MPI_Init with "GTL library is not linked".
 cat << EOF > hile_select_gpu
 #!/bin/bash

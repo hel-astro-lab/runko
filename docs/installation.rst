@@ -59,13 +59,9 @@ Backend specific requirements:
       - ROCm 6.3.4
       - MPI implementation that supports GPU-aware MPI
 
-      .. include:: installation-mpi4py.rst
-
    .. group-tab:: cpu backend
 
       - C++23 compiler with OpenMP support (e.g. g++-14)
-
-      .. include:: installation-mpi4py.rst
 
       .. include:: installation-cpu-rocthrust.rst
 
@@ -113,8 +109,6 @@ Backend specific requirements:
          which mpic++         # -> $HOME/local/openmpi/bin/mpic++
          mpic++ --version     # -> Homebrew clang version <N>
 
-      .. include:: installation-mpi4py.rst
-
       .. include:: installation-cpu-rocthrust.rst
 
    .. group-tab:: hip backend on LUMI
@@ -135,10 +129,6 @@ Backend specific requirements:
          module load lumi-CrayPath
          module load Boost/1.90.0-cpeCray-25.09
 
-      .. include:: installation-mpi4py.rst
-
-      .. hint:: On LUMI ``<mpi-aware C compiler>`` is ``cc``.
-
    .. group-tab:: hip backend on HILE
 
       Obtain the required dependencies by loading modules as shown:
@@ -156,10 +146,6 @@ Backend specific requirements:
          module load cray-python
          module load lumi-CrayPath
          module load Boost/1.90.0-cpeCray-26.03
-
-      .. include:: installation-mpi4py.rst
-
-      .. hint:: On HILE ``<mpi-aware C compiler>`` is ``cc``.
 
 
 .. _building:

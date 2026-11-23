@@ -1,7 +1,7 @@
 # Copyright 2026 - 2026, Miro Palmu, Joonas Nättilä and the runko contributors
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-from mpi4py import MPI
+from .runtime import default_runtime
 
 
 def one_tile_per_rank_cube_size(override_number_of_ranks=None):
@@ -18,7 +18,7 @@ def one_tile_per_rank_cube_size(override_number_of_ranks=None):
     if override_number_of_ranks:
         ranks = override_number_of_ranks
     else:
-        ranks = MPI.COMM_WORLD.size
+        ranks = default_runtime().mpi_size()
 
     candidate = int(round(ranks**(1/3)))
     if candidate**3 != ranks:
