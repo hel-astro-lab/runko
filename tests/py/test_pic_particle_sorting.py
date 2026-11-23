@@ -94,6 +94,13 @@ class pic_payload(unittest.TestCase):
         conf.q2, conf.m2, conf.n_payload2 = -1, 1, 2
         return runko.pic.threeD.Tile((2, 1, 3), conf)
 
+    def test_negative_payload_width_is_refused(self):
+        conf, _ = make_test_tile()
+        conf.q2, conf.m2, conf.n_payload2 = -1, 1, -1
+        tile = runko.pic.threeD.Tile((2, 1, 3), conf)
+        with self.assertRaises(RuntimeError):
+            tile.get_positions(2)  # the containers are built on first use
+
     def test_sort_keeps_the_payload_with_its_particle(self):
         tile = self.make_tile()
         rng = np.random.default_rng(1)

@@ -20,7 +20,11 @@ std::size_t
 std::size_t
   runko::species_n_payload(const toolbox::ConfigParser& config, const std::size_t i)
 {
-  return config.get<std::size_t>(std::format("n_payload{}", i)).value_or(0uz);
+  const auto n = config.get<std::ptrdiff_t>(std::format("n_payload{}", i)).value_or(0);
+  if(n < 0) {
+    throw std::runtime_error { std::format("n_payload{} = {} is negative.", i, n) };
+  }
+  return static_cast<std::size_t>(n);
 }
 
 double
