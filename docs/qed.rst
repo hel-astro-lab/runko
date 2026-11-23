@@ -146,10 +146,11 @@ the layout and the next ``interact`` lays the species out again::
 The layout survives the particle exchange and an injection through the pic path
 (``tile.inject``): both append behind the last alive slot of the container, into the slack of the
 keys there or past the layout as tail; slack that the append dropped from the end of the
-container is given back to its keys. An arrival
-in slack stays where it is: a product claims a slack slot only while its id is dead and otherwise
-goes to the tail, the key's bounds taking the arrival in. An arrival inside a key's fill reacts
-with the key at once (every step widens the bounds by the live slots of every key before any
+container is given back to its keys. An arrival in slack stays where it is and is no member
+of the key yet: a product claims a slack slot only while its id is dead and otherwise goes to
+the tail, the key's bounds taking the arrival in as its fill reaches it. An arrival inside a
+key's fill reacts with the key at once (every step widens the bounds by the members of every
+key before any
 channel runs), one in the slack once the fill reaches it, a tail one from the next sort on.
 Photons move at `c` along their momentum,
 deposit no current and carry their weight through the exchange as their payload; the particle

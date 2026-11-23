@@ -40,7 +40,7 @@ void
     const std::uint64_t rng_key)
 {
   // The only kernel of the scheme that runs over the particles; it is amortized over
-  // the sort epoch and shared with the sort the particle pusher needs anyway. The bins
+  // the sort epoch. The bins
   // are log-spaced in the kinetic energy between the extremes of the live population,
   // so every bound is equally tight in every bin, and a sparse tail costs nothing: an
   // empty bin launches no lane.
