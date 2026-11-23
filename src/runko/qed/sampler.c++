@@ -315,7 +315,8 @@ enum DStat : int { d_fired = 0, d_facc, d_wem, d_clamped, d_shnum, d_shden, d_co
 // states of a thinning lane: the counts come from these, not from contended atomics
 enum LaneState : std::uint8_t { L_WFAIL = 0, L_ACC = 1, L_VIRT = 2, L_WPASS = 3 };
 // slots of the device counters (counters_): staged records, tail slots taken per
-// species, products placed in slack and in the tail, ids consumed per species
+// species, products placed in slack and in the tail, of the latter those whose slack
+// slot an arrival held, ids consumed per species
 enum Counter : int {
   c_staged = 0,
   c_tail0,
@@ -323,6 +324,7 @@ enum Counter : int {
   c_tail2,
   c_slack,
   c_tailn,
+  c_held,
   c_id0,
   c_id1,
   c_id2,
@@ -1394,7 +1396,7 @@ void
     if(tot[s] > 0) {
       // grow once by the exact copy total; the layout follows with tail keys
       c.t->con[s]->append_dead(tot[s]);
-      c.t->pop[s]->grown(*c.t->con[s]);
+      c.t->pop[s]->resized(*c.t->con[s]);
     }
   }
   c.refresh_all();  // the containers were resized
@@ -1417,11 +1419,19 @@ void
       const auto kk =
         lay.key_of(rec.cell, lay.bin_of(e), rec.bit);  // the product's own key
       for(auto n = 0; n < rec.n_r; ++n) {
+        const auto id =
+          idb[s] +
+          static_cast<runko::prtc_id_type>(
+            sstd::atomic_fetch_add(&cnt[c_id0 + rec.species], std::int32_t { 1 }));
         const auto f =
           sstd::atomic_fetch_add(&lay.fill[kk], I { 1 });  // rank behind the key's fill
+        const auto at = lay.b[kk] + f;  // behind what the key already holds
+        const auto fits = f < lay.cap[kk];
         I slot;
-        if(f < lay.cap[kk]) {
-          slot = lay.b[kk] + f;  // behind what the key already holds, reactive at once
+        // the slot is the product's only if its id is still dead: an arrival of the
+        // particle exchange may have taken it since the layout
+        if(fits and sstd::atomic_compare_exchange(&pv.ids[at][], runko::dead_prtc_id, id)) {
+          slot = at;  // reactive at once
           // a product outside the bounds of its key must widen them, or the envelopes
           // of the channels still to come this step would no longer be upper bounds
           sstd::atomic_max(&lay.wmax[kk], rec.w);
@@ -1429,16 +1439,20 @@ void
           sstd::atomic_min(&lay.emin[kk], e);
           sstd::atomic_add(&cnt[c_slack], std::int32_t { 1 });
         } else {
+          if(fits) {
+            // the arrival stays, and the fill now counts it a member of the key: the
+            // bounds take it in as they would a product
+            sstd::atomic_max(&lay.wmax[kk], static_cast<float>(pv.w(at)));
+            sstd::atomic_max(&lay.emax[kk], static_cast<float>(pv.e(at)));
+            sstd::atomic_min(&lay.emin[kk], static_cast<float>(pv.e(at)));
+            sstd::atomic_add(&cnt[c_held], std::int32_t { 1 });
+          }
           const auto t =
             sstd::atomic_fetch_add(&cnt[c_tail0 + rec.species], std::int32_t { 1 });
           slot = tail_base[s] + static_cast<I>(t);  // inert until the next sort
           sstd::atomic_add(&cnt[c_tailn], std::int32_t { 1 });
         }
         sstd::atomic_add(&lay.prod[kk], I { 1 });  // demand, whether or not it fitted
-        const auto id =
-          idb[s] +
-          static_cast<runko::prtc_id_type>(
-            sstd::atomic_fetch_add(&cnt[c_id0 + rec.species], std::int32_t { 1 }));
         // write the copy
         for(auto q = 0uz; q < 3uz; ++q) {
           pv.pos[slot][q] = rec.pos[q];
@@ -1459,6 +1473,7 @@ void
     }
     stats.slackprod += h[c_slack];
     stats.tailprod += h[c_tailn];
+    stats.heldprod += h[c_held];
   }
 }
 
@@ -2223,9 +2238,10 @@ std::string
     }
   }
   o << std::format(
-    "   products slack / tail  : {:.2f}/{:.2f}\n",
+    "   products slack / tail  : {:.2f}/{:.2f} ({:.2f} found an arrival in slack)\n",
     stats.slackprod / ns,
-    stats.tailprod / ns);
+    stats.tailprod / ns,
+    stats.heldprod / ns);
   return o.str();
 }
 

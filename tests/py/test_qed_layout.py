@@ -1,6 +1,7 @@
 # Copyright 2026 - 2026, Miro Palmu, Joonas Nättilä and the runko contributors
 # SPDX-License-Identifier: GPL-3.0-or-later
 
+import re
 import unittest
 import numpy as np
 import runko
@@ -175,22 +176,25 @@ class qed_layout(unittest.TestCase):
         rng = np.random.default_rng(7)
         populate(tile, rng)
         tile.layout()
-        n0 = tile.totals("ph")["N"]
-        # particles appended by pic's path stale the tables; the next sort keys them
+        n0 = int(tile.totals("ph")["N"])
         tile.inject(tile.species("ph"), [runko.pic.threeD.ParticleState(pos=(1.0, 2.0, 3.0), vel=(0.5, 0, 0), wgt=1e-3)
                                           for _ in range(50)])
         self.assertEqual(tile.totals("ph")["N"], n0 + 50)
-        # pic's append writes behind the last alive slot, into the last key's slack: the tables
-        # no longer describe the container, and the next step lays it out again
-        self.assertFalse(tile.laid())
+        # pic's append writes behind the last alive slot, into the slack of the keys there and
+        # past them: the tables follow the container, and the injected LPs are no members of a key
+        self.assertTrue(tile.laid())
+        keys = np.asarray(tile.get_slot_keys("ph"))
+        tb = tile.get_tables("ph")
+        self.assertEqual(len(keys), n0 + 50)
+        np.testing.assert_array_equal(np.bincount(keys[:n0], minlength=len(tb["fill"])), tb["fill"])
         tile.layout()
         self.assertTrue(tile.laid())
         check_layout(self, tile, "ph", (0.0, 0.0, 0.0), (NC, NC, NC))
         self.assertEqual(tile.totals("ph")["N"], n0 + 50)
 
     def test_arrivals_keep_the_layout(self):
-        """photons crossing from the neighbour tile are appended as tail (key -1) without
-        invalidating the layout; the next sort keys them"""
+        """photons crossing from the neighbour tile are appended behind the last alive slot
+        without invalidating the layout; the next sort keys them"""
         import tempfile
         config = runko.Configuration(None)
         config.tile_partitioning = "catepillar_track"
@@ -244,11 +248,60 @@ class qed_layout(unittest.TestCase):
         self.assertTrue(t1.laid(), "arrivals must not invalidate the layout")
         keys = np.asarray(t1.get_slot_keys("ph"))
         self.assertEqual(len(keys), n_stay + n_cross)
-        self.assertEqual(np.count_nonzero(keys < 0), n_cross, "arrivals are tail")
+        # arrivals sit behind the stayers, in slack or tail: the fill counts the stayers alone
+        self.assertTrue(np.all(keys[:n_stay] >= 0))
+        np.testing.assert_array_equal(np.bincount(keys[:n_stay], minlength=len(t1.get_tables("ph")["fill"])),
+                                      t1.get_tables("ph")["fill"], "arrivals are no members")
         self.assertEqual(t1.totals("ph")["N"], n_stay + n_cross)
         self.assertEqual(tiles[(0, 0, 0)].totals("ph")["N"], n_stay)
         t1.layout()
         check_layout(self, t1, "ph", (NC, 0.0, 0.0), (2 * NC, NC, NC))
+
+    def test_arrival_in_slack_survives_products(self):
+        """an LP appended into a key's slack keeps its slot: a product finding it there goes to the
+        tail. Pair annihilation alone never touches a photon, so every photon must come out of the
+        steps as it went in, the injected ones too"""
+        config, tile = make_tile(qed_channels=["pairann"], qed_nbin=1, qed_n_reaction_cells=1, qed_slack=1.0,
+                                 qed_a_res=0.0, qed_nsort=1000)
+        rng = np.random.default_rng(21)
+        nph, nlep, k = 200, 1000, 5
+        x = np.exp(rng.uniform(np.log(1e-2), 0.0, nph))
+        d = rng.normal(size=(nph, 3)); d /= np.linalg.norm(d, axis=1)[:, None]
+        tile.set_particles("ph", [tuple(v) for v in x[:, None] * d], list(rng.uniform(0.3, 3.0, nph) * WL))
+        for s in ("e-", "e+"):
+            tile.set_particles(s, [tuple(v) for v in 0.3 * rng.normal(size=(nlep, 3))], [WL] * nlep)
+        tile.interact()  # lays out; its products fit the slack, so the last alive photon is in the last key
+        sp = tile.species("ph")
+
+        def photons():
+            u = np.stack([np.asarray(a) for a in tile.get_velocities(sp)], 1)
+            return dict(zip(np.asarray(tile.get_ids(sp)), zip(map(tuple, u), np.asarray(tile.get_weights(sp)))))
+
+        before = photons()
+        tile.inject(sp, [runko.pic.threeD.ParticleState(pos=(1.0, 2.0, 3.0), vel=(0.5, 0, 0), wgt=7e-3)
+                         for _ in range(k)])
+        self.assertTrue(tile.laid(), "an injection keeps the layout")
+        state = photons()
+        new = sorted(set(state) - set(before))
+        self.assertEqual(len(new), k)
+        # the injected LPs took the last key's slack, and the container shrank to them
+        keys = np.asarray(tile.get_slot_keys("ph"))
+        np.testing.assert_array_equal(keys[-k:], 1)
+        tb = tile.get_tables("ph")
+        self.assertEqual(tb["cap"][1], np.count_nonzero(keys == 1))
+        self.assertEqual(tb["fill"][1] + k, tb["cap"][1])
+        held = 0.0
+        for _ in range(3):
+            tile.interact()
+            held += float(re.search(r"\(([0-9.]+) found an arrival", tile.report()).group(1))
+            ids = np.asarray(tile.get_ids(sp))
+            self.assertEqual(len(ids), len(set(ids)), "an id twice")
+            after = photons()
+            # every photon, the injected ones too, as it was
+            self.assertFalse(set(state) - set(after), "photons lost")
+            self.assertEqual({i: after[i] for i in state}, state)
+            state = after
+        self.assertGreater(held, 0.0, "no product found an arrival in slack")
 
     def test_pic_sort_on_a_qed_tile(self):
         """a pic sort reorders a laid-out container and drops its layout; the next step lays it

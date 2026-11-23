@@ -8,7 +8,9 @@
 // key are the tail. The key is the reaction cell, the energy bin and, for photons, the
 // sub-range bit that makes photon-photon pair production a cross-range channel. The
 // container itself is the layout: slack slots are dead ids, products written into them
-// become alive.
+// become alive. The container's append (particle exchange, injection) fills the dead
+// slots behind its last alive one, so an arrival may sit in a key's slack: a product
+// claims a slack slot only while its id is still dead.
 
 #include "runko/mdgrid_common.h"
 #include "runko/pic/particle.h"
@@ -106,7 +108,8 @@ class [[nodiscard]] Pop {
   std::array<float, 3> mins_ {}, maxs_ {};  // tile extent
   double llo_ { 0.0 }, dl_ { 1.0 };         // log bin edges: lowest edge and bin width
   int nkeys_ { 0 };                         // keys of the layout
-  bool laid_ { false };  // tables built; valid while the container keeps their size
+  bool laid_ { false };                     // tables built
+  std::uint64_t reorders_ { 0 };  // the container's reorder count they were built at
 
   // ---- per slot: key of every slot, -1 in the tail
   thrust::device_vector<std::int32_t> skey_;
@@ -122,11 +125,12 @@ class [[nodiscard]] Pop {
 public:
   Pop(bool keyed, double mass);
 
-  /// whether the tables describe this container: built, the container still placed (a
-  /// sort or an injection drops the layout) and at the size they were built or grown
-  /// for
+  /// whether the tables describe this container: built, not reordered since (a sort
+  /// drops the layout) and at the size they were built or resized for
   [[nodiscard]] bool laid(const pic::ParticleContainer& con) const
-  { return laid_ and con.placed() and skey_.size() == con.size(); }
+  {
+    return laid_ and con.reorder_count() == reorders_ and skey_.size() == con.size();
+  }
   void invalidate() { laid_ = false; }
 
   /// group the live LPs by key, reserve slack behind each group, build the tables
@@ -140,9 +144,11 @@ public:
   /// the tables as the kernels read them (valid while laid)
   [[nodiscard]] LayoutView view();
 
-  /// the container grew at its tail since the tables were built or last grown (products
-  /// placed, arrivals appended): the new slots are tail (-1)
-  void grown(const pic::ParticleContainer& con);
+  /// follow the container's size since the tables were built or last resized: slots it
+  /// grew by (products placed, arrivals appended) are tail (-1); slots it shrank by (an
+  /// append reuses the dead slots behind the last alive one, and drops the rest) were
+  /// dead, and the keys that held them are clipped to the container
+  void resized(const pic::ParticleContainer& con);
 
   /// widen the bounds of every key by every live LP it holds, on the caller's queue
   /// (the caller waits)

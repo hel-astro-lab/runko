@@ -240,7 +240,7 @@ void
   this->vel_ = std::move(vel_new);
   this->ids_ = std::move(ids_new);
   this->wgt_ = std::move(wgt_new);
-  this->placed_ = true;
+  ++this->reorder_count_;
 }
 
 void
@@ -553,7 +553,6 @@ ParticleContainer::ParticleContainer(const ParticleContainer& other)
   this->charge_               = other.charge_;
   this->mass_                 = other.mass_;
   this->weight_               = other.weight_;
-  this->placed_ = other.placed_;
   this->reorder_count_ = other.reorder_count_;
 }
 
@@ -569,7 +568,6 @@ ParticleContainer&
   this->charge_               = other.charge_;
   this->mass_                 = other.mass_;
   this->weight_               = other.weight_;
-  this->placed_ = other.placed_;
   this->reorder_count_ = other.reorder_count_;
 
   return *this;

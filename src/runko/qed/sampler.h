@@ -26,10 +26,11 @@
 //             kernel.
 //   one-body  one lane per slot evaluates the rate of its own LP and fires on it.
 // Products are staged and then placed in the slack of their own key, reactive at once,
-// or in the tail, inert until the next sort; parents are updated in place in the
-// probabilistic realization, with per-cell systematic rounding of every decision. The
-// copy number of the resolution function is realized exactly in both directions
-// (splitting and Russian roulette).
+// or in the tail, inert until the next sort (also when an arrival of the particle
+// exchange holds the slack slot: it stays, and the key's bounds take it in); parents
+// are updated in place in the probabilistic realization, with per-cell systematic
+// rounding of every decision. The copy number of the resolution function is realized
+// exactly in both directions (splitting and Russian roulette).
 //
 // Accumulation. f = min(w_i/w_j, kappa (gamma-1)/dgamma_max) events of a heavy soft
 // photon on a light lepton are merged into one: the pair reacts with P_ij/f, the photon
@@ -117,6 +118,7 @@ struct [[nodiscard]] Stats {
   double cell_lanes { 0 };  // (cell, bin, bin) lanes of the envelope kernels
   std::array<ChannelStats, N_CHANNELS> ch {};  // per channel
   double slackprod { 0 }, tailprod { 0 };      // products placed in slack / in the tail
+  double heldprod { 0 };  // of the tail ones, those whose slack slot held an arrival
   std::array<double, 3> slots {}, live {};     // per species: slots, live LPs
 };
 

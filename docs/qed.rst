@@ -138,10 +138,14 @@ the layout and the next ``interact`` lays the species out again::
     x.grid_push_half_b(); comm B
     x.grid_push_e(); x.grid_deposit_antenna_current(); x.grid_add_current(); comm E
 
-A laid-out container is *placed*: the particle exchange appends the arrivals behind its last slot
-rather than into the slack of its last key, and the layout keys them as tail, inert until the
-next sort, so the layout survives the exchange. An injection through the pic path
-(``tile.inject``) drops the layout too. Photons move at `c` along their momentum,
+The layout survives the particle exchange and an injection through the pic path
+(``tile.inject``): both append behind the last alive slot of the container, into the slack of the
+keys there or past the layout as tail, and the container grows or shrinks to fit. An arrival
+in slack stays where it is: a product claims a slack slot only while its id is dead and otherwise
+goes to the tail, the key's bounds taking the arrival in. An arrival inside a key's fill reacts
+with the key at once (every step widens the bounds by the live slots of every key before any
+channel runs), one in the slack once the fill reaches it, a tail one from the next sort on.
+Photons move at `c` along their momentum,
 deposit no current and carry their weight through the exchange; the particle snapshots carry
 it as a 13th field ``wgt`` and the spectra are weighted by it. With `n_t` tiles per edge the
 weight unit is that of the tile, so the depth of the box is `\sum w / n_t^2` and

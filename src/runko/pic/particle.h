@@ -92,10 +92,6 @@ private:
   double charge_;
   double mass_;
   double weight_;
-  /// The slots are a layout built by place(): append grows the container at its tail
-  /// instead of reusing the dead slots behind the last alive one, so the padding of the
-  /// layout survives arrivals. sort, set and add_particles drop the layout.
-  bool placed_ { false };
   std::uint64_t reorder_count_ { 0 };
 
   /// Reusable buffer for particle trackers.
@@ -156,7 +152,8 @@ public:
   /// slots (it may grow or shrink). In place, one component at a time.
   void reorder(const thrust::device_vector<runko::index_t>& src);
 
-  /// Number of reorders so far: whoever caches slot indices compares it.
+  /// Number of reorders so far (sort, reorder, place, set): whoever caches slot indices
+  /// compares it.
   [[nodiscard]] std::uint64_t reorder_count() const { return reorder_count_; }
 
   /// Append n dead-particle slots at the end of the container.
@@ -166,9 +163,6 @@ public:
   /// the new slots are left uninitialized, since dead particles are identified
   /// by their id alone.
   void append_dead(std::size_t n);
-
-  /// Whether the slots are still the layout of the last place().
-  [[nodiscard]] bool placed() const { return placed_; }
 
   /// Returns the number of particles dead or alive.
   std::size_t size() const;
@@ -360,10 +354,6 @@ template<std::ranges::forward_range R>
                                 .wgt = static_cast<value_type>(state.wgt) };
     });
 
-  // an injection is no part of a layout: the particles take the slots after the last
-  // alive one, as in any container
-  this->placed_ = false;
-
   const auto new_states_h = thrust::host_vector<value_state_type>(
     casted_new_particles.begin(),
     casted_new_particles.end());
@@ -403,7 +393,7 @@ template<std::ranges::forward_range R>
     // because there is no charge and mass specified.
     throw std::runtime_error { "Trying to set ParticleContainer from zero spans." };
   }
-  this->placed_ = false;
+  ++this->reorder_count_;  // every slot is replaced
 
   /* Due to limitation of tyvi::when_all taking only statically known
      amount of tyvi::mdgrid_work, we have to wait for the copies in batches.
@@ -570,8 +560,7 @@ inline void
 
   if(rn::empty(spans)) { return; }
 
-  // 1. find last alive particle P (a placed container: its end, so that its layout
-  //    keeps every slot)
+  // 1. find last alive particle P
   // 2. resizes containers to fit appended particles (with tyvi::mdsegments this should
   // be cheap)
   // 3. copy appended particles to dead particles after P
@@ -596,9 +585,7 @@ inline void
     });
 
   const auto dead_particles_at_end = rn::distance(rev_particle_ordinals_begin, Piter);
-  const auto Pnum                  = this->placed_
-                                       ? this->size()
-                                       : static_cast<std::size_t>(this->ssize() - dead_particles_at_end);
+  const auto Pnum = static_cast<std::size_t>(this->ssize() - dead_particles_at_end);
 
   const auto span_sizes = spans | rv::transform(rn::size);
 
@@ -691,8 +678,6 @@ inline void
 inline void
   ParticleContainer::sort(pic::score_function<value_type> auto&& f)
 {
-  this->placed_ = false;  // the permutation breaks any layout
-
   namespace rn                       = std::ranges;
   const auto particle_ordinals_begin = thrust::counting_iterator<runko::index_t>(0uz);
   const auto particle_ordinals_end   = rn::next(particle_ordinals_begin, this->ssize());

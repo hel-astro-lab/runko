@@ -326,9 +326,9 @@ tile_state&
   auto& st =
     component<tile_state>(sim, id, "qed state (build it with runko.qed.threeD.Tile)");
   auto& pc = containers(sim, id);
-  // the particle exchange appends arrivals behind the layout: tail slots, inert until
-  // the next layout
-  for(auto s = 0uz; s < 3uz; ++s) { st.pops[s].grown(pc.at(st.sp[s])); }
+  // the particle exchange appends arrivals behind the last alive slot, which grows or
+  // shrinks the container: the tables follow its size
+  for(auto s = 0uz; s < 3uz; ++s) { st.pops[s].resized(pc.at(st.sp[s])); }
   return st;
 }
 

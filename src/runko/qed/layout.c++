@@ -222,7 +222,8 @@ void
   wmax_.assign(nk, 0.0f);
   emin_.assign(nk, inf);
   emax_.assign(nk, 0.0f);
-  laid_ = true;             // the tables are valid for the current container
+  laid_     = true;  // the tables are valid for the current container
+  reorders_ = con.reorder_count();
   this->touch_all(con, w);  // behind the key writers on the same queue
   w.wait();
 }
@@ -282,12 +283,28 @@ LayoutView
 }
 
 void
-  Pop::grown(const pic::ParticleContainer& con)
+  Pop::resized(const pic::ParticleContainer& con)
 {
-  // a placed container only grows at its tail, so the tables still describe its head
-  if(laid_ and con.placed() and con.size() > skey_.size()) {
-    skey_.resize(con.size(), std::int32_t { -1 });
+  // a container that was not reordered changed only at its end, so the tables still
+  // describe its head
+  if(not laid_ or con.reorder_count() != reorders_ or con.size() == skey_.size()) {
+    return;
   }
+  const auto n = static_cast<I>(con.size());
+  if(con.size() < skey_.size()) {
+    // the dropped slots were dead: no key may reach past the container
+    const auto b_p = thrust::raw_pointer_cast(b_.data());
+    const auto w   = tyvi::mdgrid_work {};
+    thrust::transform(
+      w.on_this(),
+      cap_.begin(),
+      cap_.end(),
+      thrust::counting_iterator<I>(0),
+      cap_.begin(),
+      [=](const I c, const I k) { return n > b_p[k] ? sstd::min(c, n - b_p[k]) : I { 0 }; });
+    w.wait();
+  }
+  skey_.resize(con.size(), std::int32_t { -1 });
 }
 
 Pop::Totals

@@ -7,6 +7,7 @@
 #include "thrust/iterator/counting_iterator.h"
 #include "thrust/transform.h"
 
+#include <array>
 #include <boost/ut.hpp>
 #include <cstddef>
 #include <vector>
@@ -71,7 +72,7 @@ void
 
 [[maybe_unused]]
 const suite<"particle container"> _ = [] {
-  "reorder permutes, grows with dead gaps and shrinks"_test = [] {
+  "reorder permutes, grows with dead gaps and shrinks; append and set"_test = [] {
     for(const auto mass: { 1.0, 0.0 }) {  // a massless species carries weights
       auto pc = ParticleContainer({ .N = 0, .charge = 0, .mass = mass });
       auto p  = std::vector<runko::ParticleState<double>> {};
@@ -97,6 +98,18 @@ const suite<"particle container"> _ = [] {
       expect_slots(pc, { 0, 1, 3, -1 }, weighted);
       expect(that % pc.number_alive() == 3uz);
       expect(that % pc.reorder_count() == n0 + 3);
+
+      // append fills the dead slots behind the last alive one, and the container ends there
+      pc.add_particles(std::vector { p[2], p[2] });
+      expect_slots(pc, { 0, 1, 3, 2, 2 }, weighted);
+      expect(that % pc.reorder_count() == n0 + 3);
+
+      // set replaces every slot: a reorder
+      const auto other = ParticleContainer(pc);
+      pc.set(std::array { ParticleContainer::specific_span { .span      = { 1, 3 },
+                                                             .container = &other } });
+      expect_slots(pc, { 1, 3 }, weighted);
+      expect(that % pc.reorder_count() == n0 + 4);
     }
   };
 };
