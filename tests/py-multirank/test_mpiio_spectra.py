@@ -13,8 +13,6 @@ import shutil
 import tempfile
 import numpy as np
 
-from mpi4py import MPI
-
 import runko
 from runko import actions
 from runko.mpiio_spectra_reader import (
@@ -22,8 +20,8 @@ from runko.mpiio_spectra_reader import (
 )
 
 
-comm = MPI.COMM_WORLD
-rank = comm.Get_rank()
+runtime = runko.default_runtime()
+rank = runtime.mpi_rank()
 
 
 def broadcast_outdir():
@@ -31,7 +29,7 @@ def broadcast_outdir():
     outdir = None
     if rank == 0:
         outdir = tempfile.mkdtemp(prefix="runko-mpiio-spectra-test-")
-    outdir = comm.bcast(outdir, root=0)
+    outdir = runtime.mpi_bcast(outdir, root=0)
     return outdir
 
 
@@ -122,7 +120,7 @@ def test_multirank_constant_velocity():
         mask[expected_bin] = False
         np.testing.assert_array_equal(total[mask], 0)
 
-    comm.Barrier()
+    runtime.mpi_barrier()
     mpi_unittest.assertEqual(True, True)
 
     cleanup_outdir(outdir)
@@ -197,7 +195,7 @@ def test_multirank_tile_placement():
         assert tile1[bin_u50] > 0, f"Tile 1 should have particles at u=50"
         assert tile1[bin_u1] == 0, f"Tile 1 should NOT have particles at u=1"
 
-    comm.Barrier()
+    runtime.mpi_barrier()
     mpi_unittest.assertEqual(True, True)
 
     cleanup_outdir(outdir)
@@ -261,7 +259,7 @@ def test_multirank_count_conservation():
         assert abs(bx_total - total_particles) <= 1, \
             f"Expected {total_particles}, got {bx_total}"
 
-    comm.Barrier()
+    runtime.mpi_barrier()
     mpi_unittest.assertEqual(True, True)
 
     cleanup_outdir(outdir)

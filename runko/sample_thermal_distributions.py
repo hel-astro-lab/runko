@@ -1,12 +1,9 @@
 # Copyright 2025 - 2026, Miro Palmu, Joonas Nättilä and the runko contributors
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-import numpy as np
-from scipy.special import kn
-
 def sample_juttner_synge_sobol_method(size: int,
                                       theta: float,
-                                      gen = np.random.default_rng()):
+                                      gen = None):
     """
     Generates `size` amount of floats distributed
     according to Juttner-Synge (Zenitani 2015 eq. 2),
@@ -15,6 +12,11 @@ def sample_juttner_synge_sobol_method(size: int,
     Random numbers are generated with the given generator.
     """
 
+    import numpy as np
+    if gen is None:
+        gen = np.random.default_rng()
+
+    from scipy.special import kn
     eff = kn(2, 1 / theta) / (2 * theta**2)
     gen_coeff = 1.001 # Maybe could be adjusted for minor performance increase?
 
@@ -40,7 +42,7 @@ def sample_juttner_synge_sobol_method(size: int,
 
 def sample_juttner_synge_rejection_method(size: int,
                                           theta: float,
-                                          gen = np.random.default_rng()):
+                                          gen = None):
     """
     Generates `size` amount of floats distributed
     according to Juttner-Synge (Zenitani 2015 eq. 2),
@@ -51,6 +53,10 @@ def sample_juttner_synge_rejection_method(size: int,
 
     Random numbers are generated with the given generator.
     """
+
+    import numpy as np
+    if gen is None:
+        gen = np.random.default_rng()
 
     candidates = []
     total_num_of_candidates = 0
@@ -70,7 +76,7 @@ def sample_juttner_synge_rejection_method(size: int,
 
 def sample_maxwellian_box_muller_method(size: int,
                                         theta: float,
-                                        gen = np.random.default_rng()):
+                                        gen = None):
     """
     Generates `size` amount of speeds |u| distributed
     according to the Maxwell-Boltzmann distribution,
@@ -79,6 +85,10 @@ def sample_maxwellian_box_muller_method(size: int,
 
     Random numbers are generated with the given generator.
     """
+
+    import numpy as np
+    if gen is None:
+        gen = np.random.default_rng()
 
     x1, x2, x3, x4 = (gen.random(size=size) for _ in range(4))
     r12 = np.sqrt(-2.0 * np.log(x1))
@@ -92,7 +102,7 @@ def sample_boosted_juttner_synge(size: int,
                                  beta: None | float = None,
                                  Gamma: None | float = None,
                                  direction: str = '-x',
-                                 gen = np.random.default_rng()):
+                                 gen = None):
     """
     Generates `size` amount of 3D spatial components of 4-velocities
     according to boosted Juttner-Synge distribution (Zenitani 2015),
@@ -113,6 +123,10 @@ def sample_boosted_juttner_synge(size: int,
 
     Returns the components as a three 1D numpy arrays: (ux, uy, uz)
     """
+
+    import numpy as np
+    if gen is None:
+        gen = np.random.default_rng()
 
     beta_given, Gamma_given = beta != None, Gamma != None
 
@@ -165,13 +179,13 @@ if __name__ == "__main__":
                                         number_of_samples: int = int(1e6),
                                         Gammas = [1, 1.1, 10]):
         """
-        Plots FIG. 3 from Zenitani 2015 using batch sampling
-        and old sampling from pytools.
+        Plots FIG. 3 from Zenitani 2015 using batch sampling.
         """
         import time
+        import numpy as np
+        from scipy.special import kn
         import matplotlib.pyplot as plt
         plt.rcParams['text.usetex'] = True
-        from pytools import sample_boosted_maxwellian
 
 
         def expected_distribution(u, T: float, Gamma: float):
@@ -188,41 +202,25 @@ if __name__ == "__main__":
 
         u_arr = np.linspace(-20, 50, res)
 
-        fig, (ax, ax_pytools) = plt.subplots(2, 1, layout="constrained")
+        fig, ax = plt.subplots(1, 1, layout="constrained")
         fig.suptitle(f"$\\theta = \\frac{{kT}}{{mc^2}} = {theta}, N = {number_of_samples}$")
 
         for G in Gammas:
             expected = expected_distribution(u_arr, theta, G)
             ax.plot(u_arr, expected, label=f"$\\Gamma={G}$")
-            ax_pytools.plot(u_arr, expected, label=f"$\\Gamma={G}$")
 
             begin = time.time()
             ux, _, _, = sample_boosted_juttner_synge(number_of_samples, theta, Gamma=G)
             end = time.time()
-            print(f"new: {end - begin:.3}s")
-
-            begin = time.time()
-            ux_pytools = [sample_boosted_maxwellian(theta, G, direction=1, dims=3)[0]
-                          for _ in range(number_of_samples)]
-            end = time.time()
-            print(f"pytools: {end - begin:.3}s")
+            print(f"time: {end - begin:.3}s")
 
             ax.hist(ux, bins=100, density=True, alpha=0.2)
-            ax_pytools.hist(ux_pytools, bins=100, density=True, alpha=0.2)
 
         ax.legend()
         ax.set(xlabel="$u'_x$",
                yscale="log",
                ylim=(1e-5, 1),
-               xlim=(-20, 50),
-               title="new")
-
-        ax_pytools.legend()
-        ax_pytools.set(xlabel="$u'_x$",
-                       yscale="log",
-                       ylim=(1e-5, 1),
-                       xlim=(-20, 50),
-                       title="pytools")
+               xlim=(-20, 50))
         plt.show()
 
     plot_zenitani_2015_test_problem()

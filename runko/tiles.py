@@ -1,7 +1,6 @@
 # Copyright 2025 - 2026, Miro Palmu, Joonas Nättilä and the runko contributors
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-import numpy as np
 import itertools
 import runko_cpp_bindings.actions as actions
 import runko_cpp_bindings.qed as qed
@@ -261,6 +260,7 @@ def make_independent_tile(idx, conf) -> ProxyTile:
     Rerturns a ProxyTile tile corresponding to the tile.
     """
 
+    import numpy as np
     idx_arr = np.array(idx)
     check0 = np.zeros(len(idx)) <= idx_arr
     check1 = np.array(idx) < conf.n_tiles

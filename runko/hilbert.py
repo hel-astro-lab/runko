@@ -11,8 +11,6 @@ Based on Chris Hamilton, Technical Report CS-2006-07,
 Faculty of Computer Science, Dalhousie University, Halifax.
 """
 
-import numpy as np
-
 # ---- bit-manipulation primitives -------------------------------------------
 
 def bit(i, k):
@@ -68,6 +66,8 @@ def tedinv(e, d, b, dim):
 
 def _build_luts(dim):
     """Build numpy lookup tables for all helper functions at a given dimension."""
+    import numpy as np
+
     n = 1 << dim  # 4 for 2D, 8 for 3D
 
     gcinv_lut     = np.array([gcinv(i)          for i in range(n)], dtype=np.int64)
@@ -87,8 +87,16 @@ def _build_luts(dim):
 
     return gcinv_lut, entry_lut, direction_lut, rotl_lut, ted_lut
 
-_gcinv_3d, _entry_3d, _direction_3d, _rotl_3d, _ted_3d = _build_luts(3)
-_gcinv_2d, _entry_2d, _direction_2d, _rotl_2d, _ted_2d = _build_luts(2)
+_gcinv_3d, _entry_3d, _direction_3d, _rotl_3d, _ted_3d = (None,) * 5
+_gcinv_2d, _entry_2d, _direction_2d, _rotl_2d, _ted_2d = (None,) * 5
+
+def _caching_build_luts():
+    global _gcinv_3d, _entry_3d, _direction_3d, _rotl_3d, _ted_3d
+    global _gcinv_2d, _entry_2d, _direction_2d, _rotl_2d, _ted_2d
+
+    if _gcinv_3d is None:
+        _gcinv_3d, _entry_3d, _direction_3d, _rotl_3d, _ted_3d = _build_luts(3)
+        _gcinv_2d, _entry_2d, _direction_2d, _rotl_2d, _ted_2d = _build_luts(2)
 
 
 # ---- LUT-based forward Hilbert index (2D) ----------------------------------
@@ -98,10 +106,13 @@ def _hilbertindex_2d(m, x, y, einit, dinit):
 
     Returns (h, e, d) as arrays.
     """
+    import numpy as np
     N = x.shape[0]
     h = np.zeros(N, dtype=np.int64)
     e = np.full(N, einit, dtype=np.int64) if np.isscalar(einit) else einit.copy()
     d = np.full(N, dinit, dtype=np.int64) if np.isscalar(dinit) else dinit.copy()
+
+    _caching_build_luts()
 
     for i in range(m - 1, -1, -1):
         l = ((y >> i) & 1) * 2 + ((x >> i) & 1)
@@ -118,10 +129,13 @@ def _hilbertindex_2d(m, x, y, einit, dinit):
 
 def _hilbertindex_3d(m, x, y, z, einit, dinit):
     """3D cubic Hilbert index. x, y, z are 1-D int64 arrays."""
+    import numpy as np
     N = x.shape[0]
     h = np.zeros(N, dtype=np.int64)
     e = np.full(N, einit, dtype=np.int64) if np.isscalar(einit) else einit.copy()
     d = np.full(N, dinit, dtype=np.int64) if np.isscalar(dinit) else dinit.copy()
+
+    _caching_build_luts()
 
     for i in range(m - 1, -1, -1):
         l = ((z >> i) & 1) * 4 + ((y >> i) & 1) * 2 + ((x >> i) & 1)
@@ -141,6 +155,8 @@ def _generalhilbertindex_2d(m0, m1, x, y):
 
     Returns (h, einit, dinit) as arrays.
     """
+    import numpy as np
+
     dinit = 0
     einit = 0
 
@@ -180,6 +196,7 @@ def _generalhilbertindex_2d(m0, m1, x, y):
 
 def _generalhilbertindex_3d(m0, m1, m2, x, y, z):
     """General 3D Hilbert index. x, y, z are 1-D int64 arrays."""
+    import numpy as np
     mi = [m0, m1, m2]
 
     if mi[0] >= mi[1] and mi[0] >= mi[2]:
@@ -290,6 +307,7 @@ def _generalhilbertindexinv_2d(m0, m1, h):
 
 def _generalhilbertindexinv_3d(m0, m1, m2, h):
     """Inverse general 3D Hilbert index. Returns (x, y, z)."""
+    import numpy as np
     mi = [m0, m1, m2]
 
     if (mi[0] >= mi[1]) and (mi[0] >= mi[2]):
@@ -351,6 +369,7 @@ class Hilbert2D:
         self.m1 = int(m1)
 
     def hindex(self, x, y):
+        import numpy as np
         xa = np.array([x], dtype=np.int64)
         ya = np.array([y], dtype=np.int64)
         h, _, _ = _generalhilbertindex_2d(self.m0, self.m1, xa, ya)
@@ -369,6 +388,7 @@ class Hilbert3D:
         self.m2 = int(m2)
 
     def hindex(self, x, y, z):
+        import numpy as np
         xa = np.array([x], dtype=np.int64)
         ya = np.array([y], dtype=np.int64)
         za = np.array([z], dtype=np.int64)

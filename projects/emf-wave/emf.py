@@ -7,7 +7,6 @@ Simple example of using runko module to simulate E and B fields in vacuum.
 
 import runko
 import numpy as np
-from mpi4py import MPI
 import matplotlib.pyplot as plt
 
 if __name__ == "__main__":

@@ -2,15 +2,14 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import itertools
-import pickle
 import logging
 import math
 import pathlib
-import numpy as np
 from .simulation import Simulation
 from .runko_logging import runko_logger, on_main_rank
 from .balance_grid import balance_mpi, load_catepillar_track_mpi
 from .auto_outdir import resolve_outdir
+from .runtime import default_runtime
 
 
 class TileGrid:
@@ -45,9 +44,9 @@ class TileGrid:
 
         self._local_indices = []
 
-        from mpi4py import MPI
-        self._my_rank = MPI.COMM_WORLD.Get_rank()
-        self._world_size = MPI.COMM_WORLD.Get_size()
+        runtime = default_runtime()
+        self._my_rank = runtime.mpi_rank()
+        self._world_size = runtime.mpi_size()
 
         total_n_tiles = self._Nx * self._Ny * self._Nz
 
@@ -82,6 +81,7 @@ class TileGrid:
             if type(ctl) != int or ctl <= 0:
                 raise RuntimeError(f"'catepillar_track_length' is required to be positive int and not: {ctl}")
 
+            import numpy as np
             grid = np.zeros((ctl, self._Ny, self._Nz))
             val = 0.0
             for i in range(ctl):
@@ -169,6 +169,7 @@ class TileGrid:
         pathlib.Path(io_config["outdir"]).mkdir(parents=True, exist_ok=True)
 
         if on_main_rank():
+            import pickle
             pickled_conf_path = pathlib.Path(f"{io_config['outdir']}/config.pkl")
             config.ranks = self._world_size
             with open(pickled_conf_path, "wb") as f:

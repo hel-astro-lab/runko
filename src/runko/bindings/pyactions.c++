@@ -24,12 +24,18 @@
 
 #include <array>
 #include <chrono>
+#include <cstddef>
 #include <exception>
+#include <limits>
+#include <mpi.h>
 #include <pika/execution.hpp>
 #include <pika/init.hpp>
 #include <pika/thread.hpp>
 #include <print>
 #include <ranges>
+#include <stdexcept>
+#include <string>
+#include <string_view>
 #include <thread>
 #include <tuple>
 #include <vector>
@@ -128,7 +134,7 @@ void
   for(const auto &tile: tiles) {
     const auto other_id =
       tile.attr("tile_id").cast<runko::simulation_context::tile_id_type>();
-    auto other_sim_py = tile.attr("sim_context");
+    auto other_sim_py     = tile.attr("sim_context");
     const auto &other_sim = other_sim_py.cast<const runko::simulation_context &>();
 
     using index_type   = runko::cartesian_index<3>;
@@ -376,6 +382,115 @@ auto
   }
 }
 
+// Minimal MPI functionality exposed as methods of RuntimeInstance in Python.
+// The RuntimeInstance guarantees that MPI is initialized.
+// All operations are done in MPI_COMM_WORLD.
+
+void
+  check_mpi(const int ret, const std::string_view what)
+{
+  if(ret != MPI_SUCCESS) {
+    throw std::runtime_error { std::string { what } + " failed!" };
+  }
+}
+
+int
+  mpi_rank()
+{
+  int rank {};
+  check_mpi(MPI_Comm_rank(MPI_COMM_WORLD, &rank), "MPI_Comm_rank");
+  return rank;
+}
+
+int
+  mpi_size()
+{
+  int size {};
+  check_mpi(MPI_Comm_size(MPI_COMM_WORLD, &size), "MPI_Comm_size");
+  return size;
+}
+
+void
+  check_root(const int root)
+{
+  const auto size = mpi_size();
+  if(root < 0 or root >= size) {
+    throw std::invalid_argument { "MPI root rank " + std::to_string(root) +
+                                  " is out of range [0, " + std::to_string(size) +
+                                  ")." };
+  }
+}
+
+int
+  checked_count(const std::size_t n)
+{
+  if(n > static_cast<std::size_t>(std::numeric_limits<int>::max())) {
+    throw std::length_error { "Too many bytes for a single MPI message." };
+  }
+  return static_cast<int>(n);
+}
+
+/// Broadcast bytes from root to every rank. `data` is only significant on root.
+std::string
+  mpi_bcast_bytes(const std::string &data, const int root)
+{
+  check_root(root);
+  const auto is_root = mpi_rank() == root;
+
+  auto n = is_root ? checked_count(data.size()) : 0;
+  check_mpi(MPI_Bcast(&n, 1, MPI_INT, root, MPI_COMM_WORLD), "MPI_Bcast");
+
+  auto buffer = is_root ? data : std::string(static_cast<std::size_t>(n), '\0');
+  check_mpi(MPI_Bcast(buffer.data(), n, MPI_BYTE, root, MPI_COMM_WORLD), "MPI_Bcast");
+  return buffer;
+}
+
+/// Gather bytes from every rank to root.
+/// Returns the bytes ordered by rank on root and empty vector on other ranks.
+std::vector<std::string>
+  mpi_gather_bytes(const std::string &data, const int root)
+{
+  check_root(root);
+  const auto is_root = mpi_rank() == root;
+
+  const auto n = checked_count(data.size());
+  auto counts  = std::vector<int>(is_root ? static_cast<std::size_t>(mpi_size()) : 0uz);
+  check_mpi(
+    MPI_Gather(&n, 1, MPI_INT, counts.data(), 1, MPI_INT, root, MPI_COMM_WORLD),
+    "MPI_Gather");
+
+  auto displs = std::vector<int>(counts.size());
+  auto total  = std::size_t { 0 };
+  for(auto i = 0uz; i < counts.size(); ++i) {
+    displs[i] = checked_count(total);
+    total += static_cast<std::size_t>(counts[i]);
+  }
+  if(is_root) { checked_count(total); }
+
+  auto recv_buffer = std::string(total, '\0');
+  check_mpi(
+    MPI_Gatherv(
+      data.data(),
+      n,
+      MPI_BYTE,
+      recv_buffer.data(),
+      counts.data(),
+      displs.data(),
+      MPI_BYTE,
+      root,
+      MPI_COMM_WORLD),
+    "MPI_Gatherv");
+
+  auto result = std::vector<std::string> {};
+  result.reserve(counts.size());
+  for(auto i = 0uz; i < counts.size(); ++i) {
+    result.push_back(recv_buffer.substr(
+      static_cast<std::size_t>(displs[i]),
+      static_cast<std::size_t>(counts[i])));
+  }
+  return result;
+}
+
 }  // namespace
 
 
@@ -449,7 +564,77 @@ void
 
   m_sub.def("empty_context_eval", &::empty_context_eval);
 
-  py::class_<runko::RuntimeInstance>(m_sub, "RuntimeInstance").def(py::init<>());
+  py::class_<runko::RuntimeInstance>(m_sub, "RuntimeInstance", R"(
+Handle to the runko runtime.
+
+MPI is initialized (if not already) when the first runtime instance is created
+and finalized (if runko initialized it) when the last one is destroyed.
+Importing runko does not initialize MPI.
+
+The ``mpi_*`` methods provide the minimal MPI functionality needed by runko.
+All of them operate in ``MPI_COMM_WORLD`` and the collective ones
+have to be called on every rank.
+)")
+    .def(py::init<>())
+    .def(
+      "mpi_rank",
+      [](const runko::RuntimeInstance &) { return mpi_rank(); },
+      "Rank of this process.")
+    .def(
+      "mpi_size",
+      [](const runko::RuntimeInstance &) { return mpi_size(); },
+      "Number of MPI processes.")
+    .def(
+      "mpi_barrier",
+      [](const runko::RuntimeInstance &) {
+        check_mpi(MPI_Barrier(MPI_COMM_WORLD), "MPI_Barrier");
+      },
+      "Block until every rank has called this (collective).")
+    .def(
+      "mpi_bcast",
+      [](const runko::RuntimeInstance &, const py::object &obj, const int root) {
+        const auto pickle  = py::module_::import("pickle");
+        const auto is_root = mpi_rank() == root;
+
+        auto data = std::string {};
+        if(is_root) { data = pickle.attr("dumps")(obj).cast<std::string>(); }
+
+        data = mpi_bcast_bytes(data, root);
+
+        return pickle.attr("loads")(py::bytes(data));
+      },
+      py::arg("obj"),
+      py::arg("root") = 0,
+      R"(
+Broadcast picklable object from root to every rank (collective).
+
+Value of ``obj`` is ignored on non-root ranks.
+Returns the object from root on every rank.
+)")
+    .def(
+      "mpi_gather",
+      [](const runko::RuntimeInstance &, const py::object &obj, const int root)
+        -> py::object {
+        const auto pickle = py::module_::import("pickle");
+        const auto data   = pickle.attr("dumps")(obj).cast<std::string>();
+
+        const auto gathered = mpi_gather_bytes(data, root);
+
+        if(mpi_rank() != root) { return py::none(); }
+
+        auto result = py::list {};
+        for(const auto &x: gathered) {
+          result.append(pickle.attr("loads")(py::bytes(x)));
+        }
+        return result;
+      },
+      py::arg("obj"),
+      py::arg("root") = 0,
+      R"(
+Gather picklable objects from every rank to root (collective).
+
+Returns list of the objects ordered by rank on root and None on other ranks.
+)");
 
   py::class_<runko::simulation_context::tile_id_type>(m_sub, "TileID")
     .def(py::init<>());

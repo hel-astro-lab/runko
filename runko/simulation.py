@@ -8,15 +8,11 @@ from .configuration import Configuration
 from .tiles import ProxyTile
 import runko_cpp_bindings.actions as actions
 
-import json
 import logging
-import pickle
 import copy
 import time
-import numpy as np
 import pathlib
 from dataclasses import dataclass
-from mpi4py import MPI
 from .ram_usage import get_rss_kB, get_gpu_mem_kB
 
 @dataclass
@@ -78,7 +74,7 @@ class Simulation:
 
         self._logger = runko_logger("Simulation")
 
-        self._rank = MPI.COMM_WORLD.Get_rank()
+        self._rank = self._runtime_instance.mpi_rank()
 
         self._ram_file = pathlib.Path(f"{self._io_config['outdir']}/mem-usage/cpu/{self._rank}.csv")
         self._gpu_ram_file = pathlib.Path(f"{self._io_config['outdir']}/mem-usage/gpu/{self._rank}.csv")
@@ -337,6 +333,7 @@ class Simulation:
             msg += f"{name:<{nlen}} | {s.total:>9.1e} | {p:>10.4} | {s.average:>11.3e} | {s.std_dev:>7.1e} | {s.count:>5}\n"
         msg += f"Total elapsed interval time: {self._total_interval_time:.4}s\n"
 
+        import numpy as np
         total_wall_time = np.sum(self._lap_wall_times)
         avg_lap_wall_time = np.mean(self._lap_wall_times)
         laps = len(self._lap_wall_times)
@@ -365,6 +362,7 @@ class Simulation:
         [0]: https://docs.google.com/document/d/1CvAClvFfyA5R-PhYUmn5OOQtYMH4h6I0nSsKchNAySU
         """
 
+        import json
         obj = dict(traceEvents=[{
             "name": "process_name",
             "ph": "M",
@@ -432,11 +430,11 @@ class Simulation:
         if not combine:
             return
 
-        MPI.COMM_WORLD.barrier()
+        self._runtime_instance.mpi_barrier()
         if on_main_rank():
             combined = {"traceEvents": []}
 
-            for i in range(MPI.COMM_WORLD.Get_size()):
+            for i in range(self._runtime_instance.mpi_size()):
                 p = pathlib.Path(f"{self._io_config['outdir']}/traces/{i}.json")
                 with open(p, "r") as f:
                     data = json.load(f)
@@ -461,6 +459,8 @@ class Simulation:
         [0]: https://pypi.org/project/qttl/
         [1]: https://docs.google.com/document/d/1CvAClvFfyA5R-PhYUmn5OOQtYMH4h6I0nSsKchNAySU
         """
+
+        import json
 
         n_latests = self._io_config["laps_in_timer_statistics"]
         begin = -n_latests if n_latests else 0
@@ -487,6 +487,7 @@ class Simulation:
         which maps component name (str) to runko.TimerStatistics.
         """
 
+        import pickle
         self._timer_stats_file.parent.mkdir(exist_ok=True, parents=True)
         with open(self._timer_stats_file, "wb") as f:
             pickle.dump(self.get_time_statistics(self._io_config["laps_in_timer_statistics"]), f)

@@ -118,9 +118,6 @@ source "$VENV/bin/activate"
 
 pip install --upgrade pip
 
-# Link mpi4py against Cray MPICH; the PyPI wheel fails at MPI_Init.
-MPI4PY_BUILD_MPICC=cc python -m pip install --no-cache-dir --no-binary=mpi4py mpi4py --force-reinstall
-
 pip install pybind11 scikit-build-core numpy scipy matplotlib
 
 #--------------------------------------------------
