@@ -3,8 +3,6 @@
 
 #include "runko/actions/pic.h"
 
-#include "runko/actions/qed.h"
-
 #include "runko/comm/cartesian_grid.h"
 #include "runko/coords.h"
 #include "runko/pic/particle.h"
@@ -624,14 +622,11 @@ void
 void
   sort_particles(runko::simulation_context& sim)
 {
-  // a QED tile sorts by its reaction layout (qed::layout) instead
-  for(auto&& [_, yee, particles, idx]: sim.tiles
-                                         .view<
-                                           emf::YeeLattice,
-                                           pic::particle_containers,
-                                           const runko::cartesian_index<3>,
-                                           runko::local_tile_tag>(entt::exclude<qed::tile_state>)
-                                         .each()) {
+  for(auto&& [_, yee, particles, idx]: sim.template view_tiles<
+                                       emf::YeeLattice,
+                                       pic::particle_containers,
+                                       const runko::cartesian_index<3>,
+                                       runko::local_tile_tag>()) {
 
     const auto m = yee.grid_mapping_with_halo();
     using M      = decltype(m);

@@ -14,7 +14,7 @@ SMIN = 4
 WL = 1e-3
 
 
-def make_tile(positron_first=False, proton=False, bad_mass=None, idx=(0, 0, 0)):
+def make_tile(positron_first=False, proton=False, bad_mass=None, idx=(0, 0, 0), **extra):
     config = runko.Configuration(None)
     config.n_tiles = [2, 1, 1]
     config.n_cells_per_tile = [NC, NC, NC]
@@ -45,6 +45,8 @@ def make_tile(positron_first=False, proton=False, bad_mass=None, idx=(0, 0, 0)):
     config.qed_slack = SLACK
     config.qed_smin = SMIN
     config.qed_seed = 3
+    for k, v in extra.items():  # further config keys as they are
+        setattr(config, k, v)
     tile = runko.qed.threeD.Tile(idx, config)
     zero = lambda x, y, z: (0, 0, 0)
     tile.set_EBJ(zero, zero, zero)
@@ -142,7 +144,7 @@ class qed_layout(unittest.TestCase):
         rng = np.random.default_rng(5)
         populate(tile, rng)
         t0 = {s: tile.totals(s) for s in ("ph", "e-", "e+")}
-        tile.sort_particles()
+        tile.layout()
         self.assertTrue(tile.laid())
         mins, maxs = (0.0, 0.0, 0.0), (NC, NC, NC)
         for s in ("ph", "e-", "e+"):
@@ -157,10 +159,10 @@ class qed_layout(unittest.TestCase):
         config, tile = make_tile()
         rng = np.random.default_rng(6)
         populate(tile, rng)
-        tile.sort_particles()
+        tile.layout()
         f0 = {s: tile.get_tables(s)["fill"].copy() for s in ("ph", "e-", "e+")}
         n0 = {s: tile.totals(s)["N"] for s in ("ph", "e-", "e+")}
-        tile.sort_particles()
+        tile.layout()
         mins, maxs = (0.0, 0.0, 0.0), (NC, NC, NC)
         for s in ("ph", "e-", "e+"):
             check_layout(self, tile, s, mins, maxs)
@@ -172,7 +174,7 @@ class qed_layout(unittest.TestCase):
         config, tile = make_tile()
         rng = np.random.default_rng(7)
         populate(tile, rng)
-        tile.sort_particles()
+        tile.layout()
         n0 = tile.totals("ph")["N"]
         # particles appended by pic's path stale the tables; the next sort keys them
         tile.inject(tile.species("ph"), [runko.pic.threeD.ParticleState(pos=(1.0, 2.0, 3.0), vel=(0.5, 0, 0), wgt=1e-3)
@@ -181,7 +183,7 @@ class qed_layout(unittest.TestCase):
         # pic's append writes behind the last alive slot, into the last key's slack: the tables
         # no longer describe the container, and the next step lays it out again
         self.assertFalse(tile.laid())
-        tile.sort_particles()
+        tile.layout()
         self.assertTrue(tile.laid())
         check_layout(self, tile, "ph", (0.0, 0.0, 0.0), (NC, NC, NC))
         self.assertEqual(tile.totals("ph")["N"], n0 + 50)
@@ -231,7 +233,7 @@ class qed_layout(unittest.TestCase):
         simulation = tile_grid.configure_simulation(config)
         tiles = {tuple(tile.index): tile for tile in simulation.local_tiles()}  # the tiles as the simulation holds them
         for tile in simulation.local_tiles():
-            tile.sort_particles()
+            tile.layout()
         def lap(x):
             x.prtcl_push()
             x.prtcl_pack_outgoing()
@@ -245,8 +247,26 @@ class qed_layout(unittest.TestCase):
         self.assertEqual(np.count_nonzero(keys < 0), n_cross, "arrivals are tail")
         self.assertEqual(t1.totals("ph")["N"], n_stay + n_cross)
         self.assertEqual(tiles[(0, 0, 0)].totals("ph")["N"], n_stay)
-        t1.sort_particles()
+        t1.layout()
         check_layout(self, t1, "ph", (NC, 0.0, 0.0), (2 * NC, NC, NC))
+
+    def test_pic_sort_on_a_qed_tile(self):
+        """a pic sort reorders a laid-out container and drops its layout; the next step lays it
+        out again (Compton only, no splitting: weight and count of every species conserved)"""
+        config, tile = make_tile(qed_channels=["compton-", "compton+"], qed_a_res=0.0, qed_n_reaction_cells=1)
+        populate(tile, np.random.default_rng(13))
+        tile.interact()
+        self.assertTrue(tile.laid())
+        t0 = {s: tile.totals(s) for s in ("ph", "e-", "e+")}
+        tile.sort_particles()
+        self.assertFalse(tile.laid())
+        tile.interact()
+        self.assertTrue(tile.laid())
+        self.assertGreater(sum(tile.counts().values()), 0)
+        for s in ("ph", "e-", "e+"):
+            t1 = tile.totals(s)
+            self.assertEqual(t1["N"], t0[s]["N"])
+            self.assertAlmostEqual(t1["W"], t0[s]["W"], delta=1e-9 * t0[s]["W"])
 
     def test_tiles_draw_their_own_streams(self):
         """two tiles of one seed with the same population must not make the same random decisions:
@@ -256,7 +276,7 @@ class qed_layout(unittest.TestCase):
         for idx in ((0, 0, 0), (1, 0, 0)):
             config, tile = make_tile(idx=idx)
             populate(tile, np.random.default_rng(12))
-            tile.sort_particles()
+            tile.layout()
             ordinal = np.asarray(tile.get_ids(tile.species("ph"))) & ((1 << 40) - 1)
             bits.append(dict(zip(ordinal, np.asarray(tile.get_slot_keys("ph")) % 2)))
         common = sorted(set(bits[0]) & set(bits[1]))
@@ -287,7 +307,7 @@ class qed_layout(unittest.TestCase):
         config, tile = make_tile()
         rng = np.random.default_rng(8)
         populate(tile, rng, nph=0, nlep=10)
-        tile.sort_particles()
+        tile.layout()
         tb = tile.get_tables("ph")
         self.assertTrue(np.all(tb["fill"] == 0))
         self.assertTrue(np.all(tb["cap"] == SMIN))

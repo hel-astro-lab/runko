@@ -93,11 +93,11 @@ The channels are ``compton-``, ``compton+``, ``pairann``, ``photann``, ``ssa-``,
 The step
 --------
 
-Every ``qed_nsort`` steps each species is laid out by a counting sort on its key — the reaction
-cell, the energy bin and, for photons, a random bit — with slack behind every key for the
-products of the coming steps; this layout is the sort of a QED tile (``prtcl_sort`` lays QED
-tiles out instead of sorting them by cell). The channels then
-run in a random order. A two-body channel proposes, per pair of energy bins, an envelope of
+Every ``qed_nsort`` steps, and whenever a species has lost its layout, the sampler lays each
+species out by a counting sort on its key — the reaction cell, the energy bin and, for photons,
+a random bit — with slack behind every key for the products of the coming steps; this layout is
+the sort of a QED tile, and the sampler makes it itself (``tile.layout()`` makes it at once).
+The channels then run in a random order. A two-body channel proposes, per pair of energy bins, an envelope of
 events from the bin tables alone, pairs particles by two-level stratified sampling, thins each
 proposal against the true rate with a single uniform, and realizes the accepted events with
 per-cell systematic rounding; a one-body channel evaluates the rate of every particle and fires
@@ -119,15 +119,16 @@ reads (``tile.budget()``, ``tile.escaped_spectrum()``, ``tile.escaped_mu_spectru
 ``ProxyTile`` methods that runko's pic and emf layers provide (``tile.sort_particles()``,
 ``tile.push_particles()``, ``tile.inject(...)``, ``tile.set_EBJ(...)``, ...) instead evaluate an
 action over every local tile of the context the proxy belongs to: the tile alone for a tile of
-``runko.qed.threeD.Tile``, but all local tiles for one of ``simulation.local_tiles()``, where
-``tile.sort_particles()`` lays out every QED tile of the rank.
+``runko.qed.threeD.Tile``, but all local tiles for one of ``simulation.local_tiles()``.
 
 Inside PIC
 ----------
 
 QED tiles take part in an otherwise ordinary PIC lap. The reactions run first, when every particle is inside its tile (the last thing that moved them was
 the exchange of the previous lap), so that the products, born at their parents' positions, take
-the push and the exchange of the lap like any particle; the layout replaces ``prtcl_sort``::
+the push and the exchange of the lap like any particle. The sampler lays its species out
+itself, so the lap needs no ``prtcl_sort``; calling it is harmless, since a pic sort only drops
+the layout and the next ``interact`` lays the species out again::
 
     x.prtcl_interact()
     x.grid_escape_photons(tau_box, dt_box)    # tau_box: the lepton weight of all ranks / n_t^2
@@ -140,7 +141,7 @@ the push and the exchange of the lap like any particle; the layout replaces ``pr
 A laid-out container is *placed*: the particle exchange appends the arrivals behind its last slot
 rather than into the slack of its last key, and the layout keys them as tail, inert until the
 next sort, so the layout survives the exchange. An injection through the pic path
-(``tile.inject``) or a pic sort drops the layout, and the next step lays the species out again. Photons move at `c` along their momentum,
+(``tile.inject``) drops the layout too. Photons move at `c` along their momentum,
 deposit no current and carry their weight through the exchange; the particle snapshots carry
 it as a 13th field ``wgt`` and the spectra are weighted by it. With `n_t` tiles per edge the
 weight unit is that of the tile, so the depth of the box is `\sum w / n_t^2` and

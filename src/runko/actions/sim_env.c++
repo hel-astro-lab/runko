@@ -330,14 +330,7 @@ tyvi::actions::sexpr
       ta::procedure { [](const ta::sexpr& args) -> ta::sexpr_sender {
         return parse_atom_args<std::reference_wrapper<runko::simulation_context>>(
                  args) |
-               te::then([](runko::simulation_context& sim) {
-                 pic::sort_particles(sim);
-                 // QED tiles sort by their layout; plain PIC runs have none
-                 for(auto&& [id, _]: sim.view_tiles<qed::tile_state, runko::local_tile_tag>()) {
-                   qed::layout(sim, id);
-                 }
-                 return ta::null;
-               });
+               te::then(&pic::sort_particles) | te::then([] { return ta::null; });
       } }),
     timed_procedure(
       runko::symbol::ensure_constructed_qed,

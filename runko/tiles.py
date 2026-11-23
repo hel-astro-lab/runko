@@ -191,6 +191,9 @@ class ProxyTile:
     def laid(self):
         return qed.laid(self.sim_context, self.tile_id)
 
+    def layout(self):
+        qed.layout(self.sim_context, self.tile_id)
+
     def interact(self):
         qed.interact(self.sim_context, self.tile_id)
 

@@ -177,6 +177,7 @@ void
 
   // layout: its state, the species roles and the box clocks
   m_sub.def("laid", &qed::laid);
+  m_sub.def("layout", &qed::layout);
   m_sub.def("step", [=](sim_t& sim, const id_t id) { return sampler(sim, id).step(); });
   m_sub.def("species", [](sim_t& sim, const id_t id, const std::string& s) {
     return qed::state(sim, id).sp[static_cast<std::size_t>(species_of(s))];

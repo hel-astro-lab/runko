@@ -68,7 +68,7 @@ class qed_onebody(CheckMixin, unittest.TestCase):
         self.assertGreater(loss, 0.05 * t0["ph"]["E"])
         self.check("photon energy loss = lepton gain", 0.0, abs(loss - (t1["e-"]["E"] - t0["e-"]["E"])) / loss, 0.05)
         # ---- the bound must cover the rate over every pair the envelope can propose, bin by bin
-        t.sort_particles()
+        t.layout()
         tp, te = t.get_tables("ph"), t.get_tables("e-")
         kp, ke = np.asarray(t.get_slot_keys("ph")), np.asarray(t.get_slot_keys("e-"))
         up, xp, _ = state(t, "ph"); ue1, ge, _ = state(t, "e-")

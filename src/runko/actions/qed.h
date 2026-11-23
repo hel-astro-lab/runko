@@ -78,7 +78,7 @@ void
 // ---- one tile: the step, its layout, the sources and sinks of the open box
 /// One step of the QED Monte Carlo.
 void interact(runko::simulation_context&, tile_id);
-/// The padded reaction layout of every species: the sort of a QED tile.
+/// The padded reaction layout of every species now; the step otherwise lays out by itself.
 void layout(runko::simulation_context&, tile_id);
 void inject_pairs_plaw(
   runko::simulation_context&,

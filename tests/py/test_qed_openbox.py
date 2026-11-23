@@ -72,7 +72,7 @@ class qed_openbox(CheckMixin, unittest.TestCase):
         tiles = [make_tile(11, dt), make_tile(11, dt)]
         for t in tiles:
             init_pairs(t, nph, 1000, 0.1, 1.0, np.random.default_rng(21))
-            t.sort_particles()
+            t.layout()
         tau, N2 = tiles[0].tau_T(), 1 / dt
         tiles[0].escape_photons()
         tiles[1].escape_photons(tau, dt)
@@ -86,7 +86,7 @@ class qed_openbox(CheckMixin, unittest.TestCase):
         np.testing.assert_allclose(hmu.sum(1), h, rtol=1e-12)
         self.assertAlmostEqual(h.sum(), b0["esc_E"], delta=1e-9 * b0["esc_E"])
         # a smaller step in crossings escapes proportionally fewer
-        t = make_tile(11, dt); init_pairs(t, nph, 1000, 0.1, 1.0, np.random.default_rng(21)); t.sort_particles()
+        t = make_tile(11, dt); init_pairs(t, nph, 1000, 0.1, 1.0, np.random.default_rng(21)); t.layout()
         t.escape_photons(tau, dt / 4)
         self.assertLess(t.budget()["esc_W"], 0.5 * b0["esc_W"])
         t.reset_budget()
