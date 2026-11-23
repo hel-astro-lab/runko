@@ -5,18 +5,19 @@
 Nano unittest library for MPI related tests.
 """
 
-from mpi4py import MPI
 from dataclasses import dataclass
 
-_comm = MPI.COMM_WORLD
-_comm_size = _comm.Get_size()
-_rank = _comm.Get_rank()
+import runko
+
+
+def _rank() -> int:
+    return runko.default_runtime().mpi_rank()
 
 
 def _gather_error_msgs(msg: str):
-    msgs = _comm.gather(msg, root=0)
+    msgs = runko.default_runtime().mpi_gather(msg, root=0)
 
-    if _rank == 0:
+    if _rank() == 0:
         concatted_msg = "\n"
         passes = True
         for msg in msgs:
@@ -37,7 +38,7 @@ def assertEqual(a, b) -> None:
 
     err_msg = ""
     if not ok:
-        err_msg = f"rank {_rank}: {a} != {b}\n"
+        err_msg = f"rank {_rank()}: {a} != {b}\n"
 
     _gather_error_msgs(err_msg)
 
@@ -51,7 +52,7 @@ def assertNotEqual(a, b) -> None:
 
     err_msg = ""
     if not ok:
-        err_msg = f"rank {_rank}: {a} == {b}\n"
+        err_msg = f"rank {_rank()}: {a} == {b}\n"
 
     _gather_error_msgs(err_msg)
 
@@ -82,7 +83,7 @@ def assertEqualDeferred(a, b) -> DeferredAssertResult:
     if a == b:
         return DeferredAssertResult("")
     else:
-        return DeferredAssertResult(f"rank {_rank}: {a} != {b}\n")
+        return DeferredAssertResult(f"rank {_rank()}: {a} != {b}\n")
 
 
 def assertDeferredResults(results: list[DeferredAssertResult]) -> None:

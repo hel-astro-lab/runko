@@ -58,11 +58,6 @@ source venv/runko-gpu/bin/activate
 # Install necessary Python dependencies
 pip3 install scipy matplotlib numpy
 
-# Build mpi4py against Cray MPICH (PrgEnv-cray).
-# --force-reinstall ensures the venv gets its own copy instead of using the
-# system cray-python mpi4py, which is built against GNU MPICH.
-MPI4PY_BUILD_MPICC="cc -shared" pip install --force-reinstall --no-cache-dir --no-binary=mpi4py mpi4py
-
 #--------------------------------------------------
 # Patch the activate script with module loads, PYTHONPATH, and build helpers
 P1="$RUNKO_PATH/"
@@ -85,7 +80,7 @@ module load cray-python
 
 export LD_LIBRARY_PATH=/opt/cray/pe/cce/18.0.1/cce/x86_64/lib:\$LD_LIBRARY_PATH
 
-# GPU-aware MPI: preload GTL so it is available before mpi4py calls MPI_Init
+# GPU-aware MPI: preload GTL so it is available before MPI_Init
 export LD_PRELOAD=\${CRAY_MPICH_ROOTDIR}/gtl/lib/libmpi_gtl_hsa.so
 
 # PYTHONPATH: repo root (runko_cpp_bindings.so) + corgi lib (pycorgi.so)

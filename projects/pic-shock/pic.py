@@ -9,11 +9,11 @@ import runko
 import numpy as np
 import argparse
 import logging
-from mpi4py import MPI
 
 
 if __name__ == "__main__":
-    mpi_rank = MPI.COMM_WORLD.Get_rank()
+    runtime = runko.default_runtime()
+    mpi_rank = runtime.mpi_rank()
     rng = np.random.default_rng(seed=mpi_rank)
 
     logger = runko.runko_logger()
@@ -265,19 +265,19 @@ if __name__ == "__main__":
             injector.inject(simulation, [(0, pgen0), (1, pgen1)], ppc)
 
         # --- IO ---
-        MPI.COMM_WORLD.Barrier()
+        runtime.mpi_barrier()
         x.io_average_kinetic_energy()
         x.io_average_B_energy_density()
         x.io_average_E_energy_density()
         x.io_ram_usage()
 
         if simulation.lap % output_interval == 0:
-            MPI.COMM_WORLD.Barrier()
+            runtime.mpi_barrier()
             x.io_emf_snapshot()
 
             #x.io_prtcl_snapshot()
 
-            MPI.COMM_WORLD.Barrier()
+            runtime.mpi_barrier()
             x.io_spectra_snapshot()
 
             simulation.log_timer_statistics()

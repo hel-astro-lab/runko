@@ -16,7 +16,6 @@ import time
 import numpy as np
 import pathlib
 from dataclasses import dataclass
-from mpi4py import MPI
 from .ram_usage import get_rss_kB, get_gpu_mem_kB
 
 @dataclass
@@ -78,7 +77,7 @@ class Simulation:
 
         self._logger = runko_logger("Simulation")
 
-        self._rank = MPI.COMM_WORLD.Get_rank()
+        self._rank = self._runtime_instance.mpi_rank()
 
         self._ram_file = pathlib.Path(f"{self._io_config['outdir']}/mem-usage/cpu/{self._rank}.csv")
         self._gpu_ram_file = pathlib.Path(f"{self._io_config['outdir']}/mem-usage/gpu/{self._rank}.csv")
@@ -431,11 +430,11 @@ class Simulation:
         if not combine:
             return
 
-        MPI.COMM_WORLD.barrier()
+        self._runtime_instance.mpi_barrier()
         if on_main_rank():
             combined = {"traceEvents": []}
 
-            for i in range(MPI.COMM_WORLD.Get_size()):
+            for i in range(self._runtime_instance.mpi_size()):
                 p = pathlib.Path(f"{self._io_config['outdir']}/traces/{i}.json")
                 with open(p, "r") as f:
                     data = json.load(f)

@@ -57,11 +57,6 @@ source venv/runko-cpu/bin/activate
 pip install --upgrade pip
 pip install h5py scipy matplotlib numpy
 
-# Build mpi4py against the Homebrew MPI that `mpicc` resolves to.
-# --force-reinstall --no-cache-dir rebuilds mpi4py cleanly when the script
-# is re-run (e.g. after a Homebrew MPI upgrade).
-MPICC=mpicc pip install --no-cache-dir --no-binary=mpi4py mpi4py
-
 #--------------------------------------------------
 # Patch the activate script with PYTHONPATH so pycorgi / runko_cpp_bindings
 # are importable after `source venv/runko-cpu/bin/activate`.

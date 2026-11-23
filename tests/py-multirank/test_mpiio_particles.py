@@ -13,15 +13,13 @@ import shutil
 import tempfile
 import numpy as np
 
-from mpi4py import MPI
-
 import runko
 from runko import actions
 from runko.mpiio_prtcl_reader import read_prtcl_header, read_prtcl_snapshot
 
 
-comm = MPI.COMM_WORLD
-rank = comm.Get_rank()
+runtime = runko.default_runtime()
+rank = runtime.mpi_rank()
 
 
 def broadcast_outdir():
@@ -29,7 +27,7 @@ def broadcast_outdir():
     outdir = None
     if rank == 0:
         outdir = tempfile.mkdtemp(prefix="runko-mpiio-prtcl-test-")
-    outdir = comm.bcast(outdir, root=0)
+    outdir = runtime.mpi_bcast(outdir, root=0)
     return outdir
 
 
@@ -104,7 +102,7 @@ def test_multirank_constant_velocity():
         np.testing.assert_allclose(fields["uy"], 2.0, atol=1e-5)
         np.testing.assert_allclose(fields["uz"], 3.0, atol=1e-5)
 
-    comm.Barrier()
+    runtime.mpi_barrier()
     mpi_unittest.assertEqual(True, True)
 
     cleanup_outdir(outdir)
@@ -200,7 +198,7 @@ def test_multirank_tile_placement():
         assert len(velocity_codes) == 8, \
             f"Expected 8 distinct tiles, got {len(velocity_codes)}"
 
-    comm.Barrier()
+    runtime.mpi_barrier()
     mpi_unittest.assertEqual(True, True)
 
     cleanup_outdir(outdir)
@@ -266,7 +264,7 @@ def test_multirank_asymmetric_mesh():
         np.testing.assert_allclose(fields["uy"], 6.0, atol=1e-5)
         np.testing.assert_allclose(fields["uz"], 7.0, atol=1e-5)
 
-    comm.Barrier()
+    runtime.mpi_barrier()
     mpi_unittest.assertEqual(True, True)
 
     cleanup_outdir(outdir)

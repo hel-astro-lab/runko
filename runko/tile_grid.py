@@ -11,6 +11,7 @@ from .simulation import Simulation
 from .runko_logging import runko_logger, on_main_rank
 from .balance_grid import balance_mpi, load_catepillar_track_mpi
 from .auto_outdir import resolve_outdir
+from .runtime import default_runtime
 
 
 class TileGrid:
@@ -45,9 +46,9 @@ class TileGrid:
 
         self._local_indices = []
 
-        from mpi4py import MPI
-        self._my_rank = MPI.COMM_WORLD.Get_rank()
-        self._world_size = MPI.COMM_WORLD.Get_size()
+        runtime = default_runtime()
+        self._my_rank = runtime.mpi_rank()
+        self._world_size = runtime.mpi_size()
 
         total_n_tiles = self._Nx * self._Ny * self._Nz
 
