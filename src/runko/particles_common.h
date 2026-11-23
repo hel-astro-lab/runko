@@ -87,4 +87,7 @@ enum class CurrentDepositer { zigzag_1st, zigzag_1st_atomic };
 /// Number of particle species in the config (q0/m0, q1/m1, ...).
 std::size_t count_species(const toolbox::ConfigParser&);
 
+/// Payload floats per particle of species i: config n_payload{i}, or 0.
+std::size_t species_n_payload(const toolbox::ConfigParser&, std::size_t i);
+
 }  // namespace runko

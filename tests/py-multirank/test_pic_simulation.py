@@ -705,6 +705,63 @@ def pic_photon_weights_communication():
     mpi_unittest.assertDeferredResults(asserts)
 
 
+def pic_payload_communication():
+    """
+    Species 1 (one payload component) and 2 (two), placed in every halo subregion of
+    every tile next to species 0 (none), keep their payloads through tile and rank
+    exchange. The payload encodes the sending tile and the direction, which the velocity
+    carries along; every particle has to arrive in the neighbour in its direction.
+    """
+
+    conf, tile_grid = make_test_grid()
+    conf.n_payload1 = 1
+    conf.q2, conf.m2, conf.n_payload2 = -1, 1, 2
+
+    dirs = list(itertools.product([-1, 0, 1], repeat=3))
+    lin = lambda idx: (idx[0] * 2 + idx[1]) * 2 + idx[2]
+    direction = lambda v: dirs.index(tuple(int(round(c)) for c in v))
+
+    for idx in tile_grid.local_tile_indices():
+        tile = runko.pic.threeD.Tile(idx, conf)
+        particles = make_test_particles(tile)
+        d = [direction(p.vel) for p in particles]
+        tile.inject(0, particles)
+        tile.inject(1, particles, payload=[100 * lin(idx) + k for k in d])
+        tile.inject(2, particles, payload=[[lin(idx)] * len(d), d])
+        tile_grid.add_tile(tile, idx)
+
+    simulation = tile_grid.configure_simulation(conf)
+
+    def f(x):
+        x.comm_external(runko.tools.comm_mode.pic_particle)
+        x.comm_local(runko.tools.comm_mode.pic_particle)
+
+    simulation.for_one_lap(f)
+
+    asserts = []
+    local = []
+    for tile in simulation.local_tiles():
+        v1 = zip(*tile.get_velocities(1))
+        v2 = zip(*tile.get_velocities(2))
+        for p, v in zip(tile.get_payload(1), v1):
+            local.append((int(p) // 100, int(p) % 100))
+            asserts.append(mpi_unittest.assertEqualDeferred(int(p) % 100, direction(v)))
+        for src, k, v in zip(tile.get_payload(2, 0), tile.get_payload(2, 1), v2):
+            local.append((int(src), int(k)))
+            asserts.append(mpi_unittest.assertEqualDeferred(int(k), direction(v)))
+            # the sending tile plus the direction, periodically
+            sent = np.array([int(src) // 4, int(src) // 2 % 2, int(src) % 2])
+            arrived = (sent + np.array(dirs[int(k)])) % 2
+            asserts.append(mpi_unittest.assertEqualDeferred(arrived.tolist(), list(tile.index)))
+
+    runtime = runko.default_runtime()
+    got = sorted(itertools.chain.from_iterable(runtime.mpi_bcast(runtime.mpi_gather(local))))
+    expected = sorted(2 * [(lin(idx), k) for idx in itertools.product([0, 1], repeat=3)
+                           for k in range(27)])
+    asserts.append(mpi_unittest.assertEqualDeferred(got, expected))
+    mpi_unittest.assertDeferredResults(asserts)
+
+
 if __name__ == "__main__":
     _ = runko.actions.RuntimeInstance()
     pic_noop_communication()
@@ -715,3 +772,4 @@ if __name__ == "__main__":
     pic_wrap_positions()
     pic_kinetic_energy_reduction()
     pic_photon_weights_communication()
+    pic_payload_communication()

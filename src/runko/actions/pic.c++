@@ -119,10 +119,10 @@ void
   // Return optional containing the arguments if q and m are found in conf.
   // The species weight w is optional (1), as is the payload size n_payload (0).
   const auto make_opt_args = [&](
+                               const std::size_t i,
                                const std::string& q_label,
                                const std::string& m_label,
-                               const std::string& w_label,
-                               const std::string& np_label) -> opt_args_t {
+                               const std::string& w_label) -> opt_args_t {
     const auto q_to_qm_tuple = [&](const auto q) {
       return sim.config.get<double>(m_label).transform(
         [&](const auto m) { return std::tuple { q, m }; });
@@ -136,7 +136,7 @@ void
         .charge    = q,
         .mass      = m,
         .weight    = sim.config.get<double>(w_label).value_or(1.0),
-        .n_payload = sim.config.get<std::size_t>(np_label).value_or(0uz)
+        .n_payload = runko::species_n_payload(sim.config, i)
       };
     };
 
@@ -178,9 +178,8 @@ void
       const auto q_label = std::format("q{}", i);
       const auto m_label = std::format("m{}", i);
       const auto w_label = std::format("w{}", i);
-      const auto np_label = std::format("n_payload{}", i);
 
-      const auto pcontainer_args = make_opt_args(q_label, m_label, w_label, np_label);
+      const auto pcontainer_args = make_opt_args(i, q_label, m_label, w_label);
       if(not pcontainer_args) { break; }
 
       auto container = pic::ParticleContainer { pcontainer_args.value() };

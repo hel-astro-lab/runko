@@ -21,15 +21,23 @@ struct external_comm_buffs {
 
   /// All outgoing particle data.
   thrust::device_vector<runko::ParticleState<value_type>> subregion_particle_buff;
+  /// The payloads of subregion_particle_buff in the same order: n_payload floats per
+  /// particle of each species (none for a species without payload).
+  thrust::device_vector<value_type> subregion_payload_buff;
   /// One-past-end indices to subregion_particle_buff.
   std::vector<std::size_t> subregion_particle_ends;
 };
 
+/// Incoming particles of one species and their payloads, span by span.
+struct incoming_particles {
+  using value_type = pic::external_comm_buffs::value_type;
+
+  std::vector<std::span<const runko::ParticleState<value_type>>> states;
+  std::vector<std::span<const value_type>> payloads;
+};
+
 /// particle type -> incoming particles
-using local_comm_buffs = std::map<
-  std::size_t,
-  std::vector<
-    std::span<const runko::ParticleState<pic::external_comm_buffs::value_type>>>>;
+using local_comm_buffs = std::map<std::size_t, incoming_particles>;
 
 tyvi::actions::sexpr_sender comm_external_particles(runko::simulation_context&);
 tyvi::actions::sexpr_sender comm_local_particles(runko::simulation_context&);

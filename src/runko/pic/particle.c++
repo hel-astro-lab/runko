@@ -10,6 +10,7 @@
 #include "thrust/device_vector.h"
 #include "thrust/execution_policy.h"
 #include "thrust/fill.h"
+#include "thrust/for_each.h"
 #include "thrust/host_vector.h"
 #include "thrust/iterator/counting_iterator.h"
 #include "thrust/iterator/transform_iterator.h"
@@ -336,6 +337,7 @@ void
 std::map<runko::grid_neighbor<3>, std::pair<std::size_t, std::size_t>>
   ParticleContainer::divide_to_subregions(
     thrust::device_vector<runko::ParticleState<ParticleContainer::value_type>>& buffer,
+    thrust::device_vector<value_type>& payload_buffer,
     std::array<value_type, 2> x_dividers,
     std::array<value_type, 2> y_dividers,
     std::array<value_type, 2> z_dividers)
@@ -365,7 +367,11 @@ std::map<runko::grid_neighbor<3>, std::pair<std::size_t, std::size_t>>
   const auto weighted = this->has_particle_weights();
   const auto w0       = static_cast<value_type>(this->weight_);
 
-  const auto coords_to_subregion_index = [=](const auto x, const auto y, const auto z) {
+  // subregion of the particle in slot n
+  const auto slot_to_subregion_index = [=](const runko::index_t n) {
+    const auto x = pos_mds[n][0];
+    const auto y = pos_mds[n][1];
+    const auto z = pos_mds[n][2];
     const auto i =
       static_cast<int>(x >= x_dividers[0]) - static_cast<int>(x < x_dividers[1]);
     const auto j =
@@ -380,26 +386,39 @@ std::map<runko::grid_neighbor<3>, std::pair<std::size_t, std::size_t>>
   const auto particle_ordinals_begin = thrust::counting_iterator<runko::index_t>(0uz);
   const auto particle_ordinals_end   = rn::next(particle_ordinals_begin, this->ssize());
 
-  const auto is_leaving = [=](const auto index) {
-    return index != subregion_index(0, 0, 0);
-  };
-
+  // The slots of the leaving particles, ordered by subregion and within one by slot.
   tyvi::mdgrid_work w {};
-  const auto leaving_particles = thrust::count_if(
+  auto& leaving_slots = this->tracker_cache_;
+  leaving_slots.resize(this->size());
+  const auto leaving_end = thrust::copy_if(
     w.on_this(),
     particle_ordinals_begin,
     particle_ordinals_end,
-    [=](const auto i) {
-      return ids_mds[i][] != runko::dead_prtc_id and
-             is_leaving(
-               coords_to_subregion_index(pos_mds[i][0], pos_mds[i][1], pos_mds[i][2]));
+    leaving_slots.begin(),
+    [=](const auto n) {
+      return ids_mds[n][] != runko::dead_prtc_id and
+             slot_to_subregion_index(n) != subregion_index(0, 0, 0);
+    });
+  const auto leaving_particles = rn::distance(leaving_slots.begin(), leaving_end);
+  leaving_slots.resize(static_cast<std::size_t>(leaving_particles));
+
+  thrust::stable_sort(
+    w.on_this(),
+    leaving_slots.begin(),
+    leaving_slots.end(),
+    [=](const auto lhs, const auto rhs) {
+      return slot_to_subregion_index(lhs) < slot_to_subregion_index(rhs);
     });
 
+  // Gather their states and payloads into the buffers, then free their slots.
   const auto prev_buffer_size = buffer.size();
-  buffer.resize(prev_buffer_size + static_cast<std::size_t>(leaving_particles));
-
-  const auto particle_states_begin =
-    thrust::make_transform_iterator(particle_ordinals_begin, [=](const auto n) {
+  buffer.resize(prev_buffer_size + leaving_slots.size());
+  std::ignore = thrust::transform(
+    w.on_this(),
+    leaving_slots.begin(),
+    leaving_slots.end(),
+    rn::next(buffer.begin(), static_cast<std::ptrdiff_t>(prev_buffer_size)),
+    [=](const auto n) {
       return runko::ParticleState<value_type> {
         .pos { pos_mds[n][0], pos_mds[n][1], pos_mds[n][2] },
         .vel { vel_mds[n][0], vel_mds[n][1], vel_mds[n][2] },
@@ -407,64 +426,43 @@ std::map<runko::grid_neighbor<3>, std::pair<std::size_t, std::size_t>>
         .wgt { weighted ? wgt_mds[n][] : w0 }
       };
     });
-  const auto particle_states_end = rn::next(particle_states_begin, this->ssize());
 
-  const auto buffer_data_begin =
-    rn::next(buffer.begin(), static_cast<std::ptrdiff_t>(prev_buffer_size));
-
-  const auto copy_if_result = thrust::copy_if(
-    w.on_this(),
-    particle_states_begin,
-    particle_states_end,
-    buffer_data_begin,
-    [=](const auto& state) {
-      return state.id != runko::dead_prtc_id and
-             is_leaving(
-               coords_to_subregion_index(state.pos[0], state.pos[1], state.pos[2]));
-    });
-
-  if(copy_if_result != buffer.end()) {
-    throw std::logic_error {
-      "These should match, because buffer is resized specificly for correct amount of "
-      "particles."
-    };
+  // n_payload floats per leaving particle, in the order of the states
+  const auto np = this->n_payload();
+  const auto prev_payload_size = payload_buffer.size();
+  payload_buffer.resize(prev_payload_size + leaving_slots.size() * np);
+  const auto slots = thrust::raw_pointer_cast(leaving_slots.data());
+  const auto dst   = rn::next(
+    thrust::raw_pointer_cast(payload_buffer.data()),
+    static_cast<std::ptrdiff_t>(prev_payload_size));
+  for(auto c = 0uz; c < np; ++c) {
+    thrust::for_each(
+      w.on_this(),
+      particle_ordinals_begin,
+      rn::next(particle_ordinals_begin, leaving_particles),
+      [=, src = this->payload_mds(c)](const auto k) {
+        dst[k * np + c] = src[slots[k]][];
+      });
   }
 
-  tyvi::mdgrid_work w2 {};
-  tyvi::when_all(w, w2);
-  w2.for_each_index(pos_mds, [=](const auto idx) {
-    if(is_leaving(coords_to_subregion_index(
-         pos_mds[idx][0],
-         pos_mds[idx][1],
-         pos_mds[idx][2]))) {
-      ids_mds[idx][] = runko::dead_prtc_id;
-    }
-  });
-
-  thrust::sort(
+  thrust::for_each(
     w.on_this(),
-    buffer_data_begin,
-    buffer.end(),
-    [=](const auto& lhs, const auto& rhs) {
-      const auto sublhs = coords_to_subregion_index(lhs.pos[0], lhs.pos[1], lhs.pos[2]);
-      const auto subrhs = coords_to_subregion_index(rhs.pos[0], rhs.pos[1], rhs.pos[2]);
-      return sublhs < subrhs;
-    });
+    leaving_slots.begin(),
+    leaving_slots.end(),
+    [=](const auto n) { ids_mds[n][] = runko::dead_prtc_id; });
 
   using subregion_counter     = toolbox::VecD<runko::index_t, 27>;
-  const auto state_to_counter = [=](const runko::ParticleState<value_type>& x) {
-    const auto i = coords_to_subregion_index(x.pos[0], x.pos[1], x.pos[2]);
-    auto v       = subregion_counter {};
-    v[i]         = 1;
+  const auto slot_to_counter = [=](const runko::index_t n) {
+    auto v                        = subregion_counter {};
+    v[slot_to_subregion_index(n)] = 1;
     return v;
   };
 
-  const auto counters_begin =
-    thrust::transform_iterator(buffer_data_begin, state_to_counter);
-  const auto counters_end = rn::next(counters_begin, leaving_particles);
-
-  const auto subregion_counts =
-    thrust::reduce(w.on_this(), counters_begin, counters_end, subregion_counter {});
+  const auto subregion_counts = thrust::reduce(
+    w.on_this(),
+    thrust::transform_iterator(leaving_slots.begin(), slot_to_counter),
+    thrust::transform_iterator(leaving_slots.end(), slot_to_counter),
+    subregion_counter {});
 
   std::map<runko::grid_neighbor<3>, std::pair<std::size_t, std::size_t>> m {};
 
@@ -484,7 +482,6 @@ std::map<runko::grid_neighbor<3>, std::pair<std::size_t, std::size_t>>
     m.insert_or_assign(dir, std::pair { from, until });
   }
 
-  tyvi::when_all(w, w2);
   w.wait();
   return m;
 }

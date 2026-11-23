@@ -258,18 +258,20 @@ public:
   /// Wraps coordinates outside of given extents.
   void wrap_positions(std::array<value_type, 3> mins, std::array<value_type, 3> maxs);
 
-  /// Splits container to 27 subcontainers along given divider lines.
+  /// Moves the particles outside the center of the 27 subregions along given divider
+  /// lines out of the container.
   ///
-  /// Data of the particles (x, y, z, vx, vy, vz, id)
-  /// is appended to the given buffer in AOS manner.
+  /// Data of the particles (x, y, z, vx, vy, vz, id) is appended to the given buffer in
+  /// AOS manner, ordered by subregion and within one by slot; their payloads,
+  /// n_payload() floats per particle in the same order, to payload_buffer.
   ///
   /// Returns map: (i, j, k) -> span
   /// where span represent the data of subregion (i, j, k) in the buffer.
   [[nodiscard]]
-
   std::map<runko::grid_neighbor<3>, std::pair<std::size_t, std::size_t>>
     divide_to_subregions(
       thrust::device_vector<runko::ParticleState<value_type>>& buffer,
+      thrust::device_vector<value_type>& payload_buffer,
       std::array<value_type, 2> x_dividers,
       std::array<value_type, 2> y_dividers,
       std::array<value_type, 2> z_dividers);

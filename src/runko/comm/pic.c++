@@ -15,6 +15,35 @@
 
 namespace pic {
 
+namespace {
+
+/// Payload floats per particle of every species, from the config.
+std::vector<std::size_t>
+  species_n_payloads(const runko::simulation_context& sim)
+{
+  return std::views::iota(0uz, runko::count_species(sim.config)) |
+         std::views::transform(
+           std::bind_front(&runko::species_n_payload, std::cref(sim.config))) |
+         std::ranges::to<std::vector>();
+}
+
+/// Where the payload of each species starts in subregion_payload_buff, given the
+/// subregion_particle_ends; the last entry is the size of the buffer.
+std::vector<std::size_t>
+  payload_begins(
+    const std::vector<std::size_t>& ends,
+    const std::vector<std::size_t>& n_payloads)
+{
+  auto begins = std::vector<std::size_t>(n_payloads.size() + 1uz, 0uz);
+  for(auto s = 0uz; s < n_payloads.size(); ++s) {
+    const auto species_begin = s == 0uz ? 0uz : ends.at(27 * s - 1);
+    begins[s + 1] = begins[s] + (ends.at(27 * s + 26) - species_begin) * n_payloads[s];
+  }
+  return begins;
+}
+
+}  // namespace
+
 void
   ensure_constructed_pic_comm_buffs(
     runko::simulation_context& sim,
@@ -60,11 +89,13 @@ void
   const auto z_div = std::array { mins[2], maxs[2] };
 
   comm_buffs.subregion_particle_buff.resize(0);
+  comm_buffs.subregion_payload_buff.resize(0);
 
   // ptypes are assumed always to be contiguous 0, 1, ..., N
   for(auto& [ptype, pcontainer]: pcontainers) {
     auto spans = pcontainer.divide_to_subregions(
       comm_buffs.subregion_particle_buff,
+      comm_buffs.subregion_payload_buff,
       x_div,
       y_div,
       z_div);
@@ -107,15 +138,36 @@ tyvi::actions::sexpr_sender
   const auto comm = runko::make_communicator<runko::comm_mode::pic_particle>(x).comm;
   using value_type =
     decltype(pic::external_comm_buffs::subregion_particle_buff)::value_type;
+  using payload_type = pic::external_comm_buffs::value_type;
 
-  auto virt_tiles = [comm](
+  // The payload follows the states as a message of its own, skipped by both sides when
+  // it is empty: a run without payload exchanges only ends and states.
+  const auto payload_message = [comm](
+                                 const auto mpi_op,
+                                 thrust::device_vector<payload_type>& buff,
+                                 const int rank,
+                                 const int tag) -> te::unique_any_sender<> {
+    if(buff.empty()) { return te::just(); }
+    return te::just(
+             reinterpret_cast<void*>(thrust::raw_pointer_cast(buff.data())),
+             runko::checked_cast<int>(buff.size() * sizeof(payload_type)),
+             MPI_BYTE,
+             rank,
+             tag,
+             comm) |
+           pmpi::transform_mpi(mpi_op);
+  };
+
+  auto virt_tiles = [comm, payload_message](
                       runko::simulation_context& sim,
-                      const auto number_of_ptypes) {
+                      const auto number_of_ptypes,
+                      const std::vector<std::size_t>& n_payloads) {
     /* Due to: https://github.com/MiroPalmu/HPE-bug-report/blob/main/HPE-bug-report.md
        there has to be extra syncs. */
     auto sendersA = std::vector<te::unique_any_sender<>> {};
     auto sendersB = std::vector<te::unique_any_sender<>> {};
     auto sendersC = std::vector<te::unique_any_sender<>> {};
+    auto sendersD = std::vector<te::unique_any_sender<>> {};
 
     for(auto&& [_, idx, virt, comm_buffs]: sim.view_tiles<
                                            const index_type,
@@ -145,9 +197,12 @@ tyvi::actions::sexpr_sender
         }));
 
       sendersB.push_back(
-        te::schedule(te::thread_pool_scheduler {}) | te::then([&comm_buffs] {
-          comm_buffs.subregion_particle_buff.resize(
-            comm_buffs.subregion_particle_ends.back());
+        te::schedule(te::thread_pool_scheduler {}) |
+        te::then([&comm_buffs, n_payloads] {
+          const auto& ends = comm_buffs.subregion_particle_ends;
+          comm_buffs.subregion_particle_buff.resize(ends.back());
+          comm_buffs.subregion_payload_buff.resize(
+            payload_begins(ends, n_payloads).back());
         }));
       sendersC.push_back(
         te::schedule(te::thread_pool_scheduler {}) |
@@ -165,6 +220,15 @@ tyvi::actions::sexpr_sender
                    comm) |
                  pmpi::transform_mpi(MPI_Irecv);
         }));
+      sendersD.push_back(
+        te::schedule(te::thread_pool_scheduler {}) |
+        te::let_value([&comm_buffs, rank, tag, payload_message] {
+          return payload_message(
+            MPI_Irecv,
+            comm_buffs.subregion_payload_buff,
+            rank,
+            tag);
+        }));
     }
 
     auto then = []<typename T>(std::vector<T>&& senders) {
@@ -172,10 +236,10 @@ tyvi::actions::sexpr_sender
         [s = std::move(senders)] mutable { return te::when_all_vector(std::move(s)); });
     };
     return te::when_all_vector(std::move(sendersA)) | then(std::move(sendersB)) |
-           then(std::move(sendersC));
+           then(std::move(sendersC)) | then(std::move(sendersD));
   };
 
-  auto boundary_tiles = [comm](runko::simulation_context& sim) {
+  auto boundary_tiles = [comm, payload_message](runko::simulation_context& sim) {
     auto senders = std::vector<te::unique_any_sender<>> {};
     for(auto&& [_, idx, boundary, comm_buffs]: sim.view_tiles<
                                                const index_type,
@@ -209,12 +273,20 @@ tyvi::actions::sexpr_sender
                      tag,
                      comm) |
                    pmpi::transform_mpi(MPI_Isend);
+          }) |
+          te::let_value([rank, tag, &comm_buffs, payload_message] {
+            return payload_message(
+              MPI_Isend,
+              comm_buffs.subregion_payload_buff,
+              rank,
+              tag);
           }));
       }
     }
     return te::when_all_vector(std::move(senders));
   };
   const auto num_of_ptypes = runko::count_species(x.config);
+  const auto n_payloads    = species_n_payloads(x);
 
   return te::just() |
          te::then(
@@ -223,9 +295,12 @@ tyvi::actions::sexpr_sender
              std::ref(x),
              num_of_ptypes)) |
          te::let_value(std::bind_front(&pack_outgoing_particles, std::ref(x))) |
-         te::let_value([sim = std::ref(x), virt_tiles, boundary_tiles, num_of_ptypes] {
-           return te::when_all(virt_tiles(sim, num_of_ptypes), boundary_tiles(sim));
-         }) |
+         te::let_value(
+           [sim = std::ref(x), virt_tiles, boundary_tiles, num_of_ptypes, n_payloads] {
+             return te::when_all(
+               virt_tiles(sim, num_of_ptypes, n_payloads),
+               boundary_tiles(sim));
+           }) |
          te::then([] { return tyvi::actions::null; });
 }
 
@@ -236,8 +311,9 @@ tyvi::actions::sexpr_sender
   namespace te = tyvi::exec;
 
   const auto number_of_ptypes = runko::count_species(x.config);
+  const auto n_payloads       = species_n_payloads(x);
 
-  auto prep_local_comm_buffs = [number_of_ptypes](
+  auto prep_local_comm_buffs = [number_of_ptypes, n_payloads](
                                  const runko::simulation_context& sim,
                                  const runko::cartesian_index<3>& idx,
                                  const runko::cartesian_neighbors<3>& cart_neighs,
@@ -266,22 +342,34 @@ tyvi::actions::sexpr_sender
       }
 
       const auto inverted_dir = dir.inverted();
+      const auto& ends        = neigh_ptr->subregion_particle_ends;
+      const auto pbegins      = payload_begins(ends, n_payloads);
 
       namespace rv = std::views;
       for(const auto ptype: rv::iota(0uz, number_of_ptypes)) {
-        const auto& ends = neigh_ptr->subregion_particle_ends;
         const auto& buff = neigh_ptr->subregion_particle_buff;
 
         const auto index = 27 * ptype + inverted_dir.neighbor_index();
-        const auto end   = static_cast<std::ptrdiff_t>(ends.at(index));
-        const auto begin =
-          static_cast<std::ptrdiff_t>(index == 0 ? 0uz : ends.at(index - 1));
-        const auto p = thrust::raw_pointer_cast(buff.data());
+        const auto end   = ends.at(index);
+        const auto begin = index == 0 ? 0uz : ends.at(index - 1);
+        const auto p     = thrust::raw_pointer_cast(buff.data());
 
-        buffs[ptype].push_back(
+        buffs[ptype].states.push_back(
           std::span<const runko::ParticleState<pic::ParticleContainer::value_type>>(
-            std::ranges::next(p, begin),
-            std::ranges::next(p, end)));
+            std::ranges::next(p, static_cast<std::ptrdiff_t>(begin)),
+            end - begin));
+
+        // the payload of the span: n_payload floats per particle behind the payload of
+        // the species' earlier particles
+        const auto np            = n_payloads[ptype];
+        const auto species_begin = ptype == 0uz ? 0uz : ends.at(27 * ptype - 1);
+        const auto offset        = pbegins[ptype] + (begin - species_begin) * np;
+        const auto q =
+          thrust::raw_pointer_cast(neigh_ptr->subregion_payload_buff.data());
+        buffs[ptype].payloads.push_back(
+          std::span<const pic::ParticleContainer::value_type>(
+            std::ranges::next(q, static_cast<std::ptrdiff_t>(offset)),
+            (end - begin) * np));
       }
     }
   };
@@ -291,11 +379,11 @@ tyvi::actions::sexpr_sender
   auto gather_from_others =
     [gce_mins,
      gce_maxs](pic::local_comm_buffs& buffs, pic::particle_containers& pcontainers) {
-      for(const auto& [ptype, spans]: buffs) {
+      for(const auto& [ptype, incoming]: buffs) {
         using T = pic::ParticleContainer::value_type;
         pcontainers.at(ptype).append(
-          spans,
-          {},
+          incoming.states,
+          incoming.payloads,
           runko::cast_array<T>(gce_mins),
           runko::cast_array<T>(gce_maxs));
       }
