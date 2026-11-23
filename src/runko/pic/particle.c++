@@ -31,11 +31,10 @@ ParticleContainer::ParticleContainer(const ParticleContainerArgs args) :
   pos_(args.N),
   vel_(args.N),
   ids_(args.N),
-  wgt_(args.kind == SpeciesKind::photon ? args.N : 0uz),
+  wgt_(args.mass == 0.0 ? args.N : 0uz),
   charge_ { args.charge },
   mass_ { args.mass },
-  weight_ { args.weight },
-  kind_ { args.kind }
+  weight_ { args.weight }
 {
 }
 
@@ -94,8 +93,7 @@ ParticleContainerArgs
   return { .N                    = size(),
            .charge               = charge_,
            .mass                 = mass_,
-           .weight               = weight_,
-           .kind                 = kind_ };
+           .weight               = weight_ };
 }
 
 std::array<std::vector<ParticleContainer::value_type>, 3>
@@ -509,7 +507,6 @@ ParticleContainer::ParticleContainer(const ParticleContainer& other)
   this->charge_               = other.charge_;
   this->mass_                 = other.mass_;
   this->weight_               = other.weight_;
-  this->kind_ = other.kind_;
   this->placed_ = other.placed_;
 }
 
@@ -525,7 +522,6 @@ ParticleContainer&
   this->charge_               = other.charge_;
   this->mass_                 = other.mass_;
   this->weight_               = other.weight_;
-  this->kind_ = other.kind_;
   this->placed_ = other.placed_;
 
   return *this;

@@ -44,10 +44,6 @@
 
 namespace pic {
 
-/// What a species is: photons move at c along their momentum, deposit no current and carry
-/// individual weights; everything else is a charged massive species.
-enum class SpeciesKind { charged, photon };
-
 /// Radiation pusher inputs in code units; each closure reads only what it needs.
 struct RadParams {
   // clang-format off
@@ -63,7 +59,6 @@ struct ParticleContainerArgs {
   double charge, mass;
   /// Common weight of the species (leptons, ions); 1 unless configured.
   double weight { 1 };
-  SpeciesKind kind { SpeciesKind::charged };
 };
 
 template<typename F, typename T>
@@ -100,7 +95,6 @@ private:
   double charge_;
   double mass_;
   double weight_;
-  SpeciesKind kind_;
   /// The slots are a layout built by place(): append grows the container at its tail
   /// instead of reusing the dead slots behind the last alive one, so the padding of the
   /// layout survives arrivals. sort, set and add_particles drop the layout.
@@ -190,9 +184,8 @@ public:
   std::vector<value_type> get_weights();
 
   [[nodiscard]] double weight() const { return weight_; }
-  [[nodiscard]] SpeciesKind kind() const { return kind_; }
-  /// photons carry a weight per particle; the other species share the species weight
-  [[nodiscard]] bool has_particle_weights() const { return kind_ == SpeciesKind::photon; }
+  /// a massless species carries a weight per particle; the others share the species weight
+  [[nodiscard]] bool has_particle_weights() const { return mass_ == 0.0; }
 
   [[nodiscard]]
   auto pos_mds() const
@@ -429,14 +422,12 @@ template<std::ranges::forward_range R>
     this->charge_               = args.charge;
     this->mass_                 = args.mass;
     this->weight_               = args.weight;
-    this->kind_                 = args.kind;
 
     const auto consistent_given_charge_n_mass =
       rn::all_of(spans, [this](const auto& span) {
         const auto args = span.container->args();
         return this->charge_ == args.charge and this->mass_ == args.mass and
-               this->weight_ == args.weight and
-               this->kind_ == args.kind;
+               this->weight_ == args.weight;
       });
     if(not consistent_given_charge_n_mass) {
       throw std::runtime_error {

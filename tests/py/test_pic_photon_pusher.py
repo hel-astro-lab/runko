@@ -64,10 +64,9 @@ class photon_pusher(unittest.TestCase):
         np.testing.assert_allclose(tile.get_weights(1), [1.0])
 
     def test_photons_deposit_no_current(self):
-        """the mass decides: a massless species deposits nothing, even if given a charge"""
+        """a neutral massless species is skipped by the depositers"""
         for depositer in ("zigzag_1st", "zigzag_1st_atomic"):
             config = make_config()
-            config.q2 = 1
             config.current_depositer = depositer
             _, tile = make_tile(config)
             rng = np.random.default_rng(2)

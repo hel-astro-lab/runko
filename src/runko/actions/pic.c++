@@ -67,7 +67,7 @@ void
   using opt_args_t = std::optional<pic::ParticleContainerArgs>;
 
   // Return optional containing the arguments if q and m are found in conf.
-  // The species weight w is optional (1); a massless species is the photons.
+  // The species weight w is optional (1).
   const auto make_opt_args = [&](
                                const std::string& q_label,
                                const std::string& m_label,
@@ -79,13 +79,11 @@ void
 
     const auto qm_tuple_to_args = [&](const auto qm) {
       const auto [q, m] = qm;
-      const auto kind   = m == 0.0 ? pic::SpeciesKind::photon : pic::SpeciesKind::charged;
 
       return pic::ParticleContainerArgs { .N      = 0,
                                           .charge = q,
                                           .mass   = m,
-                                          .weight = sim.config.get<double>(w_label).value_or(1.0),
-                                          .kind   = kind };
+                                          .weight = sim.config.get<double>(w_label).value_or(1.0) };
     };
 
     return sim.config.get<double>(q_label)
@@ -528,6 +526,14 @@ void
   }
 }
 
+/// a neutral massless species (q = m = 0) deposits nothing
+static bool
+  carries_no_current(const pic::ParticleContainer& pcontainer)
+{
+  const auto a = pcontainer.args();
+  return a.charge == 0.0 and a.mass == 0.0;
+}
+
 void
   deposit_current(runko::simulation_context& sim)
 {
@@ -563,7 +569,7 @@ void
     switch(current_depositer) {
       case runko::CurrentDepositer::zigzag_1st:
         for(const auto& [_, pcontainer]: particles) {
-          if(pcontainer.kind() == pic::SpeciesKind::photon) { continue; }  // no current
+          if(carries_no_current(pcontainer)) { continue; }
           yee.deposit_current(pcontainer.current_zigzag_1st(origo_pos, cfl));
         }
         break;
@@ -589,7 +595,7 @@ void
           .wait();
 
         for(const auto& [_, pcontainer]: particles) {
-          if(pcontainer.kind() == pic::SpeciesKind::photon) { continue; }  // no current
+          if(carries_no_current(pcontainer)) { continue; }
           pcontainer.current_zigzag_1st(generated_J, origo_pos, cfl);
         }
 

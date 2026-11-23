@@ -63,7 +63,7 @@ tile_state
   // every species of the tile is assigned a role or skipped
   for(const auto& [i, con]: pc) {
     const auto a = con.args();
-    if(a.kind == pic::SpeciesKind::photon) {
+    if(a.mass == 0.0) {
       if(found[0]) {
         throw std::runtime_error { "qed tile: more than one photon species." };
       }
