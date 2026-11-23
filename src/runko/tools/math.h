@@ -78,6 +78,28 @@ atomic_exchange(T* addr, T val) {
 }
 
 // =====================================================================
+// atomic_compare_exchange — stores desired iff *addr == expected (integers)
+// =====================================================================
+// Returns true when the store happened. HIP's atomicCAS takes unsigned int
+// or unsigned long long, so the pointer is cast by width (std::uint64_t is
+// unsigned long on Linux).
+
+template<typename T>
+constexpr bool
+atomic_compare_exchange(T* addr, T expected, T desired) {
+#ifdef TYVI_BACKEND_CPU
+    return std::atomic_ref<T>(*addr).compare_exchange_strong(
+        expected, desired, std::memory_order_relaxed);
+#elif defined(TYVI_BACKEND_HIP)
+    using U = std::conditional_t<sizeof(T) == 4, unsigned int, unsigned long long>;
+    static_assert(std::is_integral_v<T> and sizeof(T) == sizeof(U));
+    return ::atomicCAS(reinterpret_cast<U*>(addr),
+                       static_cast<U>(expected),
+                       static_cast<U>(desired)) == static_cast<U>(expected);
+#endif
+}
+
+// =====================================================================
 // atomic_max / atomic_min — for non-negative floating point values
 // =====================================================================
 // On HIP the bit pattern of a non-negative IEEE number orders like an

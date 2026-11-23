@@ -1,11 +1,19 @@
 // Copyright 2026 - 2026, Miro Palmu, Joonas Nättilä and the runko contributors
 // SPDX-License-Identifier: GPL-3.0-or-later
 
+#include "runko/tools/math.h"
 #include "runko/tools/random.h"
+#include "thrust/device_vector.h"
+#include "thrust/for_each.h"
+#include "thrust/host_vector.h"
+#include "thrust/iterator/counting_iterator.h"
+#include "tyvi/mdgrid.h"
 
+#include <algorithm>
 #include <array>
 #include <boost/ut.hpp>
 #include <cmath>
+#include <cstdint>
 #include <vector>
 
 namespace {
@@ -84,6 +92,28 @@ const suite<"counter-based rng"> _ = [] {
     auto cnt = std::array<int, 7> {};
     for(auto i = 0; i < 70000; ++i) { ++cnt[rng.integer(7)]; }
     for(const auto c: cnt) { expect(std::abs(c - 10000) < 400); }
+  };
+};
+
+[[maybe_unused]]
+const suite<"portable atomics"> atomics = [] {
+  "compare_exchange: of many lanes racing on one slot exactly one wins"_test = [] {
+    // the winner stored its value and saw true; every loser saw false and left it
+    constexpr auto n = 100000;
+    auto slot        = thrust::device_vector<std::uint64_t>(1, 0);
+    auto won         = thrust::device_vector<int>(n, 0);
+    const auto s     = thrust::raw_pointer_cast(slot.data());
+    const auto wp    = thrust::raw_pointer_cast(won.data());
+    const auto w     = tyvi::mdgrid_work {};
+    const auto i0    = thrust::counting_iterator<int>(0);
+    thrust::for_each(w.on_this(), i0, i0 + n, [=](const int i) {
+      wp[i] = sstd::atomic_compare_exchange(s, std::uint64_t { 0 }, std::uint64_t(i) + 1) ? 1 : 0;
+    });
+    w.wait();
+    const auto h      = thrust::host_vector<int>(won);
+    const auto winner = std::find(h.begin(), h.end(), 1) - h.begin();
+    expect(std::count(h.begin(), h.end(), 1) == 1);
+    expect(std::uint64_t { slot[0] } == static_cast<std::uint64_t>(winner) + 1);
   };
 };
 
