@@ -1,8 +1,6 @@
 # Copyright 2025 - 2026, Miro Palmu, Joonas Nättilä and the runko contributors
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-import inspect
-
 
 class MethodWrapper:
     """
@@ -46,6 +44,8 @@ class MethodWrapper:
         Attributes starting with __ are treated as proper attributes
         which are not customizable, so AttributeError is raised for them.
         """
+
+        import inspect
 
         if name.startswith("__"):
             msg = f"MethodWrapper invalid method name: {name}\n"
