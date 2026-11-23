@@ -46,6 +46,9 @@ struct ParticleStateBatch {
   container_type vel;
   /// Per-particle weights; ignored by species that carry the species weight.
   std::optional<pybind11::array_t<double>> wgt {};
+  /// Payload of the species: n_payload arrays (or an (n_payload, N) array); None for a
+  /// species without one.
+  pybind11::object payload {};
 };
 
 template<typename F, typename T>

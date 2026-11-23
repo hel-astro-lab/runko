@@ -56,6 +56,8 @@ struct ParticleContainerArgs {
   double charge, mass;
   /// Common weight of the species (leptons, ions); 1 unless configured.
   double weight { 1 };
+  /// Opaque floats every particle carries along (config n_payload{i}).
+  std::size_t n_payload { 0 };
 };
 
 template<typename F, typename T>
@@ -88,6 +90,9 @@ private:
   runko::device_scalar_segments<runko::prtc_id_type> ids_;
   /// Weight of each particle; empty unless the species carries per-particle weights.
   runko::device_scalar_segments<value_type> wgt_;
+  /// Payload of each particle, one array per component: opaque floats that follow the
+  /// particle through every reorder, append and exchange.
+  std::vector<runko::device_scalar_segments<value_type>> payload_;
 
   double charge_;
   double mass_;
@@ -130,12 +135,16 @@ public:
 
 
   /// Appends the particles pointed by the given spans.
+  ///
+  /// payloads[n] holds the payload of the particles of spans[n], n_payload() floats per
+  /// particle in the same order; it is required iff n_payload() > 0.
   template<std::ranges::forward_range R>
     requires std::convertible_to<
       std::ranges::range_reference_t<R>,
       std::span<const runko::ParticleState<value_type>>>
   inline void append(
     const R& spans,
+    std::span<const std::span<const value_type>> payloads = {},
     std::optional<std::array<value_type, 3>> wrap_mins = {},
     std::optional<std::array<value_type, 3>> wrap_maxs = {});
 
@@ -153,7 +162,7 @@ public:
 
   /// Append n dead-particle slots at the end of the container.
   ///
-  /// Grows pos_/vel_/ids_ (and wgt_) by n and tags the new ids with
+  /// Grows pos_/vel_/ids_ (and wgt_, payload_) by n and tags the new ids with
   /// runko::dead_prtc_id; the existing particles are kept. pos_ and vel_ of
   /// the new slots are left uninitialized, since dead particles are identified
   /// by their id alone.
@@ -176,6 +185,9 @@ public:
   /// Weights of the alive particles; the common weight repeated for species without
   /// per-particle weights.
   std::vector<value_type> get_weights();
+
+  /// Payload component c of the alive particles.
+  std::vector<value_type> get_payload(std::size_t c);
 
   [[nodiscard]] double weight() const { return weight_; }
   /// a massless species carries a weight per particle; the others share the species weight
@@ -205,6 +217,14 @@ public:
     return wgt_.mds();
   }
 
+  [[nodiscard]] std::size_t n_payload() const { return payload_.size(); }
+
+  [[nodiscard]]
+  auto payload_mds(const std::size_t c) const
+  {
+    return payload_.at(c).mds();
+  }
+
   [[nodiscard]]
   auto pos_mds()
   {
@@ -229,6 +249,12 @@ public:
     return wgt_.mds();
   }
 
+  [[nodiscard]]
+  auto payload_mds(const std::size_t c)
+  {
+    return payload_.at(c).mds();
+  }
+
   /// Wraps coordinates outside of given extents.
   void wrap_positions(std::array<value_type, 3> mins, std::array<value_type, 3> maxs);
 
@@ -249,10 +275,14 @@ public:
       std::array<value_type, 2> z_dividers);
 
   /// Way to initialize particles. Known to be slow.
+  ///
+  /// payload: n_payload() floats per particle, in the order of new_particles.
   template<std::ranges::forward_range R>
     requires std::
       convertible_to<std::ranges::range_reference_t<R>, runko::ParticleState<double>>
-    void add_particles(const R& new_particles);
+    void add_particles(
+      const R& new_particles,
+      std::span<const value_type> payload = {});
 
   /// Sorts particles based on a function of particle position.
   ///
@@ -334,7 +364,9 @@ template<std::ranges::forward_range R>
   requires std::
     convertible_to<std::ranges::range_reference_t<R>, runko::ParticleState<double>>
   inline void
-  ParticleContainer::add_particles(const R& new_particles)
+  ParticleContainer::add_particles(
+    const R& new_particles,
+    const std::span<const value_type> payload)
 {
   using value_state_type = runko::ParticleState<ParticleContainer::value_type>;
   auto casted_new_particles =
@@ -360,10 +392,16 @@ template<std::ranges::forward_range R>
     new_states.begin());
 
 
+  const auto new_payload =
+    thrust::device_vector<value_type>(payload.begin(), payload.end());
+
   this->append(
     std::array { std::span<const value_state_type>(
       thrust::raw_pointer_cast(new_states.data()),
-      new_states.size()) });
+      new_states.size()) },
+    std::array { std::span<const value_type>(
+      thrust::raw_pointer_cast(new_payload.data()),
+      new_payload.size()) });
 }
 
 template<std::ranges::forward_range R>
@@ -412,17 +450,18 @@ template<std::ranges::forward_range R>
     this->charge_               = args.charge;
     this->mass_                 = args.mass;
     this->weight_               = args.weight;
+    this->payload_.resize(args.n_payload);
 
     const auto consistent_given_charge_n_mass =
       rn::all_of(spans, [this](const auto& span) {
         const auto args = span.container->args();
         return this->charge_ == args.charge and this->mass_ == args.mass and
-               this->weight_ == args.weight;
+               this->weight_ == args.weight and this->n_payload() == args.n_payload;
       });
     if(not consistent_given_charge_n_mass) {
       throw std::runtime_error {
         "Trying to set ParticleContainer from spans to containers with "
-        "inconsistent charges/masses."
+        "inconsistent charges/masses/payloads."
       };
     }
   }
@@ -454,6 +493,7 @@ template<std::ranges::forward_range R>
   this->vel_.resize(Ntotal);
   this->ids_.resize(Ntotal);
   if(this->has_particle_weights()) { this->wgt_.resize(Ntotal); }
+  for(auto& p: this->payload_) { p.resize(Ntotal); }
 
   const auto pos_mds = this->pos_.mds();
   const auto vel_mds = this->vel_.mds();
@@ -491,6 +531,13 @@ template<std::ranges::forward_range R>
       const auto wgt_submds       = std::submdspan(wgt_mds, location_in_this);
       w.for_each_index(wgt_submds, [=](const auto idx) {
         wgt_submds[idx][] = other_wgt_submds[idx][];
+      });
+    }
+    for(auto c = 0uz; c < this->n_payload(); ++c) {
+      const auto other_submds = std::submdspan(span.container->payload_mds(c), s);
+      const auto submds       = std::submdspan(this->payload_mds(c), location_in_this);
+      w.for_each_index(submds, [=](const auto idx) {
+        submds[idx][] = other_submds[idx][];
       });
     }
   };
@@ -547,6 +594,7 @@ template<std::ranges::forward_range R>
 inline void
   ParticleContainer::append(
     const R& spans,
+    const std::span<const std::span<const value_type>> payloads,
     const std::optional<std::array<value_type, 3>> wrap_mins,
     const std::optional<std::array<value_type, 3>> wrap_maxs)
 {
@@ -554,6 +602,20 @@ inline void
   namespace rv = std::views;
 
   if(rn::empty(spans)) { return; }
+
+  const auto np = this->n_payload();
+  if(not(payloads.empty() and np == 0uz)) {
+    const auto matching =
+      payloads.size() == rn::size(spans) and
+      rn::all_of(rv::iota(0uz, payloads.size()), [&](const auto n) {
+        return payloads[n].size() == spans[n].size() * np;
+      });
+    if(not matching) {
+      throw std::runtime_error {
+        "ParticleContainer::append: the payloads do not match the particles."
+      };
+    }
+  }
 
   // 1. find last alive particle P
   // 2. resizes containers to fit appended particles (with tyvi::mdsegments this should
@@ -602,6 +664,7 @@ inline void
   this->vel_.resize(Pnum + Ntotal);
   this->ids_.resize(Pnum + Ntotal);
   if(this->has_particle_weights()) { this->wgt_.resize(Pnum + Ntotal); }
+  for(auto& p: this->payload_) { p.resize(Pnum + Ntotal); }
 
   // 3.
   const auto pos_mds  = this->pos_.mds();
@@ -663,6 +726,15 @@ inline void
 
         ids_mds[j][] = state.id;
         if(weighted) { wgt_mds[j][] = state.wgt; }
+      });
+    }
+
+    // particle i of the span carries its payload at n_payload() i + c
+    for(auto c = 0uz; c < np; ++c) {
+      const auto dst = this->payload_mds(c);
+      const auto src = payloads[n].data();
+      thrust::for_each(w.on_this(), n_begin, n_end, [=](const auto i) {
+        dst[i + n_offset][] = src[i * np + c];
       });
     }
 

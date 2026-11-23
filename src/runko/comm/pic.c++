@@ -295,6 +295,7 @@ tyvi::actions::sexpr_sender
         using T = pic::ParticleContainer::value_type;
         pcontainers.at(ptype).append(
           spans,
+          {},
           runko::cast_array<T>(gce_mins),
           runko::cast_array<T>(gce_maxs));
       }

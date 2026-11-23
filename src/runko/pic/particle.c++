@@ -35,10 +35,12 @@ ParticleContainer::ParticleContainer(const ParticleContainerArgs args) :
   vel_(args.N),
   ids_(args.N),
   wgt_(args.mass == 0.0 ? args.N : 0uz),
+  payload_(args.n_payload),
   charge_ { args.charge },
   mass_ { args.mass },
   weight_ { args.weight }
 {
+  for(auto& p: payload_) { p.resize(args.N); }
 }
 
 std::size_t
@@ -72,7 +74,8 @@ ParticleContainerArgs
   return { .N                    = size(),
            .charge               = charge_,
            .mass                 = mass_,
-           .weight               = weight_ };
+           .weight               = weight_,
+           .n_payload            = n_payload() };
 }
 
 std::array<std::vector<ParticleContainer::value_type>, 3>
@@ -188,6 +191,30 @@ std::vector<ParticleContainer::value_type>
   return tmp;
 }
 
+std::vector<ParticleContainer::value_type>
+  ParticleContainer::get_payload(const std::size_t c)
+{
+  auto host_ids = runko::host_scalar_segments<runko::prtc_id_type>(this->size());
+  auto host_p   = runko::host_scalar_segments<value_type>(this->size());
+  tyvi::copy_d2h(this->ids_, host_ids);
+  tyvi::copy_d2h(this->payload_.at(c), host_p);
+
+  auto tmp = std::vector<value_type>(this->size());
+
+  const auto idmds = host_ids.mds();
+  const auto pmds  = host_p.mds();
+  auto n           = 0uz;
+  for(const auto [i]: tyvi::sstd::index_space(idmds)) {
+    if(idmds[i][] == runko::dead_prtc_id) { continue; }
+
+    tmp[n] = pmds[i][];
+    ++n;
+  }
+
+  tmp.resize(n);
+  return tmp;
+}
+
 void
   ParticleContainer::reorder(const thrust::device_vector<runko::index_t>& src)
 {
@@ -205,6 +232,7 @@ void
     this->vel_.resize(n);
     this->ids_.resize(n);
     if(this->has_particle_weights()) { this->wgt_.resize(n); }
+    for(auto& p: this->payload_) { p.resize(n); }
   };
   if(n_new > n_old) { resize_all(n_new); }
 
@@ -235,7 +263,7 @@ void
       [=](const I s) { return s == no_source ? fill : p[s]; });
   };
 
-  // pos/vel/wgt of a dead slot are never read: only the id distinguishes it.
+  // pos/vel/wgt/payload of a dead slot are never read: only the id distinguishes it.
   move(this->pos_.component_view<zero>(), value_type { 0 });
   move(this->pos_.component_view<one>(), value_type { 0 });
   move(this->pos_.component_view<two>(), value_type { 0 });
@@ -245,6 +273,7 @@ void
   if(this->has_particle_weights()) {
     move(this->wgt_.component_view<>(), value_type { 0 });
   }
+  for(auto& p: this->payload_) { move(p.component_view<>(), value_type { 0 }); }
   move(this->ids_.component_view<>(), runko::dead_prtc_id);
   w.wait();
 
@@ -261,6 +290,7 @@ void
   this->vel_.resize(old + n);
   this->ids_.resize(old + n);
   if(this->has_particle_weights()) { this->wgt_.resize(old + n); }
+  for(auto& p: this->payload_) { p.resize(old + n); }
 
   // Only the id distinguishes a dead slot. Pushers, depositors, and reflectors
   // early-return on id == dead_prtc_id, so pos_ and vel_ are never read for
@@ -494,6 +524,10 @@ ParticleContainer::ParticleContainer(const ParticleContainer& other)
   tyvi::copy_d2d(other.vel_, this->vel_);
   tyvi::copy_d2d(other.ids_, this->ids_);
   if(other.has_particle_weights()) { tyvi::copy_d2d(other.wgt_, this->wgt_); }
+  this->payload_.resize(other.n_payload());
+  for(auto c = 0uz; c < other.n_payload(); ++c) {
+    tyvi::copy_d2d(other.payload_[c], this->payload_[c]);
+  }
 
   this->charge_               = other.charge_;
   this->mass_                 = other.mass_;
@@ -509,6 +543,10 @@ ParticleContainer&
   tyvi::copy_d2d(other.vel_, this->vel_);
   tyvi::copy_d2d(other.ids_, this->ids_);
   tyvi::copy_d2d(other.wgt_, this->wgt_);  // empty for an unweighted species
+  this->payload_.resize(other.n_payload());
+  for(auto c = 0uz; c < other.n_payload(); ++c) {
+    tyvi::copy_d2d(other.payload_[c], this->payload_[c]);
+  }
 
   this->charge_               = other.charge_;
   this->mass_                 = other.mass_;

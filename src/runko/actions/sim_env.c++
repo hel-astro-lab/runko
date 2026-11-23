@@ -262,13 +262,19 @@ tyvi::actions::sexpr
         return parse_atom_args<
                  std::reference_wrapper<runko::simulation_context>,
                  long,
-                 py::list>(args) |
-               te::then([](const auto sim, const auto ptype, const auto& particles) {
+                 py::list,
+                 runko::opt_arg<py::list>>(args) |
+               te::then([](
+                          const auto sim,
+                          const auto ptype,
+                          const auto& particles,
+                          const auto& payload) {
                  pic::inject(
                    sim,
                    runko::checked_cast<std::size_t>(ptype),
                    particles
-                     .template cast<std::vector<runko::ParticleState<double>>>());
+                     .template cast<std::vector<runko::ParticleState<double>>>(),
+                   payload ? py::handle(*payload) : py::handle(py::none()));
                  return ta::null;
                });
       } }),

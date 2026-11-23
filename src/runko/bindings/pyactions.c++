@@ -303,6 +303,22 @@ auto
 }
 
 auto
+  get_payload(
+    runko::simulation_context &sim,
+    const runko::simulation_context::tile_id_type id,
+    const std::size_t ptype,
+    const std::size_t c)
+{
+  if(const auto p = sim.tiles.try_get<pic::particle_containers>(id)) {
+    return to_ndarray(p->at(ptype).get_payload(c));
+  } else {
+    throw std::runtime_error(
+      "internal logic error: Trying to invoke get_payload of a tile which does not "
+      "have pic::particle_containers.");
+  }
+}
+
+auto
   get_weights(
     runko::simulation_context &sim,
     const runko::simulation_context::tile_id_type id,
@@ -667,6 +683,12 @@ Returns list of the objects ordered by rank on root and None on other ranks.
     .def("get_velocities", &get_velocities)
     .def("get_ids", &get_ids)
     .def("get_weights", &get_weights)
+    .def(
+      "get_payload",
+      &get_payload,
+      py::arg("tile_id"),
+      py::arg("ptype"),
+      py::arg("c") = 0uz)
     .def(
       "index",
       [](

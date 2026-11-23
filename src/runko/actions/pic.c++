@@ -3,6 +3,7 @@
 
 #include "runko/actions/pic.h"
 
+#include "pybind11/stl.h"
 #include "runko/comm/cartesian_grid.h"
 #include "runko/coords.h"
 #include "runko/pic/particle.h"
@@ -20,6 +21,57 @@
 namespace pic {
 namespace ta = tyvi::actions;
 namespace te = tyvi::exec;
+namespace py = pybind11;
+
+namespace {
+
+/// The payload given from the host for n particles of a species with n_payload
+/// components, as n_payload floats per particle: an array-like of shape (n_payload, n),
+/// or (n,) when n_payload is 1. A species with a payload has to be given one (unless n
+/// is 0), a species without may not be.
+std::vector<ParticleContainer::value_type>
+  host_payload(
+    const std::size_t n_payload,
+    const std::size_t n,
+    const py::handle payload)
+{
+  if(not payload or payload.is_none()) {
+    if(n_payload == 0uz or n == 0uz) { return {}; }
+    throw std::runtime_error { std::format(
+      "the species carries a payload of {} components (n_payload): the injected "
+      "particles need one.",
+      n_payload) };
+  }
+  if(n_payload == 0uz) {
+    throw std::runtime_error {
+      "the species carries no payload (n_payload = 0): none can be injected."
+    };
+  }
+  using array = py::array_t<double, py::array::c_style | py::array::forcecast>;
+  const auto a     = array::ensure(payload);
+  const auto shape = [&](const auto d) { return static_cast<std::size_t>(a.shape(d)); };
+  const auto ok    = a and ((a.ndim() == 2 and shape(0) == n_payload and shape(1) == n) or
+                         (a.ndim() == 1 and n_payload == 1uz and shape(0) == n));
+  if(not ok) {
+    throw std::runtime_error { std::format(
+      "the payload of {} particles must have the shape ({}, {}){}.",
+      n,
+      n_payload,
+      n,
+      n_payload == 1uz ? " or (N,)" : "") };
+  }
+  // component-major in, particle-major out
+  using T  = ParticleContainer::value_type;
+  auto out = std::vector<T>(n * n_payload);
+  for(auto i = 0uz; i < n; ++i) {
+    for(auto c = 0uz; c < n_payload; ++c) {
+      out[i * n_payload + c] = static_cast<T>(a.data()[c * n + i]);
+    }
+  }
+  return out;
+}
+
+}  // namespace
 
 constexpr particle_id_generator::particle_id_generator(const runko::prtc_id_type tag) :
   tag_ { tag }
@@ -65,11 +117,12 @@ void
   using opt_args_t = std::optional<pic::ParticleContainerArgs>;
 
   // Return optional containing the arguments if q and m are found in conf.
-  // The species weight w is optional (1).
+  // The species weight w is optional (1), as is the payload size n_payload (0).
   const auto make_opt_args = [&](
                                const std::string& q_label,
                                const std::string& m_label,
-                               const std::string& w_label) -> opt_args_t {
+                               const std::string& w_label,
+                               const std::string& np_label) -> opt_args_t {
     const auto q_to_qm_tuple = [&](const auto q) {
       return sim.config.get<double>(m_label).transform(
         [&](const auto m) { return std::tuple { q, m }; });
@@ -78,10 +131,13 @@ void
     const auto qm_tuple_to_args = [&](const auto qm) {
       const auto [q, m] = qm;
 
-      return pic::ParticleContainerArgs { .N      = 0,
-                                          .charge = q,
-                                          .mass   = m,
-                                          .weight = sim.config.get<double>(w_label).value_or(1.0) };
+      return pic::ParticleContainerArgs {
+        .N         = 0,
+        .charge    = q,
+        .mass      = m,
+        .weight    = sim.config.get<double>(w_label).value_or(1.0),
+        .n_payload = sim.config.get<std::size_t>(np_label).value_or(0uz)
+      };
     };
 
     return sim.config.get<double>(q_label)
@@ -122,8 +178,9 @@ void
       const auto q_label = std::format("q{}", i);
       const auto m_label = std::format("m{}", i);
       const auto w_label = std::format("w{}", i);
+      const auto np_label = std::format("n_payload{}", i);
 
-      const auto pcontainer_args = make_opt_args(q_label, m_label, w_label);
+      const auto pcontainer_args = make_opt_args(q_label, m_label, w_label, np_label);
       if(not pcontainer_args) { break; }
 
       auto container = pic::ParticleContainer { pcontainer_args.value() };
@@ -155,18 +212,36 @@ void
                                           runko::local_tile_tag>()) {
 
     const auto gc = runko::global_coordinates(sim, idx.template as<double>().data);
+    auto& pcontainer = particles.at(particle_type);
     std::vector<runko::ParticleState<double>> new_particles {};
+    std::vector<ParticleContainer::value_type> new_payload {};
 
     for(const auto [i, j, k]:
         tyvi::sstd::index_space(std::mdspan((int*)nullptr, e[0], e[1], e[2]))) {
       const auto [x, y, z] = gc(i, j, k);
-      for(const auto p: pgen(x, y, z)) {
+      // the generator returns the states of the cell, or the pair (states, payload)
+      const auto r      = pgen(x, y, z);
+      const auto paired = py::isinstance<py::tuple>(r);
+      if(paired and py::len(r) != 2uz) {
+        throw std::runtime_error {
+          "inject_to_each_cell: a generator returns states or (states, payload)."
+        };
+      }
+      const auto states =
+        (paired ? py::object(r[py::int_(0)]) : r)
+          .cast<std::vector<runko::ParticleState<double>>>();
+      const auto payload = host_payload(
+        pcontainer.n_payload(),
+        states.size(),
+        paired ? py::object(r[py::int_(1)]) : py::object(py::none()));
+      for(const auto p: states) {
         new_particles.push_back(p);
         new_particles.back().id = id_gen.consume_next_id(particle_type);
       }
+      new_payload.insert(new_payload.end(), payload.begin(), payload.end());
     }
 
-    particles.at(particle_type).add_particles(new_particles);
+    pcontainer.add_particles(new_particles, new_payload);
   }
 }
 
@@ -174,15 +249,19 @@ void
   inject(
     runko::simulation_context& sim,
     std::size_t particle_type,
-    std::vector<runko::ParticleState<double>> new_particles)
+    std::vector<runko::ParticleState<double>> new_particles,
+    const py::handle payload)
 {
   for(auto&& [_, particles, idx, id_gen]: sim.template view_tiles<
                                           pic::particle_containers,
                                           const runko::cartesian_index<3>,
                                           pic::particle_id_generator,
                                           runko::local_tile_tag>()) {
+    auto& pcontainer = particles.at(particle_type);
     for(auto& p: new_particles) { p.id = id_gen.consume_next_id(particle_type); }
-    particles.at(particle_type).add_particles(new_particles);
+    pcontainer.add_particles(
+      new_particles,
+      host_payload(pcontainer.n_payload(), new_particles.size(), payload));
   }
 }
 
@@ -296,6 +375,10 @@ void
       if(state_batch.wgt) { assert_shapes(*state_batch.wgt); }
     }
 
+    auto& pcontainer = particles.at(particle_type);
+    const auto np    = pcontainer.n_payload();
+    const auto batch_payload = host_payload(np, batch_size, state_batch.payload);
+
     const auto posx_view = state_batch.pos[0].template unchecked<1>();
     const auto posy_view = state_batch.pos[1].template unchecked<1>();
     const auto posz_view = state_batch.pos[2].template unchecked<1>();
@@ -304,8 +387,10 @@ void
     const auto vely_view = state_batch.vel[1].template unchecked<1>();
     const auto velz_view = state_batch.vel[2].template unchecked<1>();
 
-    auto states = std::vector<runko::ParticleState<double>> {};
+    auto states  = std::vector<runko::ParticleState<double>> {};
+    auto payload = std::vector<ParticleContainer::value_type> {};
     states.reserve(batch_size);
+    payload.reserve(batch_size * np);
     for(const auto n: std::views::iota(0uz, batch_size)) {
       // partial edge cells are generated whole; keep only the part inside the stripe
       if(posx_view(n) < x_left or posx_view(n) >= x_right) { continue; }
@@ -315,9 +400,11 @@ void
           .vel = { velx_view(n), vely_view(n), velz_view(n) },
           .id  = id_gen.consume_next_id(particle_type),
           .wgt = state_batch.wgt ? state_batch.wgt->at(n) : 1.0 });
+      const auto p = std::next(batch_payload.begin(), std::ptrdiff_t(n * np));
+      payload.insert(payload.end(), p, std::next(p, std::ptrdiff_t(np)));
     }
 
-    particles.at(particle_type).add_particles(states);
+    pcontainer.add_particles(states, payload);
   }
 }
 

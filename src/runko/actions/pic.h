@@ -33,8 +33,9 @@ public:
 /// Constructs ParticleContainers to each local tile if they are not.
 void ensure_constructed_particle_containers(runko::simulation_context&);
 
-using particle_generator =
-  std::function<std::vector<runko::ParticleState<double>>(double, double, double)>;
+/// Returns the states of a cell, or the pair (states, payload) for a species with a
+/// payload (shape (n_payload, N), or (N,) when n_payload is 1).
+using particle_generator = std::function<pybind11::object(double, double, double)>;
 
 /// Inject particles to local tiles based on given generator.
 ///
@@ -51,11 +52,13 @@ void inject_to_each_cell(
 /// Should be used with caution as this does not really make sense
 /// if there are more than one local tile.
 ///
-/// Particle type is assumed to be configured.
+/// Particle type is assumed to be configured. The payload (shape (n_payload, N), or
+/// (N,) when n_payload is 1) is required iff the species carries one.
 void inject(
   runko::simulation_context&,
   std::size_t particle_type,
-  std::vector<runko::ParticleState<double>>);
+  std::vector<runko::ParticleState<double>>,
+  pybind11::handle payload);
 
 using batch_array = pybind11::array_t<double>;
 using batch_particle_generator =

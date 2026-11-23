@@ -119,15 +119,28 @@ class ProxyTile:
         return self.sim_context.get_weights(self.tile_id, ptype)
 
 
+    def get_payload(self, ptype: int, c: int = 0):
+        """payload component c of the alive particles of a species"""
+        self.sim_context.eval(self._ensure_prtcls)
+        return self.sim_context.get_payload(self.tile_id, ptype, c)
+
+
     def inject_to_each_cell(self, ptype: int, pgen):
+        """pgen(x, y, z) returns the states of a cell, or (states, payload) for a species
+        with a payload"""
         prg = (actions.inject_to_each_cell, actions.current_context, ptype, pgen)
         self.sim_context.eval((actions.sequence,
                                (actions.quote, self._ensure_prtcls),
                                (actions.quote, prg)))
 
 
-    def inject(self, ptype: int, particles: list[ParticleState]):
+    def inject(self, ptype: int, particles: list[ParticleState], payload=None):
+        """payload: shape (n_payload, N), or (N,) when n_payload is 1; required iff the
+        species carries one"""
         prg = (actions.inject, actions.current_context, ptype, particles)
+        if payload is not None:
+            import numpy as np
+            prg += (np.asarray(payload, dtype=float).tolist(),)
         self.sim_context.eval((actions.sequence,
                                (actions.quote, self._ensure_prtcls),
                                (actions.quote, prg)))

@@ -52,15 +52,21 @@ void
       py::init([](
                  PSB::container_type pos,
                  PSB::container_type vel,
-                 std::optional<py::array_t<double>> wgt) {
-        return PSB { .pos = std::move(pos), .vel = std::move(vel), .wgt = std::move(wgt) };
+                 std::optional<py::array_t<double>> wgt,
+                 py::object payload) {
+        return PSB { .pos     = std::move(pos),
+                     .vel     = std::move(vel),
+                     .wgt     = std::move(wgt),
+                     .payload = std::move(payload) };
       }),
       py::arg("pos"),
       py::arg("vel"),
-      py::arg("wgt") = py::none())
+      py::arg("wgt")     = py::none(),
+      py::arg("payload") = py::none())
     .def_readwrite("pos", &PSB::pos)
     .def_readwrite("vel", &PSB::vel)
-    .def_readwrite("wgt", &PSB::wgt);
+    .def_readwrite("wgt", &PSB::wgt)
+    .def_readwrite("payload", &PSB::payload);
 
   // reflector wall data structure
   using RW = pic::reflector_wall;
