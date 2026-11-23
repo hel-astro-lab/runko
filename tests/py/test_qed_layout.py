@@ -310,6 +310,27 @@ class qed_layout(unittest.TestCase):
             state = after
         self.assertGreater(held, 0.0, "no product found an arrival in slack")
 
+    def test_arrival_in_slack_widens_no_bound(self):
+        """an LP appended into a key's slack is no member of the key until the fill reaches it:
+        however heavy and soft, it leaves the bounds the envelopes read alone"""
+        config, tile = make_tile(qed_channels=["pairann"], qed_nbin=1, qed_n_reaction_cells=1, qed_slack=1.0,
+                                 qed_a_res=0.0, qed_nsort=1000)
+        rng = np.random.default_rng(22)
+        nph, k = 200, 5
+        d = rng.normal(size=(nph, 3)); d /= np.linalg.norm(d, axis=1)[:, None]
+        tile.set_particles("ph", [tuple(v) for v in 0.1 * d], [WL] * nph)
+        tile.interact()  # lays out
+        sp = tile.species("ph")
+        tb0 = tile.get_tables("ph")
+        tile.inject(sp, [runko.pic.threeD.ParticleState(pos=(1.0, 2.0, 3.0), vel=(1e-6, 0, 0))
+                         for _ in range(k)], payload=[1e3 * WL] * k)
+        tile.interact()  # no layout: the step re-widens the bounds by the members
+        self.assertTrue(tile.laid())
+        np.testing.assert_array_equal(np.asarray(tile.get_slot_keys("ph"))[-k:], 1)
+        tb1 = tile.get_tables("ph")
+        for q in ("wmax", "emin", "emax", "fill"):
+            np.testing.assert_array_equal(tb1[q], tb0[q])
+
     def test_pic_sort_on_a_qed_tile(self):
         """a pic sort reorders a laid-out container and drops its layout; the next step lays it
         out again (Compton only, no splitting: weight and count of every species conserved)"""

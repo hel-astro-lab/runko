@@ -245,12 +245,14 @@ void
   const auto w0       = static_cast<float>(w0_);  // weight of a lepton species
   const auto m        = mass_;
   const auto v        = this->view();
-  // one lane per slot: a live LP with a key widens the weight and energy bounds of that
-  // key
+  // one lane per slot: a live member of a key widens the weight and energy bounds of
+  // that key. An arrival in the slack beyond the fill is no member yet: nothing can
+  // select it, and the placement widens the bounds when the fill reaches it.
   w.for_each_index(ids_mds, [=](const auto idx) {
     if(ids_mds[idx][] == runko::dead_prtc_id) { return; }
     const auto k = v.skey[idx[0]];
     if(k < 0) { return; }  // tail slot: no key yet
+    if(idx[0] >= v.b[k] + sstd::min(v.fill[k], v.cap[k])) { return; }
     const auto e  = energy_of(m, vel_mds[idx][0], vel_mds[idx][1], vel_mds[idx][2]);
     const auto wg = weighted ? wgt_mds[idx][] : w0;  // its weight
     sstd::atomic_max(&v.wmax[k], wg);
