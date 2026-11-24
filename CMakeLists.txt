@@ -65,6 +65,11 @@ target_compile_options(runko_warnings
     -Werror
 )
 
+# -Wmaybe-uninitialized resulted in cryptic false positives with some optimizations.
+if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+    target_compile_options(runko_warnings INTERFACE -Wno-error=maybe-uninitialized)
+endif()
+
 add_subdirectory(external/tyvi)
 add_subdirectory(external/entt)
 
