@@ -572,8 +572,9 @@ ta::sexpr_sender
   push_e(runko::simulation_context& x)
 {
 
-  const auto cfl  = x.config.template get_or_throw<double>("cfl");
-  const auto prop = x.get_n_set_context_variable<emf::FieldPropagator>(&parse_field_propagator);
+  const auto cfl = x.config.template get_or_throw<double>("cfl");
+  const auto prop =
+    x.get_n_set_context_variable<emf::FieldPropagator>(&parse_field_propagator);
 
   using vt = emf::YeeLattice::value_type;
 
@@ -601,8 +602,9 @@ ta::sexpr_sender
   push_half_b(runko::simulation_context& x)
 {
 
-  const auto cfl  = x.config.template get_or_throw<double>("cfl");
-  const auto prop = x.get_n_set_context_variable<emf::FieldPropagator>(&parse_field_propagator);
+  const auto cfl = x.config.template get_or_throw<double>("cfl");
+  const auto prop =
+    x.get_n_set_context_variable<emf::FieldPropagator>(&parse_field_propagator);
 
   if(prop == emf::FieldPropagator::stencil) {
     std::ignore = x.set_context_variable<emf::StencilCoeffs>(&parse_stencil_coeffs);
@@ -636,7 +638,8 @@ ta::sexpr_sender
 ta::sexpr_sender
   filter_current(runko::simulation_context& x)
 {
-  const auto filter = x.get_n_set_context_variable<emf::CurrentFilter>(&parse_current_filter);
+  const auto filter =
+    x.get_n_set_context_variable<emf::CurrentFilter>(&parse_current_filter);
 
   return te::just(std::ref(x)) | te::then([filter](runko::simulation_context& sim) {
            for(auto&& [_, yee]:

@@ -1,12 +1,12 @@
 // Copyright 2016 - 2026, Miro Palmu, Joonas Nättilä and the runko contributors
 // SPDX-License-Identifier: GPL-3.0-or-later
 
-#include "runko/particles_common.h"
-#include "runko/pic/reflector_wall.h"
 #include "pybind11/functional.h"
 #include "pybind11/numpy.h"
 #include "pybind11/pybind11.h"
 #include "pybind11/stl.h"
+#include "runko/particles_common.h"
+#include "runko/pic/reflector_wall.h"
 #include "runko/tools/config_parser.h"
 
 #include <memory>

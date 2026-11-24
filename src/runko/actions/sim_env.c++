@@ -68,7 +68,7 @@ tyvi::actions::sexpr
 
                    return std::forward<decltype(s)>(s);
                  });
-          } });
+        } });
   };
 
   // Due to hipcc compiler bug, env not be non-const.
