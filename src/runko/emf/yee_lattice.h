@@ -64,7 +64,6 @@ concept yee_lattice_fields_function =
     std::invoke_result_t<F, runko::index_t, runko::index_t, runko::index_t>,
     YeeLatticeFieldsAtPoint>;
 
-/// Yee lattice of plasma quantities in tyvi::mdgrid continers.
 class [[nodiscard]] YeeLattice {
 public:
   using value_type = float;
@@ -75,8 +74,8 @@ public:
     std::vector<YeeLatticeFieldsAtPoint>,
     std::extents<runko::index_t>,
     std::layout_right,
-    VecGrid::grid_extents_type,
-    VecGrid::grid_layout_type>;
+    runko::detail::grid_extents,
+    runko::detail::grid_layout>;
 
 
   /// Lattice consists of  27 different regions which are labeled with {i, j, k}.
@@ -369,9 +368,6 @@ public:
   /// passes (async).
   void filter_current_binomial2_unrolled(const tyvi::mdgrid_work&);
 
-  /// Returns mdspans to host accessible E, B and J in non-halo region.
-  auto view_EBJ_on_host();
-
   /// Returns device mdspans to non-halo E, B and J without device→host copy.
   auto view_EBJ_on_device();
 
@@ -495,9 +491,13 @@ auto
 inline void
   YeeLattice::set_EBJ(yee_lattice_fields_function auto&& f)
 {
-  const auto [Emds, Bmds, Jmds] = std::tuple { nonhalo_submds(E_.staging_mds()),
-                                               nonhalo_submds(B_.staging_mds()),
-                                               nonhalo_submds(J_.staging_mds()) };
+  auto hostE = runko::HostMirror<VecGrid>(E_.grid_extents());
+  auto hostB = runko::HostMirror<VecGrid>(B_.grid_extents());
+  auto hostJ = runko::HostMirror<VecGrid>(J_.grid_extents());
+
+  const auto [Emds, Bmds, Jmds] = std::tuple { nonhalo_submds(hostE.mds()),
+                                               nonhalo_submds(hostB.mds()),
+                                               nonhalo_submds(hostJ.mds()) };
 
   for(const auto idx: tyvi::sstd::index_space(Emds)) {
     const auto F = f(idx[0], idx[1], idx[2]);
@@ -512,37 +512,13 @@ inline void
     Jmds[idx][2] = static_cast<value_type>(F.Jz);
   }
 
-  auto wE = tyvi::mdgrid_work {};
-  auto wB = tyvi::mdgrid_work {};
-  auto wJ = tyvi::mdgrid_work {};
+  auto w = tyvi::mdgrid_work {};
 
-  wE.sync_from_staging(E_);
-  wB.sync_from_staging(B_);
-  wJ.sync_from_staging(J_);
+  runko::thrust_copy(w, hostE, E_);
+  runko::thrust_copy(w, hostB, B_);
+  runko::thrust_copy(w, hostJ, J_);
 
-  tyvi::when_all(wE, wB, wJ);
-  wE.wait();
-}
-
-inline auto
-  YeeLattice::view_EBJ_on_host()
-{
-  auto wE = tyvi::mdgrid_work {};
-  auto wB = tyvi::mdgrid_work {};
-  auto wJ = tyvi::mdgrid_work {};
-
-  wE.sync_to_staging(E_);
-  wB.sync_to_staging(B_);
-  wJ.sync_to_staging(J_);
-
-  tyvi::when_all(wE, wB, wJ);
-  wE.wait();
-
-  const auto Emds = nonhalo_submds(E_.staging_mds());
-  const auto Bmds = nonhalo_submds(B_.staging_mds());
-  const auto Jmds = nonhalo_submds(J_.staging_mds());
-
-  return std::tuple { Emds, Bmds, Jmds };
+  w.wait();
 }
 
 inline auto

@@ -540,15 +540,17 @@ void
 
     tile_buf_offset += n_s;
   }
-  w.wait();
 
-  // On CPU the device buffer is host-accessible; on GPU use staging.
+  // On CPU the device buffer is host-accessible; on GPU copy to host.
 #if defined(TYVI_BACKEND_CPU)
   const float* write_ptr = prtcl_buf.span().data();
 #elif defined(TYVI_BACKEND_HIP)
-  tyvi::mdgrid_work {}.sync_to_staging(prtcl_buf).wait();
-  const float* write_ptr = prtcl_buf.staging_span().data();
+  auto host_buf = runko::HostMirror<decltype(prtcl_buf)>(prtcl_buf.grid_extents());
+  runko::thrust_copy(w, prtcl_buf, host_buf);
+  const float* write_ptr = host_buf.span().data();
 #endif
+
+  w.wait();
 
   // 5. Write to file.
   const auto filename = std::format("{}/prtcls_{}_{}.bin", outdir, species, lap);
@@ -922,13 +924,16 @@ tyvi::actions::sexpr_sender
 
              pack_tile(yee, particles, tile_mins, p, tile_buf);
 
-      // On CPU the device buffer is host-accessible; on GPU use staging.
+      // On CPU the device buffer is host-accessible; on GPU copy to host.
 #if defined(TYVI_BACKEND_CPU)
              const float* write_ptr = tile_buf.span().data();
 #elif defined(TYVI_BACKEND_HIP)
-             // GPU: copy packed data from device to host staging buffer
-             tyvi::mdgrid_work {}.sync_to_staging(tile_buf).wait();
-             const float* write_ptr = tile_buf.staging_span().data();
+             // GPU: copy packed data from device to host buffer
+             const auto w = tyvi::mdgrid_work {};
+             auto host_tile_buf = runko::HostMirror<decltype(tile_buf)>(tile_buf.grid_extents());
+             runko::thrust_copy(w, tile_buf, host_tile_buf);
+             w.wait();
+             const float* write_ptr = host_tile_buf.span().data();
 #endif
 
              const auto ti = static_cast<MPI_Offset>(idx[0]);
@@ -1098,12 +1103,15 @@ tyvi::actions::sexpr_sender
 
              histogram_tile(particles, tile_xmin, p, tile_buf);
 
-      // On CPU the device buffer is host-accessible; on GPU use staging.
+      // On CPU the device buffer is host-accessible; on GPU copy to host.
 #if defined(TYVI_BACKEND_CPU)
              const float* write_ptr = tile_buf.span().data();
 #elif defined(TYVI_BACKEND_HIP)
-             tyvi::mdgrid_work {}.sync_to_staging(tile_buf).wait();
-             const float* write_ptr = tile_buf.staging_span().data();
+             auto host_tile_buf = runko::HostMirror<decltype(tile_buf)>(tile_buf.grid_extents());
+             const auto w = tyvi::mdgrid_work {};
+             runko::thrust_copy(w, tile_buf, host_tile_buf);
+             w.wait();
+             const float* write_ptr = host_tile_buf.span().data();
 #endif
 
              const auto ti = static_cast<MPI_Offset>(idx[0]);

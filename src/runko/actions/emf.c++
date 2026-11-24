@@ -263,9 +263,13 @@ void
   auto K                  = vec_list(num_of_modes);
   auto lap_coeffs         = complex_list(num_of_modes);
 
-  const auto sA_mds          = A.staging_mds();
-  const auto sk_mds          = K.staging_mds();
-  const auto slap_coeffs_mds = lap_coeffs.staging_mds();
+  auto host_A          = runko::HostMirror<vec_list>(num_of_modes);
+  auto host_K          = runko::HostMirror<vec_list>(num_of_modes);
+  auto host_lap_coeffs = runko::HostMirror<complex_list>(num_of_modes);
+
+  const auto sA_mds          = host_A.mds();
+  const auto sk_mds          = host_K.mds();
+  const auto slap_coeffs_mds = host_lap_coeffs.mds();
 
   auto get_wave_vector = [&](const emf::antenna_mode& wm) {
     auto handle_wave_data =
@@ -311,7 +315,9 @@ void
   }
 
   const tyvi::mdgrid_work w {};
-  w.sync_from_staging(A).sync_from_staging(K).sync_from_staging(lap_coeffs);
+  runko::thrust_copy(w, host_A, A);
+  runko::thrust_copy(w, host_K, K);
+  runko::thrust_copy(w, host_lap_coeffs, lap_coeffs);
 
   auto& vec_pot = buffs.vec_pot;
   vec_pot.invalidating_resize(yee.extents_with_halo());

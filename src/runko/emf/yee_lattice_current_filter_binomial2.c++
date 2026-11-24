@@ -38,8 +38,8 @@ void
 
   constexpr auto C3_index_space = tyvi::sstd::geometric_index_space<3, 3>();
 
-  auto filteredJ           = VecGrid(this->J_.extents());
-  const auto e             = filteredJ.extents();
+  auto filteredJ           = VecGrid(this->J_.grid_extents());
+  const auto e             = filteredJ.grid_extents();
   const auto Nx            = e.extent(0);
   const auto Ny            = e.extent(1);
   const auto Nz            = e.extent(2);
@@ -92,7 +92,7 @@ void
   // g++ wrongly thinks this is unused... -> [[maybe_unused]]
   [[maybe_unused]] static constexpr value_type B1[3] = { 0.25f, 0.5f, 0.25f };
 
-  const auto e  = this->J_.extents();
+  const auto e  = this->J_.grid_extents();
   const auto Nx = e.extent(0);
   const auto Ny = e.extent(1);
   const auto Nz = e.extent(2);

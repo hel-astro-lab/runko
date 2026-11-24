@@ -93,13 +93,16 @@ YeeLattice::YeeLatticeHostCopy
   auto wB = tyvi::mdgrid_work {};
   auto wJ = tyvi::mdgrid_work {};
 
-  wE.sync_to_staging(E_);
-  wB.sync_to_staging(B_);
-  wJ.sync_to_staging(J_);
+  auto hostE = runko::HostMirror<VecGrid>(E_.grid_extents());
+  auto hostB = runko::HostMirror<VecGrid>(B_.grid_extents());
+  auto hostJ = runko::HostMirror<VecGrid>(J_.grid_extents());
+  runko::thrust_copy(wE, E_, hostE);
+  runko::thrust_copy(wB, B_, hostB);
+  runko::thrust_copy(wJ, J_, hostJ);
 
-  const auto [Emds, Bmds, Jmds] = std::tuple { nonhalo_submds(E_.staging_mds()),
-                                               nonhalo_submds(B_.staging_mds()),
-                                               nonhalo_submds(J_.staging_mds()) };
+  const auto [Emds, Bmds, Jmds] = std::tuple { nonhalo_submds(hostE.mds()),
+                                               nonhalo_submds(hostB.mds()),
+                                               nonhalo_submds(hostJ.mds()) };
 
   const auto [a, b, c] = extents_wout_halo();
   auto host_buffer     = YeeLatticeHostCopy(a, b, c);
@@ -130,12 +133,14 @@ YeeLattice::YeeLatticeHostCopy
   auto wB = tyvi::mdgrid_work {};
   auto wJ = tyvi::mdgrid_work {};
 
-  wE.sync_to_staging(E_);
-  wB.sync_to_staging(B_);
-  wJ.sync_to_staging(J_);
+  auto hostE = runko::HostMirror<VecGrid>(E_.grid_extents());
+  auto hostB = runko::HostMirror<VecGrid>(B_.grid_extents());
+  auto hostJ = runko::HostMirror<VecGrid>(J_.grid_extents());
+  runko::thrust_copy(wE, E_, hostE);
+  runko::thrust_copy(wB, B_, hostB);
+  runko::thrust_copy(wJ, J_, hostJ);
 
-  const auto [Emds, Bmds, Jmds] =
-    std::tuple { E_.staging_mds(), B_.staging_mds(), J_.staging_mds() };
+  const auto [Emds, Bmds, Jmds] = std::tuple { hostE.mds(), hostB.mds(), hostJ.mds() };
 
   const auto [a, b, c] = extents_with_halo();
   auto host_buffer     = YeeLatticeHostCopy(a, b, c);
@@ -373,7 +378,7 @@ void
     const runko::VecGrid<value_type>& depJ)
 {
 
-  if(depJ.extents() != this->extents_with_halo()) {
+  if(depJ.grid_extents() != this->extents_with_halo()) {
     throw std::runtime_error {
       "emf::Tile::deposit_current: given current grid has incorrect extents!"
     };
