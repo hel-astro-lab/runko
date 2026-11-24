@@ -24,7 +24,8 @@ jobs:
           rocthrust_DIR=$ROCTHRUST_INSTALL_PREFIX/lib/cmake/rocthrust cmake \
           --preset unix-cpu \
           -DCMAKE_CXX_COMPILER=/opt/rh/gcc-toolset-15/root/usr/bin/g++ \
-          -DMPI_HOME=/usr/lib64/openmpi/
+          -DMPI_HOME=/usr/lib64/openmpi/ \
+          -DCMAKE_CXX_FLAGS="-O3 -march=x86-64-v3"
 
       - name: Build
         run: make -j4 -C build/unix-cpu
