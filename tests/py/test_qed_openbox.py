@@ -128,32 +128,36 @@ class qed_openbox(CheckMixin, unittest.TestCase):
 
     # test 7: adaptivity
     def test7_adaptivity(self):
-        steps, dt = 300, 5e-3
-        curves = {}
+        steps, dt, nseed = 300, 5e-3, 24
+        late = slice(int(0.75 * steps), None)
+        Eg = {}
         for k in (1, 3, 10):
             # k times the weight on k times fewer LPs: the same physical box, hence the same
-            # evolution
-            rng = np.random.default_rng(1)
-            t = make_tile(1, dt, w_lep=k * WL)
+            # evolution. One run scatters by 1.5 % (k = 1) to 5 % (k = 10) in the late photon
+            # energy, so each k is the mean of nseed runs (measured over 60: k = 3 within
+            # 1.2 +- 0.4 %, k = 10 within 1.3 +- 0.7 %).
+            runs = []
+            for sd in range(nseed):
+                rng = np.random.default_rng(1)
+                t = make_tile(1 + 100 * sd, dt, w_lep=k * WL)
 
-            u, w = wien_pop(8000 // k, 0.05, rng)
-            set_pop(t, "ph", u, k * w)
-            for s in ("e-", "e+"):
-                u, w = mj_pop(2000 // k, 2.0, rng)
-                set_pop(t, s, u, k * w)
+                u, w = wien_pop(8000 // k, 0.05, rng)
+                set_pop(t, "ph", u, k * w)
+                for s in ("e-", "e+"):
+                    u, w = mj_pop(2000 // k, 2.0, rng)
+                    set_pop(t, s, u, k * w)
 
-            tt, E0, _ = totals(t)
-            Eg = []
-            for n in range(steps + 1):
-                Eg.append(t.totals("ph")["E"] / E0)
-                if n < steps:
-                    t.interact()
-            curves[k] = np.array(Eg)
+                tt, E0, _ = totals(t)
+                curve = []
+                for n in range(steps + 1):
+                    curve.append(t.totals("ph")["E"] / E0)
+                    if n < steps:
+                        t.interact()
+                runs.append(np.mean(curve[late]))
+            Eg[k] = np.mean(runs)
 
-        late = slice(int(0.75 * steps), None)
-        ref = curves[1][late].mean()
         for k in (3, 10):
-            self.check(f"weight invariance E_gamma k={k}", 1.0, curves[k][late].mean() / ref, 0.05)
+            self.check(f"weight invariance E_gamma k={k}", 1.0, Eg[k] / Eg[1], 0.05)
 
         # (b) resolution function: N_LP/W relaxes to x^a once the roulette has thinned the soft end
         # and the copies have populated the hard one; the slope overshoots in a transient that
