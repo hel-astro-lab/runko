@@ -7,31 +7,14 @@
 
 #include "runko/qed/interactions/qed1_bw.h"
 #include "runko/qed/interactions/qed1_syn.h"
-#include "runko/qed/interactions/qed2_ann.h"
-#include "runko/qed/interactions/qed2_comp.h"
-#include "runko/qed/interactions/qed2_gg.h"
-#include "runko/qed/interactions/qed2_ssa.h"
 #include "runko/qed/weights.h"
 #include "runko/tools/math.h"
 #include "runko/tools/random.h"
-#include "thrust/binary_search.h"
 #include "thrust/copy.h"
-#include "thrust/fill.h"
 #include "thrust/for_each.h"
-#include "thrust/host_vector.h"
 #include "thrust/iterator/counting_iterator.h"
-#include "thrust/iterator/transform_iterator.h"
-#include "thrust/reduce.h"
-#include "thrust/scan.h"
-#include "thrust/sort.h"
-#include "thrust/transform.h"
 #include "thrust/transform_reduce.h"
 #include "tyvi/mdgrid.h"
-
-#include <algorithm>
-#include <format>
-#include <sstream>
-#include <stdexcept>
 
 namespace qed {
 
