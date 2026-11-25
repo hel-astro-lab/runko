@@ -191,7 +191,6 @@ class qed_twobody(CheckMixin, unittest.TestCase):
         rng = np.random.default_rng(1)
         t = make_tile(1, dt=dt)
         bvec = np.array([0.0, 0.0, beta])
-        G = 1 / np.sqrt(1 - beta * beta)
 
         u, w = wien_pop(Nph, 0.05, rng)
         _, u = boost(-bvec, np.linalg.norm(u, axis=1), u)
@@ -204,12 +203,12 @@ class qed_twobody(CheckMixin, unittest.TestCase):
         tt, E0, P0 = totals(t)
         N0 = sum(v["W"] for v in tt.values())
         L0 = tt["e-"]["W"] - tt["e+"]["W"]
-        M = np.sqrt(E0 * E0 - P0 @ P0)
-        T, Wg, Wm, Wp = equilibrium(M, N0, L0)
 
-        rec = dict(Wg=[], Wpm=[], dP=[], dE=[], x=[], g=[])
+        rec = dict(Wg=[], Wpm=[], dP=[], dE=[], x=[], g=[], E=[], Pz=[])
         for n in range(steps + 1):
             tt, E, P = totals(t)
+            rec["E"].append(E)
+            rec["Pz"].append(P[2])
             rec["Wg"].append(tt["ph"]["W"])
             rec["Wpm"].append(tt["e-"]["W"] + tt["e+"]["W"])
             rec["dP"].append(np.linalg.norm(P - P0) / E0)
@@ -220,7 +219,15 @@ class qed_twobody(CheckMixin, unittest.TestCase):
                 t.interact()
         rec = {k: np.array(v) for k, v in rec.items()}
 
+        # Energy and momentum are conserved in expectation and random-walk by a per cent
+        # over the run (checked last): the equilibrium is that of the box as it is late,
+        # of its invariant mass and its boost.
         late = slice(int(0.75 * steps), None)
+        E, Pz = rec["E"][late].mean(), rec["Pz"][late].mean()
+        M = np.sqrt(E * E - Pz * Pz)
+        G = E / M
+        T, Wg, Wm, Wp = equilibrium(M, N0, L0)
+
         self.check("W_gamma", Wg, rec["Wg"][late].mean(), 0.02)
         self.check("W_pm", Wm + Wp, rec["Wpm"][late].mean(), 0.02)
         self.check("<x>_lab", 3 * T * G, rec["x"][late].mean(), 0.02)
