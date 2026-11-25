@@ -175,7 +175,7 @@ const suite<"two-body qed physics"> _ = [] {
     }
     expect(trips / n < 1.3);
 
-    // a pair with no net momentum: back-to-back photons of energy gamma each; for the
+    // A pair with no net momentum: back-to-back photons of energy gamma each; for the
     // pair at rest, an isotropic direction
     auto c2 = 0.0;
     for(auto m = 0; m < 100000; ++m) {

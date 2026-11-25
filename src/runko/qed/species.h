@@ -3,10 +3,6 @@
 
 #pragma once
 
-// The species of a tile as the sampler kernels see them: device views of the three
-// containers (photons, electrons, positrons) with their layouts, and the tile around
-// them.
-
 #include "runko/pic/particle.h"
 #include "runko/qed/field.h"
 #include "runko/qed/layout.h"
@@ -36,13 +32,20 @@ using WgtMds = decltype(weight_mds(std::declval<pic::ParticleContainer&>()));
 
 /// One species as the kernels see it, captured by value.
 struct PView {
-  VecMds pos, vel;  // positions (cells) and momenta (m_e c; k for photons)
-  IdMds ids;        // dead_prtc_id marks a free slot
-  WgtMds wgt;       // weights (payload component 0), empty for leptons
-  bool weighted;    // wgt (photons) or w0 (leptons)
-  float w0;         // common weight of a species without payload
-  float mass;       // 0 for photons, 1 for leptons
-  LayoutView lay;   // key tables, for touch()
+  /// Positions (cells) and momenta (m_e c; k for photons).
+  VecMds pos, vel;
+  /// The id dead_prtc_id marks a free slot.
+  IdMds ids;
+  /// Weights (payload component 0), empty for leptons.
+  WgtMds wgt;
+  /// The weight is wgt (photons) or w0 (leptons).
+  bool weighted;
+  /// Common weight of a species without payload.
+  float w0;
+  /// 0 for photons, 1 for leptons.
+  float mass;
+  /// Key tables, for touch().
+  LayoutView lay;
 
   [[nodiscard]] constexpr bool alive(const I i) const
   { return ids[i][] != runko::dead_prtc_id; }
@@ -77,8 +80,10 @@ struct PView {
     if(weighted) { wgt[i][] = 0.0f; }
   }
 
-  /// Widen the key bounds over a slot updated in place. A slot kicked out of its bin
-  /// leaves the key, inert until the next layout, so a bin's bounds stay its own.
+  /// Widen the key bounds over a slot updated in place.
+  ///
+  /// A slot kicked out of its bin leaves the key, inert until the next layout, so a
+  /// bin's bounds stay its own.
   constexpr void touch(const I i) const
   {
     const auto k = lay.skey[i];
@@ -120,19 +125,24 @@ inline PView
 /// What the sampler needs of the tile for one step.
 struct TileView {
   FieldView field;
-  std::array<pic::ParticleContainer*, 3> con;  // ph, e-, e+
-  std::array<Layout*, 3> layout;                    // their layouts
-  std::array<float, 3> mins, maxs;             // tile extent
-  std::array<runko::prtc_id_type, 3> id_base;  // first free id per species
-  std::array<std::size_t, 3> ids_used;         // returned: ids consumed by the step
+  /// Photons, electrons, positrons.
+  std::array<pic::ParticleContainer*, 3> con;
+  std::array<Layout*, 3> layout;
+  std::array<float, 3> mins, maxs;
+  /// First free id per species.
+  std::array<runko::prtc_id_type, 3> id_base;
+  /// Returned: ids consumed by the step.
+  std::array<std::size_t, 3> ids_used;
 };
 
 /// Containers, layouts and device views of one step.
 struct Ctx {
-  TileView* t;             // containers, layouts, extent and ids
-  std::array<PView, 3> v;  // views of ph, e-, e+; stale after a resize
-  int ncell;               // reaction cells of the tile
-  int nb;                  // energy bins per cell
+  TileView* t;
+  /// Views of ph, e-, e+; stale after a resize.
+  std::array<PView, 3> v;
+  int ncell;
+  /// Energy bins per cell.
+  int nb;
 
   Ctx(TileView& tile, const int nbin) : t { &tile }, v {}, ncell { 0 }, nb { nbin }
   {

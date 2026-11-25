@@ -3,22 +3,23 @@
 
 #pragma once
 
-// Compton scattering, photon + lepton -> photon + lepton: the Klein-Nishina cross
-// section, the rate (sigma_KN times the Moller relative velocity, halved), its bound
-// over a pair of energy bins, and the product sampler. Units: m_e c^2, m_e c, sigma_T.
-
 #include "runko/qed/interactions/qed_kinematics.h"
 
+/// Compton scattering, photon + lepton -> photon + lepton.
+///
+/// The rate is the Klein-Nishina cross section times the Moller relative velocity,
+/// halved. Units: m_e c^2, m_e c, sigma_T.
 namespace qed::comp {
 
-inline constexpr double rate_max = 1.0;  // sup of rate: sigma_KN -> 1 as x_R -> 0
+/// Supremum of rate: sigma_KN -> 1 as x_R -> 0.
+inline constexpr double rate_max = 1.0;
 
 /// Returns the Klein-Nishina cross section from the rest-frame photon energy x_R.
 [[nodiscard]]
 constexpr double
   sigma_kn(double xR)
 {
-  // the closed form cancels to 0/0 as x_R -> 0: series below 1e-2
+  // The closed form cancels to 0/0 as x_R -> 0: series below 1e-2
   xR = sstd::max(xR, 1e-12);
   if(xR < 1e-2) { return 1.0 - 2.0 * xR + 5.2 * xR * xR - 13.3 * xR * xR * xR; }
 
@@ -40,14 +41,14 @@ constexpr double
   return 0.5 * sigma_kn(xR) * F;
 }
 
-/// Returns a bound on rate over photons in [xlo, xhi] and leptons in [glo, ghi]; 0 for
-/// an empty bin.
+/// Returns a bound on rate over photons in [xlo, xhi] and leptons in [glo, ghi], 0
+/// for an empty bin.
 [[nodiscard]]
 constexpr double
   bound(const double xlo, const double xhi, const double glo, const double ghi)
 {
-  // sigma_KN x_R/2 grows with x_R: take the largest x_R (head-on at the top corner)
-  // over the smallest x gamma
+  // The rate sigma_KN x_R/2 grows with x_R: take the largest x_R (head-on at the top
+  // corner) over the smallest x gamma.
   const auto y  = xhi * (ghi + sstd::sqrt(sstd::max(ghi * ghi - 1.0, 0.0)));
   const auto sh = sigma_kn(y) * y / 2.0 / (xlo * glo);
   return sh == sh and sh < 1e300 ? sstd::min(sh, rate_max) : 0.0;  // NaN/inf: empty bin
@@ -60,8 +61,10 @@ constexpr double
 { return 4.0 * x * g * g; }
 
 struct Products {
-  Vec3 k1;  // scattered photon
-  Vec3 u1;  // recoiled lepton
+  /// Scattered photon.
+  Vec3 k1;
+  /// Recoiled lepton.
+  Vec3 u1;
 };
 
 /// Klein-Nishina scattering of photon k on lepton u; ntry receives the proposals used.

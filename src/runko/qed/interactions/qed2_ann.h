@@ -3,15 +3,16 @@
 
 #pragma once
 
-// Pair annihilation, e- + e+ -> photon + photon: the Dirac cross section through its
-// energy bracket, the rate (sigma_ann times the Moller relative velocity, halved), its
-// bound over a pair of energy bins, and the product sampler. Units: m_e c^2, m_e c.
-
 #include "runko/qed/interactions/qed_kinematics.h"
 
+/// Pair annihilation, e- + e+ -> photon + photon.
+///
+/// The Dirac cross section enters through its energy bracket; the rate is sigma_ann
+/// times the Moller relative velocity, halved. Units: m_e c^2, m_e c.
 namespace qed::ann {
 
-inline constexpr double rate_max = 0.208;  // sup of rate, 0.20798 at gamma_cm = 1.1354
+/// Supremum of rate, 0.20798 at gamma_cm = 1.1354.
+inline constexpr double rate_max = 0.208;
 
 /// Returns the energy bracket of the pair invariant q_e = p+ . p-, with
 /// sigma_ann F/2 = (3/32) bracket(q_e)/(g- g+); increasing in q_e.
@@ -75,7 +76,7 @@ constexpr Products
   const auto nm   = toolbox::norm(um);
   const auto omm  = nm > 1e-300 ? um / nm : Vec3(1.0, 0.0, 0.0);
 
-  // polar axis: the boost, or the electron direction (y = 1) for a pair at rest;
+  // Polar axis: the boost, or the electron direction (y = 1) for a pair at rest;
   // y = cosine of the electron's CM direction to the axis
   const auto deg  = vc < 1e-10;
   const auto kvec = deg ? omm : bc / sstd::max(vc, 1e-300);

@@ -1,8 +1,6 @@
 // Copyright 2026 - 2026, Miro Palmu, Joonas Nättilä and the runko contributors
 // SPDX-License-Identifier: GPL-3.0-or-later
 
-// The one-body channels: quantum synchrotron emission and magnetic pair production.
-
 #include "runko/qed/sampler.h"
 
 #include "runko/qed/interactions/qed1_bw.h"
@@ -22,7 +20,8 @@ namespace {
 
 /// Stages a product at the position and in the reaction cell of its parent.
 struct AtParent {
-  PView v;  // the parent species
+  /// The parent species.
+  PView v;
   Stager out;
 
   constexpr void operator()(
@@ -40,7 +39,6 @@ struct AtParent {
 
 }  // namespace
 
-// ---------------------------------------------------------------- synchrotron emission
 void
   Sampler::synchrotron(Ctx& c, const Channel which)
 {
@@ -126,7 +124,6 @@ void
   this->place(c);
 }
 
-// ---------------------------------------------------------------- magnetic pair production
 void
   Sampler::breit_wheeler(Ctx& c)
 {
@@ -173,7 +170,7 @@ void
   const auto s0    = thrust::counting_iterator<I>(0);
   const auto nslot = static_cast<std::ptrdiff_t>(n);
 
-  // one lane per photon slot: the photon converts within the step with the
+  // One lane per photon slot: the photon converts within the step with the
   // probability 1 - exp(-lam), exact for a decay
   thrust::for_each(w.on_this(), s0, s0 + nslot, [=](const I i) {
     if(not v.alive(i)) { return; }

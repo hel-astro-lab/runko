@@ -3,15 +3,6 @@
 
 #pragma once
 
-// Cell-envelope Monte Carlo of one tile over the energy-binned padded layout of every
-// species. Two-body channels (Compton, pair annihilation, photon-photon pair
-// production, synchrotron self-absorption) draw per (cell, bin a, bin b) the envelope
-// Lambda = c_l N_a N_b 2 sigmahat_ab W_max/N_2 by stratified pairing (twobody.c++);
-// one-body channels (quantum synchrotron emission, magnetic pair production) run one
-// lane per slot (onebody.c++). What an event moves and how often it fires is the rule
-// of weights.h. Products go into the slack of their key (reactive at once) or the tail
-// (inert until the next layout).
-
 #include "runko/pic/particle.h"
 #include "runko/qed/box.h"
 #include "runko/qed/channels.h"
@@ -32,60 +23,92 @@ namespace qed {
 
 /// The knobs of the sampler.
 struct Params {
-  int nbin { 16 };         // energy bins per cell and species
-  int ncell_edge { 1 };    // reaction sub-cells per tile edge
-  int nsort { 10 };        // steps between padded sorts
-  int smin { 4 };          // floor on the slack slots of a key
-  int n_cap { 32 };        // largest copy number of one reaction
-  int nsub_max { 8 };      // sub-steps of an additive channel before rows are clamped
-  double slack { 0.5 };    // slack slots per key, as a fraction of its live LPs
-  double a_res { 0.7 };    // exponent of the photon resolution function
-  double x_ref { 1e-5 };   // its anchor: one LP per unit weight there
-  double acc_syn { 3.0 };  // coefficient of the emission accumulation, 0 disables
-  double kappa { 0.1 };    // merged exchange <= kappa (gamma - 1), 0 disables
+  /// Energy bins per cell and species.
+  int nbin { 16 };
+  /// Reaction sub-cells per tile edge.
+  int ncell_edge { 1 };
+  /// Steps between padded sorts.
+  int nsort { 10 };
+  /// Floor on the slack slots of a key.
+  int smin { 4 };
+  /// Largest copy number of one reaction.
+  int n_cap { 32 };
+  /// Sub-steps of an additive channel before rows are clamped.
+  int nsub_max { 8 };
+  /// Slack slots per key, as a fraction of its live LPs.
+  double slack { 0.5 };
+  /// Exponent of the photon resolution function.
+  double a_res { 0.7 };
+  /// Anchor of the photon resolution function: one LP per unit weight there.
+  double x_ref { 1e-5 };
+  /// Coefficient of the emission accumulation; 0 disables it.
+  double acc_syn { 3.0 };
+  /// Bound kappa (gamma - 1) on a merged exchange; 0 disables merging.
+  double kappa { 0.1 };
   std::uint64_t seed { 1 };
 };
 
 /// Per-channel counters of a run.
 struct ChannelStats {
-  double M { 0 };        // envelope lanes (two-body), slots (one-body)
-  double virt { 0 };     // two-body lanes on a dead slot
-  double wpass { 0 };    // lanes past the weight stage
-  double acc { 0 };      // accepted events
-  double wmoved { 0 };   // weight moved, sum f s
-  double facc { 0 };     // summed accumulation factors of accepted events
-  double wem { 0 };      // emitted weight (one-body emission)
-  double clamped { 0 };  // events dropped to keep the strata of a bin distinct
-  double shbar_num { 0 }, shbar_den { 0 };  // <sigmahat> of the envelope
-  int nsub_max_seen { 1 };                  // largest sub-cycle count of a step
-  double nsub_steps { 0 };                  // steps with more than one sub-cycle
+  /// Envelope lanes (two-body) or slots (one-body).
+  double M { 0 };
+  /// Two-body lanes on a dead slot.
+  double virt { 0 };
+  /// Lanes past the weight stage.
+  double wpass { 0 };
+  /// Accepted events.
+  double acc { 0 };
+  /// Weight moved: the summed sizes of the accepted events.
+  double wmoved { 0 };
+  /// Summed accumulation factors of the accepted events.
+  double facc { 0 };
+  /// Emitted weight (one-body emission).
+  double wem { 0 };
+  /// Events dropped to keep the strata of a bin distinct.
+  double clamped { 0 };
+  /// Numerator and denominator of the mean sigmahat of the envelope.
+  double shbar_num { 0 }, shbar_den { 0 };
+  /// Largest sub-cycle count of a step.
+  int nsub_max_seen { 1 };
+  /// Steps with more than one sub-cycle.
+  double nsub_steps { 0 };
 };
 
 /// Counters of a run.
 struct Stats {
   std::size_t steps { 0 };
-  double cell_lanes { 0 };  // (cell, bin, bin) lanes of the envelope kernels
+  /// Lanes (cell, bin, bin) of the envelope kernels.
+  double cell_lanes { 0 };
   std::array<ChannelStats, n_channels> ch {};
-  double slackprod { 0 }, tailprod { 0 };   // products placed in slack / in the tail
-  double heldprod { 0 };                    // tail ones whose slack held an arrival
-  std::array<double, 3> slots {}, live {};  // per species
+  /// Products placed in the slack of their key and in the tail.
+  double slackprod { 0 }, tailprod { 0 };
+  /// Tail products whose slack slot held an arrival.
+  double heldprod { 0 };
+  /// Slots and live particles per species.
+  std::array<double, 3> slots {}, live {};
 };
 
 /// A product of a channel pass, staged before placement.
 struct Staged {
-  float u[3];            // momentum
-  float pos[3];          // position (the parent's)
-  float w;               // weight of each copy
-  std::int32_t n_r;      // copies to place
-  std::int32_t cell;     // reaction cell
-  std::int32_t species;  // 0 ph, 1 e-, 2 e+
-  std::int32_t bit;      // photon sub-range bit
+  float u[3];
+  /// The parent's position.
+  float pos[3];
+  /// Weight of each copy.
+  float w;
+  /// Copies to place.
+  std::int32_t n_r;
+  std::int32_t cell;
+  /// 0 photon, 1 electron, 2 positron.
+  std::int32_t species;
+  /// Photon sub-range bit.
+  std::int32_t bit;
 };
 
 /// Appends product records to the staging buffer from inside a kernel.
 struct Stager {
   Staged* rec;
-  std::int32_t* count;  // records staged so far
+  /// Records staged so far.
+  std::int32_t* count;
 
   /// Stages n_r copies of weight w of a product of species s at pos, in the reaction
   /// cell `cell` and the photon sub-range `bit`.
@@ -112,25 +135,38 @@ struct Stager {
   }
 };
 
-/// Sampler state of a tile: scratch buffers, rounding carries and counters kept over
+/// Cell-envelope Monte Carlo of one tile over the energy-binned padded layout.
+///
+/// Two-body channels (Compton, pair annihilation, photon-photon pair production,
+/// synchrotron self-absorption) draw per (cell, bin a, bin b) the envelope
+/// Lambda = c_l N_a N_b 2 sigmahat_ab W_max/N_2 by stratified pairing (twobody.c++);
+/// one-body channels (quantum synchrotron emission, magnetic pair production) run one
+/// lane per slot (onebody.c++). What an event moves and how often it fires is the rule
+/// of weights.h. Products go into the slack of their key (reactive at once) or the
+/// tail (inert until the next layout). The scratch buffers are members to keep their
+/// allocations between passes; the rounding carries and the counters persist over
 /// steps.
 class [[nodiscard]] Sampler {
 public:
   Box box;
   Params par;
-  std::array<bool, n_channels> enabled {};  // per Channel
+  /// Indexed by Channel.
+  std::array<bool, n_channels> enabled {};
   Stats stats;
 
   /// What the sources and sinks of the open box moved since the last reset.
   struct Budget {
-    double inj_E { 0 }, inj_W { 0 };  // energy and pair depth injected
-    double heat_E { 0 };              // energy of the diffusive heating
-    double esc_E { 0 }, esc_W { 0 };  // energy and weight escaped
+    /// Energy and pair depth injected.
+    double inj_E { 0 }, inj_W { 0 };
+    /// Energy of the diffusive heating.
+    double heat_E { 0 };
+    /// Energy and weight escaped.
+    double esc_E { 0 }, esc_W { 0 };
   };
   Budget budget;
 
-  // escape spectrum: n_esc log bins of x over [esc_lo, esc_hi], n_mu linear bins of
-  // mu = k_z/x over [-1, 1]
+  /// Escape spectrum: n_esc log bins of x over [esc_lo, esc_hi], n_mu linear bins of
+  /// mu = k_z/x over [-1, 1].
   static constexpr int n_esc      = 100;
   static constexpr int n_mu       = 32;
   static constexpr double esc_lo = 1e-8, esc_hi = 1e2;
@@ -139,37 +175,44 @@ private:
   template<typename Ch>
   friend class TwoBody;
 
-  // ---- scratch, kept between passes for its allocations
-
-  /// One side of a two-body channel, as of the start of the channel: per (cell, bin)
-  /// the first slot and the fill of its one or two sub-ranges (the second at ncb + cb)
-  /// and the bounds over them.
+  /// One side of a two-body channel, as of the start of the channel.
+  ///
+  /// Per (cell, bin): the first slot, the fill of its one or two sub-ranges (the
+  /// second at ncb + cb) and the bounds over them.
   struct SideTable {
     thrust::device_vector<runko::index_t> base, cnt;
     thrust::device_vector<float> wmax, emin, emax;
   };
-  std::array<SideTable, 2> sides_;  // incident, partner
+  /// Incident and partner side.
+  std::array<SideTable, 2> sides_;
 
-  /// Envelope tables per (cell, bin a, bin b): the envelope, the rate bound and the
-  /// weight bound; and the envelope summed over b (row) and over a (col).
+  /// Envelope tables per (cell, bin a, bin b).
+  ///
+  /// The envelope, the rate bound and the weight bound; the envelope summed over b
+  /// (row) and over a (col).
   struct Envelope {
     thrust::device_vector<double> Lam, bound, wmax, row, col;
   } env_;
 
-  /// Envelope events of a sub-step per (cell, bin a, bin b): the count M and its
-  /// exclusive scan, the first lane; for a consumed partner the strata base along a
-  /// and the events per partner bin.
+  /// Envelope events of a sub-step per (cell, bin a, bin b).
+  ///
+  /// The count M and its exclusive scan, the first lane; for a consumed partner the
+  /// strata base along a and the events per partner bin.
   struct Strata {
     thrust::device_vector<std::int32_t> M, off2, M2;
     thrust::device_vector<runko::index_t> first;
   } strata_;
 
-  /// How the thinning of a lane ended: at the weight stage, accepted, on a dead or
-  /// unkeyed slot, or past the weight stage and rejected by the rate.
+  /// How the thinning of a lane ended.
+  ///
+  /// A lane on an unkeyed slot counts as dead; weight_passed is a lane past the
+  /// weight stage and rejected by the rate.
   enum class Outcome : std::uint8_t { weight_failed, accepted, dead, weight_passed };
 
-  /// One envelope event: the slot pair it proposes, the weight its event would move,
-  /// its bin pair and how its thinning ended.
+  /// One envelope event.
+  ///
+  /// The slot pair i, j it proposes, the weight S its event would move, its bin pair
+  /// g and how its thinning ended.
   struct Lane {
     runko::index_t i, j;
     double S;
@@ -178,12 +221,16 @@ private:
   };
   thrust::device_vector<Lane> lanes_;
 
-  thrust::device_vector<runko::index_t> acc_;  // accepted lanes; fired slots (one-body)
-  thrust::device_vector<std::uint8_t> fired_;  // one-body: the slot fired
+  /// Accepted lanes (two-body) or fired slots (one-body).
+  thrust::device_vector<runko::index_t> acc_;
+  /// One-body: whether the slot fired.
+  thrust::device_vector<std::uint8_t> fired_;
 
-  /// Accepted events: the probabilities q1, q2 that parent 1, 2 is updated or removed
-  /// and the pair count q3, their rounded decisions n1, n2, n3, the cell, the exchanges
-  /// f the partner takes as one and its momentum kick (3 per event).
+  /// Accepted events.
+  ///
+  /// The probabilities q1, q2 that parent 1, 2 is updated or removed and the pair
+  /// count q3, their rounded decisions n1, n2, n3, the cell, the exchanges f the
+  /// partner takes as one and its momentum kick (3 per event).
   struct Events {
     thrust::device_vector<double> q1, q2, q3, f;
     thrust::device_vector<std::int32_t> n1, n2, n3, cell;
@@ -193,9 +240,11 @@ private:
   /// Energy the absorptions of a pass gave each partner slot; zero between passes.
   thrust::device_vector<float> dgam_;
 
-  /// Systematic rounding: per-cell running remainders, one array per channel and role
-  /// (what becomes of parent 1 (0), of parent 2 (1), the pair count (2)); the scan of
-  /// the probabilities; the cell order of unsorted events and their cells alongside.
+  /// State of the systematic rounding.
+  ///
+  /// Per-cell running remainders, one array per channel and role (parent 1 (0),
+  /// parent 2 (1), the pair count (2)); the scan of the probabilities; the cell order
+  /// of unsorted events and their cells alongside.
   struct Rounding {
     std::array<thrust::device_vector<double>, 3 * n_channels> carry;
     thrust::device_vector<double> cs;
@@ -203,36 +252,49 @@ private:
     thrust::device_vector<std::int32_t> keys;
   } round_;
 
-  thrust::device_vector<Staged> staged_;         // products of one channel pass
-  thrust::device_vector<std::int32_t> nstaged_;  // their count, one element
+  /// Products of one channel pass.
+  thrust::device_vector<Staged> staged_;
+  /// Their count, one element.
+  thrust::device_vector<std::int32_t> nstaged_;
 
-  /// Counters of one placement, summed on the device.
+  /// Counters of one placement, summed on the device in the one element of placed_.
   struct Placed {
-    std::int32_t tail[3];  // tail slots taken, per species
-    std::int32_t id[3];    // ids taken, per species
-    std::int32_t slack;    // products placed in the slack of their key
-    std::int32_t tailn;    // products placed in the tail
-    std::int32_t held;     // of those, the ones whose slack slot held an arrival
+    /// Tail slots taken, per species.
+    std::int32_t tail[3];
+    /// Ids taken, per species.
+    std::int32_t id[3];
+    /// Products placed in the slack of their key.
+    std::int32_t slack;
+    /// Products placed in the tail.
+    std::int32_t tailn;
+    /// Tail products whose slack slot held an arrival.
+    std::int32_t held;
   };
-  thrust::device_vector<Placed> placed_;  // one element
+  thrust::device_vector<Placed> placed_;
 
-  /// Statistics of a channel that its kernels sum on the device, over the run: the
-  /// one-body events fired, their summed accumulation factor and emitted weight; the
-  /// clamped two-body events, the envelope-weighted rate bound and its weight.
+  /// Per-channel statistics the kernels sum on the device over the run.
+  ///
+  /// The one-body events fired, their summed accumulation factor and emitted weight;
+  /// the clamped two-body events, the envelope-weighted rate bound and its weight.
   struct DeviceStats {
     double fired, facc, wem, clamped, shnum, shden;
   };
-  thrust::device_vector<DeviceStats> dstat_;  // per channel
+  thrust::device_vector<DeviceStats> dstat_;
 
-  thrust::device_vector<double> esc_hist_;     // x ell_x per log bin
-  thrust::device_vector<double> esc_mu_hist_;  // the same per (log bin, mu bin)
-  /// Energy and weight a source or sink moved in one call, summed on the device.
+  /// Escaped x ell_x per log bin.
+  thrust::device_vector<double> esc_hist_;
+  /// Escaped x ell_x per (log bin, mu bin).
+  thrust::device_vector<double> esc_mu_hist_;
+
+  /// Energy and weight a source or sink moved in one call, summed on the device in
+  /// the one element of tally_.
   struct Tally {
     double E, W;
   };
-  thrust::device_vector<Tally> tally_;  // one element
+  thrust::device_vector<Tally> tally_;
 
-  std::uint64_t istep_ { 0 };  // steps taken: the time index of the random streams
+  /// Steps taken: the time index of the random streams.
+  std::uint64_t istep_ { 0 };
 
   /// Two-body channel: sides, envelope, sub-steps of strata, thinning and reactions.
   void twobody(Ctx& c, Channel which);
@@ -256,8 +318,10 @@ private:
   [[nodiscard]] ChannelStats
     channel_snap(std::size_t l, const thrust::host_vector<DeviceStats>& h) const;
 
-  /// Systematic rounding of the event probabilities q into counts out, on the caller's
-  /// queue. sorted: the events come cell-ordered, as the two-body lanes do.
+  /// Systematic rounding of the event probabilities q into counts out, on the
+  /// caller's queue.
+  ///
+  /// Set sorted when the events come cell-ordered, as the two-body lanes do.
   void select(
     const tyvi::mdgrid_work& w,
     bool sorted,
@@ -278,21 +342,22 @@ public:
   void layout(TileView& t);
 
   /// Lays out if a species has no valid tables, or on the caller's epoch beat.
+  ///
   /// The sources and sinks touch the tables, so they call this first.
   void lay_if_needed(TileView& t, bool epoch = false);
 
   /// One step of every enabled channel, in a random order; lays out where needed.
   void step(TileView& t);
 
-  /// Exact expectation of a two-body channel in one step by a brute-force pair sum:
-  /// the events sum_ij P_ij, or the weight they move sum_ij P_ij s_ij.
+  /// Exact expectation of a two-body channel in one step by a brute-force pair sum.
+  ///
+  /// The events sum_ij P_ij, or with weight set the weight they move,
+  /// sum_ij P_ij s_ij.
   [[nodiscard]] double pair_sum(Channel which, const TileView& t, bool weight) const;
 
   [[nodiscard]] std::map<std::string, double> counts() const;
   [[nodiscard]] std::map<std::string, double> moved() const;
   [[nodiscard]] std::string report() const;
-
-  // ---- sources and sinks of the open box; each accumulates into the budget
 
   /// Injects pairs at the power ell per step: dN/dgamma ~ gamma^-p on [gmin, gmax],
   /// each lepton isotropic.
@@ -306,20 +371,22 @@ public:
   void heat_diffusive(TileView& t, double ell);
 
   /// Removes photons with the slab escape probability at the current pair depth.
-  /// tau_T < 0: this tile's own pair depth; dt_esc < 0: the tile is the slab (box.dt).
+  ///
+  /// tau_T < 0 takes this tile's own pair depth; dt_esc < 0 takes the tile as the
+  /// slab (box.dt).
   void escape_photons(TileView& t, double tau_T = -1.0, double dt_esc = -1.0);
 
-  /// x ell_x of the escaped photons per log bin since the budget was reset.
+  /// Escaped x ell_x per log bin since the budget was reset.
   [[nodiscard]] std::vector<double> escaped_spectrum() const;
 
   /// The same per (log x, mu) bin, n_esc x n_mu row-major.
   [[nodiscard]] std::vector<double> escaped_mu_spectrum() const;
 
+  /// Starts a new accounting window: the budget and the escape spectra.
   void reset_budget();
 
   /// Self-absorption depth across the box of a photon of energy x.
   [[nodiscard]] double tau_ssa(const TileView& t, double x) const;
-
 };
 
 }  // namespace qed

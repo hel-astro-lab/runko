@@ -57,19 +57,20 @@ namespace qed {
 namespace py = pybind11;
 
 namespace {
+
 /// The physics functions, vectorized over numpy arrays, for tests and analysis.
 void
   bind_physics(py::module& m)
 {
   using qed::Vec3;
 
-  // ---- constants and thresholds
+  // Constants and thresholds.
   m.attr("ALPHA")    = qed::alpha;
   m.attr("BQ_G")     = qed::bq_gauss;
   m.attr("SYN_GMIN") = qed::syn::gamma_min;
   m.attr("BW_XMIN")  = qed::bw::x_threshold;
 
-  // ---- two-body: cross sections and rates of (incident, partner) momenta
+  // Two-body: cross sections and rates of (incident, partner) momenta
   m.def("b_from_ellB", py::vectorize([](const double ell_B, const double H) {
           return qed::b_from_ellB(ell_B, H);
         }));
@@ -111,7 +112,7 @@ void
       return qed::ssa::bound(b, x_min, xlo, glo, ghi);
     }));
 
-  // ---- synchrotron: spectrum, rate, cumulative and its inverse, moments
+  // Synchrotron: spectrum, rate, cumulative and its inverse, moments
   m.def("G_syn", py::vectorize([](double ce, double cg) {
           return qed::ssa::G_syn(ce, cg);
         }));
@@ -138,7 +139,7 @@ void
         return qed::syn::rate(Vec3(ux, uy, uz), b, x_min, kinetic);
       }));
 
-  // ---- Breit-Wheeler: rate, cumulative and its inverse
+  // Breit-Wheeler: rate, cumulative and its inverse
   m.def("T_bw", py::vectorize([](double chi) { return qed::bw::T(chi); }));
   m.def("P_bw", py::vectorize([](double chi, double r) { return qed::bw::P(chi, r); }));
   m.def("r_bw", py::vectorize([](double z, double chi) {
@@ -148,7 +149,7 @@ void
           return qed::bw::rate(Vec3(kx, ky, kz), b);
         }));
 
-  // ---- one-body bookkeeping of the sampler: accumulation factor, cooling law
+  // One-body bookkeeping of the sampler: accumulation factor, cooling law
   m.def("facc_syn", py::vectorize([](double gam, double xm, double acc, double kappa) {
           return qed::facc_syn(gam, xm, acc, kappa);
         }));
@@ -172,14 +173,14 @@ void
   m_sub.attr("ESC_EDGES") = to_ndarray(esc_edges());
   m_sub.attr("MU_EDGES")  = to_ndarray(mu_edges());
 
-  // ---- per-tile methods of runko.ProxyTile, by tile id
+  // Per-tile methods of runko.ProxyTile, by tile id.
   using sim_t        = runko::simulation_context;
   using id_t         = qed::tile_id;
   const auto sampler = [](sim_t& sim, const id_t id) -> qed::Sampler& {
     return qed::state(sim, id).sampler;
   };
 
-  // layout, species roles, box and clocks
+  // Layout, species roles, box and clocks.
   m_sub.def("laid", &qed::laid);
   m_sub.def("layout", &qed::layout);
   m_sub.def("step", [=](sim_t& sim, const id_t id) { return sampler(sim, id).step(); });
@@ -201,7 +202,7 @@ void
     return d;
   });
 
-  // population IO (host round trips)
+  // Population IO (host round trips).
   m_sub.def(
     "set_particles",
     [](
@@ -234,7 +235,7 @@ void
     return d;
   });
 
-  // diagnostics and the step
+  // Diagnostics and the step.
   m_sub.def("totals", [](sim_t& sim, const id_t id, const std::string& s) {
     const auto tt = qed::totals(sim, id, species_of(s));
     py::dict d;
@@ -264,7 +265,7 @@ void
     py::arg("channel"),
     py::arg("weight") = false);
 
-  // the open box: sources, sink, budgets, escaping spectrum
+  // The open box: sources, sink, budgets, escaping spectrum.
   m_sub.def(
     "inject_pairs_plaw",
     &qed::inject_pairs_plaw,
@@ -328,7 +329,7 @@ void
       to_ndarray(sampler(sim, id).escaped_spectrum()));
   });
 
-  // the thermostats of the tests
+  // The thermostats of the tests.
   m_sub.def(
     "reset_momenta",
     [](

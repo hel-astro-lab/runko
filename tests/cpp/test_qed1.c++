@@ -60,7 +60,7 @@ const suite<"one-body and self-absorption physics"> _ = [] {
   };
 
   "the closed-form mean above a floor follows the moment of the cumulative"_test = [] {
-    // reference: Simpson's rule in ln r on the cumulative's tail from a few decades
+    // Reference: Simpson's rule in ln r on the cumulative's tail from a few decades
     // below the spectrum's scale; the sliver below the first node in closed form
     const auto ref = [](const double chi, const double rmin) {
       const auto s    = qed::syn::shape(chi);
@@ -97,7 +97,7 @@ const suite<"one-body and self-absorption physics"> _ = [] {
   "synchrotron inversion round-trips and the sampler conserves energy"_test = [] {
     auto rng = runko::Rng { runko::rng_key(11, 0, 0, 0), 0 };
 
-    // round-trip to round-off except where the quartic degenerates (e.g. chi ~ 2.6, as
+    // Round-trip to round-off except where the quartic degenerates (e.g. chi ~ 2.6, as
     // in the prototype): those count as outliers
     auto bad = 0;
     for(auto n = 0; n < 20000; ++n) {
@@ -124,7 +124,7 @@ const suite<"one-body and self-absorption physics"> _ = [] {
           << "collinear";
       }
       expect(close(g1 + x, gam, 1e-9) or g1 == 1.0) << "energy";
-      // where the channel is open, the floor holds up to the round-off of the inverted
+      // Where the channel is open, the floor holds up to the round-off of the inverted
       // Pade cumulative
       if(qed::syn::rate(u, b, xm, false) > 0.0) {
         open += 1.0;

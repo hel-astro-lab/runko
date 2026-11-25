@@ -1,9 +1,6 @@
 // Copyright 2026 - 2026, Miro Palmu, Joonas Nättilä and the runko contributors
 // SPDX-License-Identifier: GPL-3.0-or-later
 
-// The step of the sampler: layout cadence, channel order, systematic rounding, the
-// placement of products, statistics.
-
 #include "runko/qed/sampler.h"
 
 #include "runko/tools/math.h"
@@ -27,7 +24,7 @@ namespace qed {
 
 namespace {
 
-// in Channel order; the keys of counts() and moved()
+/// In Channel order; the keys of counts() and moved().
 constexpr const char* names[] = { "compton-", "compton+", "pairann", "photann", "ssa-",
                                   "ssa+",     "syn-",     "syn+",    "bw" };
 
@@ -102,7 +99,7 @@ void
   auto& car        = carry(l, role, ncell);
   const auto car_p = thrust::raw_pointer_cast(car.data());  // remainder per cell
 
-  // one buffer, of the pass's event count, serves every select of the pass: no resize
+  // One buffer, of the pass's event count, serves every select of the pass: no resize
   // may reallocate under a select still in flight on the queue
   if(round_.cs.size() < n) { round_.cs.resize(n); }
   const auto cs   = ptr(round_.cs);
@@ -140,16 +137,16 @@ void
       sstd::floor(base + cs[i]) - sstd::floor(base + cs[i] - q[j]));
   });
 
-  // a second pass, since every event of the cell reads the old remainder above: the
+  // A second pass, since every event of the cell reads the old remainder above: the
   // cell's last event advances it
   thrust::for_each(w.on_this(), ord0, ord0 + nn, [=](const I i) {
     if(static_cast<std::size_t>(i) + 1 < n and keys[i + 1] == keys[i]) { return; }
+
     const auto x   = car_p[keys[i]] + cs[i];
     car_p[keys[i]] = x - sstd::floor(x);
   });
 }
 
-// ---------------------------------------------------------------- the step
 void
   Sampler::layout(TileView& t)
 {
@@ -164,7 +161,7 @@ void
   }
 }
 
-// a species loses its tables when a source fills a fresh or reset tile
+// A species loses its tables when a source fills a fresh or reset tile.
 void
   Sampler::lay_if_needed(TileView& t, const bool epoch)
 {
@@ -176,19 +173,18 @@ void
 void
   Sampler::step(TileView& t)
 {
-  // ---- layout every nsort steps, or as soon as one went stale
+  // Layout every nsort steps, or as soon as one went stale.
   const auto epoch = istep_ % static_cast<std::uint64_t>(par.nsort) == 0;
   this->lay_if_needed(t, epoch);
 
   if(not epoch) {
-    // the PIC push moved particles without widening the key bounds; this sweep keeps
+    // The PIC push moved particles without widening the key bounds; this sweep keeps
     // every envelope a majorant
     const auto w = tyvi::mdgrid_work {};
     for(auto s = 0uz; s < 3uz; ++s) { t.layout[s]->touch_all(*t.con[s], w); }
     w.wait();
   }
 
-  // ---- context and slot statistics
   Ctx c { t, par.nbin };
   for(auto s = 0uz; s < 3uz; ++s) {
     stats.slots[s] += static_cast<double>(t.con[s]->size());
@@ -196,7 +192,7 @@ void
     t.ids_used[s] = 0;
   }
 
-  // ---- the channels in random order, each reading the states the previous one left;
+  // The channels in random order, each reading the states the previous one left;
   // the splitting error is second order in the rates and cancels in expectation
   auto order = std::vector<int> {};
   for(auto i = 0uz; i < n_channels; ++i) {
@@ -225,7 +221,6 @@ void
   ++istep_;
 }
 
-// ---------------------------------------------------------------- products
 Stager
   Sampler::stager(const std::size_t n)
 {
@@ -237,7 +232,7 @@ Stager
 void
   Sampler::place(Ctx& c)
 {
-  const auto nst = static_cast<std::size_t>(nstaged_[0]);  // staged records
+  const auto nst = static_cast<std::size_t>(nstaged_[0]);
   if(nst == 0) { return; }
 
   const auto w   = tyvi::mdgrid_work {};
@@ -273,7 +268,7 @@ void
   placed_[0]     = Placed {};
   const auto cnt = ptr(placed_);
   const auto v   = c.v;
-  const auto idb = c.t->id_base;  // first free id per species
+  const auto idb = c.t->id_base;
 
   // one lane per staged record; each copy takes a slack slot of its key or a tail slot
   thrust::for_each(
@@ -300,14 +295,14 @@ void
         const auto fits = f < lay.cap[kk];
         I slot;
 
-        // claim the slot by CAS on its dead id: an arrival of the particle exchange
+        // Claim the slot by CAS on its dead id: an arrival of the particle exchange
         // may have taken it since the layout
         if(
           fits and
           sstd::atomic_compare_exchange(&pv.ids[at][], runko::dead_prtc_id, id)) {
           slot = at;  // reactive at once
 
-          // widen the key's bounds, so the envelopes of the channels still to come this
+          // Widen the key's bounds, so the envelopes of the channels still to come this
           // step stay upper bounds
           lay.widen(kk, e, rec.w);
           sstd::atomic_add(&cnt->slack, std::int32_t { 1 });
@@ -366,7 +361,7 @@ ChannelStats
   return s;
 }
 
-// accepted events per enabled channel, cumulative
+// Accepted events per enabled channel, cumulative.
 std::map<std::string, double>
   Sampler::counts() const
 {
@@ -378,7 +373,7 @@ std::map<std::string, double>
   return m;
 }
 
-// weight moved per enabled channel, cumulative: sum f min(w_i, w_j) over the events
+// Weight moved per enabled channel, cumulative: sum f min(w_i, w_j) over the events.
 std::map<std::string, double>
   Sampler::moved() const
 {
@@ -417,6 +412,7 @@ std::string
   const thrust::host_vector<DeviceStats> h = dstat_;
   for(auto i = 0uz; i < n_channels; ++i) {
     if(not enabled[i]) { continue; }
+
     const auto s = channel_snap(i, h);
 
     if(is_twobody(static_cast<Channel>(i))) {

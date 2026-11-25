@@ -3,18 +3,13 @@
 
 #pragma once
 
-// Synchrotron self-absorption, photon + lepton -> lepton: the net rate of absorption
-// against stimulated emission, its bound, and the single product. The rate grows
-// without limit towards soft photons, so the bound depends on the field and the photon
-// floor. The field enters only through b_perp = B_perp/B_Q: chi_e = gamma b_perp,
-// chi_gamma = x b_perp. Units: m_e c^2, m_e c, sigma_T.
-
 #include "runko/qed/interactions/qed_kinematics.h"
 
 namespace qed {
 
-inline constexpr double alpha = 7.2973525693e-3;  // fine structure constant
-inline constexpr double bq_gauss  = 4.4140094e13;     // quantum critical field, G
+inline constexpr double alpha = 7.2973525693e-3;
+/// Quantum critical field in G.
+inline constexpr double bq_gauss = 4.4140094e13;
 
 /// Returns b_perp = B_perp/B_Q from the magnetic compactness
 /// ell_B = sigma_T H U_B/(m_e c^2) = (alpha/3) b_perp^2 (H/lamC).
@@ -23,15 +18,24 @@ constexpr double
   b_from_ellB(const double ell_B, const double size_lamC)
 { return sstd::sqrt(3.0 * ell_B / (alpha * size_lamC)); }
 
+/// Synchrotron self-absorption, photon + lepton -> lepton.
+///
+/// The rate is the net of absorption against stimulated emission; it grows without
+/// limit towards soft photons, so the bound depends on the field and the photon
+/// floor. The field enters only through b_perp = B_perp/B_Q: chi_e = gamma b_perp,
+/// chi_gamma = x b_perp. Units: m_e c^2, m_e c, sigma_T.
 namespace ssa {
 
-inline constexpr double gamma_min = 3.0;   // lepton threshold, as for synchrotron emission
-inline constexpr double x_rel = 1e-3;  // x/gamma below which the derivative form is used
+/// Lepton threshold, as for synchrotron emission.
+inline constexpr double gamma_min = 3.0;
+/// The x/gamma below which the derivative form is used.
+inline constexpr double x_rel = 1e-3;
 
-// ---- synchrotron functions F(nu) = nu int_nu^inf K_5/3 and G(nu) = nu K_2/3(nu): the
-// fits of Fouka & Ouichaoui, two asymptotes bridged by exp(H1) and 1 - exp(H2);
-// accurate to 0.26 % (F) and 0.035 % (G) over the whole range.
-
+/// Returns the synchrotron function F(nu) = nu int_nu^inf K_5/3.
+///
+/// F and G(nu) = nu K_2/3(nu) are the fits of Fouka & Ouichaoui, two asymptotes
+/// bridged by exp(H1) and 1 - exp(H2); accurate to 0.26 % (F) and 0.035 % (G) over
+/// the whole range.
 [[nodiscard]]
 constexpr double
   F_syn(const double nu)
@@ -119,10 +123,12 @@ constexpr double
   return (sstd::PI / (8.0 * alpha)) * diff / (us * gam * x * x * x);
 }
 
-/// Returns a bound on rate over photons above x_lo and leptons in [g_lo, g_hi]: the
-/// maximum over a geometric gamma grid plus the kernel peak gamma^2 = 0.4435 x/b_perp
-/// and its neighbours, times 1.05, with x at the floor. The floor maximizes the rate
-/// only for gamma b_perp below about 10: above, it rises again as x -> gamma.
+/// Returns a bound on rate over photons above x_lo and leptons in [g_lo, g_hi].
+///
+/// It is the maximum over a geometric gamma grid plus the kernel peak
+/// gamma^2 = 0.4435 x/b_perp and its neighbours, times 1.05, with x at the floor. The
+/// floor maximizes the rate only for gamma b_perp below about 10: above, it rises
+/// again as x -> gamma.
 [[nodiscard]]
 constexpr double
   shmax(const double b_perp, const double x_lo, double g_lo, double g_hi)

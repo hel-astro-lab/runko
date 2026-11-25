@@ -3,10 +3,6 @@
 
 #pragma once
 
-// The channels of the sampler. A two-body channel is a record type the kernels are
-// templates over: its two species, the keys of its two sides, what an event does to
-// the partner, its rate function and the bound of it over a pair of energy bins.
-
 #include "runko/qed/field.h"
 #include "runko/qed/interactions/qed2_ann.h"
 #include "runko/qed/interactions/qed2_comp.h"
@@ -39,8 +35,9 @@ inline constexpr auto n_channels = static_cast<std::size_t>(Channel::count);
 [[nodiscard]] const char* channel_name(Channel c);
 [[nodiscard]] bool is_twobody(Channel c);
 
-/// Kernel ids of the random streams, the last argument of rng_key(seed, step, sub, id):
-/// every use of random numbers in the module has one of its own.
+/// Kernel ids of the random streams, the last argument of rng_key(seed, step, sub, id).
+///
+/// Every use of random numbers in the module has one of its own.
 namespace stream {
 
 /// Photon sub-range bit of every slot at a layout (sub = species).
@@ -59,7 +56,7 @@ constexpr std::uint64_t
   onebody(const Channel l, const int k)
 { return static_cast<std::uint64_t>(100 + 2 * static_cast<int>(l) + k); }
 
-// sources and sinks: the count and the draws of an injection, the heating kicks
+// Sources and sinks: the count and the draws of an injection, the heating kicks
 // (sub = species), the escape
 inline constexpr std::uint64_t pairs_count = 300, pairs = 301;
 inline constexpr std::uint64_t photons_count = 302, photons = 303;
@@ -71,8 +68,10 @@ constexpr std::uint64_t
   carry(const int l, const int role)
 { return static_cast<std::uint64_t>(400 + 3 * l + role); }
 
-inline constexpr std::uint64_t channel_order = 500;  // order of the channels in a step
-inline constexpr std::uint64_t positions     = 501;  // set_particles (sub = species)
+/// Order of the channels in a step.
+inline constexpr std::uint64_t channel_order = 500;
+/// Positions of set_particles (sub = species).
+inline constexpr std::uint64_t positions = 501;
 
 }  // namespace stream
 
@@ -93,12 +92,18 @@ struct Side {
 /// of every (cell, bin) seen as one range, and the bounds over them.
 struct SideView {
   using I = runko::index_t;
-  const I* base0;     // first slot of sub-range 0, per (cell, bin)
-  const I* cnt0;      // its slots (live + appended)
-  const I* base1;     // first slot of sub-range 1 (second photon bit), 0 if absent
-  const I* cnt1;      // its slots, 0 if absent
-  const float* wmax;  // largest weight over both sub-ranges
-  const float* emin;  // energy bounds over both sub-ranges
+  /// First slot of sub-range 0, per (cell, bin).
+  const I* base0;
+  /// Slots of sub-range 0 (live + appended).
+  const I* cnt0;
+  /// First slot of sub-range 1 (second photon bit), 0 if absent.
+  const I* base1;
+  /// Slots of sub-range 1, 0 if absent.
+  const I* cnt1;
+  /// Largest weight over both sub-ranges.
+  const float* wmax;
+  /// Energy bounds over both sub-ranges.
+  const float* emin;
   const float* emax;
 
   [[nodiscard]] constexpr I N(const int cb) const { return cnt0[cb] + cnt1[cb]; }
@@ -111,8 +116,11 @@ struct SideView {
   }
 };
 
-// ---- the two-body records
-// One type per two-body channel; the kernels of the pass are templates over them.
+// ---- Two-body records
+//
+// One record type per two-body channel; the kernels of the pass are templates over
+// them. A record carries
+//
 //   t1, t2            incident and partner species
 //   side1, side2      the keys of each side
 //   c_l               pairs counted per slot pair (2 where a species is split in two)
@@ -182,8 +190,10 @@ struct ChGG {
 /// lepton bin at the photon bin's floor.
 struct ChSSA {
   Species t2;
-  double b_tile;  // tile field, an upper bound of every lepton's field
-  double x_min;   // floor of the synchrotron band
+  /// Tile field, an upper bound of every lepton's field.
+  double b_tile;
+  /// Floor of the synchrotron band.
+  double x_min;
 
   static constexpr Species t1            = Species::ph;
   static constexpr Side side1            = Side::both_bits();
@@ -192,7 +202,8 @@ struct ChSSA {
   static constexpr bool consumes_partner = false;
   static constexpr bool merges           = true;
   static constexpr bool makes_pairs      = false;
-  static constexpr double g_min          = ssa::gamma_min;  // no absorption below it
+  /// No absorption below it.
+  static constexpr double g_min = ssa::gamma_min;
 
   constexpr double rate(const Vec3& k, const Vec3& u, const FieldView& fv) const
   {

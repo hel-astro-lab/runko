@@ -29,7 +29,7 @@ const suite<"qed weight bookkeeping"> _ = [] {
       // probability times size is the reaction count of the pair
       expect(close(S * qed::pair_weight(wi, wj, fk), wi * wj, 1e-12));
 
-      // the incident never gives up more than it has; without merging the smaller
+      // The incident never gives up more than it has; without merging the smaller
       // weight moves
       expect(S <= wi);
       if(fk == 1.0) { expect(S == std::min(wi, wj)); }
@@ -113,7 +113,7 @@ const suite<"qed weight bookkeeping"> _ = [] {
       expect(not p.resolved and p.fire and p.f == 1.0);
       expect(p.g_cooled >= 1.0 and p.g_cooled < gam);
 
-      // whatever energy is drawn, the parent is at the cooled energy and the weight of
+      // Whatever energy is drawn, the parent is at the cooled energy and the weight of
       // the LP times the mean photon is the loss
       for(const auto x: { 0.1 * xm, xm, 7.0 * xm }) {
         const auto em = qed::emitted(p, w, gam, xm, x);

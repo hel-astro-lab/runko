@@ -3,29 +3,35 @@
 
 #pragma once
 
-// Quantum synchrotron emission, lepton -> lepton + photon, in the local field: the
-// one-body rate function r(chi, eps) (the factor of alpha c/lamC), the inversion of
-// the emission spectrum, the mean photon energy above a floor x_min, and the product
-// sampler, all in closed form (Sarjomaa & Nattila). chi_e = gamma b_perp with
-// b_perp = B_perp/B_Q; the photon takes the fraction r = chi_gamma/chi_e.
-// Units: m_e c^2, m_e c.
-
 #include "runko/qed/interactions/qed_kinematics.h"
 
 #include <array>
 
+/// Quantum synchrotron emission, lepton -> lepton + photon, in the local field.
+///
+/// The one-body rate function (the factor of alpha c/lamC), the inversion of the
+/// emission spectrum, the mean photon energy above a floor x_min and the product
+/// sampler are all in closed form (Sarjomaa & Nattila). The quantum parameter is
+/// chi_e = gamma b_perp with b_perp = B_perp/B_Q; the photon takes the fraction
+/// r = chi_gamma/chi_e. Units: m_e c^2, m_e c.
 namespace qed::syn {
 
-inline constexpr double gamma_min   = 3.0;         // lepton threshold of the channel
-inline constexpr double z_clip  = 5e-4;        // deviate clipped off both ends
-inline constexpr double chi_hi = 1e2;         // top of the fitted range of the shape
-inline constexpr double r_tiny   = 1e-9;        // floor of a divisor in the inversion
-inline constexpr double frac_min   = 10 * z_clip;  // thinnest drawable tail
-inline constexpr double tiny   = 1e-300;
+/// Lepton threshold of the channel.
+inline constexpr double gamma_min = 3.0;
+/// Deviate clipped off both ends.
+inline constexpr double z_clip = 5e-4;
+/// Top of the fitted range of the shape.
+inline constexpr double chi_hi = 1e2;
+/// Floor of a divisor in the inversion.
+inline constexpr double r_tiny = 1e-9;
+/// Thinnest drawable tail.
+inline constexpr double frac_min = 10 * z_clip;
+inline constexpr double tiny     = 1e-300;
 
-/// Returns T_S(chi_e), the photon-number integral of the spectrum: the rate function is
-/// (chi_e/gamma) T_S. Tends to 5/(2 sqrt 3) as chi_e -> 0; fit accurate to 0.5 % from
-/// chi_e = 1e-4 to 1e2.
+/// Returns T_S(chi_e), the photon-number integral of the spectrum.
+///
+/// The rate function is (chi_e/gamma) T_S. T_S tends to 5/(2 sqrt 3) as chi_e -> 0;
+/// the fit is accurate to 0.5 % from chi_e = 1e-4 to 1e2.
 [[nodiscard]]
 constexpr double
   T(double chi_e)
@@ -69,7 +75,8 @@ inline constexpr std::array<double, 7> lnkappa_fit = { -9.414223e-01, 3.268251e-
                                                    6.384624e-02,  2.694743e-02,
                                                    2.905601e+00,  2.529502e+00,
                                                    2.155030e+00 };
-inline constexpr double p_stretch = 1.060691e+00;  // stretching exponent of the point
+/// Stretching exponent of the point.
+inline constexpr double p_stretch = 1.060691e+00;
 
 /// Returns c0 + c1 s + c2 s^2 + c3 s^3 + E/(1 + exp(-(t - t_s)/w_s)) at t = ln chi_e.
 [[nodiscard]]
@@ -81,9 +88,10 @@ constexpr double
          q[4] / (1.0 + sstd::exp(-(t - q[5]) / q[6]));
 }
 
-/// Returns the shape at chi_e. Downwards the fit extrapolates (still a probability to
-/// chi_e = 1e-8; 1e-12 floors zero field); above chi_hi it is frozen, the far better
-/// extrapolation.
+/// Returns the shape at chi_e.
+///
+/// Downwards the fit extrapolates (still a probability to chi_e = 1e-8; 1e-12 floors
+/// zero field); above chi_hi it is frozen, the far better extrapolation.
 [[nodiscard]]
 constexpr Shape
   shape(const double chi_e)
@@ -117,8 +125,10 @@ constexpr Shape
   return Shape { a, b, n, curve(l0_fit, t), curve(linf_fit, t), sstd::exp(curve(lnkappa_fit, t)) };
 }
 
-/// Returns the probability that a photon takes at most the fraction r of chi_e:
-/// 1 - a u^4/(1 + b u^2 + c u^3), u = (1 - r^(1/3))^n, c = a - b - 1 so that p(0) = 0.
+/// Returns the probability that a photon takes at most the fraction r of chi_e.
+///
+/// It is 1 - a u^4/(1 + b u^2 + c u^3), u = (1 - r^(1/3))^n, with c = a - b - 1 so
+/// that p(0) = 0.
 [[nodiscard]]
 constexpr double
   P(const Shape& s, const double r)
@@ -168,7 +178,7 @@ constexpr double
   const auto us = sstd::max(u, tiny);
   const auto x  = u - C / (4.0 * a);  // (1 - r^(1/3))^n, the depression shift undone
 
-  // classical corner (soft emission, z near 1): C/(4a) is minute beside u, so x^(1/n)
+  // Classical corner (soft emission, z near 1): C/(4a) is minute beside u, so x^(1/n)
   // is expanded about u to second order instead of formed by cancellation
   const auto e    = C / (4.0 * a * n);
   const auto un   = sstd::pow(us, 1.0 / n);
@@ -239,8 +249,10 @@ constexpr double
 }
 
 /// Returns the mean <chi_gamma>/chi_e of the photons the sampler draws above r_min, in
-/// closed form. Multiplicities of merged emissions divide by this drawn mean, not by
-/// the exact spectrum's.
+/// closed form.
+///
+/// Multiplicities of merged emissions divide by this drawn mean, not by the exact
+/// spectrum's.
 [[nodiscard]]
 constexpr double
   rmean(const Shape& s, const double r_min)
@@ -289,13 +301,17 @@ constexpr double
 { return xmean(shape(chi_e), gam, kinetic, x_min); }
 
 struct Products {
-  Vec3 k;   // emitted photon
-  Vec3 u1;  // recoiled lepton
+  /// Emitted photon.
+  Vec3 k;
+  /// Recoiled lepton.
+  Vec3 u1;
 };
 
 /// Returns the photon above x_min and the recoiled lepton of lepton u at chi_e with
-/// shape s. Collinear: the photon leaves along u, the lepton keeps its direction and
-/// loses x on the mass shell, the inverse of the self-absorption product.
+/// shape s.
+///
+/// Collinear: the photon leaves along u, the lepton keeps its direction and loses x on
+/// the mass shell, the inverse of the self-absorption product.
 [[nodiscard]]
 constexpr Products
   sample(

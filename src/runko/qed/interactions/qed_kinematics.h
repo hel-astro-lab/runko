@@ -3,10 +3,6 @@
 
 #pragma once
 
-// Frame machinery shared by the two-body QED processes: the Lorentz boost, the triad
-// the differential cross sections are written in, and the CM angular draw of the pair
-// channels. Units: m_e c^2, m_e c.
-
 #include "runko/tools/math.h"
 #include "runko/tools/random.h"
 #include "runko/tools/vector.h"
@@ -16,7 +12,9 @@ namespace qed {
 using Vec3 = toolbox::Vec3<double>;
 
 /// Largest number of proposals of a rejection loop; beyond it the last proposal is
-/// taken. At acceptance > 0.5 per trip the cap is hit with probability below 1e-19.
+/// taken.
+///
+/// At acceptance > 0.5 per trip the cap is hit with probability below 1e-19.
 inline constexpr int trip_cap = 64;
 
 /// Right-handed triad (i, j, k) with k = kvec and ref in the (i, k) plane.
@@ -75,9 +73,10 @@ constexpr FourVec
   return FourVec { p0n, pn };
 }
 
-/// Returns the CM direction of the drawn particle of a pair channel in the triad t
-/// (polar axis t.k, azimuth origin the plane of t.k and the fixed direction at cosine
-/// cfix to it). ntry receives the number of proposals.
+/// Returns the CM direction of the drawn particle of a pair channel in the triad t.
+///
+/// The polar axis is t.k, the azimuth origin the plane of t.k and the fixed direction
+/// at cosine cfix to it. ntry receives the number of proposals.
 [[nodiscard]]
 constexpr Vec3
   cm_direction(

@@ -1,18 +1,6 @@
 // Copyright 2026 - 2026, Miro Palmu, Joonas Nättilä and the runko contributors
 // SPDX-License-Identifier: GPL-3.0-or-later
 
-// The two-body channels. One channel on one tile runs as
-//
-//   sides -> envelope -> sub-steps of { strata -> lanes -> decide -> react -> settle }
-//
-// sides     per (cell, bin) group of both species: its slots and its bounds
-// envelope  per (cell, bin a, bin b): an upper bound of the summed event probability
-// strata    envelope events per bin pair, numbered row by row into lanes
-// lanes     every lane proposes one slot pair and thins it to the pair's probability
-// decide    what an accepted event does to its parents, rounded per cell
-// react     the final state: incident in place, products staged, partner read only
-// settle    the partners take what the events of the pass gave them
-
 #include "runko/qed/interactions/qed2_ann.h"
 #include "runko/qed/interactions/qed2_comp.h"
 #include "runko/qed/interactions/qed2_gg.h"
@@ -68,26 +56,34 @@ constexpr int
   return lo;
 }
 
-// ---------------------------------------------------------------- reactions
-
 /// An accepted event as its react lane holds it.
 struct Event {
-  PView v1, v2;             // incident and partner species
-  I i, j;                   // their slots
-  double f;                 // exchanges the partner takes as one
-  std::int32_t n1, n2, n3;  // rounded decisions: incident, partner, pair count
+  /// Incident and partner species.
+  PView v1, v2;
+  /// Their slots.
+  I i, j;
+  /// Exchanges the partner takes as one.
+  double f;
+  /// Rounded decisions: incident, partner, pair count.
+  std::int32_t n1, n2, n3;
   int cell;
-  float pos[3];  // products are born where the incident is
+  /// Where the products are born: at the incident.
+  float pos[3];
   Stager stage;
-  double a_res, x_ref;  // photon resolution function
-  int n_cap;            // largest copy number
+  /// Parameters of the photon resolution function.
+  double a_res, x_ref;
+  int n_cap;
   double w_lep;
-  float* kick;  // the partner's momentum kick of this event
-  float* dgam;  // energy absorbed, per partner slot
+  /// The partner's momentum kick of this event.
+  float* kick;
+  /// Energy absorbed, per partner slot.
+  float* dgam;
 };
 
-/// Compton: the photon takes the scattered state, as the copies the resolution function
-/// asks for; the lepton's f exchanges are kept as one momentum kick.
+/// Compton scattering of one event.
+///
+/// The photon takes the scattered state, as the copies the resolution function asks
+/// for; the lepton's f exchanges are kept as one momentum kick.
 constexpr void
   reaction(const ChCompton&, const Event& r, runko::Rng& rng)
 {
@@ -171,11 +167,22 @@ constexpr void
 
 }  // namespace
 
-// ---------------------------------------------------------------- one channel run
-
-/// Channel ch (number l) on the tile of c: the stages of the header comment, over the
-/// scratch of the sampler. Members end in an underscore so that a kernel cannot capture
-/// one by accident: every stage copies what its lambdas read into locals.
+/// Two-body channel ch (number l) on the tile of c, over the scratch of the sampler.
+///
+/// One channel on one tile runs as
+///
+///   sides -> envelope -> sub-steps of { strata -> lanes -> decide -> react -> settle }
+///
+/// sides     per (cell, bin) group of both species: its slots and its bounds
+/// envelope  per (cell, bin a, bin b): upper bound of the summed event probability
+/// strata    envelope events per bin pair, numbered row by row into lanes
+/// lanes     every lane proposes one slot pair and thins it to the pair's probability
+/// decide    what an accepted event does to its parents, rounded per cell
+/// react     the final state: incident in place, products staged, partner read only
+/// settle    the partners take what the events of the pass gave them
+///
+/// Members end in an underscore so that a kernel cannot capture one by accident:
+/// every stage copies what its lambdas read into locals.
 template<typename Ch>
 class TwoBody {
   Sampler& sam_;
@@ -184,21 +191,30 @@ class TwoBody {
   const Channel which_;
   const int l_;
 
-  const int nb_;            // energy bins per cell
-  const int ncell_;         // reaction cells
-  const int ncb_;           // (cell, bin) groups
-  const int npair_;         // (cell, bin a, bin b) pairs
-  const std::size_t i1_;    // incident species
-  const std::size_t i2_;    // partner species
-  SideView s1_ {}, s2_ {};  // their sides, as of the start of the channel
+  /// Energy bins per cell.
+  const int nb_;
+  const int ncell_;
+  /// Groups (cell, bin).
+  const int ncb_;
+  /// Pairs (cell, bin a, bin b).
+  const int npair_;
+  /// Incident species.
+  const std::size_t i1_;
+  /// Partner species.
+  const std::size_t i2_;
+  /// The incident and partner sides, as of the start of the channel.
+  SideView s1_ {}, s2_ {};
 
   ChannelStats& st_;
-  Sampler::DeviceStats* const ds_;  // the statistics its kernels sum
+  /// The statistics its kernels sum.
+  Sampler::DeviceStats* const ds_;
 
   using Outcome = Sampler::Outcome;
 
-  static inline const auto g0   = thrust::counting_iterator<int>(0);  // groups, pairs
-  static inline const auto ord0 = thrust::counting_iterator<I>(0);    // lanes, events
+  /// Index of the groups and the pairs.
+  static inline const auto g0 = thrust::counting_iterator<int>(0);
+  /// Index of the lanes and the events.
+  static inline const auto ord0 = thrust::counting_iterator<I>(0);
 
 public:
   TwoBody(Sampler& sam, Ctx& c, const Ch& ch, const Channel which) :
@@ -259,7 +275,7 @@ private:
       const auto k0 = keys.stride * cb + keys.first;
       const auto k1 = keys.nranges == 2 ? k0 + 1 : -1;
 
-      // fill counts demand and exceeds cap after an overflow: only cap slots are
+      // Fill counts demand and exceeds cap after an overflow: only cap slots are
       // proposable, past them lies the next key or the tail
       b0[cb]   = lay.b[k0];
       c0[cb]   = sstd::min(lay.fill[k0], lay.cap[k0]);
@@ -283,8 +299,10 @@ private:
     return SideView { b0, c0, b0 + ncb, c0 + ncb, wm, lo, hi };
   }
 
-  /// Envelope per bin pair, from the slot counts and the bounds of the two bins alone:
-  /// all n1 n2 slot pairs at the rate bound and the pair-weight bound of the bin pair.
+  /// Envelope per bin pair, from the slot counts and the bounds of the two bins alone.
+  ///
+  /// It takes all n1 n2 slot pairs at the rate bound and the pair-weight bound of the
+  /// bin pair.
   void envelope(const tyvi::mdgrid_work& w)
   {
     const auto nb = nb_, ncb = ncb_;
@@ -321,7 +339,7 @@ private:
         const auto w2  = static_cast<double>(s2.wmax[cb]);
         auto shv       = n1 > 0.0 and n2 > 0.0 ? ch.bound(lo1, hi1, lo2, hi2) : 0.0;
 
-        // pair weight of the two maxima at the smallest f_kin of the bin pair, which
+        // Pair weight of the two maxima at the smallest f_kin of the bin pair, which
         // is extremal at the corners of the gamma range, starting at the threshold
         auto fk = 1.0;
         if constexpr(Ch::merges) {
@@ -359,11 +377,13 @@ private:
     sam_.stats.cell_lanes += npair_;
   }
 
-  /// Sub-steps of the channel. Distinct strata need at most as many events per bin as
-  /// slots; beyond that the channel splits into sub-steps of a larger N_2. A consumed
-  /// partner needs them on its side too. A channel that only adds to its partner caps
-  /// them: past the cap the row clamp drops the surplus (an under-count the cap
-  /// controls), so no two lanes ever hold one incident.
+  /// Sub-steps of the channel.
+  ///
+  /// Distinct strata need at most as many events per bin as slots; beyond that the
+  /// channel splits into sub-steps of a larger N_2. A consumed partner needs them on
+  /// its side too. A channel that only adds to its partner caps them: past the cap the
+  /// row clamp drops the surplus (an under-count the cap controls), so no two lanes
+  /// ever hold one incident.
   [[nodiscard]]
   int substeps(const tyvi::mdgrid_work& w)
   {
@@ -401,7 +421,7 @@ private:
   {
     const auto w = tyvi::mdgrid_work {};
 
-    // random streams of this (channel, sub-step): A the counts (lane = incident group)
+    // Random streams of this (channel, sub-step): A the counts (lane = incident group)
     // and the shifts (lanes past them), B the thinning, C the reactions
     const auto key = [&](const int k) {
       return runko::rng_key(
@@ -415,6 +435,7 @@ private:
     const auto Mtot = this->strata(w, keyA, nsub);
     st_.M += static_cast<double>(Mtot);
     if(Mtot == 0) { return; }
+
 
     const auto na = this->lanes(w, keyA, keyB, Mtot);
     if(na == 0) {
@@ -430,9 +451,11 @@ private:
     sam_.place(c_);
   }
 
-  /// Envelope events per bin pair for one sub-step, and the first lane of each; returns
-  /// the lanes. The lanes run row by row, so a lane's rank in its row is its incident
-  /// stratum; a consumed partner gets strata of its own along the columns.
+  /// Envelope events per bin pair for one sub-step and the first lane of each;
+  /// returns the lanes.
+  ///
+  /// The lanes run row by row, so a lane's rank in its row is its incident stratum; a
+  /// consumed partner gets strata of its own along the columns.
   [[nodiscard]]
   std::size_t strata(const tyvi::mdgrid_work& w, const std::uint64_t keyA, const int nsub)
   {
@@ -461,7 +484,7 @@ private:
         Fp           = F;
       }
 
-      // row clamp: no more events than slots, so the strata stay distinct; a backstop
+      // Row clamp: no more events than slots, so the strata stay distinct; a backstop
       // the sub-steps make rare, counted as clamped
       auto ex = 0;
       for(auto bb = 0; bb < nb; ++bb) { ex += M[ca * nb + bb]; }
@@ -514,9 +537,10 @@ private:
     return static_cast<std::size_t>(t.first[static_cast<std::size_t>(npair)]);
   }
 
-  /// The thinning: one lane per envelope event proposes a slot pair of its bin pair
-  /// and accepts it with the pair's probability over the envelope's. Returns the
-  /// accepted lanes, listed in acc_.
+  /// The thinning; returns the accepted lanes, listed in acc_.
+  ///
+  /// One lane per envelope event proposes a slot pair of its bin pair and accepts it
+  /// with the pair's probability over the envelope's.
   [[nodiscard]]
   std::size_t lanes(
     const tyvi::mdgrid_work& w,
@@ -535,7 +559,7 @@ private:
     const auto ch = ch_;
 
     const auto v1 = c_.v[i1_], v2 = c_.v[i2_];
-    const auto fv    = c_.t->field;  // the field at the partner, for the absorption rate
+    const auto fv    = c_.t->field;  // the partner's field, for the absorption rate
     const auto kappa = sam_.par.kappa;
     const auto nlane = static_cast<std::ptrdiff_t>(Mtot);
 
@@ -569,7 +593,7 @@ private:
         const auto M2c = static_cast<std::uint64_t>(M2[cb2]);
         vv2            = (shift(0, cb2, n2) + stratum(p2, M2c, n2, rng)) % n2;
       } else {
-        // the partner only accumulates what the events give it, so several lanes may
+        // The partner only accumulates what the events give it, so several lanes may
         // share it: drawn uniformly with replacement
         vv2 = static_cast<I>(rng.uniform() * static_cast<double>(n2)) % n2;
       }
@@ -584,7 +608,7 @@ private:
         return;
       }
 
-      // two stages on one uniform: the pair weight at its largest, without merging,
+      // Two stages on one uniform: the pair weight at its largest, without merging,
       // from the weights alone; then the pair weight and the rate from the momenta, a
       // threshold the first times a factor <= 1
       const auto u  = rng.uniform();
@@ -592,6 +616,7 @@ private:
       const auto wm = wmp[g];
       const auto wf = sstd::min(pair_weight(wi, wj, 1.0) / wm, 1.0);
       if(not(u < wf)) { return; }
+
       ln.outcome = Outcome::weight_passed;
 
       const auto p1v = v1.u(i), p2v = v2.u(j);
@@ -636,9 +661,11 @@ private:
     return na;
   }
 
-  /// What every accepted event does to its parents. It follows from their weights and
-  /// the size of the event alone, so it is settled before the final state is drawn:
-  /// the probabilities, then their systematic rounding in every cell.
+  /// What every accepted event does to its parents.
+  ///
+  /// It follows from their weights and the size of the event alone, so it is settled
+  /// before the final state is drawn: the probabilities, then their systematic
+  /// rounding in every cell.
   void decide(const tyvi::mdgrid_work& w, const std::size_t na)
   {
     const auto nb = nb_;
@@ -667,7 +694,7 @@ private:
       const auto n2 = S / wj;  // the exchanges the partner takes
       ecell[e]      = ln.g / (nb * nb);
 
-      // the incident gives up S; the partner takes n2 exchanges, with that probability
+      // The incident gives up S; the partner takes n2 exchanges, with that probability
       // while n2 < 1 and as one event beyond
       q1[e] = S / wi;
       q2[e] = sstd::min(n2, 1.0);
@@ -683,9 +710,11 @@ private:
     }
   }
 
-  /// The final state of every event: the incident is updated in place and the products
-  /// are staged. Lanes may share a partner, so its state is only read here; what the
-  /// events give it is kept (a kick per event, absorbed energy per slot) for settle().
+  /// The final state of every event: the incident is updated in place and the
+  /// products are staged.
+  ///
+  /// Lanes may share a partner, so its state is only read here; what the events give
+  /// it is kept (a kick per event, absorbed energy per slot) for settle().
   void react(const tyvi::mdgrid_work& w, const std::uint64_t keyC, const std::size_t na)
   {
     auto& ev         = sam_.ev_;
@@ -693,7 +722,7 @@ private:
 
     if constexpr(std::same_as<Ch, ChCompton>) { ev.kick.resize(3 * na); }
 
-    // dgam is zero between passes (settle clears what it reads): only growth needs
+    // Settle clears what it reads, so dgam is zero between passes: only growth needs
     // new zeros
     if constexpr(std::same_as<Ch, ChSSA>) {
       if(sam_.dgam_.size() < c_.t->con[i2_]->size()) {
@@ -767,7 +796,7 @@ private:
     if constexpr(std::same_as<Ch, ChSSA>) {
       const auto dgam = ptr(sam_.dgam_);
 
-      // all sums are in; the first event to reach a lepton takes its sum and leaves
+      // All sums are in; the first event to reach a lepton takes its sum and leaves
       // zero, so the lepton is rescaled once and dgam is clean for the next pass
       thrust::for_each(w.on_this(), ord0, ord0 + nev, [=](const I e) {
         const auto i  = rec[acc[e]].j;
@@ -795,6 +824,7 @@ private:
       // atomic: several events may kick one lepton
       thrust::for_each(w.on_this(), ord0, ord0 + nev, [=](const I e) {
         if(n2p[e] <= 0) { return; }
+
         const auto i = rec[acc[e]].j;
         for(auto k = 0uz; k < 3uz; ++k) {
           sstd::atomic_add(&v.vel[i][k], kick[3 * e + k]);
@@ -819,7 +849,6 @@ void
   });
 }
 
-// ---------------------------------------------------------------- diagnostics
 double
   Sampler::pair_sum(const Channel which, const TileView& t, const bool weight) const
 {
@@ -845,6 +874,7 @@ double
       r0 + static_cast<std::ptrdiff_t>(n1),
       [=](const I i) {
         if(not v1.alive(i)) { return 0.0; }
+
         const auto p1 = v1.u(i);
         const auto wi = v1.w(i);
         auto s        = 0.0;

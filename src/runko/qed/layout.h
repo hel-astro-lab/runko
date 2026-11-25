@@ -3,14 +3,6 @@
 
 #pragma once
 
-// Padded, binned layout of one species: the slots [b_k, b_k + cap_k) of key k hold its
-// live LPs, then slack for products; slots past the last key are the tail. The key is
-// the reaction cell, the energy bin and, for photons, a sub-range bit that makes
-// photon-photon pair production a cross-range channel. Slack slots are dead ids; a
-// product written there becomes alive. The container's append fills the dead slots
-// behind its last alive one, so an arrival may sit in a key's slack: a product claims a
-// slack slot only while its id is still dead.
-
 #include "runko/mdgrid_common.h"
 #include "runko/pic/particle.h"
 #include "runko/tools/math.h"
@@ -24,6 +16,7 @@
 namespace qed {
 
 /// Energy in the container's precision: |k| for photons, gamma for leptons.
+///
 /// Layout, kernels and placement all bin by it, so a slot has one bin everywhere.
 [[nodiscard]]
 constexpr float
@@ -32,32 +25,50 @@ constexpr float
 
 /// Binning and slack rule of an epoch.
 struct LayoutParams {
-  int nbin;        // energy bins per cell and species
-  int ncell_edge;  // reaction sub-cells per tile edge
-  double slack;    // slack slots per key, as a fraction of its live LPs
-  int smin;        // floor on the slack slots of a key
+  /// Energy bins per cell and species.
+  int nbin;
+  /// Reaction sub-cells per tile edge.
+  int ncell_edge;
+  /// Slack slots per key, as a fraction of its live LPs.
+  double slack;
+  /// Floor on the slack slots of a key.
+  int smin;
 };
 
 /// Device-side tables of a layout, as the kernels read them.
 struct LayoutView {
   using I = runko::index_t;
-  std::int32_t* skey;  // key of every slot, -1 in the tail
-  I* b;                // per key: first slot
-  I* cap;              // per key: slots
-  I* fill;             // per key: live + appended
-  I* prod;             // per key: products appended in the epoch, fitted or not
-  float* wmax;         // per key: largest weight held
-  float* emin;         // per key: lowest energy held
-  float* emax;         // per key: highest energy held
-  int nbin;            // energy bins per cell
-  int ncell_edge;      // reaction sub-cells per tile edge
-  int ncell;           // reaction sub-cells of the tile
+  /// Key of every slot, -1 in the tail.
+  std::int32_t* skey;
+  /// Per key: first slot.
+  I* b;
+  /// Per key: slots.
+  I* cap;
+  /// Per key: live + appended.
+  I* fill;
+  /// Per key: products appended in the epoch, fitted or not.
+  I* prod;
+  /// Per key: largest weight held.
+  float* wmax;
+  /// Per key: lowest energy held.
+  float* emin;
+  /// Per key: highest energy held.
+  float* emax;
+  /// Energy bins per cell.
+  int nbin;
+  /// Reaction sub-cells per tile edge.
+  int ncell_edge;
+  int ncell;
   int nkeys;
-  bool keyed;                 // photons: the key carries the sub-range bit
-  float mass;                 // rest mass of the species
-  double llo;                 // log of the lowest kinetic energy of the epoch
-  double dl;                  // log width of an energy bin
-  std::array<float, 3> mins;  // tile extent in global coordinates
+  /// Photons: the key carries the sub-range bit.
+  bool keyed;
+  float mass;
+  /// Log of the lowest kinetic energy of the epoch.
+  double llo;
+  /// Log width of an energy bin.
+  double dl;
+  /// Tile extent in global coordinates.
+  std::array<float, 3> mins;
   std::array<float, 3> maxs;
 
   /// Reaction cell of a position.
@@ -113,31 +124,46 @@ template<typename Container>
   return con.n_payload() > 0uz ? con.payload_mds(0) : M {};
 }
 
-/// Layout of one species. The container belongs to the tile and is passed to every
-/// call, so a tile may be copied or moved without a stale pointer.
+/// Padded, binned layout of one species.
+///
+/// The slots [b_k, b_k + cap_k) of key k hold its live LPs, then slack for products;
+/// slots past the last key are the tail. The key is the reaction cell, the energy bin
+/// and, for photons, a sub-range bit that makes photon-photon pair production a
+/// cross-range channel. Slack slots are dead ids; a product written there becomes
+/// alive. The container's append fills the dead slots behind its last alive one, so
+/// an arrival may sit in a key's slack: a product claims a slack slot only while its
+/// id is still dead.
+///
+/// The container belongs to the tile and is passed to every call, so a tile may be
+/// copied or moved without a stale pointer.
 class [[nodiscard]] Layout {
-  bool keyed_;                              // photons carry the sub-range bit
-  float mass_;                              // rest mass: 0 photons, 1 leptons
-  double w0_;                               // LP weight without payload: leptons
-  LayoutParams par_ {};                     // of the current epoch
-  std::array<float, 3> mins_ {}, maxs_ {};  // tile extent
-  double llo_ { 0.0 }, dl_ { 1.0 };         // log bin edges: lowest edge and bin width
+  /// Photons carry the sub-range bit.
+  bool keyed_;
+  /// Rest mass: 0 photons, 1 leptons.
+  float mass_;
+  /// LP weight without payload: leptons.
+  double w0_;
+  /// Parameters of the current epoch.
+  LayoutParams par_ {};
+  std::array<float, 3> mins_ {}, maxs_ {};
+  /// Log bin edges: lowest edge and bin width.
+  double llo_ { 0.0 }, dl_ { 1.0 };
   int nkeys_ { 0 };
-  bool laid_ { false };           // tables built
-  std::uint64_t reorders_ { 0 };  // the container's reorder count at the build
+  bool laid_ { false };
+  /// The container's reorder count at the build.
+  std::uint64_t reorders_ { 0 };
 
-  // the tables of LayoutView
+  // The tables of LayoutView.
   thrust::device_vector<std::int32_t> skey_;
   thrust::device_vector<runko::index_t> b_, cap_, fill_, prod_;
   thrust::device_vector<float> wmax_, emin_, emax_;
 
-  // layout scratch: per old slot its key and the sort permutation, per key + 1 the key
-  // starts, per new slot its source; the high-water mark is kept between epochs
+  /// Layout scratch: per old slot its key and the sort permutation, per key + 1 the
+  /// key starts, per new slot its source; the high-water mark is kept between epochs.
   thrust::device_vector<runko::index_t> keys_, ord_, cnt_, src_;
 
-
 public:
-  /// w0 is the weight of every LP of a species without payload; a species with one
+  /// The weight of every LP of a species without payload is w0; a species with one
   /// carries the weight of each LP as payload component 0.
   Layout(bool keyed, double mass, double w0);
 
@@ -162,10 +188,12 @@ public:
   /// until the next resize.
   [[nodiscard]] LayoutView view();
 
-  /// Follows the container's size since the last build or resize. Slots it grew by
-  /// (products placed, arrivals appended) are tail (-1). Slots it shrank by were dead
-  /// slack (an append reuses the dead slots behind the last alive one and drops the
-  /// rest); they are appended again so that every key keeps its slots.
+  /// Follows the container's size since the last build or resize.
+  ///
+  /// Slots it grew by (products placed, arrivals appended) are tail (-1). Slots it
+  /// shrank by were dead slack (an append reuses the dead slots behind the last alive
+  /// one and drops the rest); they are appended again so that every key keeps its
+  /// slots.
   void resized(pic::ParticleContainer& con);
 
   /// Widens the bounds of every key by the live LPs it holds, on the caller's queue;
@@ -179,15 +207,15 @@ public:
   };
   [[nodiscard]] Totals totals(const pic::ParticleContainer& con) const;
 
-  // ---- host copies for IO and tests
-
+  /// Host copy of the key of every slot, for IO and tests.
   [[nodiscard]] std::vector<std::int32_t>
     get_slot_keys(const pic::ParticleContainer& con);
 
+  /// Host copy of the per-key tables and the bin edges, for IO and tests.
   struct Tables {
-    std::vector<runko::index_t> b, cap, fill, prod;  // per key, as on the device
-    std::vector<float> wmax, emin, emax;             // per key
-    double llo, dl;                                  // log bin edges
+    std::vector<runko::index_t> b, cap, fill, prod;
+    std::vector<float> wmax, emin, emax;
+    double llo, dl;
   };
   [[nodiscard]] Tables get_tables();
 };

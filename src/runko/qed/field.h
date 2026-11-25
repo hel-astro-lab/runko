@@ -3,14 +3,6 @@
 
 #pragma once
 
-// The field the QED channels see. A particle's quantum parameter is chi = (gamma or x)
-// b_eff with b_eff = B_eff/B_Q: for the local field the invariant
-// sqrt(|E + beta x B|^2 - (beta.E)^2) of the interpolated E, B at the particle, scaled
-// from code units by bscale = b_0/B_0; in the field-free box a single uniform value.
-// Self-absorption, whose envelope needs one field per tile, takes the tile's median |B|
-// across the lepton's pitch angle to the tile's mean field (within 10-20 % of the
-// local-field opacity in turbulence).
-
 #include "runko/emf/yee_lattice.h"
 #include "runko/qed/interactions/qed_kinematics.h"
 #include "runko/tools/math.h"
@@ -24,12 +16,24 @@ using Interp =
     std::declval<std::array<emf::YeeLattice::value_type, 3>>()));
 
 /// The field of a tile as the channels see it.
+///
+/// A particle's quantum parameter is chi = (gamma or x) b_eff with b_eff = B_eff/B_Q:
+/// for the local field the invariant sqrt(|E + beta x B|^2 - (beta.E)^2) of the
+/// interpolated E, B at the particle, scaled from code units by bscale = b_0/B_0; in
+/// the field-free box a single uniform value. Self-absorption, whose envelope needs
+/// one field per tile, takes the tile's median |B| across the lepton's pitch angle to
+/// the tile's mean field (within 10-20 % of the local-field opacity in turbulence).
 struct FieldView {
-  bool uniform;   // no lattice: every particle sees b0
-  double b0;      // the uniform quantum parameter (the box's b_perp)
-  double bscale;  // quantum parameter per unit of code field, b_0/B_0
-  double b_tile;  // tile's median |B|/B_Q (b0 when uniform); bounds b_ssa
-  Vec3 bhat;      // direction of the tile's mean B (z when uniform)
+  /// No lattice: every particle sees b0.
+  bool uniform;
+  /// The uniform quantum parameter (the box's b_perp).
+  double b0;
+  /// Quantum parameter per unit of code field, b_0/B_0.
+  double bscale;
+  /// Tile's median |B|/B_Q (b0 when uniform); bounds b_ssa.
+  double b_tile;
+  /// Direction of the tile's mean B (z when uniform).
+  Vec3 bhat;
   Interp at;
 
   /// Field, in B_Q, felt by a particle of velocity beta (a photon: its direction).
@@ -54,7 +58,9 @@ struct FieldView {
   }
 
   /// Field a lepton moving along the unit vector n absorbs in: the tile field across
-  /// its pitch angle. The uniform box keeps every lepton perpendicular.
+  /// its pitch angle.
+  ///
+  /// The uniform box keeps every lepton perpendicular.
   [[nodiscard]] constexpr double b_ssa(const Vec3& n) const
   { return uniform ? b0 : b_tile * toolbox::norm(toolbox::cross(n, bhat)); }
 };

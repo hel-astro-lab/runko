@@ -52,8 +52,8 @@ tile_state
     const pic::particle_containers& pc,
     const runko::cartesian_index<3>& idx)
 {
-  // ---- species roles: massless = photons, unit mass = leptons (the sign of the charge
-  // picks e- or e+); heavier species (protons, ions) take no part
+  // Species roles: massless = photons, unit mass = leptons (the sign of the charge
+  // picks e- or e+); heavier species (protons, ions) take no part.
   auto sp    = std::array<std::size_t, 3> {};
   auto found = std::array { false, false, false };
 
@@ -105,7 +105,7 @@ tile_state
     };
   }
 
-  // ---- the box: tile edge in Compton wavelengths, step in light crossings
+  // The box: tile edge in Compton wavelengths, step in light crossings.
   const auto cells = conf.get_or_throw<std::vector<std::ptrdiff_t>>("n_cells_per_tile");
 
   // the weight unit W_0 = H^2/sigma_T assumes V = H^3
@@ -130,7 +130,6 @@ tile_state
     throw std::runtime_error { "qed tile: electron and positron weights must agree." };
   }
 
-  // ---- the sampler knobs
   const auto geti = [&](const char* key, const int def) {
     return static_cast<int>(conf.get<std::ptrdiff_t>(key).value_or(def));
   };
@@ -150,8 +149,8 @@ tile_state
   par.seed =
     static_cast<std::uint64_t>(conf.get<std::ptrdiff_t>("qed_seed").value_or(1));
 
-  // the streams are keyed by seed, step and lane only: fold the grid index into the
-  // seed so that no two tiles share a stream
+  // The streams are keyed by seed, step and lane only: fold the grid index into the
+  // seed so that no two tiles share a stream.
   for(auto q = 0uz; q < 3uz; ++q) {
     par.seed = runko::mix64(par.seed ^ static_cast<std::uint64_t>(idx[q]));
   }
@@ -346,7 +345,7 @@ tile_state&
     component<tile_state>(sim, id, "qed state (build it with runko.qed.threeD.Tile)");
   auto& pc = containers(sim, id);
 
-  // the particle exchange appends arrivals behind the last alive slot and so resizes
+  // The particle exchange appends arrivals behind the last alive slot and so resizes
   // the container; the tables follow it on every access
   for(auto s = 0uz; s < 3uz; ++s) { st.layouts[s].resized(pc.at(st.sp[s])); }
   return st;
@@ -357,7 +356,7 @@ void
 {
   auto& st = state(sim, id);
 
-  // an LP's reaction cell is fixed at the layout and a push between layouts moves it:
+  // An LP's reaction cell is fixed at the layout and a push between layouts moves it:
   // the step re-widens energy bounds, but nothing repairs a stale cell key
   if(st.sampler.par.ncell_edge > 1 and st.sampler.par.nsort > 1) {
     throw std::runtime_error {
@@ -541,6 +540,7 @@ void
     i0 + static_cast<std::ptrdiff_t>(n),
     [=](const runko::index_t i) {
       if(ids_mds[i][] == runko::dead_prtc_id) { return; }
+
       for(auto q = 0uz; q < 3uz; ++q) { vel_mds[i][q] = dp[3 * rk[i] + q]; }
     });
 

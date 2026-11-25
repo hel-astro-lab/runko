@@ -1,8 +1,6 @@
 // Copyright 2026 - 2026, Miro Palmu, Joonas Nättilä and the runko contributors
 // SPDX-License-Identifier: GPL-3.0-or-later
 
-// Sources and sinks of the open box: injection, heating, escape and their budget.
-
 #include "runko/qed/sampler.h"
 
 #include "runko/qed/interactions/qed2_ssa.h"
@@ -31,7 +29,7 @@ void
 {
   this->lay_if_needed(t);
 
-  // pairs per step = energy the compactness injects / (2 <gamma> w_lep), rounded
+  // Pairs per step = energy the compactness injects / (2 <gamma> w_lep), rounded
   // stochastically
   double gm;  // mean gamma of the power law
   if(p == 1.0) {
@@ -64,7 +62,7 @@ void
   // the cumulative of gamma^-p at the ends
   const auto glo = sstd::pow(gmin, 1.0 - p), ghi = sstd::pow(gmax, 1.0 - p);
 
-  // one lane per pair: uniform position; the two charges draw power-law energies and
+  // One lane per pair: uniform position; the two charges draw power-law energies and
   // isotropic directions independently
   thrust::for_each(
     w.on_this(),
@@ -112,7 +110,7 @@ void
 {
   this->lay_if_needed(t);
 
-  // photons per step = energy the compactness injects / (<x> wph), rounded
+  // Photons per step = energy the compactness injects / (<x> wph), rounded
   // stochastically
   const auto xmean = (planck ? 2.701 : 3.0) * theta;
   const auto nph   = box.dE(ell) / (xmean * wph);
@@ -198,6 +196,7 @@ void
       i0 + static_cast<std::ptrdiff_t>(n),
       [=](const I i) {
         if(not v.alive(i)) { return 0.0; }
+
         const auto p   = v.u(i);
         const auto p2  = toolbox::dot(p, p);
         const auto gam = sstd::sqrt(1.0 + p2);
@@ -208,6 +207,7 @@ void
   }
 
   if(tot <= 0.0) { return; }
+
   const auto D0 = box.dE(ell) / tot;
   tally_[0] = Tally {};
   const auto db = ptr(tally_);
@@ -253,7 +253,7 @@ void
   this->lay_if_needed(t);
   Ctx c { t, par.nbin };
 
-  // pair depth and step in slab crossings: the slab's, given by the driver, or this
+  // Pair depth and step in slab crossings: the slab's, given by the driver, or this
   // tile's own
   const auto tau_T  = tau_ext >= 0.0
                         ? tau_ext
@@ -276,7 +276,7 @@ void
   const auto w  = tyvi::mdgrid_work {};
   const auto i0 = thrust::counting_iterator<I>(0);
 
-  // one lane per photon slot: escape with the slab probability, book x ell_x per log
+  // One lane per photon slot: escape with the slab probability, book x ell_x per log
   // bin and per (log bin, cosine to z)
   thrust::for_each(
     w.on_this(),
@@ -284,6 +284,7 @@ void
     i0 + static_cast<std::ptrdiff_t>(n),
     [=](const I i) {
       if(not v.alive(i)) { return; }
+
       auto rng     = runko::Rng { key, i };
       const auto x = v.e(i);
       if(not(rng.uniform() < Box::p_esc(x, tau_T, dt_esc))) { return; }
@@ -311,7 +312,7 @@ void
   budget.esc_W += h.W;
 }
 
-// zeros before the first escape
+// Zeros before the first escape.
 std::vector<double>
   Sampler::escaped_mu_spectrum() const
 {
@@ -322,7 +323,7 @@ std::vector<double>
   return std::vector<double>(h.begin(), h.end());
 }
 
-// zeros before the first escape
+// Zeros before the first escape.
 std::vector<double>
   Sampler::escaped_spectrum() const
 {
@@ -331,7 +332,6 @@ std::vector<double>
   return std::vector<double>(h.begin(), h.end());
 }
 
-// start a new accounting window: budgets and the escaping spectrum
 void
   Sampler::reset_budget()
 {

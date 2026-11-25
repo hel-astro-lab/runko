@@ -66,7 +66,7 @@ void
   const auto ord0 = thrust::counting_iterator<I>(0);
   const auto ordN = ord0 + static_cast<std::ptrdiff_t>(n);
 
-  // ---- energy extremes of the live population fix the bins of the epoch
+  // Energy extremes of the live population fix the bins of the epoch.
   const auto inf = std::numeric_limits<float>::infinity();
   // kinetic energy of a live slot; a dead one is +inf for the min, -inf for the max
   const auto kin    = [=](const I i) { return alive(i) ? energy(i) - m : inf; };
@@ -98,8 +98,8 @@ void
     dl_  = 1e300;
   }
 
-  // ---- key of every slot, a dead one past the last key; then sort the slots by key
-  // only the bin, cell and key rules of the view are used here
+  // Key of every slot, a dead one past the last key; then sort the slots by key.
+  // Only the bin, cell and key rules of the view are used here.
   auto v = this->view();
   v.llo  = llo_;
   v.dl   = dl_;
@@ -110,6 +110,7 @@ void
   const auto keyed    = keyed_;
   thrust::transform(w.on_this(), ord0, ordN, keys_.begin(), [=](const I i) -> I {
     if(not alive(i)) { return sentinel; }
+
     const auto cell = v.cell_of(pos_mds[i][0], pos_mds[i][1], pos_mds[i][2]);
     const auto ebin = v.bin_of(static_cast<double>(energy(i)));
     const auto bit =
@@ -121,7 +122,7 @@ void
   thrust::copy(w.on_this(), ord0, ordN, ord_.begin());
   thrust::sort_by_key(w.on_this(), keys_.begin(), keys_.end(), ord_.begin());
 
-  // ---- live count of every key, then the capacities and offsets
+  // Live count of every key, then the capacities and offsets.
   const auto nk = static_cast<std::size_t>(nkeys_);
   cnt_.resize(nk + 1);
   const auto key0 = thrust::counting_iterator<I>(0);
@@ -143,7 +144,7 @@ void
   const auto prod_p = thrust::raw_pointer_cast(prod_.data());
   const auto slack  = par.slack;
   const auto smin   = static_cast<I>(par.smin);
-  // slack: the largest of a fraction of the live LPs, the floor, and 1.5 times what
+  // Slack: the largest of a fraction of the live LPs, the floor, and 1.5 times what
   // the key took in the previous epoch, so that a key that fills fast gets the slots
   // it will need
   thrust::transform(
@@ -172,8 +173,8 @@ void
     [=](const I k) -> I { return starts[k + 1] - starts[k]; });
   thrust::fill(w.on_this(), prod_.begin(), prod_.end(), I { 0 });
 
-  // ---- gather map: a live LP lands at its key's offset plus its rank in the key,
-  // every other slot is dead slack
+  // Gather map: a live LP lands at its key's offset plus its rank in the key, every
+  // other slot is dead slack.
   src_.resize(static_cast<std::size_t>(total));
   thrust::fill(
     w.on_this(),
@@ -195,7 +196,7 @@ void
   w.wait();
   con.reorder(src_);
 
-  // ---- key of every slot: the number of key offsets <= slot, minus one
+  // Key of every slot: the number of key offsets <= slot, minus one.
   skey_.resize(static_cast<std::size_t>(total));
   const auto slot0 = thrust::counting_iterator<I>(0);
   thrust::upper_bound(
@@ -212,7 +213,7 @@ void
     skey_.begin(),
     [](const std::int32_t k) { return k - 1; });
 
-  // ---- bounds start empty and are widened by every live LP
+  // Bounds start empty and are widened by every live LP.
   wmax_.assign(nk, 0.0f);
   emin_.assign(nk, inf);
   emax_.assign(nk, 0.0f);
@@ -242,9 +243,11 @@ void
   // the placement widens the bounds when the fill reaches it.
   w.for_each_index(ids_mds, [=](const auto idx) {
     if(ids_mds[idx][] == runko::dead_prtc_id) { return; }
+
     const auto k = v.skey[idx[0]];
     if(k < 0) { return; }
     if(idx[0] >= v.b[k] + sstd::min(v.fill[k], v.cap[k])) { return; }
+
     const auto e = energy_of(m, vel_mds[idx][0], vel_mds[idx][1], vel_mds[idx][2]);
     v.widen(k, e, weighted ? wgt_mds[idx][] : w0);
   });
@@ -277,7 +280,7 @@ LayoutView
 void
   Layout::resized(pic::ParticleContainer& con)
 {
-  // a container not reordered since changed only at its end; the tables still
+  // A container not reordered since changed only at its end; the tables still
   // describe its head
   if(not laid_ or con.reorder_count() != reorders_) { return; }
 
@@ -300,6 +303,7 @@ Layout::Totals
 
   const auto f = [=](const I i) {
     if(ids_mds[i][] == runko::dead_prtc_id) { return V6 {}; }
+
     const double vx = vel_mds[i][0], vy = vel_mds[i][1], vz = vel_mds[i][2];
     const auto e  = sstd::sqrt(m * m + vx * vx + vy * vy + vz * vz);
     const auto wg = weighted ? static_cast<double>(wgt_mds[i][]) : w0;

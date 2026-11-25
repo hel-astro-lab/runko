@@ -3,24 +3,29 @@
 
 #pragma once
 
-// Nonlinear Breit-Wheeler pair production, photon -> electron + positron, in the local
-// field: the one-body rate function r(chi, eps) (zero below x_threshold), the closed-form
-// inversion of the pair spectrum (Sarjomaa & Nattila), and the product sampler. The
-// field enters through chi_gamma = x b_perp. Units: m_e c^2, m_e c.
-
 #include "runko/qed/interactions/qed_kinematics.h"
 
+/// Nonlinear Breit-Wheeler pair production, photon -> electron + positron, in the
+/// local field.
+///
+/// The field enters through chi_gamma = x b_perp; the rate function is zero below
+/// x_threshold and the pair spectrum is inverted in closed form (Sarjomaa & Nattila).
+/// Units: m_e c^2, m_e c.
 namespace qed::bw {
 
-inline constexpr double x_threshold  = 2.0;   // photon threshold: one pair's mass
-inline constexpr double z_clip = 1e-4;  // deviate clipped off both ends before inversion
-inline constexpr double chi_lo = 0.5;  // validity window of the spectrum shape
+/// Photon threshold: one pair's mass.
+inline constexpr double x_threshold = 2.0;
+/// Deviate clipped off both ends before inversion.
+inline constexpr double z_clip = 1e-4;
+/// Validity window of the spectrum shape.
+inline constexpr double chi_lo = 0.5;
 inline constexpr double chi_hi = 1e4;
 inline constexpr double tiny   = 1e-300;
 
-/// Returns T_BW(chi_gamma) of the conversion rate: (3/16) sqrt(3/2) exp(-8/(3 chi)) in
-/// the tunnelling regime, 0.38 chi^(-1/3) at large chi; fit accurate to 0.6 % from 0.1
-/// to 1e4.
+/// Returns T_BW(chi_gamma) of the conversion rate.
+///
+/// It goes as (3/16) sqrt(3/2) exp(-8/(3 chi)) in the tunnelling regime and as
+/// 0.38 chi^(-1/3) at large chi; the fit is accurate to 0.6 % from 0.1 to 1e4.
 [[nodiscard]]
 constexpr double
   T(double chi_gam)
@@ -48,8 +53,9 @@ struct Shape {
   double a, b, c, n;
 };
 
-/// Returns the Pade parameters at chi_gamma clamped to [chi_lo, chi_hi]. The
-/// denominator crosses zero at chi = 0.205, so the lower clamp is mandatory.
+/// Returns the Pade parameters at chi_gamma clamped to [chi_lo, chi_hi].
+///
+/// The denominator crosses zero at chi = 0.205, so the lower clamp is mandatory.
 [[nodiscard]]
 constexpr Shape
   shape(const double chi_gam)
@@ -77,8 +83,11 @@ constexpr Shape
   return Shape { a, b, c, n };
 }
 
-/// Returns the probability that the electron takes at most the fraction r of chi_gamma:
-/// 1 - a v^(4n)/(1 + b v^n + c v^(2n)), v = 1 - r, on r >= 1/2; reflected below.
+/// Returns the probability that the electron takes at most the fraction r of
+/// chi_gamma.
+///
+/// It is 1 - a v^(4n)/(1 + b v^n + c v^(2n)), v = 1 - r, on r >= 1/2 and reflected
+/// below.
 [[nodiscard]]
 constexpr double
   P(const double chi_gam, const double r)
@@ -103,7 +112,7 @@ constexpr double
   const auto zs           = up ? z : 1.0 - z;
   const auto [a, b, c, n] = shape(chi_gam);
 
-  // quartic u^4 - w c u^2 - w b u - w = 0 in u = (1 - r)^n, w = (1 - z)/a; its
+  // Quartic u^4 - w c u^2 - w b u - w = 0 in u = (1 - r)^n, w = (1 - z)/a; its
   // resolvent cubic depressed to t^3 + p t + q = 0, y = t - wc/6, solved by Cardano
   const auto w  = (1.0 - zs) / a;
   const auto wc = w * c;
@@ -124,8 +133,10 @@ constexpr double
 }
 
 struct Products {
-  Vec3 um;  // electron
-  Vec3 up;  // positron
+  /// Electron.
+  Vec3 um;
+  /// Positron.
+  Vec3 up;
 };
 
 /// Returns the electron and positron of photon k in the field b_perp: both along the

@@ -3,11 +3,6 @@
 
 #pragma once
 
-// The QED Monte Carlo on the tiles of a simulation: photons (m = 0) react with
-// electrons (q < 0) and positrons (q > 0) of the tile's particle containers. Every tile
-// that takes part carries a qed::tile_state. The reaction layout of a species also
-// sorts its container.
-
 #include "runko/comm/cartesian_grid.h"
 #include "runko/qed/box.h"
 #include "runko/qed/layout.h"
@@ -26,24 +21,34 @@ namespace qed {
 
 using tile_id = runko::simulation_context::tile_id_type;
 
-/// The QED state of one tile. It holds no pointer into the containers (entt relocates
-/// components): the sampler's view of the tile is rebuilt on every call.
+/// The QED state of one tile.
+///
+/// Photons (m = 0) react with electrons (q < 0) and positrons (q > 0) of the tile's
+/// particle containers; every tile that takes part carries a tile_state. The reaction
+/// layout of a species also sorts its container. The state holds no pointer into the
+/// containers (entt relocates components): the sampler's view of the tile is rebuilt
+/// on every call.
 struct tile_state {
-  std::array<std::size_t, 3> sp;  // container index of ph, e-, e+
-  std::array<Layout, 3> layouts;        // their reaction layouts
+  /// Container index of ph, e-, e+.
+  std::array<std::size_t, 3> sp;
+  std::array<Layout, 3> layouts;
   Sampler sampler;
-  double B0;  // reference field in code units; 0: the uniform field of the box
+  /// Reference field in code units; 0: the uniform field of the box.
+  double B0;
 
-  // tile field of self-absorption, summarized by interact() once per lap: median |B|
-  // over the cells (code units) and mean direction
+  // Tile field of self-absorption, summarized by interact() once per lap: median |B|
+  // over the cells (code units) and mean direction.
   double b_tile { 0.0 };
   Vec3 bhat { 0.0, 0.0, 1.0 };
   bool summarized { false };
-  thrust::device_vector<float> babs {};  // scratch of the median
+  /// Scratch of the median.
+  thrust::device_vector<float> babs {};
 };
 
 /// Construct the yee lattices, particle containers and qed::tile_state of every local
-/// tile that lacks them. Config keys beyond the pic ones:
+/// tile that lacks them.
+///
+/// Config keys beyond the pic ones:
 ///   qed_H_lamC            tile edge in Compton wavelengths (cubic tile)
 ///   qed_ell_B, qed_x_min  magnetic compactness, synchrotron floor (default 0)
 ///   qed_channels          channels to run (default: all the field allows)
@@ -55,8 +60,10 @@ struct tile_state {
 /// 0). The leptons carry no payload; both take the electron species' weight `w{i}`.
 void ensure_constructed_qed(runko::simulation_context&);
 
-/// Call f(sim, id) on every local tile with a QED state. Throws if local tiles exist
-/// but none carries one (tiles built as runko.pic.threeD.Tile).
+/// Call f(sim, id) on every local tile with a QED state.
+///
+/// Throws if local tiles exist but none carries one (tiles built as
+/// runko.pic.threeD.Tile).
 template<typename F>
 void
   for_each_tile(runko::simulation_context& sim, F&& f)
@@ -76,7 +83,7 @@ void
   }
 }
 
-// ---- per tile: the step, the layout, sources and sinks
+// ---- Per tile: the step, the layout, sources and sinks
 
 /// One step of the QED Monte Carlo.
 void interact(runko::simulation_context&, tile_id);
@@ -110,7 +117,7 @@ void escape_photons(
   double tau_T  = -1.0,
   double dt_esc = -1.0);
 
-// ---- per tile: IO and tests
+// ---- Per tile: IO and tests
 
 /// Replace the population of a species: momenta u, weights w (ignored for leptons),
 /// uniform random positions in the tile.
