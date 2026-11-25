@@ -14,9 +14,10 @@
 
 #include "runko/pic/particle.h"
 #include "runko/qed/box.h"
+#include "runko/qed/channels.h"
 #include "runko/qed/field.h"
-#include "runko/qed/interactions/qed1_syn.h"
 #include "runko/qed/layout.h"
+#include "runko/qed/species.h"
 #include "runko/qed/weights.h"
 #include "thrust/device_vector.h"
 #include "thrust/host_vector.h"
@@ -28,15 +29,6 @@
 #include <vector>
 
 namespace qed {
-
-/// Species roles; each container is found from its charge and mass.
-enum class Species : std::size_t { ph = 0, em = 1, ep = 2 };
-
-/// What an event does to the partner: kicks it, consumes it, or feeds it energy.
-enum class Kind { scatter, convert, absorb };
-
-/// The slot ranges a side spans: the cell's range, one photon bit, or both bits.
-enum class Sel { cell, bit0, bit1, both };
 
 /// The knobs of the sampler.
 struct [[nodiscard]] Params {
@@ -53,24 +45,6 @@ struct [[nodiscard]] Params {
   double kappa { 0.1 };    // merged exchange <= kappa (gamma - 1), 0 disables
   std::uint64_t seed { 1 };
 };
-
-/// Every channel; the order numbers the random streams of the kernels.
-enum class Channel : int {
-  compton_m = 0,
-  compton_p,
-  pairann,
-  photann,
-  ssa_m,
-  ssa_p,
-  syn_m,
-  syn_p,
-  bw,
-  count
-};
-inline constexpr auto N_CHANNELS = static_cast<std::size_t>(Channel::count);
-
-[[nodiscard]] const char* channel_name(Channel c);
-[[nodiscard]] bool is_twobody(Channel c);
 
 /// Per-channel counters of a run.
 struct [[nodiscard]] ChannelStats {
@@ -108,37 +82,28 @@ struct [[nodiscard]] Staged {
   std::int32_t bit;      // photon sub-range bit
 };
 
-/// One side of a two-body channel: the one or two sub-ranges of every (cell, bin) seen
-/// as one range.
-struct [[nodiscard]] SideView {
-  using I = runko::index_t;
-  const I* base0;     // first slot of sub-range 0, per (cell, bin)
-  const I* cnt0;      // its slots (live + appended)
-  const I* base1;     // first slot of sub-range 1 (second photon bit), 0 if absent
-  const I* cnt1;      // its slots, 0 if absent
-  const float* wmax;  // largest weight over both sub-ranges
-  const float* emin;  // energy bounds over both sub-ranges
-  const float* emax;
-
-  [[nodiscard]] constexpr I N(const int cb) const { return cnt0[cb] + cnt1[cb]; }
-
-  /// Slot of the virtual index v in [0, N) of group cb.
-  [[nodiscard]] constexpr I pick(const int cb, const I v) const
-  {
-    const auto c0 = cnt0[cb];
-    return v < c0 ? base0[cb] + v : base1[cb] + v - c0;
-  }
-};
-
-/// What the sampler needs of the tile for one step.
-struct [[nodiscard]] TileView {
-  FieldView field;
-  std::array<pic::ParticleContainer*, 3> con;  // ph, e-, e+
-  std::array<Pop*, 3> pop;                     // their layouts
-  std::array<float, 3> mins, maxs;             // tile extent
-  std::array<runko::prtc_id_type, 3> id_base;  // first free id per species
-  std::array<std::size_t, 3> ids_used;         // returned: ids consumed by the step
-};
+/// Staged record of one product at a given position and cell.
+[[nodiscard]]
+constexpr Staged
+  staged_at(
+    const Vec3& u,
+    const float* pos,
+    const double w,
+    const int n_r,
+    const int cell,
+    const int species,
+    const int bit)
+{
+  return Staged { .u       = { static_cast<float>(u[0]),
+                               static_cast<float>(u[1]),
+                               static_cast<float>(u[2]) },
+                  .pos     = { pos[0], pos[1], pos[2] },
+                  .w       = static_cast<float>(w),
+                  .n_r     = n_r,
+                  .cell    = cell,
+                  .species = species,
+                  .bit     = bit };
+}
 
 /// Sampler state of a tile: scratch buffers, rounding carries and counters kept over
 /// steps.
@@ -191,8 +156,30 @@ private:
 
   std::uint64_t istep_ { 0 };  // steps taken: the time index of the random streams
 
-  /// Containers, layouts and device views of one step.
-  struct Ctx;
+  // per-channel slots of dstat_, over the run: one-body events fired, their summed
+  // accumulation factor and emitted weight, clamped events, the envelope-weighted rate
+  // bound and its weight
+  enum DStat : int { d_fired = 0, d_facc, d_wem, d_clamped, d_shnum, d_shden, d_count };
+
+  // slots of counters_: staged records, tail slots per species, products placed in
+  // slack, in the tail, and in the tail since an arrival held their slack slot, ids
+  // taken per species
+  enum Counter : int {
+    c_staged = 0,
+    c_tail0,
+    c_tail1,
+    c_tail2,
+    c_slack,
+    c_tailn,
+    c_held,
+    c_id0,
+    c_id1,
+    c_id2,
+    c_count
+  };
+
+  /// Two-body channel `which`: builds its record and runs it.
+  void twobody(Ctx& c, Channel which);
 
   /// Two-body channel l: envelope, sub-cycling, then one pass per sub-step.
   template<typename Ch>

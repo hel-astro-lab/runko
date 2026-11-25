@@ -40,7 +40,10 @@ set (PIC_FILES
 set (QED_FILES
      ./runko/bindings/pyqed.c++
      ./runko/qed/layout.c++
+     ./runko/qed/onebody.c++
      ./runko/qed/sampler.c++
+     ./runko/qed/sources.c++
+     ./runko/qed/twobody.c++
      )
 
 set (IO_FILES
