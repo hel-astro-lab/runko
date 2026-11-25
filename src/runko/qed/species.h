@@ -11,6 +11,7 @@
 #include "runko/qed/field.h"
 #include "runko/qed/layout.h"
 #include "runko/tools/math.h"
+#include "thrust/device_vector.h"
 
 #include <array>
 #include <cstddef>
@@ -19,6 +20,12 @@
 namespace qed {
 
 using I = runko::index_t;
+
+/// Device pointer to the storage of v, valid until v is resized.
+template<typename T>
+[[nodiscard]] T*
+  ptr(thrust::device_vector<T>& v)
+{ return thrust::raw_pointer_cast(v.data()); }
 
 /// Species roles; each container is found from its charge and mass.
 enum class Species : std::size_t { ph = 0, em = 1, ep = 2 };

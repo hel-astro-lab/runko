@@ -73,12 +73,9 @@ void
   if(n == 0) { return; }
 
   Ctx c { t, par.nbin };
-  staged_.resize(2 * n);
-  thrust::fill(counters_.begin(), counters_.begin() + 1, 0);
+  const auto stage = this->stager(2 * n);
   thrust::fill(dbudget_.begin(), dbudget_.end(), 0.0);
 
-  const auto stg  = thrust::raw_pointer_cast(staged_.data());
-  const auto cnt  = thrust::raw_pointer_cast(counters_.data());
   const auto db   = thrust::raw_pointer_cast(dbudget_.data());
   const auto key  = runko::rng_key(par.seed, istep_, 0, 301);
   const auto mins = t.mins, maxs = t.maxs;
@@ -112,9 +109,7 @@ void
           glo + z * (ghi - glo),
           1.0 / (1.0 - p));  // inverse cumulative of gamma^-p
         const auto u = sstd::sqrt(gam * gam - 1.0) * iso_dir(rng);
-        const auto k = static_cast<std::size_t>(
-          sstd::atomic_fetch_add(&cnt[c_staged], std::int32_t { 1 }));
-        stg[k] = staged_at(u, pos, wl, 1, cell, sp, 0);
+        stage(u, pos, wl, 1, cell, static_cast<Species>(sp), 0);
         sstd::atomic_add(&db[b_E], wl * gam);
       }
     });
@@ -148,12 +143,9 @@ void
   if(n == 0) { return; }
 
   Ctx c { t, par.nbin };
-  staged_.resize(n);
-  thrust::fill(counters_.begin(), counters_.begin() + 1, 0);
+  const auto stage = this->stager(n);
   thrust::fill(dbudget_.begin(), dbudget_.end(), 0.0);
 
-  const auto stg  = thrust::raw_pointer_cast(staged_.data());
-  const auto cnt  = thrust::raw_pointer_cast(counters_.data());
   const auto db   = thrust::raw_pointer_cast(dbudget_.data());
   const auto key  = runko::rng_key(par.seed, istep_, 0, 303);
   const auto mins = t.mins, maxs = t.maxs;
@@ -188,16 +180,10 @@ void
       const auto x =
         -theta * sstd::log(rng.uniform() * rng.uniform() * rng.uniform()) / j;
 
-      const auto k = static_cast<std::size_t>(
-        sstd::atomic_fetch_add(&cnt[c_staged], std::int32_t { 1 }));
-      stg[k] = staged_at(
-        x * iso_dir(rng),
-        pos,
-        wph,
-        1,
-        lay.cell_of(pos[0], pos[1], pos[2]),
-        0,
-        static_cast<int>(rng.uniform() < 0.5));
+      // drawn in this order: direction, then sub-range
+      const auto k   = x * iso_dir(rng);
+      const auto bit = static_cast<int>(rng.uniform() < 0.5);
+      stage(k, pos, wph, 1, lay.cell_of(pos[0], pos[1], pos[2]), Species::ph, bit);
       sstd::atomic_add(&db[b_E], wph * x);
     });
   w.wait();

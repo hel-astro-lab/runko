@@ -36,8 +36,9 @@
 namespace qed {
 
 void
-  Sampler::onebody(Ctx& c, const Channel which, const int l)
+  Sampler::onebody(Ctx& c, const Channel which)
 {
+  const auto l    = static_cast<int>(which);
   const auto emit = which != Channel::bw;  // emission (syn) or pair production (bw)
   const auto is   = static_cast<std::size_t>(
     which == Channel::syn_m   ? Species::em
@@ -79,35 +80,23 @@ void
 
   const auto ds =
     thrust::raw_pointer_cast(dstat_.data()) + static_cast<std::size_t>(l) * d_count;
-  staged_.resize(emit ? n : 2 * n);  // one photon per lepton; a pair per photon
-  const auto stg = thrust::raw_pointer_cast(staged_.data());
-  const auto cnt = thrust::raw_pointer_cast(counters_.data());
-  thrust::fill(counters_.begin(), counters_.begin() + 1, 0);
+  const auto out = this->stager(emit ? n : 2 * n);  // a photon per lepton; a pair
 
   const auto a_res = par.a_res, x_ref = par.x_ref, acc_syn = par.acc_syn,
              kappa = par.kappa;
   const auto n_cap = par.n_cap;
   const auto wl    = box.w_lep;
 
-  // append one product record at the parent's position and cell
+  // stage a product at the position and in the cell of its parent, slot i
   const auto stage = [=](
                        const Vec3& p,
                        const I i,
                        const double w_each,
                        const int n_r,
-                       const int species,
+                       const Species s,
                        const int bit) {
-    const auto k = static_cast<std::size_t>(
-      sstd::atomic_fetch_add(&cnt[c_staged], std::int32_t { 1 }));
     const float pos[3] = { v.pos[i][0], v.pos[i][1], v.pos[i][2] };
-    stg[k]             = staged_at(
-      p,
-      pos,
-      w_each,
-      n_r,
-      v.lay.cell_of(pos[0], pos[1], pos[2]),
-      species,
-      bit);
+    out(p, pos, w_each, n_r, v.lay.cell_of(pos[0], pos[1], pos[2]), s, bit);
   };
 
   const auto s0 = thrust::counting_iterator<I>(0);
@@ -188,17 +177,18 @@ void
         // the photon LP, split or rouletted by the resolution function
         const auto cp = copies(f_res(x, a_res, x_ref), wem, rngC, n_cap);
         if(cp.n_r >= 1) {
-          stage(P.k, i, cp.w_each, cp.n_r, 0, static_cast<int>(rngC.uniform() < 0.5));
+          const auto bit = static_cast<int>(rngC.uniform() < 0.5);
+          stage(P.k, i, cp.w_each, cp.n_r, Species::ph, bit);
         }
       });
     w.wait();  // place() reads the staged count on the host
   } else {
     // magnetic pair production: the photon goes, pairs come at the lepton weight
-    ev_q3_.resize(n);  // pairs to create per fired photon, w/w_lep
-    ev_n3_.resize(n);  // its carry-rounded count
-    ev_cell_.resize(n);
-    lane_acc_.assign(n, 0);  // fired flag per slot
-    const auto lacc = thrust::raw_pointer_cast(lane_acc_.data());
+    ev_.q3.resize(n);  // pairs to create per fired photon, w/w_lep
+    ev_.n3.resize(n);  // its carry-rounded count
+    ev_.cell.resize(n);
+    fired_.assign(n, 0);
+    const auto lacc = ptr(fired_);
 
     // one lane per photon slot: fire on the conversion rate
     thrust::for_each(
@@ -236,10 +226,10 @@ void
       return;
     }
 
-    const auto acc   = thrust::raw_pointer_cast(acc_.data());
-    const auto q3    = thrust::raw_pointer_cast(ev_q3_.data());
-    const auto n3    = thrust::raw_pointer_cast(ev_n3_.data());
-    const auto ecell = thrust::raw_pointer_cast(ev_cell_.data());
+    const auto acc   = ptr(acc_);
+    const auto q3    = ptr(ev_.q3);
+    const auto n3    = ptr(ev_.n3);
+    const auto ecell = ptr(ev_.cell);
     const auto e0    = thrust::counting_iterator<I>(0);
 
     // one lane per fired photon: the pair count it asks for and its cell
@@ -275,8 +265,8 @@ void
 
         if(n3[e] > 0) {
           // both charges at the photon's position: no charge density is added
-          stage(P.um, i, wl, n3[e], 1, 0);
-          stage(P.up, i, wl, n3[e], 2, 0);
+          stage(P.um, i, wl, n3[e], Species::em, 0);
+          stage(P.up, i, wl, n3[e], Species::ep, 0);
         }
         v.kill(i);  // s = w: the parent always goes
       });

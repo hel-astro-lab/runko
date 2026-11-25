@@ -89,7 +89,7 @@ thrust::device_vector<double>&
   Sampler::carry(const int l, const int role, const int ncell)
 {
   const auto site = 3 * static_cast<std::size_t>(l) + static_cast<std::size_t>(role);
-  auto& car       = carry_[site];
+  auto& car       = round_.carry[site];
 
   if(car.size() != static_cast<std::size_t>(ncell)) {
     auto h   = thrust::host_vector<double>(static_cast<std::size_t>(ncell));
@@ -124,8 +124,8 @@ void
 
   // one buffer, of the pass's event count, serves every select of the pass: no resize
   // may reallocate under a select still in flight on the queue
-  if(ev_cs_.size() < n) { ev_cs_.resize(n); }
-  const auto cs   = thrust::raw_pointer_cast(ev_cs_.data());
+  if(round_.cs.size() < n) { round_.cs.resize(n); }
+  const auto cs   = ptr(round_.cs);
   const auto ord0 = thrust::counting_iterator<I>(0);
   const auto nn   = static_cast<std::ptrdiff_t>(n);
   sorted          = sorted or ncell == 1;  // one cell: every order is cell-sorted
@@ -134,17 +134,17 @@ void
   const I* perm            = nullptr;
   const std::int32_t* keys = cell;
   if(not sorted) {
-    ev_perm_.resize(n);
-    ev_keys_.resize(n);
-    thrust::copy(w.on_this(), cell, cell + nn, ev_keys_.begin());
-    thrust::copy(w.on_this(), ord0, ord0 + nn, ev_perm_.begin());
+    round_.perm.resize(n);
+    round_.keys.resize(n);
+    thrust::copy(w.on_this(), cell, cell + nn, round_.keys.begin());
+    thrust::copy(w.on_this(), ord0, ord0 + nn, round_.perm.begin());
     thrust::stable_sort_by_key(
       w.on_this(),
-      ev_keys_.begin(),
-      ev_keys_.end(),
-      ev_perm_.begin());
-    perm = thrust::raw_pointer_cast(ev_perm_.data());
-    keys = thrust::raw_pointer_cast(ev_keys_.data());
+      round_.keys.begin(),
+      round_.keys.end(),
+      round_.perm.begin());
+    perm = ptr(round_.perm);
+    keys = ptr(round_.keys);
   }
 
   // event at sorted position i
@@ -237,7 +237,7 @@ void
     if(is_twobody(which)) {
       twobody(c, which);
     } else {
-      onebody(c, which, l);
+      onebody(c, which);
     }
   }
 
@@ -246,6 +246,14 @@ void
 }
 
 // ---------------------------------------------------------------- products
+Stager
+  Sampler::stager(const std::size_t n)
+{
+  staged_.resize(n);
+  thrust::fill(counters_.begin(), counters_.begin() + 1, 0);
+  return Stager { ptr(staged_), ptr(counters_) + c_staged };
+}
+
 void
   Sampler::place(Ctx& c)
 {

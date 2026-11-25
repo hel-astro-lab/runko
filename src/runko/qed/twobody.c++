@@ -1,37 +1,34 @@
 // Copyright 2026 - 2026, Miro Palmu, Joonas Nättilä and the runko contributors
 // SPDX-License-Identifier: GPL-3.0-or-later
 
-// The two-body channels: envelope, strata, thinning, reaction.
+// The two-body channels. One channel on one tile runs as
+//
+//   sides -> envelope -> sub-steps of { strata -> lanes -> decide -> react -> settle }
+//
+// sides     per (cell, bin) group of both species: its slots and its bounds
+// envelope  per (cell, bin a, bin b): an upper bound of the summed event probability
+// strata    envelope events per bin pair, numbered row by row into lanes
+// lanes     every lane proposes one slot pair and thins it to the pair's probability
+// decide    what an accepted event does to its parents, rounded per cell
+// react     the final state: incident in place, products staged, partner read only
+// settle    the partners take what the events of the pass gave them
 
-#include "runko/qed/sampler.h"
-
-#include "runko/qed/interactions/qed1_bw.h"
-#include "runko/qed/interactions/qed1_syn.h"
 #include "runko/qed/interactions/qed2_ann.h"
 #include "runko/qed/interactions/qed2_comp.h"
 #include "runko/qed/interactions/qed2_gg.h"
-#include "runko/qed/interactions/qed2_ssa.h"
+#include "runko/qed/sampler.h"
 #include "runko/qed/weights.h"
 #include "runko/tools/math.h"
 #include "runko/tools/random.h"
-#include "thrust/binary_search.h"
 #include "thrust/copy.h"
-#include "thrust/fill.h"
 #include "thrust/for_each.h"
-#include "thrust/host_vector.h"
 #include "thrust/iterator/counting_iterator.h"
-#include "thrust/iterator/transform_iterator.h"
-#include "thrust/reduce.h"
 #include "thrust/scan.h"
-#include "thrust/sort.h"
-#include "thrust/transform.h"
 #include "thrust/transform_reduce.h"
 #include "tyvi/mdgrid.h"
 
-#include <algorithm>
-#include <format>
-#include <sstream>
-#include <stdexcept>
+#include <concepts>
+#include <limits>
 
 namespace qed {
 
@@ -75,131 +72,239 @@ constexpr int
 // slot), weight stage passed; the counts come from these, not from contended atomics
 enum LaneState : std::uint8_t { L_WFAIL = 0, L_ACC = 1, L_VIRT = 2, L_WPASS = 3 };
 
+// ---------------------------------------------------------------- reactions
+
+/// An accepted event as its react lane holds it.
+struct [[nodiscard]] Event {
+  PView v1, v2;             // incident and partner species
+  I i, j;                   // their slots
+  double f;                 // exchanges the partner takes as one
+  std::int32_t n1, n2, n3;  // rounded decisions: incident, partner, pair count
+  int cell;
+  float pos[3];  // products are born where the incident is
+  Stager stage;
+  double a_res, x_ref;  // photon resolution function
+  int n_cap;            // largest copy number
+  double w_lep;
+  float* kick;  // the partner's momentum kick of this event
+  float* dgam;  // energy absorbed, per partner slot
+};
+
+/// Compton: the photon takes the scattered state, as the copies the resolution function
+/// asks for; the lepton's f exchanges are kept as one momentum kick.
+constexpr void
+  reaction(const ChCompton&, const Event& r, runko::Rng& rng)
+{
+  const auto p1v = r.v1.u(r.i), p2v = r.v2.u(r.j);
+  auto ntry      = 0;  // proposals of the rejection sampler
+  const auto P   = comp::sample(p1v, p2v, rng, ntry);
+  const auto dp  = (-r.f) * (P.k1 - p1v);
+  for(auto k = 0uz; k < 3uz; ++k) { r.kick[k] = static_cast<float>(dp[k]); }
+
+  if(r.n1 <= 0) { return; }
+
+  // the parent is the first copy
+  const auto x0 = r.v1.e(r.i), x1 = toolbox::norm(P.k1);
+  const auto n  = f_res(x1, r.a_res, r.x_ref) / f_res(x0, r.a_res, r.x_ref);
+  const auto cp = copies(n, r.v1.w(r.i), rng, r.n_cap);
+  if(cp.n_r < 1) {
+    r.v1.kill(r.i);  // the roulette merged it away
+    return;
+  }
+
+  // read before the touch, which drops a parent that left its bin from its key
+  const auto bit = r.v1.lay.skey[r.i] % 2;
+  r.v1.set_u(r.i, P.k1);
+  r.v1.set_w(r.i, cp.w_each);
+  r.v1.touch(r.i);
+  if(cp.n_r > 1) {
+    r.stage(P.k1, r.pos, cp.w_each, cp.n_r - 1, r.cell, Species::ph, bit);
+  }
+}
+
+/// Self-absorption: the photon goes, the lepton gains the energy of f photons.
+constexpr void
+  reaction(const ChSSA&, const Event& r, runko::Rng&)
+{
+  if(r.n2 > 0) {
+    // summed per lepton: other lanes may feed the same one
+    const auto x = toolbox::norm(r.v1.u(r.i));
+    sstd::atomic_add(&r.dgam[r.j], static_cast<float>(r.f * x));
+  }
+  if(r.n1 > 0) { r.v1.kill(r.i); }
+}
+
+/// Pair annihilation: two photons of the weight moved, each as the copies its
+/// resolution asks for.
+constexpr void
+  reaction(const ChAnn&, const Event& r, runko::Rng& rng)
+{
+  auto ntry    = 0;
+  const auto P = ann::sample(r.v1.u(r.i), r.v2.u(r.j), rng, ntry);
+  const auto s = sstd::min(r.v1.w(r.i), r.v2.w(r.j));
+
+  const auto photon = [&](const Vec3& k) {
+    const auto cp  = copies(f_res(toolbox::norm(k), r.a_res, r.x_ref), s, rng, r.n_cap);
+    const auto bit = static_cast<int>(rng.uniform() < 0.5);
+    if(cp.n_r >= 1) { r.stage(k, r.pos, cp.w_each, cp.n_r, r.cell, Species::ph, bit); }
+  };
+  photon(P.k0);
+  photon(P.k1);
+
+  if(r.n1 > 0) { r.v1.kill(r.i); }
+  if(r.n2 > 0) { r.v2.kill(r.j); }
+}
+
+/// Photon-photon pair production: the weight moved becomes n3 pairs at the lepton
+/// weight.
+constexpr void
+  reaction(const ChGG&, const Event& r, runko::Rng& rng)
+{
+  auto ntry       = 0;
+  const auto P    = gg::sample(r.v1.u(r.i), r.v2.u(r.j), rng, ntry);
+  const auto flip = rng.uniform() < 0.5;
+
+  if(r.n3 > 0) {
+    // a pair born on top of itself adds no charge density: div E is unchanged
+    r.stage(flip ? P.p1 : P.p2, r.pos, r.w_lep, r.n3, r.cell, Species::em, 0);
+    r.stage(flip ? P.p2 : P.p1, r.pos, r.w_lep, r.n3, r.cell, Species::ep, 0);
+  }
+  if(r.n1 > 0) { r.v1.kill(r.i); }
+  if(r.n2 > 0) { r.v2.kill(r.j); }
+}
+
 }  // namespace
 
+// ---------------------------------------------------------------- one channel run
+
+/// Channel ch (number l) on the tile of c: the stages of the header comment, over the
+/// scratch of the sampler. Members end in an underscore so that a kernel cannot capture
+/// one by accident: every stage copies what its lambdas read into locals.
 template<typename Ch>
-void
-  Sampler::twobody(Ctx& c, const Ch& ch, const int l)
-{
-  // side 1 is the incident species, side 2 the partner
-  const auto i1    = static_cast<std::size_t>(Ch::t1);
-  const auto i2    = static_cast<std::size_t>(ch.t2);
-  const auto nb    = c.nb;
-  const auto ncell = c.ncell;
-  const auto ncb   = ncell * nb;  // (cell, bin) groups
-  const auto npair = ncb * nb;    // (cell, bin a, bin b) pairs
+class TwoBody {
+  Sampler& sam_;
+  Ctx& c_;
+  const Ch ch_;
+  const int l_;
 
-  auto& st = stats.ch[static_cast<std::size_t>(l)];
-  const auto ds =
-    thrust::raw_pointer_cast(dstat_.data()) + static_cast<std::size_t>(l) * d_count;
+  const int nb_;            // energy bins per cell
+  const int ncell_;         // reaction cells
+  const int ncb_;           // (cell, bin) groups
+  const int npair_;         // (cell, bin a, bin b) pairs
+  const std::size_t i1_;    // incident species
+  const std::size_t i2_;    // partner species
+  SideView s1_ {}, s2_ {};  // their sides, as of the start of the channel
 
-  const auto w = tyvi::mdgrid_work {};
-  c.refresh_all();
+  ChannelStats& st_;
+  double* const ds_;  // the channel's device statistics
 
-  // ---- per side and (cell, bin): the slot sub-ranges and the bounds over them
-  // base0, cnt0: [0, ncb) the sub-range of the first key, [ncb, 2 ncb) of the second
-  const auto side = [&](
-                      const std::size_t is,
-                      const Sel sel,
-                      thrust::device_vector<I>& base0,
-                      thrust::device_vector<I>& cnt0,
-                      thrust::device_vector<float>& wmax,
-                      thrust::device_vector<float>& emin,
-                      thrust::device_vector<float>& emax) {
-    base0.resize(static_cast<std::size_t>(2 * ncb));
-    cnt0.resize(static_cast<std::size_t>(2 * ncb));
-    wmax.resize(static_cast<std::size_t>(ncb));
-    emin.resize(static_cast<std::size_t>(ncb));
-    emax.resize(static_cast<std::size_t>(ncb));
+  static inline const auto g0   = thrust::counting_iterator<int>(0);  // groups, pairs
+  static inline const auto ord0 = thrust::counting_iterator<I>(0);    // lanes, events
 
-    const auto lay = c.v[is].lay;
-    const auto b0  = thrust::raw_pointer_cast(base0.data()),
-               c0  = thrust::raw_pointer_cast(cnt0.data());
-    const auto wm  = thrust::raw_pointer_cast(wmax.data());
-    const auto lo  = thrust::raw_pointer_cast(emin.data()),
-               hi  = thrust::raw_pointer_cast(emax.data());
+public:
+  TwoBody(Sampler& sam, Ctx& c, const Ch& ch, const Channel which) :
+    sam_ { sam },
+    c_ { c },
+    ch_ { ch },
+    l_ { static_cast<int>(which) },
+    nb_ { c.nb },
+    ncell_ { c.ncell },
+    ncb_ { c.ncell * c.nb },
+    npair_ { c.ncell * c.nb * c.nb },
+    i1_ { static_cast<std::size_t>(Ch::t1) },
+    i2_ { static_cast<std::size_t>(ch.t2) },
+    st_ { sam.stats.ch[static_cast<std::size_t>(which)] },
+    ds_ { ptr(sam.dstat_) + static_cast<std::size_t>(which) * Sampler::d_count }
+  {
+  }
+
+  void run()
+  {
+    const auto w = tyvi::mdgrid_work {};
+    c_.refresh_all();
+
+    s1_ = this->side(w, sam_.sides_[0], i1_, Ch::side1);
+    s2_ = this->side(w, sam_.sides_[1], i2_, Ch::side2);
+    this->envelope(w);
+    const auto nsub = this->substeps(w);
+
+    // each sub-step with the envelope divided by nsub
+    for(auto r = 0; r < nsub; ++r) { this->pass(r, nsub); }
+  }
+
+private:
+  /// Fills table t with the groups of species is and returns its view: the slot
+  /// sub-ranges of every (cell, bin) and the bounds over them.
+  [[nodiscard]]
+  SideView side(
+    const tyvi::mdgrid_work& w,
+    Sampler::SideTable& t,
+    const std::size_t is,
+    const Side keys)
+  {
+    const auto ncb = ncb_;
+    t.base.resize(static_cast<std::size_t>(2 * ncb));
+    t.cnt.resize(static_cast<std::size_t>(2 * ncb));
+    t.wmax.resize(static_cast<std::size_t>(ncb));
+    t.emin.resize(static_cast<std::size_t>(ncb));
+    t.emax.resize(static_cast<std::size_t>(ncb));
+
+    const auto lay = c_.v[is].lay;
+    const auto b0 = ptr(t.base), c0 = ptr(t.cnt);
+    const auto wm = ptr(t.wmax), lo = ptr(t.emin), hi = ptr(t.emax);
     const auto inf = std::numeric_limits<float>::infinity();
 
-    thrust::for_each(
-      w.on_this(),
-      thrust::counting_iterator<int>(0),
-      thrust::counting_iterator<int>(ncb),
-      [=](const int cb) {
-        int k0 = -1, k1 = -1;  // the group's one or two keys
-        switch(sel) {
-          case Sel::cell: k0 = cb; break;
-          case Sel::bit0: k0 = 2 * cb; break;
-          case Sel::bit1: k0 = 2 * cb + 1; break;
-          case Sel::both:
-            k0 = 2 * cb;
-            k1 = 2 * cb + 1;
-            break;
-        }
+    thrust::for_each(w.on_this(), g0, g0 + ncb, [=](const int cb) {
+      // the group's one or two keys
+      const auto k0 = keys.stride * cb + keys.first;
+      const auto k1 = keys.nranges == 2 ? k0 + 1 : -1;
 
-        // fill counts demand and exceeds cap after an overflow: only cap slots are
-        // proposable, past them lies the next key or the tail
-        b0[cb]   = lay.b[k0];
-        c0[cb]   = sstd::min(lay.fill[k0], lay.cap[k0]);
-        auto wmx = lay.wmax[k0], emn = lay.emin[k0], emx = lay.emax[k0];
-        if(k1 >= 0) {
-          b0[ncb + cb] = lay.b[k1];
-          c0[ncb + cb] = sstd::min(lay.fill[k1], lay.cap[k1]);
-          wmx          = sstd::max(wmx, lay.wmax[k1]);
-          emn          = sstd::min(emn, lay.emin[k1]);
-          emx          = sstd::max(emx, lay.emax[k1]);
-        } else {
-          b0[ncb + cb] = 0;
-          c0[ncb + cb] = 0;
-        }
+      // fill counts demand and exceeds cap after an overflow: only cap slots are
+      // proposable, past them lies the next key or the tail
+      b0[cb]   = lay.b[k0];
+      c0[cb]   = sstd::min(lay.fill[k0], lay.cap[k0]);
+      auto wmx = lay.wmax[k0], emn = lay.emin[k0], emx = lay.emax[k0];
+      if(k1 >= 0) {
+        b0[ncb + cb] = lay.b[k1];
+        c0[ncb + cb] = sstd::min(lay.fill[k1], lay.cap[k1]);
+        wmx          = sstd::max(wmx, lay.wmax[k1]);
+        emn          = sstd::min(emn, lay.emin[k1]);
+        emx          = sstd::max(emx, lay.emax[k1]);
+      } else {
+        b0[ncb + cb] = 0;
+        c0[ncb + cb] = 0;
+      }
 
-        wm[cb] = wmx;
-        lo[cb] = c0[cb] + c0[ncb + cb] > 0 ? emn : inf;
-        hi[cb] = emx;
-      });
-  };
+      wm[cb] = wmx;
+      lo[cb] = c0[cb] + c0[ncb + cb] > 0 ? emn : inf;
+      hi[cb] = emx;
+    });
 
-  side(i1, Ch::sel1, base1_, cnt1_, wmax1_, emin1_, emax1_);
-  side(i2, Ch::sel2, base2_, cnt2_, wmax2_, emin2_, emax2_);
+    return SideView { b0, c0, b0 + ncb, c0 + ncb, wm, lo, hi };
+  }
 
-  const auto s1 = SideView { thrust::raw_pointer_cast(base1_.data()),
-                             thrust::raw_pointer_cast(cnt1_.data()),
-                             thrust::raw_pointer_cast(base1_.data()) + ncb,
-                             thrust::raw_pointer_cast(cnt1_.data()) + ncb,
-                             thrust::raw_pointer_cast(wmax1_.data()),
-                             thrust::raw_pointer_cast(emin1_.data()),
-                             thrust::raw_pointer_cast(emax1_.data()) };
+  /// Envelope per bin pair, from the slot counts and the bounds of the two bins alone:
+  /// all n1 n2 slot pairs at the rate bound and the pair-weight bound of the bin pair.
+  void envelope(const tyvi::mdgrid_work& w)
+  {
+    const auto nb = nb_, ncb = ncb_;
+    auto& e = sam_.env_;
+    e.Lam.resize(static_cast<std::size_t>(npair_));
+    e.bound.resize(static_cast<std::size_t>(npair_));
+    e.wmax.resize(static_cast<std::size_t>(npair_));
+    e.row.resize(static_cast<std::size_t>(ncb));
+    e.col.resize(static_cast<std::size_t>(ncb));
 
-  const auto s2 = SideView { thrust::raw_pointer_cast(base2_.data()),
-                             thrust::raw_pointer_cast(cnt2_.data()),
-                             thrust::raw_pointer_cast(base2_.data()) + ncb,
-                             thrust::raw_pointer_cast(cnt2_.data()) + ncb,
-                             thrust::raw_pointer_cast(wmax2_.data()),
-                             thrust::raw_pointer_cast(emin2_.data()),
-                             thrust::raw_pointer_cast(emax2_.data()) };
+    const auto Lam = ptr(e.Lam), sh = ptr(e.bound), wmp = ptr(e.wmax);
+    const auto rowsum = ptr(e.row), colsum = ptr(e.col);
+    const auto s1 = s1_, s2 = s2_;
+    const auto ch = ch_;
+    const auto ds = ds_;
 
-  // ---- envelope per bin pair, from the slot counts and the bins' bounds alone
-  // per bin pair: envelope Lam, rate bound sh, weight bound wmp; Lam summed over b
-  // into rowsum, over a into colsum
-  Lam_.resize(static_cast<std::size_t>(npair));
-  sh_.resize(static_cast<std::size_t>(npair));
-  wm_.resize(static_cast<std::size_t>(npair));
-  rowsum_.resize(static_cast<std::size_t>(ncb));
-  colsum_.resize(static_cast<std::size_t>(ncb));
+    const auto kappa = sam_.par.kappa;
+    const auto N2c   = sam_.box.N2() / ncell_;  // the two-body clock of a reaction cell
 
-  const auto Lam    = thrust::raw_pointer_cast(Lam_.data()),
-             sh     = thrust::raw_pointer_cast(sh_.data());
-  const auto wmp    = thrust::raw_pointer_cast(wm_.data());
-  const auto rowsum = thrust::raw_pointer_cast(rowsum_.data()),
-             colsum = thrust::raw_pointer_cast(colsum_.data());
-
-  const auto kappa = par.kappa;
-  const auto N2c   = box.N2() / ncell;  // the two-body clock of one reaction cell
-
-  thrust::for_each(
-    w.on_this(),
-    thrust::counting_iterator<int>(0),
-    thrust::counting_iterator<int>(ncb),
-    [=](const int ca) {
+    thrust::for_each(w.on_this(), g0, g0 + ncb, [=](const int ca) {
       const auto cc  = ca / nb;
       const auto n1  = static_cast<double>(s1.N(ca));
       const auto lo1 = static_cast<double>(s1.emin[ca]),
@@ -219,7 +324,7 @@ void
         // pair weight of the two maxima at the smallest f_kin of the bin pair, which
         // is extremal at the corners of the gamma range, starting at the threshold
         auto fk = 1.0;
-        if constexpr(Ch::has_dgm) {
+        if constexpr(Ch::merges) {
           const auto glo = sstd::max(lo2, Ch::g_min);
           fk             = sstd::min(
             fkin(kappa, glo, ch.dgmax(hi1, glo)),
@@ -227,7 +332,6 @@ void
         }
         const auto wmv = pair_weight(w1, w2, fk);
 
-        // envelope: all n1 n2 slot pairs at the bin pair's rate and weight bounds
         auto L = Ch::c_l * n1 * n2 * 2.0 * shv * wmv / N2c;
         if(not(L == L) or L > 1e300) { L = 0.0; }
 
@@ -241,145 +345,124 @@ void
       rowsum[ca] = sum;
 
       // the envelope-weighted mean of the rate bound, a measure of the bins' tightness
-      sstd::atomic_add(&ds[d_shnum], sum_sh);
-      sstd::atomic_add(&ds[d_shden], sum);
+      sstd::atomic_add(&ds[Sampler::d_shnum], sum_sh);
+      sstd::atomic_add(&ds[Sampler::d_shden], sum);
     });
 
-  thrust::for_each(
-    w.on_this(),
-    thrust::counting_iterator<int>(0),
-    thrust::counting_iterator<int>(ncb),
-    [=](const int cb) {
+    thrust::for_each(w.on_this(), g0, g0 + ncb, [=](const int cb) {
       const auto cc = cb / nb, bb = cb % nb;
       auto sum = 0.0;
       for(auto a = 0; a < nb; ++a) { sum += Lam[(cc * nb + a) * nb + bb]; }
       colsum[cb] = sum;
     });
 
-  stats.cell_lanes += npair;
-  const auto g0 = thrust::counting_iterator<int>(0);
+    sam_.stats.cell_lanes += npair_;
+  }
 
-  // ---- sub-steps: distinct strata need at most as many events per bin as slots,
-  // on both sides; beyond that the channel splits into sub-steps of a larger N_2.
-  // Additive channels cap them: past the cap the row clamp drops the surplus (an
-  // under-count the cap controls), so no two lanes ever hold one slot.
-  auto nsub = thrust::transform_reduce(
-    w.on_this(),
-    g0,
-    g0 + ncb,
-    [=](const int ca) {
-      const auto n = static_cast<double>(s1.N(ca));
-      return rowsum[ca] > 0.0 and n >= 1.0
-               ? sstd::ceil(rowsum[ca] / sstd::max(n - 1.0, 1.0))
-               : 1.0;
-    },
-    1.0,
-    thrust::maximum<double> {});
-
-  if constexpr(Ch::kind == Kind::convert) {
-    // a consumed partner needs distinct strata too
-    nsub = sstd::max(
-      nsub,
-      thrust::transform_reduce(
+  /// Sub-steps of the channel. Distinct strata need at most as many events per bin as
+  /// slots; beyond that the channel splits into sub-steps of a larger N_2. A consumed
+  /// partner needs them on its side too. A channel that only adds to its partner caps
+  /// them: past the cap the row clamp drops the surplus (an under-count the cap
+  /// controls), so no two lanes ever hold one incident.
+  [[nodiscard]]
+  int substeps(const tyvi::mdgrid_work& w)
+  {
+    // sub-steps that bring the events of every group of side s below its slots
+    const auto needed = [&](const SideView s, const double* const sum) {
+      return thrust::transform_reduce(
         w.on_this(),
         g0,
-        g0 + ncb,
+        g0 + ncb_,
         [=](const int cb) {
-          const auto n = static_cast<double>(s2.N(cb));
-          return colsum[cb] > 0.0 and n >= 1.0
-                   ? sstd::ceil(colsum[cb] / sstd::max(n - 1.0, 1.0))
+          const auto n = static_cast<double>(s.N(cb));
+          return sum[cb] > 0.0 and n >= 1.0
+                   ? sstd::ceil(sum[cb] / sstd::max(n - 1.0, 1.0))
                    : 1.0;
         },
         1.0,
-        thrust::maximum<double> {}));
-  } else {
-    nsub = sstd::min(nsub, static_cast<double>(par.nsub_max));
-  }
+        thrust::maximum<double> {});
+    };
 
-  const auto ns    = static_cast<int>(nsub);
-  st.nsub_max_seen = sstd::max(st.nsub_max_seen, ns);
-  st.nsub_steps += (ns > 1);
-
-  // each sub-step with the envelope divided by ns
-  for(auto r = 0; r < ns; ++r) { pass(c, ch, l, r, ns, s1, s2); }
-}
-
-template<typename Ch>
-void
-  Sampler::pass(
-    Ctx& c,
-    const Ch& ch,
-    const int l,
-    const int r,
-    const int nsub,
-    const SideView& s1,
-    const SideView& s2)
-{
-  const auto i1    = static_cast<std::size_t>(Ch::t1);
-  const auto i2    = static_cast<std::size_t>(ch.t2);
-  const auto nb    = c.nb;
-  const auto ncell = c.ncell;
-  const auto ncb   = ncell * nb;
-  const auto npair = ncb * nb;
-
-  auto& st        = stats.ch[static_cast<std::size_t>(l)];
-  const auto w    = tyvi::mdgrid_work {};
-  const auto step = istep_;
-
-  // random streams of this (channel, sub-step): A the counts (lane = incident group)
-  // and the shifts (lanes past them), B the thinning, C the reactions
-  const auto keyA = runko::rng_key(
-    par.seed,
-    step,
-    static_cast<std::uint64_t>(r),
-    static_cast<std::uint64_t>(1 + 4 * l));
-  const auto keyB = runko::rng_key(
-    par.seed,
-    step,
-    static_cast<std::uint64_t>(r),
-    static_cast<std::uint64_t>(2 + 4 * l));
-  const auto keyC = runko::rng_key(
-    par.seed,
-    step,
-    static_cast<std::uint64_t>(r),
-    static_cast<std::uint64_t>(3 + 4 * l));
-
-  const auto ds =
-    thrust::raw_pointer_cast(dstat_.data()) + static_cast<std::size_t>(l) * d_count;
-
-  const auto Lam = thrust::raw_pointer_cast(Lam_.data()),
-             sh  = thrust::raw_pointer_cast(sh_.data());
-  const auto wmp = thrust::raw_pointer_cast(wm_.data());
-
-  // ---- counts per bin pair, clamps, strata bases and shifts
-  // M events per bin pair; for a consumed partner off2, its strata base along a, and
-  // M2, the events per partner bin
-  M_.resize(static_cast<std::size_t>(npair));
-  off2_.resize(static_cast<std::size_t>(npair));
-  M2_.resize(static_cast<std::size_t>(ncb));
-
-  const auto M    = thrust::raw_pointer_cast(M_.data());
-  const auto off2 = thrust::raw_pointer_cast(off2_.data());
-  const auto M2   = thrust::raw_pointer_cast(M2_.data());
-  const auto cb0  = thrust::counting_iterator<int>(0);
-
-  // incident rows: M[a, b] by cumulative rounding with one uniform for the whole row
-  thrust::for_each(w.on_this(), cb0, cb0 + ncb, [=](const int ca) {
-    auto rng     = runko::Rng { keyA, static_cast<std::uint64_t>(ca) };
-    const auto U = rng.uniform();
-    auto C = 0.0, Fp = 0.0;  // cumulative envelope and its previous floor
-
-    for(auto bb = 0; bb < nb; ++bb) {
-      const auto g = ca * nb + bb;
-      C += Lam[g] / nsub;
-      const auto F = sstd::floor(C + U);
-      M[g]         = static_cast<std::int32_t>(F - Fp);
-      Fp           = F;
+    auto nsub = needed(s1_, ptr(sam_.env_.row));
+    if constexpr(Ch::consumes_partner) {
+      nsub = sstd::max(nsub, needed(s2_, ptr(sam_.env_.col)));
+    } else {
+      nsub = sstd::min(nsub, static_cast<double>(sam_.par.nsub_max));
     }
 
-    {
-      // row clamp: no more events than slots, so the strata stay distinct; a
-      // backstop the sub-steps make rare, counted as clamped
+    const auto ns     = static_cast<int>(nsub);
+    st_.nsub_max_seen = sstd::max(st_.nsub_max_seen, ns);
+    st_.nsub_steps += (ns > 1);
+    return ns;
+  }
+
+  /// Sub-step r of nsub: its lanes, its events and their reactions.
+  void pass(const int r, const int nsub)
+  {
+    const auto w = tyvi::mdgrid_work {};
+
+    // random streams of this (channel, sub-step): A the counts (lane = incident group)
+    // and the shifts (lanes past them), B the thinning, C the reactions
+    const auto key = [&](const int kernel) {
+      return runko::rng_key(
+        sam_.par.seed,
+        sam_.istep_,
+        static_cast<std::uint64_t>(r),
+        static_cast<std::uint64_t>(kernel + 4 * l_));
+    };
+    const auto keyA = key(1), keyB = key(2), keyC = key(3);
+
+    const auto Mtot = this->strata(w, keyA, nsub);
+    st_.M += static_cast<double>(Mtot);
+    if(Mtot == 0) { return; }
+
+    const auto na = this->lanes(w, keyA, keyB, Mtot);
+    if(na == 0) {
+      w.wait();
+      return;
+    }
+
+    this->decide(w, na);
+    this->react(w, keyC, na);
+    w.wait();
+
+    this->settle(na);
+    sam_.place(c_);
+  }
+
+  /// Envelope events per bin pair for one sub-step, and the first lane of each; returns
+  /// the lanes. The lanes run row by row, so a lane's rank in its row is its incident
+  /// stratum; a consumed partner gets strata of its own along the columns.
+  [[nodiscard]]
+  std::size_t strata(const tyvi::mdgrid_work& w, const std::uint64_t keyA, const int nsub)
+  {
+    const auto nb = nb_, ncb = ncb_, npair = npair_;
+    auto& t = sam_.strata_;
+    t.M.resize(static_cast<std::size_t>(npair));
+    t.off2.resize(static_cast<std::size_t>(npair));
+    t.M2.resize(static_cast<std::size_t>(ncb));
+
+    const auto M = ptr(t.M), off2 = ptr(t.off2), M2 = ptr(t.M2);
+    const auto Lam = ptr(sam_.env_.Lam);
+    const auto s1 = s1_, s2 = s2_;
+    const auto ds = ds_;
+
+    // incident rows: M[a, b] by cumulative rounding with one uniform for the whole row
+    thrust::for_each(w.on_this(), g0, g0 + ncb, [=](const int ca) {
+      auto rng     = runko::Rng { keyA, static_cast<std::uint64_t>(ca) };
+      const auto U = rng.uniform();
+      auto C = 0.0, Fp = 0.0;  // cumulative envelope and its previous floor
+
+      for(auto bb = 0; bb < nb; ++bb) {
+        const auto g = ca * nb + bb;
+        C += Lam[g] / nsub;
+        const auto F = sstd::floor(C + U);
+        M[g]         = static_cast<std::int32_t>(F - Fp);
+        Fp           = F;
+      }
+
+      // row clamp: no more events than slots, so the strata stay distinct; a backstop
+      // the sub-steps make rare, counted as clamped
       auto ex = 0;
       for(auto bb = 0; bb < nb; ++bb) { ex += M[ca * nb + bb]; }
       ex -= static_cast<int>(s1.N(ca));
@@ -390,79 +473,75 @@ void
           if(M[ca * nb + bb] > M[ca * nb + imax]) { imax = bb; }
         }
         --M[ca * nb + imax];
-        sstd::atomic_add(&ds[d_clamped], 1.0);
+        sstd::atomic_add(&ds[Sampler::d_clamped], 1.0);
       }
-    }
-  });
-
-  // partner columns of a consumed partner: the clamp, then the strata bases along a
-  if constexpr(Ch::kind == Kind::convert) {
-    thrust::for_each(w.on_this(), cb0, cb0 + ncb, [=](const int cb) {
-      const auto cc = cb / nb, bb = cb % nb;
-      auto ex = 0;
-      for(auto a = 0; a < nb; ++a) { ex += M[(cc * nb + a) * nb + bb]; }
-      ex -= static_cast<int>(s2.N(cb));
-
-      for(; ex > 0; --ex) {
-        auto imax = 0;
-        for(auto a = 1; a < nb; ++a) {
-          if(M[(cc * nb + a) * nb + bb] > M[(cc * nb + imax) * nb + bb]) { imax = a; }
-        }
-        --M[(cc * nb + imax) * nb + bb];
-        sstd::atomic_add(&ds[d_clamped], 1.0);
-      }
-
-      // strata bases: disjoint across bin pairs
-      auto sum = 0;
-      for(auto a = 0; a < nb; ++a) {
-        const auto g = (cc * nb + a) * nb + bb;
-        off2[g]      = sum;
-        sum += M[g];
-      }
-      M2[cb] = sum;
     });
+
+    // partner columns of a consumed partner: the clamp, then the strata bases along a
+    if constexpr(Ch::consumes_partner) {
+      thrust::for_each(w.on_this(), g0, g0 + ncb, [=](const int cb) {
+        const auto cc = cb / nb, bb = cb % nb;
+        auto ex = 0;
+        for(auto a = 0; a < nb; ++a) { ex += M[(cc * nb + a) * nb + bb]; }
+        ex -= static_cast<int>(s2.N(cb));
+
+        for(; ex > 0; --ex) {
+          auto imax = 0;
+          for(auto a = 1; a < nb; ++a) {
+            if(M[(cc * nb + a) * nb + bb] > M[(cc * nb + imax) * nb + bb]) { imax = a; }
+          }
+          --M[(cc * nb + imax) * nb + bb];
+          sstd::atomic_add(&ds[Sampler::d_clamped], 1.0);
+        }
+
+        // strata bases: disjoint across bin pairs
+        auto sum = 0;
+        for(auto a = 0; a < nb; ++a) {
+          const auto g = (cc * nb + a) * nb + bb;
+          off2[g]      = sum;
+          sum += M[g];
+        }
+        M2[cb] = sum;
+      });
+    }
+
+    // first lane of every bin pair; the last entry, the lane total, is read on the host
+    t.first.resize(static_cast<std::size_t>(npair) + 1);
+    t.first[0] = I { 0 };
+    thrust::inclusive_scan(w.on_this(), t.M.begin(), t.M.end(), t.first.begin() + 1);
+    w.wait();
+
+    return static_cast<std::size_t>(t.first[static_cast<std::size_t>(npair)]);
   }
 
-  // first lane of every bin pair; the last entry, the lane total, is read on the host.
-  // The lanes run row by row, so a lane's rank in its row is its incident stratum.
-  Mstart_.resize(static_cast<std::size_t>(npair) + 1);
-  Mstart_[0] = I { 0 };
-  thrust::inclusive_scan(w.on_this(), M_.begin(), M_.end(), Mstart_.begin() + 1);
-  w.wait();
+  /// The thinning: one lane per envelope event proposes a slot pair of its bin pair
+  /// and accepts it with the pair's probability over the envelope's. Returns the
+  /// accepted lanes, listed in acc_.
+  [[nodiscard]]
+  std::size_t lanes(
+    const tyvi::mdgrid_work& w,
+    const std::uint64_t keyA,
+    const std::uint64_t keyB,
+    const std::size_t Mtot)
+  {
+    const auto nb = nb_, ncb = ncb_, npair = npair_;
+    sam_.lanes_.resize(Mtot);
 
-  const auto Mtot = static_cast<std::size_t>(Mstart_[static_cast<std::size_t>(npair)]);
-  st.M += static_cast<double>(Mtot);
+    const auto rec   = ptr(sam_.lanes_);
+    const auto first = ptr(sam_.strata_.first);
+    const auto off2 = ptr(sam_.strata_.off2), M2 = ptr(sam_.strata_.M2);
+    const auto sh = ptr(sam_.env_.bound), wmp = ptr(sam_.env_.wmax);
+    const auto s1 = s1_, s2 = s2_;
+    const auto ch = ch_;
 
-  if(Mtot == 0) { return; }
+    const auto v1 = c_.v[i1_], v2 = c_.v[i2_];
+    const auto fv    = c_.t->field;  // the field at the partner, for the absorption rate
+    const auto kappa = sam_.par.kappa;
+    const auto nlane = static_cast<std::ptrdiff_t>(Mtot);
 
-  // ---- thinning kernel: one lane per envelope event
-  // per lane: the bin pair, the state, the incident and partner slot, the
-  // accumulation factor
-  lane_acc_.resize(Mtot);
-  lane_i_.resize(Mtot);
-  lane_j_.resize(Mtot);
-  lane_S_.resize(Mtot);
-  lane_g_.resize(Mtot);
-
-  const auto Mstart = thrust::raw_pointer_cast(Mstart_.data());
-  const auto lg     = thrust::raw_pointer_cast(lane_g_.data());
-  const auto lacc   = thrust::raw_pointer_cast(lane_acc_.data());
-  const auto li     = thrust::raw_pointer_cast(lane_i_.data()),
-             lj     = thrust::raw_pointer_cast(lane_j_.data());
-  const auto lS     = thrust::raw_pointer_cast(lane_S_.data());
-
-  const auto v1 = c.v[i1], v2 = c.v[i2];
-  const auto fv    = c.t->field;  // the field at the partner, for the absorption rate
-  const auto kappa = par.kappa;
-  const auto lane0 = thrust::counting_iterator<I>(0);
-
-  thrust::for_each(
-    w.on_this(),
-    lane0,
-    lane0 + static_cast<std::ptrdiff_t>(Mtot),
-    [=](const I lane) {
+    thrust::for_each(w.on_this(), ord0, ord0 + nlane, [=](const I lane) {
       auto rng      = runko::Rng { keyB, lane };
-      const auto g  = segment_of(Mstart, npair, lane);
+      const auto g  = segment_of(first, npair, lane);
       const auto cc = g / (nb * nb), a = (g / nb) % nb,
                  bb  = g % nb;  // cell, incident bin, partner bin
       const auto cb1 = cc * nb + a, cb2 = cc * nb + bb;
@@ -477,16 +556,16 @@ void
       };
 
       // incident: a slot drawn in stratum p1 of the row's M1
-      const auto row = Mstart[cb1 * nb];
+      const auto row = first[cb1 * nb];
       const auto p1  = static_cast<std::uint64_t>(lane - row);
-      const auto M1  = static_cast<std::uint64_t>(Mstart[(cb1 + 1) * nb] - row);
+      const auto M1  = static_cast<std::uint64_t>(first[(cb1 + 1) * nb] - row);
       const auto vv1 = (shift(1, cb1, n1) + stratum(p1, M1, n1, rng)) % n1;
 
       I vv2;
-      if constexpr(Ch::kind == Kind::convert) {
+      if constexpr(Ch::consumes_partner) {
         // a consumed partner: a slot drawn in stratum p2 of the column's M2
         const auto p2 = static_cast<std::uint64_t>(off2[g]) +
-                        static_cast<std::uint64_t>(lane - Mstart[g]);
+                        static_cast<std::uint64_t>(lane - first[g]);
         const auto M2c = static_cast<std::uint64_t>(M2[cb2]);
         vv2            = (shift(0, cb2, n2) + stratum(p2, M2c, n2, rng)) % n2;
       } else {
@@ -496,15 +575,12 @@ void
       }
 
       const auto i = s1.pick(cb1, vv1), j = s2.pick(cb2, vv2);
-      li[lane]   = i;
-      lj[lane]   = j;
-      lg[lane]   = g;
-      lS[lane]   = 0.0;
-      lacc[lane] = L_WFAIL;
+      auto& ln = rec[lane];
+      ln       = { .i = i, .j = j, .S = 0.0, .g = g, .state = L_WFAIL };
 
       // a dead slot, or one a kick dropped from its key: nothing to react
       if(not(v1.alive(i) and v2.alive(j)) or v1.lay.skey[i] < 0 or v2.lay.skey[j] < 0) {
-        lacc[lane] = L_VIRT;
+        ln.state = L_VIRT;
         return;
       }
 
@@ -516,326 +592,230 @@ void
       const auto wm = wmp[g];
       const auto wf = sstd::min(pair_weight(wi, wj, 1.0) / wm, 1.0);
       if(not(u < wf)) { return; }
-      lacc[lane] = L_WPASS;
+      ln.state = L_WPASS;
 
       const auto p1v = v1.u(i), p2v = v2.u(j);
-      const auto rate = pair_rate(ch, fv, p1v, p2v);
+      const auto rate = ch.rate(p1v, p2v, fv);
       auto fk         = 1.0;
-      if constexpr(Ch::has_dgm) {
+      if constexpr(Ch::merges) {
         const auto x   = toolbox::norm(p1v);
         const auto gam = sstd::sqrt(1.0 + toolbox::dot(p2v, p2v));
         fk             = fkin(kappa, gam, ch.dgmax(x, gam));
       }
 
-      lS[lane] = event_size(wi, wj, fk);
-      if(u < (pair_weight(wi, wj, fk) / wm) * rate / sh[g]) { lacc[lane] = L_ACC; }
+      ln.S = event_size(wi, wj, fk);
+      if(u < (pair_weight(wi, wj, fk) / wm) * rate / sh[g]) { ln.state = L_ACC; }
     });
 
-  acc_.resize(Mtot);
-  const auto acc_end = thrust::copy_if(
-    w.on_this(),
-    lane0,
-    lane0 + static_cast<std::ptrdiff_t>(Mtot),
-    acc_.begin(),
-    [=](const I lane) { return lacc[lane] == L_ACC; });
-  const auto na = static_cast<std::size_t>(acc_end - acc_.begin());  // accepted events
-  st.acc += static_cast<double>(na);
+    sam_.acc_.resize(Mtot);
+    const auto acc_end =
+      thrust::copy_if(w.on_this(), ord0, ord0 + nlane, sam_.acc_.begin(), [=](const I lane) {
+        return rec[lane].state == L_ACC;
+      });
+    const auto na = static_cast<std::size_t>(acc_end - sam_.acc_.begin());
+    st_.acc += static_cast<double>(na);
 
-  // the dead lanes and those past the weight stage only, in one reduction
-  using V2         = toolbox::VecD<double, 2>;
-  const auto vsum  = [](const V2& a, const V2& b) { return a + b; };
-  const auto lanes = thrust::transform_reduce(
-    w.on_this(),
-    lane0,
-    lane0 + static_cast<std::ptrdiff_t>(Mtot),
-    [=](const I lane) {
-      return V2(lacc[lane] == L_VIRT ? 1.0 : 0.0, lacc[lane] == L_WPASS ? 1.0 : 0.0);
-    },
-    V2 {},
-    vsum);
+    // the dead lanes and those past the weight stage only, in one reduction
+    using V2         = toolbox::VecD<double, 2>;
+    const auto tally = thrust::transform_reduce(
+      w.on_this(),
+      ord0,
+      ord0 + nlane,
+      [=](const I lane) {
+        return V2(
+          rec[lane].state == L_VIRT ? 1.0 : 0.0,
+          rec[lane].state == L_WPASS ? 1.0 : 0.0);
+      },
+      V2 {},
+      [](const V2& a, const V2& b) { return a + b; });
 
-  st.virt += lanes[0];
-  st.wpass += static_cast<double>(na) + lanes[1];
-
-  if(na == 0) {
-    w.wait();
-    return;
+    st_.virt += tally[0];
+    st_.wpass += static_cast<double>(na) + tally[1];
+    return na;
   }
 
-  // ---- decide: what an event does to its parents follows from their weights and its
-  // size alone, so it is settled before the final state is drawn
-  // q1, q2: the update or removal probability of parent 1, 2; q3: the lepton pairs
-  // to create (photon-photon); n1p, n2p, n3p: their carry-rounded decisions; ef: the
-  // exchanges the partner takes as one
-  ev_q1_.resize(na);
-  ev_q2_.resize(na);
-  ev_q3_.resize(na);
-  ev_n1_.resize(na);
-  ev_n2_.resize(na);
-  ev_n3_.resize(na);
-  ev_cell_.resize(na);
-  ev_f_.resize(na);
+  /// What every accepted event does to its parents. It follows from their weights and
+  /// the size of the event alone, so it is settled before the final state is drawn:
+  /// the probabilities, then their systematic rounding in every cell.
+  void decide(const tyvi::mdgrid_work& w, const std::size_t na)
+  {
+    const auto nb = nb_;
+    auto& ev = sam_.ev_;
+    ev.q1.resize(na);
+    ev.q2.resize(na);
+    ev.q3.resize(na);
+    ev.n1.resize(na);
+    ev.n2.resize(na);
+    ev.n3.resize(na);
+    ev.cell.resize(na);
+    ev.f.resize(na);
 
-  const auto acc   = thrust::raw_pointer_cast(acc_.data());
-  const auto q1    = thrust::raw_pointer_cast(ev_q1_.data()),
-             q2    = thrust::raw_pointer_cast(ev_q2_.data());
-  const auto q3    = thrust::raw_pointer_cast(ev_q3_.data());
-  const auto n1p   = thrust::raw_pointer_cast(ev_n1_.data()),
-             n2p   = thrust::raw_pointer_cast(ev_n2_.data());
-  const auto n3p   = thrust::raw_pointer_cast(ev_n3_.data());
-  const auto ecell = thrust::raw_pointer_cast(ev_cell_.data());
-  const auto ef    = thrust::raw_pointer_cast(ev_f_.data());
+    const auto q1 = ptr(ev.q1), q2 = ptr(ev.q2), q3 = ptr(ev.q3), ef = ptr(ev.f);
+    const auto ecell = ptr(ev.cell);
+    const auto acc   = ptr(sam_.acc_);
+    const auto rec   = ptr(sam_.lanes_);
+    const auto v1 = c_.v[i1_], v2 = c_.v[i2_];
+    const auto wl    = sam_.box.w_lep;
+    const auto nev   = static_cast<std::ptrdiff_t>(na);
 
-  const auto wl  = box.w_lep;
-  const auto ev0 = thrust::counting_iterator<I>(0);
-
-  thrust::for_each(
-    w.on_this(),
-    ev0,
-    ev0 + static_cast<std::ptrdiff_t>(na),
-    [=](const I e) {
-      const auto lane = acc[e];
-      const auto wi = v1.w(li[lane]), wj = v2.w(lj[lane]);
-      const auto S  = lS[lane];  // the weight the event moves, <= wi
-      const auto n2 = S / wj;    // the exchanges the partner takes
-      ecell[e]      = lg[lane] / (nb * nb);
+    thrust::for_each(w.on_this(), ord0, ord0 + nev, [=](const I e) {
+      const auto ln = rec[acc[e]];
+      const auto wi = v1.w(ln.i), wj = v2.w(ln.j);
+      const auto S  = ln.S;    // the weight the event moves, <= wi
+      const auto n2 = S / wj;  // the exchanges the partner takes
+      ecell[e]      = ln.g / (nb * nb);
 
       // the incident gives up S; the partner takes n2 exchanges, with that probability
       // while n2 < 1 and as one event beyond
       q1[e] = S / wi;
       q2[e] = sstd::min(n2, 1.0);
       ef[e] = sstd::max(n2, 1.0);
-      q3[e] = Ch::pairs ? S / wl : 0.0;
+      q3[e] = Ch::makes_pairs ? S / wl : 0.0;
     });
-  // no wait: the rounding and the reactions follow on the same queue
+    // no wait: the rounding and the reactions follow on the same queue
 
-  // the systematic rounding of the probabilities in every cell
-  select(w, true, l, 0, ncell, na, ecell, q1, n1p);
-  select(w, true, l, 1, ncell, na, ecell, q2, n2p);
-  if constexpr(Ch::pairs) { select(w, true, l, 2, ncell, na, ecell, q3, n3p); }
-
-  // ---- react: the final state of every event; the incident is updated in place, the
-  // products are staged. Lanes may share a partner, so its state is only read here:
-  // what the events give it is summed (kicks per event, absorbed energy per slot) and
-  // applied once the kernel is through.
-  staged_.resize(2 * na);  // at most two products per event
-  const auto stg = thrust::raw_pointer_cast(staged_.data());
-  const auto cnt = thrust::raw_pointer_cast(counters_.data());
-
-  thrust::fill(counters_.begin(), counters_.begin() + 1, 0);
-
-  if constexpr(Ch::kind == Kind::scatter) { ev_kick_.resize(3 * na); }
-
-  // dgam is zero between passes (apply_dgam clears what it reads): only growth needs
-  // new zeros
-  if constexpr(Ch::kind == Kind::absorb) {
-    if(dgam_.size() < c.t->con[i2]->size()) {
-      dgam_.resize(c.t->con[i2]->size(), 0.0f);
+    sam_.select(w, true, l_, 0, ncell_, na, ecell, q1, ptr(ev.n1));
+    sam_.select(w, true, l_, 1, ncell_, na, ecell, q2, ptr(ev.n2));
+    if constexpr(Ch::makes_pairs) {
+      sam_.select(w, true, l_, 2, ncell_, na, ecell, q3, ptr(ev.n3));
     }
   }
 
-  const auto kick  = thrust::raw_pointer_cast(ev_kick_.data());
-  const auto dgam  = thrust::raw_pointer_cast(dgam_.data());
-  const auto a_res = par.a_res, x_ref = par.x_ref;
-  const auto n_cap = par.n_cap;
+  /// The final state of every event: the incident is updated in place and the products
+  /// are staged. Lanes may share a partner, so its state is only read here; what the
+  /// events give it is kept (a kick per event, absorbed energy per slot) for settle().
+  void react(const tyvi::mdgrid_work& w, const std::uint64_t keyC, const std::size_t na)
+  {
+    auto& ev         = sam_.ev_;
+    const auto stage = sam_.stager(2 * na);  // at most two products per event
 
-  // append one product record to the staging buffer
-  const auto stage = [=](
-                       const Vec3& p,
-                       const float* pos,
-                       const double w_each,
-                       const int n_r,
-                       const int cell,
-                       const int species,
-                       const int bit) {
-    const auto k = static_cast<std::size_t>(
-      sstd::atomic_fetch_add(&cnt[c_staged], std::int32_t { 1 }));
-    stg[k] = staged_at(p, pos, w_each, n_r, cell, species, bit);
-  };
+    if constexpr(std::same_as<Ch, ChCompton>) { ev.kick.resize(3 * na); }
 
-  thrust::for_each(
-    w.on_this(),
-    ev0,
-    ev0 + static_cast<std::ptrdiff_t>(na),
-    [=](const I e) {
-      auto rng        = runko::Rng { keyC, e };
-      const auto lane = acc[e];
-      const auto i = li[lane], j = lj[lane];
-      const auto f    = ef[e];
-      const auto cell = ecell[e];
-      const auto p1v = v1.u(i), p2v = v2.u(j);
-
-      // products are born where the incident is
-      const float posi[3] = { v1.pos[i][0], v1.pos[i][1], v1.pos[i][2] };
-
-      [[maybe_unused]] auto ntry = 0;  // proposals of the rejection samplers
-
-      if constexpr(Ch::kind == Kind::scatter) {
-        // Compton: the lepton takes the f exchanges as one momentum kick
-        const auto P  = comp::sample(p1v, p2v, rng, ntry);
-        const auto dp = (-f) * (P.k1 - p1v);
-        for(auto k = 0uz; k < 3uz; ++k) { kick[3 * e + k] = static_cast<float>(dp[k]); }
-
-        if(n1p[e] > 0) {
-          // the parent takes the new state as the copies the resolution function asks
-          // for, itself the first copy
-          const auto x0 = v1.e(i), x1 = toolbox::norm(P.k1);
-          const auto n  = f_res(x1, a_res, x_ref) / f_res(x0, a_res, x_ref);
-          const auto cp = copies(n, v1.w(i), rng, n_cap);
-
-          if(cp.n_r >= 1) {
-            // read before the touch, which drops a parent that left its bin from its key
-            const auto bit = v1.lay.skey[i] % 2;
-            v1.set_u(i, P.k1);
-            v1.set_w(i, cp.w_each);
-            v1.touch(i);
-            if(cp.n_r > 1) { stage(P.k1, posi, cp.w_each, cp.n_r - 1, cell, 0, bit); }
-          } else {
-            v1.kill(i);  // the roulette merged it away
-          }
-        }
-      } else if constexpr(Ch::kind == Kind::absorb) {
-        // self-absorption: the lepton gains the energy f x, summed per lepton
-        if(n2p[e] > 0) {
-          sstd::atomic_add(&dgam[j], static_cast<float>(f * toolbox::norm(p1v)));
-        }
-        if(n1p[e] > 0) { v1.kill(i); }
-      } else if constexpr(Ch::pairs) {
-        // photon-photon: the weight s becomes lepton pairs at the lepton weight
-        const auto P    = gg::sample(p1v, p2v, rng, ntry);
-        const auto flip = rng.uniform() < 0.5;
-        const auto nl   = n3p[e];
-        if(nl > 0) {
-          // a pair born on top of itself adds no charge density: div E is unchanged
-          stage(flip ? P.p1 : P.p2, posi, wl, nl, cell, 1, 0);
-          stage(flip ? P.p2 : P.p1, posi, wl, nl, cell, 2, 0);
-        }
-        if(n1p[e] > 0) { v1.kill(i); }
-        if(n2p[e] > 0) { v2.kill(j); }
-      } else {
-        // pair annihilation: two photons of weight s, each realized as the copies its
-        // resolution asks for
-        const auto P = ann::sample(p1v, p2v, rng, ntry);
-        const auto s = sstd::min(v1.w(i), v2.w(j));
-        auto photon  = [&](const Vec3& k) {
-          const auto cp = copies(f_res(toolbox::norm(k), a_res, x_ref), s, rng, n_cap);
-          const auto bit = static_cast<int>(rng.uniform() < 0.5);
-          if(cp.n_r >= 1) { stage(k, posi, cp.w_each, cp.n_r, cell, 0, bit); }
-        };
-        photon(P.k0);
-        photon(P.k1);
-        if(n1p[e] > 0) { v1.kill(i); }
-        if(n2p[e] > 0) { v2.kill(j); }
+    // dgam is zero between passes (settle clears what it reads): only growth needs
+    // new zeros
+    if constexpr(std::same_as<Ch, ChSSA>) {
+      if(sam_.dgam_.size() < c_.t->con[i2_]->size()) {
+        sam_.dgam_.resize(c_.t->con[i2_]->size(), 0.0f);
       }
+    }
+
+    const auto n1p = ptr(ev.n1), n2p = ptr(ev.n2), n3p = ptr(ev.n3);
+    const auto ecell = ptr(ev.cell);
+    const auto ef    = ptr(ev.f);
+    const auto kick  = ptr(ev.kick);
+    const auto dgam  = ptr(sam_.dgam_);
+    const auto acc   = ptr(sam_.acc_);
+    const auto rec   = ptr(sam_.lanes_);
+    const auto v1 = c_.v[i1_], v2 = c_.v[i2_];
+    const auto ch    = ch_;
+    const auto par   = sam_.par;
+    const auto wl    = sam_.box.w_lep;
+    const auto nev   = static_cast<std::ptrdiff_t>(na);
+
+    thrust::for_each(w.on_this(), ord0, ord0 + nev, [=](const I e) {
+      auto rng      = runko::Rng { keyC, e };
+      const auto ln = rec[acc[e]];
+
+      reaction(
+        ch,
+        Event { .v1    = v1,
+                .v2    = v2,
+                .i     = ln.i,
+                .j     = ln.j,
+                .f     = ef[e],
+                .n1    = n1p[e],
+                .n2    = n2p[e],
+                .n3    = n3p[e],
+                .cell  = ecell[e],
+                .pos   = { v1.pos[ln.i][0], v1.pos[ln.i][1], v1.pos[ln.i][2] },
+                .stage = stage,
+                .a_res = par.a_res,
+                .x_ref = par.x_ref,
+                .n_cap = par.n_cap,
+                .w_lep = wl,
+                .kick  = kick + 3 * e,
+                .dgam  = dgam },
+        rng);
     });
-  w.wait();
+  }
 
-  const auto sums = thrust::transform_reduce(
-    w.on_this(),
-    ev0,
-    ev0 + static_cast<std::ptrdiff_t>(na),
-    [=](const I e) { return V2(lS[acc[e]], ef[e]); },
-    V2 {},
-    vsum);
-  st.wmoved += sums[0];
-  st.facc += sums[1];
+  /// The partners take what the events of the pass gave them, each once, and the
+  /// statistics of the pass are read.
+  void settle(const std::size_t na)
+  {
+    const auto w     = tyvi::mdgrid_work {};
+    const auto v     = c_.v[i2_];
+    const auto acc   = ptr(sam_.acc_);
+    const auto rec   = ptr(sam_.lanes_);
+    const auto ef    = ptr(sam_.ev_.f);
+    const auto nev   = static_cast<std::ptrdiff_t>(na);
 
-  // ---- the partners take their summed changes, then the products are placed
-  if constexpr(Ch::kind == Kind::absorb) { apply_dgam(c, ch.t2, na); }
-  if constexpr(Ch::kind == Kind::scatter) { apply_kicks(c, ch.t2, na); }
-  this->place(c);
-}
+    // weight moved and exchanges merged
+    using V2        = toolbox::VecD<double, 2>;
+    const auto sums = thrust::transform_reduce(
+      w.on_this(),
+      ord0,
+      ord0 + nev,
+      [=](const I e) { return V2(rec[acc[e]].S, ef[e]); },
+      V2 {},
+      [](const V2& a, const V2& b) { return a + b; });
+    st_.wmoved += sums[0];
+    st_.facc += sums[1];
+
+    if constexpr(std::same_as<Ch, ChSSA>) {
+      const auto dgam = ptr(sam_.dgam_);
+
+      // all sums are in; the first event to reach a lepton takes its sum and leaves
+      // zero, so the lepton is rescaled once and dgam is clean for the next pass
+      thrust::for_each(w.on_this(), ord0, ord0 + nev, [=](const I e) {
+        const auto i  = rec[acc[e]].j;
+        const auto dg = static_cast<double>(sstd::atomic_exchange(&dgam[i], 0.0f));
+        if(dg <= 0.0 or not v.alive(i)) { return; }
+
+        // rescale |u| to the energy g0 + dg, on the mass shell
+        const auto u0 = v.u(i);
+        const auto g0 = sstd::sqrt(1.0 + toolbox::dot(u0, u0));
+        const auto g1 = g0 + dg;
+        v.set_u(
+          i,
+          u0 *
+            (sstd::sqrt(g1 * g1 - 1.0) / sstd::sqrt(sstd::max(g0 * g0 - 1.0, 1e-300))));
+
+        v.touch(i);
+      });
+      w.wait();
+    }
+
+    if constexpr(std::same_as<Ch, ChCompton>) {
+      const auto kick = ptr(sam_.ev_.kick);
+      const auto n2p  = ptr(sam_.ev_.n2);
+
+      // atomic: several events may kick one lepton
+      thrust::for_each(w.on_this(), ord0, ord0 + nev, [=](const I e) {
+        if(n2p[e] <= 0) { return; }
+        const auto i = rec[acc[e]].j;
+        for(auto k = 0uz; k < 3uz; ++k) {
+          sstd::atomic_add(&v.vel[i][k], kick[3 * e + k]);
+        }
+      });
+
+      // once all kicks are in; touching a lepton hit by several events repeats the same
+      thrust::for_each(w.on_this(), ord0, ord0 + nev, [=](const I e) {
+        const auto i = rec[acc[e]].j;
+        if(v.alive(i)) { v.touch(i); }
+      });
+      w.wait();
+    }
+  }
+};
 
 void
   Sampler::twobody(Ctx& c, const Channel which)
 {
-  const auto l      = static_cast<int>(which);
-  const auto b_tile = c.t->field.b_tile;
-
-  switch(which) {
-    case Channel::compton_m: twobody(c, ChCompton { Species::em }, l); break;
-    case Channel::compton_p: twobody(c, ChCompton { Species::ep }, l); break;
-    case Channel::pairann: twobody(c, ChAnn {}, l); break;
-    case Channel::photann: twobody(c, ChGG {}, l); break;
-    case Channel::ssa_m:
-      twobody(c, ChSSA { Species::em, b_tile, box.x_min }, l);
-      break;
-    case Channel::ssa_p:
-      twobody(c, ChSSA { Species::ep, b_tile, box.x_min }, l);
-      break;
-    default: throw std::runtime_error { "twobody: not a two-body channel" };
-  }
+  with_record(which, c.t->field.b_tile, box.x_min, [&](const auto& ch) {
+    TwoBody { *this, c, ch, which }.run();
+  });
 }
-
-void
-  Sampler::apply_dgam(Ctx& c, const Species s, const std::size_t na)
-{
-  const auto v    = c.v[static_cast<std::size_t>(s)];
-  const auto dgam = thrust::raw_pointer_cast(dgam_.data());
-  const auto acc  = thrust::raw_pointer_cast(acc_.data());
-  const auto lj   = thrust::raw_pointer_cast(lane_j_.data());
-  const auto w    = tyvi::mdgrid_work {};
-  const auto e0   = thrust::counting_iterator<I>(0);
-
-  // all sums are in; the first event to reach a lepton takes its sum and leaves zero,
-  // so the lepton is rescaled once and dgam is clean for the next pass
-  thrust::for_each(
-    w.on_this(),
-    e0,
-    e0 + static_cast<std::ptrdiff_t>(na),
-    [=](const I e) {
-      const auto i  = lj[acc[e]];
-      const auto dg = static_cast<double>(sstd::atomic_exchange(&dgam[i], 0.0f));
-      if(dg <= 0.0 or not v.alive(i)) { return; }
-
-      // rescale |u| to the energy g0 + dg, on the mass shell
-      const auto u0 = v.u(i);
-      const auto g0 = sstd::sqrt(1.0 + toolbox::dot(u0, u0));
-      const auto g1 = g0 + dg;
-      v.set_u(
-        i,
-        u0 *
-          (sstd::sqrt(g1 * g1 - 1.0) / sstd::sqrt(sstd::max(g0 * g0 - 1.0, 1e-300))));
-
-      v.touch(i);
-    });
-  w.wait();
-}
-
-void
-  Sampler::apply_kicks(Ctx& c, const Species s, const std::size_t na)
-{
-  const auto v    = c.v[static_cast<std::size_t>(s)];
-  const auto acc  = thrust::raw_pointer_cast(acc_.data());
-  const auto lj   = thrust::raw_pointer_cast(lane_j_.data());
-  const auto kick = thrust::raw_pointer_cast(ev_kick_.data());
-  const auto n2p  = thrust::raw_pointer_cast(ev_n2_.data());
-  const auto w    = tyvi::mdgrid_work {};
-  const auto e0   = thrust::counting_iterator<I>(0);
-
-  // atomic: several events may kick one lepton
-  thrust::for_each(
-    w.on_this(),
-    e0,
-    e0 + static_cast<std::ptrdiff_t>(na),
-    [=](const I e) {
-      if(n2p[e] <= 0) { return; }
-      const auto i = lj[acc[e]];
-      for(auto k = 0uz; k < 3uz; ++k) { sstd::atomic_add(&v.vel[i][k], kick[3 * e + k]); }
-    });
-
-  // once all kicks are in; touching a lepton hit by several events repeats the same
-  thrust::for_each(
-    w.on_this(),
-    e0,
-    e0 + static_cast<std::ptrdiff_t>(na),
-    [=](const I e) {
-      const auto i = lj[acc[e]];
-      if(v.alive(i)) { v.touch(i); }
-    });
-  w.wait();
-}
-
 
 // ---------------------------------------------------------------- diagnostics
 double
@@ -845,8 +825,8 @@ double
   const auto N2 = box.N2();
   const auto fv = t.field;  // the partner's field, for the absorption rate
 
-  // brute-force sum over every (incident, partner) pair of the channel's record type
-  auto run = [&](const auto& ch) {
+  // brute-force sum over every (incident, partner) pair of the channel
+  return with_record(which, fv.b_tile, box.x_min, [&](const auto& ch) {
     const auto i1 = static_cast<std::size_t>(std::remove_cvref_t<decltype(ch)>::t1);
     const auto i2 = static_cast<std::size_t>(ch.t2);
     auto& c1      = *t.con[i1];
@@ -871,7 +851,7 @@ double
           if(not v2.alive(j)) { continue; }
           const auto wj = v2.w(j);
           s += sstd::max(wi, wj) * (weight ? sstd::min(wi, wj) : 1.0) * 2.0 *
-               pair_rate(ch, fv, p1, v2.u(j));
+               ch.rate(p1, v2.u(j), fv);
         }
         return s;
       },
@@ -880,17 +860,7 @@ double
 
     if(i1 == i2) { tot *= 0.5; }  // each unordered pair once
     return tot / N2;
-  };
-
-  switch(which) {
-    case Channel::compton_m: return run(ChCompton { Species::em });
-    case Channel::compton_p: return run(ChCompton { Species::ep });
-    case Channel::pairann: return run(ChAnn {});
-    case Channel::photann: return run(ChGG {});
-    case Channel::ssa_m: return run(ChSSA { Species::em, fv.b_tile, box.x_min });
-    case Channel::ssa_p: return run(ChSSA { Species::ep, fv.b_tile, box.x_min });
-    default: throw std::runtime_error { "pair_sum: not a two-body channel" };
-  }
+  });
 }
 
 }  // namespace qed
