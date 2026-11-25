@@ -986,7 +986,8 @@ void
       I vv2;
       if constexpr(Ch::kind == Kind::convert) {
         // a consumed partner: a slot drawn in stratum p2 of the column's M2
-        const auto p2 = static_cast<std::uint64_t>(off2[g] + (lane - Mstart[g]));
+        const auto p2 = static_cast<std::uint64_t>(off2[g]) +
+                        static_cast<std::uint64_t>(lane - Mstart[g]);
         const auto M2c = static_cast<std::uint64_t>(M2[cb2]);
         vv2            = (shift(0, cb2, n2) + stratum(p2, M2c, n2, rng)) % n2;
       } else {
