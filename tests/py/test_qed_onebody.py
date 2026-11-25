@@ -126,7 +126,7 @@ class qed_onebody(CheckMixin, unittest.TestCase):
 
         slow = lam <= 1.0
         f = np.where(slow, ph.facc_syn(gam, xm, acc, kappa), 1.0)
-        p = np.where(slow, 1 - np.exp(-lam / f), 1.0)
+        p = np.where(slow, lam / f, 1.0)
         mult = np.where(slow, 1.0,
                         (gam - ph.gamma_cooled(gam, lam, xm, b, N1)) / np.maximum(xm, 1e-300))
         return float(p.sum()), float(np.sum(w * f * p * mult)), float(np.mean(p * f * mult * xm))

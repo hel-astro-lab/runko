@@ -1620,11 +1620,11 @@ void
         if(lam <= 0.0) { return; }
         const auto xm = syn::xmean(s, gam, false, x_min);
 
-        // slow: resolved; f: emissions merged into one LP
-        const auto z    = sstd::max(rngA.uniform(), 1e-300);
+        // slow: resolved; f: emissions merged into one LP, which fires with the
+        // probability lam / f <= 1, so that the emissions of a step average lam
         const auto slow = lam <= 1.0;
         const auto f    = slow ? facc_syn(gam, xm, acc_syn, kappa) : 1.0;
-        const auto fire = slow ? -sstd::log(z) < lam / f : true;
+        const auto fire = slow ? rngA.uniform() < lam / f : true;
 
         auto dgu = 0.0;  // energy the continuous cooling took
         if(not slow) {

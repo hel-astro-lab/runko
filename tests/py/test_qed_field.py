@@ -56,7 +56,7 @@ class qed_field(CheckMixin, unittest.TestCase):
             Bx = np.where(pos[:, 0] < NC / 2, B0, B0 / 4)
             b_eff = b0 * sina * Bx / B0
             lam = ph.rate_syn(uu[:, 0], uu[:, 1], uu[:, 2], b_eff, 0.0, False) / N1
-            p = 1 - np.exp(-lam)
+            p = lam                     # resolved: lam ~ 0.07
             left = pos[:, 0] < NC / 2
             exp = np.array([p[left].sum(), p[~left].sum()])
 
