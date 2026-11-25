@@ -75,7 +75,7 @@ void
   // random streams, the lane being the slot: A fires, C draws the photon and its copies
   const auto keyA  = runko::rng_key(par.seed, istep_, 0, stream::onebody(which, 0));
   const auto keyC  = runko::rng_key(par.seed, istep_, 0, stream::onebody(which, 1));
-  const auto ds    = ptr(dstat_) + l * d_count;
+  const auto ds    = ptr(dstat_) + l;
   const auto stage = AtParent { v, this->stager(n) };  // one photon per lepton
 
   const auto fv    = c.t->field;
@@ -127,9 +127,9 @@ void
              sstd::sqrt(sstd::max(gam * gam - 1.0, 1e-300))));
       v.touch(i);
 
-      sstd::atomic_add(&ds[d_fired], 1.0);
-      sstd::atomic_add(&ds[d_wem], em.wem);
-      sstd::atomic_add(&ds[d_facc], plan.f);
+      sstd::atomic_add(&ds->fired, 1.0);
+      sstd::atomic_add(&ds->wem, em.wem);
+      sstd::atomic_add(&ds->facc, plan.f);
 
       // the photon LP, split or rouletted by the resolution function
       const auto cp = copies(f_res(x, a_res, x_ref), em.wem, rngC, n_cap);

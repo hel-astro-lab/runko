@@ -68,10 +68,6 @@ constexpr int
   return lo;
 }
 
-// outcome of a thinning lane: weight stage failed, accepted, virtual (a dead or unkeyed
-// slot), weight stage passed; the counts come from these, not from contended atomics
-enum LaneState : std::uint8_t { L_WFAIL = 0, L_ACC = 1, L_VIRT = 2, L_WPASS = 3 };
-
 // ---------------------------------------------------------------- reactions
 
 /// An accepted event as its react lane holds it.
@@ -197,7 +193,9 @@ class TwoBody {
   SideView s1_ {}, s2_ {};  // their sides, as of the start of the channel
 
   ChannelStats& st_;
-  double* const ds_;  // the channel's device statistics
+  Sampler::DeviceStats* const ds_;  // the statistics its kernels sum
+
+  using Outcome = Sampler::Outcome;
 
   static inline const auto g0   = thrust::counting_iterator<int>(0);  // groups, pairs
   static inline const auto ord0 = thrust::counting_iterator<I>(0);    // lanes, events
@@ -216,7 +214,7 @@ public:
     i1_ { static_cast<std::size_t>(Ch::t1) },
     i2_ { static_cast<std::size_t>(ch.t2) },
     st_ { sam.stats.ch[static_cast<std::size_t>(which)] },
-    ds_ { ptr(sam.dstat_) + static_cast<std::size_t>(which) * Sampler::d_count }
+    ds_ { ptr(sam.dstat_) + static_cast<std::size_t>(which) }
   {
   }
 
@@ -347,8 +345,8 @@ private:
       rowsum[ca] = sum;
 
       // the envelope-weighted mean of the rate bound, a measure of the bins' tightness
-      sstd::atomic_add(&ds[Sampler::d_shnum], sum_sh);
-      sstd::atomic_add(&ds[Sampler::d_shden], sum);
+      sstd::atomic_add(&ds->shnum, sum_sh);
+      sstd::atomic_add(&ds->shden, sum);
     });
 
     thrust::for_each(w.on_this(), g0, g0 + ncb, [=](const int cb) {
@@ -475,7 +473,7 @@ private:
           if(M[ca * nb + bb] > M[ca * nb + imax]) { imax = bb; }
         }
         --M[ca * nb + imax];
-        sstd::atomic_add(&ds[Sampler::d_clamped], 1.0);
+        sstd::atomic_add(&ds->clamped, 1.0);
       }
     });
 
@@ -493,7 +491,7 @@ private:
             if(M[(cc * nb + a) * nb + bb] > M[(cc * nb + imax) * nb + bb]) { imax = a; }
           }
           --M[(cc * nb + imax) * nb + bb];
-          sstd::atomic_add(&ds[Sampler::d_clamped], 1.0);
+          sstd::atomic_add(&ds->clamped, 1.0);
         }
 
         // strata bases: disjoint across bin pairs
@@ -578,11 +576,11 @@ private:
 
       const auto i = s1.pick(cb1, vv1), j = s2.pick(cb2, vv2);
       auto& ln = rec[lane];
-      ln       = { .i = i, .j = j, .S = 0.0, .g = g, .state = L_WFAIL };
+      ln = { .i = i, .j = j, .S = 0.0, .g = g, .outcome = Outcome::weight_failed };
 
       // a dead slot, or one a kick dropped from its key: nothing to react
       if(not(v1.alive(i) and v2.alive(j)) or v1.lay.skey[i] < 0 or v2.lay.skey[j] < 0) {
-        ln.state = L_VIRT;
+        ln.outcome = Outcome::dead;
         return;
       }
 
@@ -594,7 +592,7 @@ private:
       const auto wm = wmp[g];
       const auto wf = sstd::min(pair_weight(wi, wj, 1.0) / wm, 1.0);
       if(not(u < wf)) { return; }
-      ln.state = L_WPASS;
+      ln.outcome = Outcome::weight_passed;
 
       const auto p1v = v1.u(i), p2v = v2.u(j);
       const auto rate = ch.rate(p1v, p2v, fv);
@@ -606,13 +604,15 @@ private:
       }
 
       ln.S = event_size(wi, wj, fk);
-      if(u < (pair_weight(wi, wj, fk) / wm) * rate / sh[g]) { ln.state = L_ACC; }
+      if(u < (pair_weight(wi, wj, fk) / wm) * rate / sh[g]) {
+        ln.outcome = Outcome::accepted;
+      }
     });
 
     sam_.acc_.resize(Mtot);
     const auto acc_end =
       thrust::copy_if(w.on_this(), ord0, ord0 + nlane, sam_.acc_.begin(), [=](const I lane) {
-        return rec[lane].state == L_ACC;
+        return rec[lane].outcome == Outcome::accepted;
       });
     const auto na = static_cast<std::size_t>(acc_end - sam_.acc_.begin());
     st_.acc += static_cast<double>(na);
@@ -625,8 +625,8 @@ private:
       ord0 + nlane,
       [=](const I lane) {
         return V2(
-          rec[lane].state == L_VIRT ? 1.0 : 0.0,
-          rec[lane].state == L_WPASS ? 1.0 : 0.0);
+          rec[lane].outcome == Outcome::dead ? 1.0 : 0.0,
+          rec[lane].outcome == Outcome::weight_passed ? 1.0 : 0.0);
       },
       V2 {},
       [](const V2& a, const V2& b) { return a + b; });

@@ -35,14 +35,6 @@
 
 namespace qed {
 
-namespace {
-
-
-// slots of dbudget_, the per-call budget summed on the device
-enum BStat : int { b_E = 0, b_W, b_count };
-
-}  // namespace
-
 void
   Sampler::inject_pairs_plaw(
     TileView& t,
@@ -74,9 +66,9 @@ void
 
   Ctx c { t, par.nbin };
   const auto stage = this->stager(2 * n);
-  thrust::fill(dbudget_.begin(), dbudget_.end(), 0.0);
+  tally_[0] = Tally {};
 
-  const auto db   = thrust::raw_pointer_cast(dbudget_.data());
+  const auto db   = ptr(tally_);
   const auto key  = runko::rng_key(par.seed, istep_, 0, stream::pairs);
   const auto mins = t.mins, maxs = t.maxs;
   const auto lay = c.v[1].lay;
@@ -110,14 +102,14 @@ void
           1.0 / (1.0 - p));  // inverse cumulative of gamma^-p
         const auto u = sstd::sqrt(gam * gam - 1.0) * iso_dir(rng);
         stage(u, pos, wl, 1, cell, static_cast<Species>(sp), 0);
-        sstd::atomic_add(&db[b_E], wl * gam);
+        sstd::atomic_add(&db->E, wl * gam);
       }
     });
   w.wait();
 
   {
-    thrust::host_vector<double> h = dbudget_;
-    budget.inj_E += h[b_E];
+    const Tally h = tally_[0];
+    budget.inj_E += h.E;
     budget.inj_W += 2.0 * static_cast<double>(n) * wl;
   }
 
@@ -144,9 +136,9 @@ void
 
   Ctx c { t, par.nbin };
   const auto stage = this->stager(n);
-  thrust::fill(dbudget_.begin(), dbudget_.end(), 0.0);
+  tally_[0] = Tally {};
 
-  const auto db   = thrust::raw_pointer_cast(dbudget_.data());
+  const auto db   = ptr(tally_);
   const auto key  = runko::rng_key(par.seed, istep_, 0, stream::photons);
   const auto mins = t.mins, maxs = t.maxs;
   const auto lay = c.v[0].lay;
@@ -184,13 +176,13 @@ void
       const auto k   = x * iso_dir(rng);
       const auto bit = static_cast<int>(rng.uniform() < 0.5);
       stage(k, pos, wph, 1, lay.cell_of(pos[0], pos[1], pos[2]), Species::ph, bit);
-      sstd::atomic_add(&db[b_E], wph * x);
+      sstd::atomic_add(&db->E, wph * x);
     });
   w.wait();
 
   {
-    thrust::host_vector<double> h = dbudget_;
-    budget.inj_E += h[b_E];
+    const Tally h = tally_[0];
+    budget.inj_E += h.E;
   }
 
   this->place(c);
@@ -231,8 +223,8 @@ void
 
   if(tot <= 0.0) { return; }
   const auto D0 = box.dE(ell) / tot;
-  thrust::fill(dbudget_.begin(), dbudget_.end(), 0.0);
-  const auto db = thrust::raw_pointer_cast(dbudget_.data());
+  tally_[0] = Tally {};
+  const auto db = ptr(tally_);
 
   // the kicks: one lane per lepton slot of either species
   for(auto s = 1uz; s <= 2uz; ++s) {
@@ -257,7 +249,7 @@ void
                         Vec3(sd * rng.normal(), sd * rng.normal(), sd * rng.normal());
 
         sstd::atomic_add(
-          &db[b_E],
+          &db->E,
           v.w(i) * (sstd::sqrt(1.0 + toolbox::dot(p1, p1)) - sstd::sqrt(1.0 + p2)));
         v.set_u(i, p1);
         v.touch(i);
@@ -265,8 +257,8 @@ void
   }
   w.wait();
 
-  thrust::host_vector<double> h = dbudget_;
-  budget.heat_E += h[b_E];
+  const Tally h = tally_[0];
+  budget.heat_E += h.E;
 }
 
 void
@@ -286,8 +278,8 @@ void
     esc_mu_hist_.assign(static_cast<std::size_t>(NESC) * NMU, 0.0);
   }
 
-  thrust::fill(dbudget_.begin(), dbudget_.end(), 0.0);
-  const auto db   = thrust::raw_pointer_cast(dbudget_.data());
+  tally_[0] = Tally {};
+  const auto db   = ptr(tally_);
   const auto hist = thrust::raw_pointer_cast(esc_hist_.data());
   const auto hmu  = thrust::raw_pointer_cast(esc_mu_hist_.data());
 
@@ -312,8 +304,8 @@ void
 
       const auto wg = v.w(i);
       v.kill(i);
-      sstd::atomic_add(&db[b_E], x * wg);
-      sstd::atomic_add(&db[b_W], wg);
+      sstd::atomic_add(&db->E, x * wg);
+      sstd::atomic_add(&db->W, wg);
 
       const auto b = sstd::clamp(
         static_cast<int>(sstd::floor((sstd::log(x) - llo) / dl)),
@@ -328,9 +320,9 @@ void
     });
   w.wait();
 
-  thrust::host_vector<double> h = dbudget_;
-  budget.esc_E += h[b_E];
-  budget.esc_W += h[b_W];
+  const Tally h = tally_[0];
+  budget.esc_E += h.E;
+  budget.esc_W += h.W;
 }
 
 // zeros before the first escape

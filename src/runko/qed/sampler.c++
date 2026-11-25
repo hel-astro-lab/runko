@@ -71,9 +71,10 @@ Sampler::Sampler(
     enabled[i] = on;
   }
 
-  counters_.assign(c_count, 0);
-  dstat_.assign(N_CHANNELS * static_cast<std::size_t>(d_count), 0.0);
-  dbudget_.assign(2, 0.0);
+  nstaged_.assign(1, 0);
+  placed_.assign(1, Placed {});
+  dstat_.assign(N_CHANNELS, DeviceStats {});
+  tally_.assign(1, Tally {});
 }
 
 thrust::device_vector<double>&
@@ -206,8 +207,6 @@ void
     t.ids_used[s] = 0;
   }
 
-  thrust::fill(counters_.begin(), counters_.end(), 0);
-
   // ---- the channels in random order, each reading the states the previous one left;
   // the splitting error is second order in the rates and cancels in expectation
   auto order = std::vector<int> {};
@@ -242,14 +241,14 @@ Stager
   Sampler::stager(const std::size_t n)
 {
   staged_.resize(n);
-  thrust::fill(counters_.begin(), counters_.begin() + 1, 0);
-  return Stager { ptr(staged_), ptr(counters_) + c_staged };
+  nstaged_[0] = 0;
+  return Stager { ptr(staged_), ptr(nstaged_) };
 }
 
 void
   Sampler::place(Ctx& c)
 {
-  const auto nst = static_cast<std::size_t>(counters_[c_staged]);  // staged records
+  const auto nst = static_cast<std::size_t>(nstaged_[0]);  // staged records
   if(nst == 0) { return; }
 
   const auto w   = tyvi::mdgrid_work {};
@@ -282,8 +281,8 @@ void
   }
   c.refresh_all();  // the containers were resized
 
-  thrust::fill(counters_.begin() + c_tail0, counters_.end(), 0);
-  const auto cnt = thrust::raw_pointer_cast(counters_.data());
+  placed_[0]     = Placed {};
+  const auto cnt = ptr(placed_);
   const auto v   = c.v;
   const auto idb = c.t->id_base;  // first free id per species
 
@@ -304,7 +303,7 @@ void
         const auto id =
           idb[s] +
           static_cast<runko::prtc_id_type>(
-            sstd::atomic_fetch_add(&cnt[c_id0 + rec.species], std::int32_t { 1 }));
+            sstd::atomic_fetch_add(&cnt->id[rec.species], std::int32_t { 1 }));
 
         // the copy's rank behind what the key already holds
         const auto f    = sstd::atomic_fetch_add(&lay.fill[kk], I { 1 });
@@ -322,17 +321,17 @@ void
           // widen the key's bounds, so the envelopes of the channels still to come this
           // step stay upper bounds
           lay.widen(kk, e, rec.w);
-          sstd::atomic_add(&cnt[c_slack], std::int32_t { 1 });
+          sstd::atomic_add(&cnt->slack, std::int32_t { 1 });
         } else {
           if(fits) {
             // the arrival stays and the fill now counts it in the key: widen by it too
             lay.widen(kk, static_cast<float>(pv.e(at)), static_cast<float>(pv.w(at)));
-            sstd::atomic_add(&cnt[c_held], std::int32_t { 1 });
+            sstd::atomic_add(&cnt->held, std::int32_t { 1 });
           }
           const auto t =
-            sstd::atomic_fetch_add(&cnt[c_tail0 + rec.species], std::int32_t { 1 });
+            sstd::atomic_fetch_add(&cnt->tail[rec.species], std::int32_t { 1 });
           slot = tail_base[s] + static_cast<I>(t);  // inert until the next sort
-          sstd::atomic_add(&cnt[c_tailn], std::int32_t { 1 });
+          sstd::atomic_add(&cnt->tailn, std::int32_t { 1 });
         }
 
         sstd::atomic_add(&lay.prod[kk], I { 1 });  // demand, whether or not it fitted
@@ -349,31 +348,32 @@ void
 
   {
     // ids consumed and placement statistics
-    thrust::host_vector<std::int32_t> h = counters_;
+    const Placed h = placed_[0];
     for(auto s = 0uz; s < 3uz; ++s) {
-      const auto used = h[static_cast<std::size_t>(c_id0) + s];
-      c.t->ids_used[s] += static_cast<std::size_t>(used);
-      c.t->id_base[s] += static_cast<runko::prtc_id_type>(used);
+      c.t->ids_used[s] += static_cast<std::size_t>(h.id[s]);
+      c.t->id_base[s] += static_cast<runko::prtc_id_type>(h.id[s]);
     }
-    stats.slackprod += h[c_slack];
-    stats.tailprod += h[c_tailn];
-    stats.heldprod += h[c_held];
+    stats.slackprod += h.slack;
+    stats.tailprod += h.tailn;
+    stats.heldprod += h.held;
   }
 }
 
-// Each field is written by one side only, so the sum is exact; d_fired is the one-body
+// Each field is written by one side only, so the sum is exact; fired is the one-body
 // accepted count.
 ChannelStats
-  Sampler::channel_snap(const std::size_t l, const thrust::host_vector<double>& h) const
+  Sampler::channel_snap(
+    const std::size_t l,
+    const thrust::host_vector<DeviceStats>& h) const
 {
-  auto s       = stats.ch[l];
-  const auto d = h.data() + l * static_cast<std::size_t>(d_count);
-  s.acc += d[d_fired];
-  s.facc += d[d_facc];
-  s.wem += d[d_wem];
-  s.clamped += d[d_clamped];
-  s.shbar_num += d[d_shnum];
-  s.shbar_den += d[d_shden];
+  auto s        = stats.ch[l];
+  const auto& d = h[l];
+  s.acc += d.fired;
+  s.facc += d.facc;
+  s.wem += d.wem;
+  s.clamped += d.clamped;
+  s.shbar_num += d.shnum;
+  s.shbar_den += d.shden;
   return s;
 }
 
@@ -381,7 +381,7 @@ ChannelStats
 std::map<std::string, double>
   Sampler::counts() const
 {
-  const thrust::host_vector<double> h = dstat_;
+  const thrust::host_vector<DeviceStats> h = dstat_;
   std::map<std::string, double> m;
   for(auto i = 0uz; i < N_CHANNELS; ++i) {
     if(enabled[i]) { m[NAMES[i]] = channel_snap(i, h).acc; }
@@ -393,7 +393,7 @@ std::map<std::string, double>
 std::map<std::string, double>
   Sampler::moved() const
 {
-  const thrust::host_vector<double> h = dstat_;
+  const thrust::host_vector<DeviceStats> h = dstat_;
   std::map<std::string, double> m;
   for(auto i = 0uz; i < N_CHANNELS; ++i) {
     if(enabled[i]) { m[NAMES[i]] = channel_snap(i, h).wmoved; }
@@ -425,7 +425,7 @@ std::string
     stats.live[2] / ns);
   o << std::format("   cell-kernel lanes      : {:.0f}\n", stats.cell_lanes / ns);
 
-  const thrust::host_vector<double> h = dstat_;
+  const thrust::host_vector<DeviceStats> h = dstat_;
   for(auto i = 0uz; i < N_CHANNELS; ++i) {
     if(not enabled[i]) { continue; }
     const auto s = channel_snap(i, h);

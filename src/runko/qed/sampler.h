@@ -150,13 +150,17 @@ private:
     thrust::device_vector<runko::index_t> first;
   } strata_;
 
+  /// How the thinning of a lane ended: at the weight stage, accepted, on a dead or
+  /// unkeyed slot, or past the weight stage and rejected by the rate.
+  enum class Outcome : std::uint8_t { weight_failed, accepted, dead, weight_passed };
+
   /// One envelope event: the slot pair it proposes, the weight its event would move,
-  /// its bin pair and how the thinning ended.
+  /// its bin pair and how its thinning ended.
   struct Lane {
     runko::index_t i, j;
     double S;
     std::int32_t g;
-    std::uint8_t state;
+    Outcome outcome;
   };
   thrust::device_vector<Lane> lanes_;
 
@@ -185,33 +189,28 @@ private:
     thrust::device_vector<std::int32_t> keys;
   } round_;
 
-  thrust::device_vector<Staged> staged_;          // products of one channel pass
-  thrust::device_vector<std::int32_t> counters_;  // staged count, tail and id counters
-  thrust::device_vector<double> dstat_;           // device half of the statistics
+  thrust::device_vector<Staged> staged_;         // products of one channel pass
+  thrust::device_vector<std::int32_t> nstaged_;  // their count, one element
+
+  /// Counters of one placement, summed on the device.
+  struct Placed {
+    std::int32_t tail[3];  // tail slots taken, per species
+    std::int32_t id[3];    // ids taken, per species
+    std::int32_t slack;    // products placed in the slack of their key
+    std::int32_t tailn;    // products placed in the tail
+    std::int32_t held;     // of those, the ones whose slack slot held an arrival
+  };
+  thrust::device_vector<Placed> placed_;  // one element
+
+  /// Statistics of a channel that its kernels sum on the device, over the run: the
+  /// one-body events fired, their summed accumulation factor and emitted weight; the
+  /// clamped two-body events, the envelope-weighted rate bound and its weight.
+  struct DeviceStats {
+    double fired, facc, wem, clamped, shnum, shden;
+  };
+  thrust::device_vector<DeviceStats> dstat_;  // per channel
 
   std::uint64_t istep_ { 0 };  // steps taken: the time index of the random streams
-
-  // per-channel slots of dstat_, over the run: one-body events fired, their summed
-  // accumulation factor and emitted weight, clamped events, the envelope-weighted rate
-  // bound and its weight
-  enum DStat : int { d_fired = 0, d_facc, d_wem, d_clamped, d_shnum, d_shden, d_count };
-
-  // slots of counters_: staged records, tail slots per species, products placed in
-  // slack, in the tail, and in the tail since an arrival held their slack slot, ids
-  // taken per species
-  enum Counter : int {
-    c_staged = 0,
-    c_tail0,
-    c_tail1,
-    c_tail2,
-    c_slack,
-    c_tailn,
-    c_held,
-    c_id0,
-    c_id1,
-    c_id2,
-    c_count
-  };
 
   /// Two-body channel: sides, envelope, sub-steps of strata, thinning and reactions.
   void twobody(Ctx& c, Channel which);
@@ -231,9 +230,9 @@ private:
   /// Carry array of a role of channel l, seeded on first use and for a new cell count.
   thrust::device_vector<double>& carry(int l, int role, int ncell);
 
-  /// Statistics of channel l: the host half plus its slice of the device read-back h.
+  /// Statistics of channel l: the host half plus its part of the device read-back h.
   [[nodiscard]] ChannelStats
-    channel_snap(std::size_t l, const thrust::host_vector<double>& h) const;
+    channel_snap(std::size_t l, const thrust::host_vector<DeviceStats>& h) const;
 
   /// Systematic rounding of the event probabilities q into counts out, on the caller's
   /// queue. sorted: the events come cell-ordered, as the two-body lanes do.
@@ -315,7 +314,11 @@ public:
 private:
   thrust::device_vector<double> esc_hist_;     // x ell_x per log bin
   thrust::device_vector<double> esc_mu_hist_;  // the same per (log bin, mu bin)
-  thrust::device_vector<double> dbudget_;      // energy and weight of one call
+  /// Energy and weight a source or sink moved in one call, summed on the device.
+  struct Tally {
+    double E, W;
+  };
+  thrust::device_vector<Tally> tally_;  // one element
 };
 
 }  // namespace qed
