@@ -215,13 +215,13 @@ private:
   // lanes, one per envelope event: the two slots; acc_ lists the accepted lanes
   thrust::device_vector<runko::index_t> lane_i_, lane_j_, acc_;
   thrust::device_vector<std::int32_t> lane_g_;    // bin pair
-  thrust::device_vector<double> lane_f_;          // accumulation factor
+  thrust::device_vector<double> lane_S_;          // weight the event moves
   thrust::device_vector<std::uint8_t> lane_acc_;  // accepted
 
   // events, one per accepted lane: decision probabilities (update, kick, lepton count)
   // and their scan; the rounded decisions and the cell
   thrust::device_vector<double> ev_q1_, ev_q2_, ev_q3_, ev_cs_;
-  thrust::device_vector<double> ev_fs_;  // weight moved, f s
+  thrust::device_vector<double> ev_f_;  // exchanges the partner takes as one
   thrust::device_vector<std::int32_t> ev_n1_, ev_n2_, ev_n3_, ev_cell_;
   thrust::device_vector<runko::index_t> ev_perm_;  // cell order of unsorted events
   thrust::device_vector<std::int32_t> ev_keys_;    // their cells, sorted alongside

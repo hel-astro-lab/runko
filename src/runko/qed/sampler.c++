@@ -9,6 +9,7 @@
 #include "runko/qed/interactions/qed2_comp.h"
 #include "runko/qed/interactions/qed2_gg.h"
 #include "runko/qed/interactions/qed2_ssa.h"
+#include "runko/qed/weights.h"
 #include "runko/tools/math.h"
 #include "runko/tools/random.h"
 #include "thrust/binary_search.h"
@@ -285,20 +286,6 @@ constexpr Copies
   const auto den =
     n >= 1.0 ? static_cast<double>(sstd::max(n_r, 1)) : sstd::max(n, 1e-300);
   return Copies { n_r, s / den };
-}
-
-/// Accumulation factor, the events a lepton takes at once: max(1, kappa (g-1)/dgmax).
-template<typename Ch>
-[[nodiscard]]
-constexpr double
-  fkin(const Ch& ch, const double kappa, const double x, const double g)
-{
-  if constexpr(not Ch::has_dgm) {
-    return 1.0;
-  } else {
-    if(kappa <= 0.0) { return 1.0; }
-    return sstd::max(1.0, kappa * (g - 1.0) / sstd::max(ch.dgmax(x, g), 1e-300));
-  }
 }
 
 /// Staged record of one product at a given position and cell.
@@ -720,17 +707,16 @@ void
         const auto w2  = static_cast<double>(s2.wmax[cb]);
         auto shv       = n1 > 0.0 and n2 > 0.0 ? ch.bound(lo1, hi1, lo2, hi2) : 0.0;
 
-        // weight bound of a merged pair from the two maxima: f_kin is extremal at the
-        // corners of the gamma range, which starts at the threshold g_min
-        auto wmv = sstd::max(w1, w2);
+        // pair weight of the two maxima at the smallest f_kin of the bin pair, which
+        // is extremal at the corners of the gamma range, starting at the threshold
+        auto fk = 1.0;
         if constexpr(Ch::has_dgm) {
-          if(kappa > 0.0) {
-            const auto glo = sstd::max(lo2, Ch::g_min);
-            const auto fk =
-              sstd::min(fkin(ch, kappa, hi1, glo), fkin(ch, kappa, hi1, hi2));
-            wmv = sstd::max(w2, w1 / fk);
-          }
+          const auto glo = sstd::max(lo2, Ch::g_min);
+          fk             = sstd::min(
+            fkin(kappa, glo, ch.dgmax(hi1, glo)),
+            fkin(kappa, hi2, ch.dgmax(hi1, hi2)));
         }
+        const auto wmv = pair_weight(w1, w2, fk);
 
         // envelope: all n1 n2 slot pairs at the bin pair's rate and weight bounds
         auto L = Ch::c_l * n1 * n2 * 2.0 * shv * wmv / N2c;
@@ -946,7 +932,7 @@ void
   lane_acc_.resize(Mtot);
   lane_i_.resize(Mtot);
   lane_j_.resize(Mtot);
-  lane_f_.resize(Mtot);
+  lane_S_.resize(Mtot);
   lane_g_.resize(Mtot);
 
   const auto Mstart = thrust::raw_pointer_cast(Mstart_.data());
@@ -954,7 +940,7 @@ void
   const auto lacc   = thrust::raw_pointer_cast(lane_acc_.data());
   const auto li     = thrust::raw_pointer_cast(lane_i_.data()),
              lj     = thrust::raw_pointer_cast(lane_j_.data());
-  const auto lf     = thrust::raw_pointer_cast(lane_f_.data());
+  const auto lS     = thrust::raw_pointer_cast(lane_S_.data());
 
   const auto v1 = c.v[i1], v2 = c.v[i2];
   const auto fv    = c.t->field;  // the field at the partner, for the absorption rate
@@ -1004,7 +990,7 @@ void
       li[lane]   = i;
       lj[lane]   = j;
       lg[lane]   = g;
-      lf[lane]   = 1.0;
+      lS[lane]   = 0.0;
       lacc[lane] = L_WFAIL;
 
       // a dead slot, or one a kick dropped from its key: nothing to react
@@ -1013,29 +999,27 @@ void
         return;
       }
 
-      // two stages on one uniform: the weight at its largest merged value first, then
-      // the effective weight and the rate, a threshold the first times a factor <= 1
+      // two stages on one uniform: the pair weight at its largest, without merging,
+      // from the weights alone; then the pair weight and the rate from the momenta, a
+      // threshold the first times a factor <= 1
       const auto u  = rng.uniform();
       const auto wi = v1.w(i), wj = v2.w(j);
       const auto wm = wmp[g];
-      const auto wf = sstd::min(sstd::max(wi, wj) / wm, 1.0);
+      const auto wf = sstd::min(pair_weight(wi, wj, 1.0) / wm, 1.0);
       if(not(u < wf)) { return; }
       lacc[lane] = L_WPASS;
 
       const auto p1v = v1.u(i), p2v = v2.u(j);
       const auto rate = pair_rate(ch, fv, p1v, p2v);
-      auto weff       = sstd::max(wi, wj);  // effective weight of the merged pair
+      auto fk         = 1.0;
       if constexpr(Ch::has_dgm) {
-        if(kappa > 0.0) {
-          // heavy-light merging of f events: effective weight max(w_j, w_i / f_kin)
-          const auto x   = toolbox::norm(p1v);
-          const auto gam = sstd::sqrt(1.0 + toolbox::dot(p2v, p2v));
-          weff           = sstd::max(wj, wi / fkin(ch, kappa, x, gam));
-          lf[lane]       = sstd::max(wi, wj) / weff;
-        }
+        const auto x   = toolbox::norm(p1v);
+        const auto gam = sstd::sqrt(1.0 + toolbox::dot(p2v, p2v));
+        fk             = fkin(kappa, gam, ch.dgmax(x, gam));
       }
 
-      if(u < (weff / wm) * rate / sh[g]) { lacc[lane] = L_ACC; }
+      lS[lane] = event_size(wi, wj, fk);
+      if(u < (pair_weight(wi, wj, fk) / wm) * rate / sh[g]) { lacc[lane] = L_ACC; }
     });
 
   acc_.resize(Mtot);
@@ -1069,10 +1053,11 @@ void
     return;
   }
 
-  // ---- decide: what an event does to its parents follows from their weights and the
-  // merging factor alone, so it is settled before the final state is drawn
+  // ---- decide: what an event does to its parents follows from their weights and its
+  // size alone, so it is settled before the final state is drawn
   // q1, q2: the update or removal probability of parent 1, 2; q3: the lepton pairs
-  // to create (photon-photon); n1p, n2p, n3p: their carry-rounded decisions
+  // to create (photon-photon); n1p, n2p, n3p: their carry-rounded decisions; ef: the
+  // exchanges the partner takes as one
   ev_q1_.resize(na);
   ev_q2_.resize(na);
   ev_q3_.resize(na);
@@ -1080,7 +1065,7 @@ void
   ev_n2_.resize(na);
   ev_n3_.resize(na);
   ev_cell_.resize(na);
-  ev_fs_.resize(na);
+  ev_f_.resize(na);
 
   const auto acc   = thrust::raw_pointer_cast(acc_.data());
   const auto q1    = thrust::raw_pointer_cast(ev_q1_.data()),
@@ -1090,7 +1075,7 @@ void
              n2p   = thrust::raw_pointer_cast(ev_n2_.data());
   const auto n3p   = thrust::raw_pointer_cast(ev_n3_.data());
   const auto ecell = thrust::raw_pointer_cast(ev_cell_.data());
-  const auto efs   = thrust::raw_pointer_cast(ev_fs_.data());  // weight moved
+  const auto ef    = thrust::raw_pointer_cast(ev_f_.data());
 
   const auto wl  = box.w_lep;
   const auto ev0 = thrust::counting_iterator<I>(0);
@@ -1102,15 +1087,16 @@ void
     [=](const I e) {
       const auto lane = acc[e];
       const auto wi = v1.w(li[lane]), wj = v2.w(lj[lane]);
-      const auto f = lf[lane];           // events merged into this one
-      const auto s = sstd::min(wi, wj);  // the weight one event transfers
-      ecell[e]     = lg[lane] / (nb * nb);
-      efs[e]       = f * s;
+      const auto S  = lS[lane];  // the weight the event moves, <= wi
+      const auto n2 = S / wj;    // the exchanges the partner takes
+      ecell[e]      = lg[lane] / (nb * nb);
 
-      // the incident gives up the weight f s, the partner takes f exchanges at once
-      q1[e] = sstd::min(f * s / wi, 1.0);
-      q2[e] = sstd::min(s / wj, 1.0);
-      q3[e] = Ch::pairs ? s / wl : 0.0;
+      // the incident gives up S; the partner takes n2 exchanges, with that probability
+      // while n2 < 1 and as one event beyond
+      q1[e] = S / wi;
+      q2[e] = sstd::min(n2, 1.0);
+      ef[e] = sstd::max(n2, 1.0);
+      q3[e] = Ch::pairs ? S / wl : 0.0;
     });
   // no wait: the rounding and the reactions follow on the same queue
 
@@ -1176,7 +1162,7 @@ void
       auto rng        = runko::Rng { keyC, e };
       const auto lane = acc[e];
       const auto i = li[lane], j = lj[lane];
-      const auto f    = lf[lane];
+      const auto f    = ef[e];
       const auto cell = ecell[e];
       const auto p1v = v1.u(i), p2v = v2.u(j);
 
@@ -1249,7 +1235,7 @@ void
     w.on_this(),
     ev0,
     ev0 + static_cast<std::ptrdiff_t>(na),
-    [=](const I e) { return V2(efs[e], lf[acc[e]]); },
+    [=](const I e) { return V2(lS[acc[e]], ef[e]); },
     V2 {},
     vsum);
   st.wmoved += sums[0];
