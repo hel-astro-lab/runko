@@ -90,10 +90,7 @@ struct PView {
       return;
     }
 
-    const auto ww = static_cast<float>(w(i));
-    sstd::atomic_max(&lay.emax[k], ee);
-    sstd::atomic_min(&lay.emin[k], ee);
-    sstd::atomic_max(&lay.wmax[k], ww);
+    lay.widen(k, ee, static_cast<float>(w(i)));
   }
 };
 

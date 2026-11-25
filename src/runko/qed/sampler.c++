@@ -329,16 +329,12 @@ void
 
           // widen the key's bounds, so the envelopes of the channels still to come this
           // step stay upper bounds
-          sstd::atomic_max(&lay.wmax[kk], rec.w);
-          sstd::atomic_max(&lay.emax[kk], e);
-          sstd::atomic_min(&lay.emin[kk], e);
+          lay.widen(kk, e, rec.w);
           sstd::atomic_add(&cnt[c_slack], std::int32_t { 1 });
         } else {
           if(fits) {
             // the arrival stays and the fill now counts it in the key: widen by it too
-            sstd::atomic_max(&lay.wmax[kk], static_cast<float>(pv.w(at)));
-            sstd::atomic_max(&lay.emax[kk], static_cast<float>(pv.e(at)));
-            sstd::atomic_min(&lay.emin[kk], static_cast<float>(pv.e(at)));
+            lay.widen(kk, static_cast<float>(pv.e(at)), static_cast<float>(pv.w(at)));
             sstd::atomic_add(&cnt[c_held], std::int32_t { 1 });
           }
           const auto t =

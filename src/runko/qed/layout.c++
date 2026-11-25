@@ -245,11 +245,8 @@ void
     const auto k = v.skey[idx[0]];
     if(k < 0) { return; }
     if(idx[0] >= v.b[k] + sstd::min(v.fill[k], v.cap[k])) { return; }
-    const auto e  = energy_of(m, vel_mds[idx][0], vel_mds[idx][1], vel_mds[idx][2]);
-    const auto wg = weighted ? wgt_mds[idx][] : w0;
-    sstd::atomic_max(&v.wmax[k], wg);
-    sstd::atomic_max(&v.emax[k], e);
-    sstd::atomic_min(&v.emin[k], e);
+    const auto e = energy_of(m, vel_mds[idx][0], vel_mds[idx][1], vel_mds[idx][2]);
+    v.widen(k, e, weighted ? wgt_mds[idx][] : w0);
   });
 }
 

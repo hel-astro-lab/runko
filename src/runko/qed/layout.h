@@ -93,6 +93,14 @@ struct [[nodiscard]] LayoutView {
   /// Energy bin of a key.
   [[nodiscard]] constexpr int bin_of_key(const int k) const
   { return (keyed ? k / 2 : k) % nbin; }
+
+  /// Widens the bounds of key k over a member of energy e and weight w.
+  constexpr void widen(const int k, const float e, const float w) const
+  {
+    sstd::atomic_max(&wmax[k], w);
+    sstd::atomic_max(&emax[k], e);
+    sstd::atomic_min(&emin[k], e);
+  }
 };
 
 /// Weight of each LP, payload component 0, of a species with payload (the photons);
