@@ -59,7 +59,7 @@ constexpr double
   dgmax(const double x, const double g)
 { return 4.0 * x * g * g; }
 
-struct [[nodiscard]] Products {
+struct Products {
   Vec3 k1;  // scattered photon
   Vec3 u1;  // recoiled lepton
 };

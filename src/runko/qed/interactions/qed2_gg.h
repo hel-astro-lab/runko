@@ -48,7 +48,7 @@ constexpr double
   return sh == sh and sh < 1e300 ? sstd::min(sh, rate_max) : 0.0;
 }
 
-struct [[nodiscard]] Products {
+struct Products {
   Vec3 p1, p2;  // the caller assigns the charges
 };
 

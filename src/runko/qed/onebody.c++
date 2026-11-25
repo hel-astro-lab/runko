@@ -38,7 +38,7 @@ namespace qed {
 namespace {
 
 /// Stages a product at the position and in the reaction cell of its parent.
-struct [[nodiscard]] AtParent {
+struct AtParent {
   PView v;  // the parent species
   Stager out;
 

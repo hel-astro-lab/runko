@@ -31,7 +31,7 @@
 namespace qed {
 
 /// The knobs of the sampler.
-struct [[nodiscard]] Params {
+struct Params {
   int nbin { 16 };         // energy bins per cell and species
   int ncell_edge { 1 };    // reaction sub-cells per tile edge
   int nsort { 10 };        // steps between padded sorts
@@ -47,7 +47,7 @@ struct [[nodiscard]] Params {
 };
 
 /// Per-channel counters of a run.
-struct [[nodiscard]] ChannelStats {
+struct ChannelStats {
   double M { 0 };        // envelope lanes (two-body), slots (one-body)
   double virt { 0 };     // two-body lanes on a dead slot
   double wpass { 0 };    // lanes past the weight stage
@@ -62,7 +62,7 @@ struct [[nodiscard]] ChannelStats {
 };
 
 /// Counters of a run.
-struct [[nodiscard]] Stats {
+struct Stats {
   std::size_t steps { 0 };
   double cell_lanes { 0 };  // (cell, bin, bin) lanes of the envelope kernels
   std::array<ChannelStats, n_channels> ch {};
@@ -72,7 +72,7 @@ struct [[nodiscard]] Stats {
 };
 
 /// A product of a channel pass, staged before placement.
-struct [[nodiscard]] Staged {
+struct Staged {
   float u[3];            // momentum
   float pos[3];          // position (the parent's)
   float w;               // weight of each copy
@@ -83,7 +83,7 @@ struct [[nodiscard]] Staged {
 };
 
 /// Appends product records to the staging buffer from inside a kernel.
-struct [[nodiscard]] Stager {
+struct Stager {
   Staged* rec;
   std::int32_t* count;  // records staged so far
 
@@ -272,7 +272,7 @@ public:
 
   // ---- sources and sinks of the open box; each accumulates into the budget
 
-  struct [[nodiscard]] Budget {
+  struct Budget {
     double inj_E { 0 }, inj_W { 0 };  // energy and pair depth injected
     double heat_E { 0 };              // energy of the diffusive heating
     double esc_E { 0 }, esc_W { 0 };  // energy and weight escaped

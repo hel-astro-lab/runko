@@ -31,7 +31,7 @@ constexpr float
 { return sstd::sqrt(mass * mass + vx * vx + vy * vy + vz * vz); }
 
 /// Binning and slack rule of an epoch.
-struct [[nodiscard]] LayoutParams {
+struct LayoutParams {
   int nbin;        // energy bins per cell and species
   int ncell_edge;  // reaction sub-cells per tile edge
   double slack;    // slack slots per key, as a fraction of its live LPs
@@ -39,7 +39,7 @@ struct [[nodiscard]] LayoutParams {
 };
 
 /// Device-side tables of a layout, as the kernels read them.
-struct [[nodiscard]] LayoutView {
+struct LayoutView {
   using I = runko::index_t;
   std::int32_t* skey;  // key of every slot, -1 in the tail
   I* b;                // per key: first slot

@@ -71,7 +71,7 @@ constexpr int
 // ---------------------------------------------------------------- reactions
 
 /// An accepted event as its react lane holds it.
-struct [[nodiscard]] Event {
+struct Event {
   PView v1, v2;             // incident and partner species
   I i, j;                   // their slots
   double f;                 // exchanges the partner takes as one

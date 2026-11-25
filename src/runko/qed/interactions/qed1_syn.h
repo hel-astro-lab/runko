@@ -51,7 +51,7 @@ constexpr double
 
 /// Pade parameters (a, b, n) of the cumulative spectrum and the parameters
 /// (l0, linf, kappa) of the effective point of its mean (see rmean).
-struct [[nodiscard]] Shape {
+struct Shape {
   double a, b, n, l0, linf, kappa;
 };
 
@@ -288,7 +288,7 @@ constexpr double
   xmean(const double chi_e, const double gam, const bool kinetic, const double x_min)
 { return xmean(shape(chi_e), gam, kinetic, x_min); }
 
-struct [[nodiscard]] Products {
+struct Products {
   Vec3 k;   // emitted photon
   Vec3 u1;  // recoiled lepton
 };

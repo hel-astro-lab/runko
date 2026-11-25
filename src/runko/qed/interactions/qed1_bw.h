@@ -44,7 +44,7 @@ constexpr double
 
 /// Pade parameters of the cumulative pair spectrum: amplitude a, denominator
 /// coefficients b and c, exponent n.
-struct [[nodiscard]] Shape {
+struct Shape {
   double a, b, c, n;
 };
 
@@ -123,7 +123,7 @@ constexpr double
   return sstd::clamp(up ? re : 1.0 - re, 0.0, 1.0);
 }
 
-struct [[nodiscard]] Products {
+struct Products {
   Vec3 um;  // electron
   Vec3 up;  // positron
 };

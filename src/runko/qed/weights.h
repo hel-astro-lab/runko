@@ -109,7 +109,7 @@ constexpr double
 
 /// What a lepton of energy gam does in a step in which it emits lam photons of mean
 /// energy xm, before any photon is drawn.
-struct [[nodiscard]] EmissionPlan {
+struct EmissionPlan {
   bool resolved;    // below one emission per step
   bool fire;        // an LP is emitted this step
   double f;         // emissions merged into the LP; 1 if unresolved
@@ -142,7 +142,7 @@ constexpr EmissionPlan
 }
 
 /// The emitted LP and its parent once the photon energy x is drawn.
-struct [[nodiscard]] Emitted {
+struct Emitted {
   double g1;   // parent energy after the step
   double wem;  // weight of the photon LP
 };

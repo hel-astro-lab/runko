@@ -24,7 +24,7 @@ using Interp =
     std::declval<std::array<emf::YeeLattice::value_type, 3>>()));
 
 /// The field of a tile as the channels see it.
-struct [[nodiscard]] FieldView {
+struct FieldView {
   bool uniform;   // no lattice: every particle sees b0
   double b0;      // the uniform quantum parameter (the box's b_perp)
   double bscale;  // quantum parameter per unit of code field, b_0/B_0

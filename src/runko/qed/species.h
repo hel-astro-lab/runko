@@ -118,7 +118,7 @@ inline PView
 }
 
 /// What the sampler needs of the tile for one step.
-struct [[nodiscard]] TileView {
+struct TileView {
   FieldView field;
   std::array<pic::ParticleContainer*, 3> con;  // ph, e-, e+
   std::array<Layout*, 3> layout;                    // their layouts
@@ -128,7 +128,7 @@ struct [[nodiscard]] TileView {
 };
 
 /// Containers, layouts and device views of one step.
-struct [[nodiscard]] Ctx {
+struct Ctx {
   TileView* t;             // containers, layouts, extent and ids
   std::array<PView, 3> v;  // views of ph, e-, e+; stale after a resize
   int ncell;               // reaction cells of the tile

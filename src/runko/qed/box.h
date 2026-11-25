@@ -16,7 +16,7 @@ namespace qed {
 
 inline constexpr double lamc_cm = 3.8615926796e-11;  // reduced Compton wavelength, cm
 
-struct [[nodiscard]] Box {
+struct Box {
   double H_lamC;      // tile edge in Compton wavelengths, H/lamC
   double H_box_lamC;  // box edge, which defines ell_B (the tile edge in a 0-D box)
   double dt;          // step in light crossings of the tile, c Delta t/H

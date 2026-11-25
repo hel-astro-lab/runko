@@ -78,7 +78,7 @@ inline constexpr std::uint64_t positions     = 501;  // set_particles (sub = spe
 
 /// The keys one side of a channel spans in every (cell, bin) group: nranges
 /// consecutive keys from stride * group + first.
-struct [[nodiscard]] Side {
+struct Side {
   int stride, first, nranges;
 
   /// The one key of a species without sub-ranges (the leptons).
@@ -91,7 +91,7 @@ struct [[nodiscard]] Side {
 
 /// One side of a two-body channel as the kernels read it: the one or two sub-ranges
 /// of every (cell, bin) seen as one range, and the bounds over them.
-struct [[nodiscard]] SideView {
+struct SideView {
   using I = runko::index_t;
   const I* base0;     // first slot of sub-range 0, per (cell, bin)
   const I* cnt0;      // its slots (live + appended)

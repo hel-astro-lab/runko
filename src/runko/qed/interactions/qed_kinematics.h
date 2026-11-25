@@ -20,7 +20,7 @@ using Vec3 = toolbox::Vec3<double>;
 inline constexpr int trip_cap = 64;
 
 /// Right-handed triad (i, j, k) with k = kvec and ref in the (i, k) plane.
-struct [[nodiscard]] Triad {
+struct Triad {
   Vec3 i, j, k;
 };
 
@@ -53,7 +53,7 @@ constexpr Triad
 }
 
 /// A four-vector as energy and momentum.
-struct [[nodiscard]] FourVec {
+struct FourVec {
   double e;
   Vec3 p;
 };
