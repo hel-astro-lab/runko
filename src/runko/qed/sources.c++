@@ -350,8 +350,11 @@ void
   Sampler::reset_budget()
 {
   budget = Budget {};
-  thrust::fill(esc_hist_.begin(), esc_hist_.end(), 0.0);
-  thrust::fill(esc_mu_hist_.begin(), esc_mu_hist_.end(), 0.0);
+
+  const auto w = tyvi::mdgrid_work {};
+  thrust::fill(w.on_this(), esc_hist_.begin(), esc_hist_.end(), 0.0);
+  thrust::fill(w.on_this(), esc_mu_hist_.begin(), esc_mu_hist_.end(), 0.0);
+  w.wait();
 }
 
 double

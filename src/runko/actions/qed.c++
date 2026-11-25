@@ -220,9 +220,9 @@ void
     at,
     Vec3(0.0, 0.0, 0.0),
     [](const Vec3& a, const Vec3& b) { return a + b; });
+  thrust::sort(w.on_this(), st.babs.begin(), st.babs.end());
   w.wait();
 
-  thrust::sort(st.babs.begin(), st.babs.end());
   st.b_tile     = static_cast<double>(st.babs[st.babs.size() / 2]);
   const auto nb = toolbox::norm(bsum);
   st.bhat       = nb > 0.0 ? bsum / nb : Vec3(0.0, 0.0, 1.0);
