@@ -180,9 +180,9 @@ tile_state
 
   // one layout per role; only the photon keys carry the sub-range bit
   return tile_state { .sp   = sp,
-                      .pops = { Pop { true, 0.0, runko::species_weight(conf, sp[0]) },
-                                Pop { false, pc.at(sp[1]).args().mass, box.w_lep },
-                                Pop { false, pc.at(sp[2]).args().mass, box.w_lep } },
+                      .layouts = { Layout { true, 0.0, runko::species_weight(conf, sp[0]) },
+                                Layout { false, pc.at(sp[1]).args().mass, box.w_lep },
+                                Layout { false, pc.at(sp[2]).args().mass, box.w_lep } },
                       .sampler = Sampler { box, par, channels },
                       .B0      = conf.get<double>("qed_B0").value_or(0.0) };
 }
@@ -292,7 +292,7 @@ TileView
   return TileView {
     .field    = field_view(st, component<emf::YeeLattice>(sim, id, "yee lattice"), gc),
     .con      = { &pc.at(st.sp[0]), &pc.at(st.sp[1]), &pc.at(st.sp[2]) },
-    .pop      = { &st.pops[0], &st.pops[1], &st.pops[2] },
+    .layout   = { &st.layouts[0], &st.layouts[1], &st.layouts[2] },
     .mins     = runko::cast_array<F>(gc.mins()),
     .maxs     = runko::cast_array<F>(gc.maxs()),
     .id_base  = {},
@@ -348,7 +348,7 @@ tile_state&
 
   // the particle exchange appends arrivals behind the last alive slot and so resizes
   // the container; the tables follow it on every access
-  for(auto s = 0uz; s < 3uz; ++s) { st.pops[s].resized(pc.at(st.sp[s])); }
+  for(auto s = 0uz; s < 3uz; ++s) { st.layouts[s].resized(pc.at(st.sp[s])); }
   return st;
 }
 
@@ -489,7 +489,7 @@ void
   con.add_particles(states, payload);
 
   // the container was rebuilt: lay it out again at the next step
-  st.pops[static_cast<std::size_t>(s)].invalidate();
+  st.layouts[static_cast<std::size_t>(s)].invalidate();
 }
 
 void
@@ -545,7 +545,7 @@ void
     });
 
   // the new energies may lie outside the bounds of their keys
-  st.pops[static_cast<std::size_t>(s)].touch_all(con, w);
+  st.layouts[static_cast<std::size_t>(s)].touch_all(con, w);
   w.wait();
 }
 
@@ -555,7 +555,7 @@ bool
   auto& st = state(sim, id);
   auto& pc = containers(sim, id);
   for(auto s = 0uz; s < 3uz; ++s) {
-    if(not st.pops[s].laid(pc.at(st.sp[s]))) { return false; }
+    if(not st.layouts[s].laid(pc.at(st.sp[s]))) { return false; }
   }
 
   return true;
@@ -565,15 +565,15 @@ std::vector<std::int32_t>
   get_slot_keys(runko::simulation_context& sim, const tile_id id, const Species s)
 {
   auto& st = state(sim, id);
-  return st.pops[static_cast<std::size_t>(s)].get_slot_keys(
+  return st.layouts[static_cast<std::size_t>(s)].get_slot_keys(
     containers(sim, id).at(st.sp[static_cast<std::size_t>(s)]));
 }
 
-Pop::Totals
+Layout::Totals
   totals(runko::simulation_context& sim, const tile_id id, const Species s)
 {
   auto& st = state(sim, id);
-  return st.pops[static_cast<std::size_t>(s)].totals(
+  return st.layouts[static_cast<std::size_t>(s)].totals(
     containers(sim, id).at(st.sp[static_cast<std::size_t>(s)]));
 }
 

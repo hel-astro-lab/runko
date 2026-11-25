@@ -24,7 +24,7 @@ namespace qed {
 
 using I = runko::index_t;
 
-Pop::Pop(const bool keyed, const double mass, const double w0) :
+Layout::Layout(const bool keyed, const double mass, const double w0) :
   keyed_ { keyed },
   mass_ { static_cast<float>(mass) },
   w0_ { w0 }
@@ -32,7 +32,7 @@ Pop::Pop(const bool keyed, const double mass, const double w0) :
 }
 
 void
-  Pop::layout(
+  Layout::build(
     pic::ParticleContainer& con,
     const LayoutParams& par,
     const std::array<float, 3> mins,
@@ -224,7 +224,7 @@ void
 }
 
 void
-  Pop::touch_all(pic::ParticleContainer& con, const tyvi::mdgrid_work& w)
+  Layout::touch_all(pic::ParticleContainer& con, const tyvi::mdgrid_work& w)
 {
   // no tables to widen; the next layout builds them
   if(not this->laid(con)) { return; }
@@ -251,7 +251,7 @@ void
 }
 
 LayoutView
-  Pop::view()
+  Layout::view()
 {
   const auto ncell = par_.ncell_edge * par_.ncell_edge * par_.ncell_edge;
   return LayoutView { .skey       = thrust::raw_pointer_cast(skey_.data()),
@@ -275,7 +275,7 @@ LayoutView
 }
 
 void
-  Pop::resized(pic::ParticleContainer& con)
+  Layout::resized(pic::ParticleContainer& con)
 {
   // a container not reordered since changed only at its end; the tables still
   // describe its head
@@ -286,8 +286,8 @@ void
   skey_.resize(con.size(), std::int32_t { -1 });
 }
 
-Pop::Totals
-  Pop::totals(const pic::ParticleContainer& con) const
+Layout::Totals
+  Layout::totals(const pic::ParticleContainer& con) const
 {
   const auto ids_mds  = con.ids_mds();
   const auto vel_mds  = con.vel_mds();
@@ -317,7 +317,7 @@ Pop::Totals
 }
 
 std::vector<std::int32_t>
-  Pop::get_slot_keys(const pic::ParticleContainer& con)
+  Layout::get_slot_keys(const pic::ParticleContainer& con)
 {
   const auto n       = con.size();
   const auto ids_mds = con.ids_mds();
@@ -338,8 +338,8 @@ std::vector<std::int32_t>
   return std::vector<std::int32_t>(h.begin(), h.end());
 }
 
-Pop::Tables
-  Pop::get_tables()
+Layout::Tables
+  Layout::get_tables()
 {
   Tables t;
 

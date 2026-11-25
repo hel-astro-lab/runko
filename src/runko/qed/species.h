@@ -110,10 +110,10 @@ inline PView
 
 /// View of a container and its layout; stale after a resize.
 inline PView
-  make_view(pic::ParticleContainer& con, Pop& pop)
+  make_view(pic::ParticleContainer& con, Layout& layout)
 {
-  auto v = make_view(con, pop.w0());
-  v.lay  = pop.view();
+  auto v = make_view(con, layout.w0());
+  v.lay  = layout.view();
   return v;
 }
 
@@ -121,7 +121,7 @@ inline PView
 struct [[nodiscard]] TileView {
   FieldView field;
   std::array<pic::ParticleContainer*, 3> con;  // ph, e-, e+
-  std::array<Pop*, 3> pop;                     // their layouts
+  std::array<Layout*, 3> layout;                    // their layouts
   std::array<float, 3> mins, maxs;             // tile extent
   std::array<runko::prtc_id_type, 3> id_base;  // first free id per species
   std::array<std::size_t, 3> ids_used;         // returned: ids consumed by the step
@@ -142,7 +142,7 @@ struct [[nodiscard]] Ctx {
 
   void refresh_all()
   {
-    for(auto i = 0uz; i < 3uz; ++i) { v[i] = make_view(*t->con[i], *t->pop[i]); }
+    for(auto i = 0uz; i < 3uz; ++i) { v[i] = make_view(*t->con[i], *t->layout[i]); }
   }
 };
 

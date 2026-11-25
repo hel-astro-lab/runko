@@ -169,8 +169,8 @@ void
                                  .smin       = par.smin };
 
   for(auto s = 0uz; s < 3uz; ++s) {
-    t.pop[s]
-      ->layout(*t.con[s], lp, t.mins, t.maxs, runko::rng_key(par.seed, istep_, s, stream::layout));
+    t.layout[s]
+      ->build(*t.con[s], lp, t.mins, t.maxs, runko::rng_key(par.seed, istep_, s, stream::layout));
   }
 }
 
@@ -179,7 +179,7 @@ void
   Sampler::lay_if_needed(TileView& t, const bool epoch)
 {
   auto need = epoch;
-  for(auto s = 0uz; s < 3uz; ++s) { need = need or not t.pop[s]->laid(*t.con[s]); }
+  for(auto s = 0uz; s < 3uz; ++s) { need = need or not t.layout[s]->laid(*t.con[s]); }
   if(need) { this->layout(t); }
 }
 
@@ -194,7 +194,7 @@ void
     // the PIC push moved particles without widening the key bounds; this sweep keeps
     // every envelope a majorant
     const auto w = tyvi::mdgrid_work {};
-    for(auto s = 0uz; s < 3uz; ++s) { t.pop[s]->touch_all(*t.con[s], w); }
+    for(auto s = 0uz; s < 3uz; ++s) { t.layout[s]->touch_all(*t.con[s], w); }
     w.wait();
   }
 
@@ -277,7 +277,7 @@ void
     tail_base[s] = static_cast<I>(c.t->con[s]->size());
     if(tot[s] > 0) {
       c.t->con[s]->append_dead(tot[s]);
-      c.t->pop[s]->resized(*c.t->con[s]);
+      c.t->layout[s]->resized(*c.t->con[s]);
     }
   }
   c.refresh_all();  // the containers were resized

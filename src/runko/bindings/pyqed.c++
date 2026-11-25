@@ -220,7 +220,7 @@ void
   });
   m_sub.def("get_tables", [](sim_t& sim, const id_t id, const std::string& s) {
     const auto tb =
-      qed::state(sim, id).pops[static_cast<std::size_t>(species_of(s))].get_tables();
+      qed::state(sim, id).layouts[static_cast<std::size_t>(species_of(s))].get_tables();
     py::dict d;
     d["b"]    = to_ndarray(tb.b);
     d["cap"]  = to_ndarray(tb.cap);

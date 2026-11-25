@@ -30,7 +30,7 @@ using tile_id = runko::simulation_context::tile_id_type;
 /// components): the sampler's view of the tile is rebuilt on every call.
 struct tile_state {
   std::array<std::size_t, 3> sp;  // container index of ph, e-, e+
-  std::array<Pop, 3> pops;        // their reaction layouts
+  std::array<Layout, 3> layouts;        // their reaction layouts
   Sampler sampler;
   double B0;  // reference field in code units; 0: the uniform field of the box
 
@@ -138,7 +138,7 @@ void reset_momenta(
 [[nodiscard]] std::vector<std::int32_t>
   get_slot_keys(runko::simulation_context&, tile_id, Species);
 
-[[nodiscard]] Pop::Totals totals(runko::simulation_context&, tile_id, Species);
+[[nodiscard]] Layout::Totals totals(runko::simulation_context&, tile_id, Species);
 
 /// Weights of the live LPs of container ptype in slot order: payload component 0 if the
 /// species has a payload (the photons), else the species weight w{i}.

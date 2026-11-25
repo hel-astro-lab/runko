@@ -115,7 +115,7 @@ template<typename Container>
 
 /// Layout of one species. The container belongs to the tile and is passed to every
 /// call, so a tile may be copied or moved without a stale pointer.
-class [[nodiscard]] Pop {
+class [[nodiscard]] Layout {
   bool keyed_;                              // photons carry the sub-range bit
   float mass_;                              // rest mass: 0 photons, 1 leptons
   double w0_;                               // LP weight without payload: leptons
@@ -139,7 +139,7 @@ class [[nodiscard]] Pop {
 public:
   /// w0 is the weight of every LP of a species without payload; a species with one
   /// carries the weight of each LP as payload component 0.
-  Pop(bool keyed, double mass, double w0);
+  Layout(bool keyed, double mass, double w0);
 
   [[nodiscard]] double w0() const { return w0_; }
 
@@ -151,7 +151,7 @@ public:
 
   /// Groups the live LPs by key with slack behind each group (one reorder of the
   /// container) and builds the tables.
-  void layout(
+  void build(
     pic::ParticleContainer& con,
     const LayoutParams& par,
     std::array<float, 3> mins,

@@ -279,7 +279,7 @@ void
   // tile's own
   const auto tau_T  = tau_ext >= 0.0
                         ? tau_ext
-                        : t.pop[1]->totals(*t.con[1]).W + t.pop[2]->totals(*t.con[2]).W;
+                        : t.layout[1]->totals(*t.con[1]).W + t.layout[2]->totals(*t.con[2]).W;
   const auto dt_esc = dt_ext > 0.0 ? dt_ext : box.dt;
   if(esc_hist_.size() != static_cast<std::size_t>(NESC)) {
     esc_hist_.assign(NESC, 0.0);
