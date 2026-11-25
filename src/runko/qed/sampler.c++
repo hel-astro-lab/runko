@@ -52,6 +52,7 @@ struct ChCompton {
   static constexpr Sel sel2     = Sel::cell;
   static constexpr double c_l   = 1.0;
   static constexpr bool has_dgm = true;
+  static constexpr bool pairs   = false;
   static constexpr double g_min = 1.0;
 
   constexpr double rate(const Vec3& k, const Vec3& u) const { return comp::rate(k, u); }
@@ -70,6 +71,7 @@ struct ChAnn {
   static constexpr Sel sel2     = Sel::cell;
   static constexpr double c_l   = 1.0;
   static constexpr bool has_dgm = false;
+  static constexpr bool pairs   = false;
 
   constexpr double rate(const Vec3& um, const Vec3& up) const
   { return ann::rate(um, up); }
@@ -87,6 +89,7 @@ struct ChGG {
   static constexpr Sel sel2     = Sel::bit1;
   static constexpr double c_l   = 2.0;  // same species split by the photon bit
   static constexpr bool has_dgm = false;
+  static constexpr bool pairs   = true;
 
   constexpr double rate(const Vec3& k1, const Vec3& k2) const
   { return gg::rate(k1, k2); }
@@ -107,6 +110,7 @@ struct ChSSA {
   static constexpr Sel sel2     = Sel::cell;
   static constexpr double c_l   = 1.0;
   static constexpr bool has_dgm = true;
+  static constexpr bool pairs   = false;
   static constexpr double g_min = ssa::GMIN;  // no absorption below the threshold
 
   /// Rate at the lepton's field b, set by its pitch angle in the tile field.
@@ -1065,7 +1069,8 @@ void
     return;
   }
 
-  // ---- react kernel, first half: products and decision probabilities per event
+  // ---- decide: what an event does to its parents follows from their weights and the
+  // merging factor alone, so it is settled before the final state is drawn
   // q1, q2: the update or removal probability of parent 1, 2; q3: the lepton pairs
   // to create (photon-photon); n1p, n2p, n3p: their carry-rounded decisions
   ev_q1_.resize(na);
@@ -1076,7 +1081,6 @@ void
   ev_n3_.resize(na);
   ev_cell_.resize(na);
   ev_fs_.resize(na);
-  ev_p_.resize(6 * na);
 
   const auto acc   = thrust::raw_pointer_cast(acc_.data());
   const auto q1    = thrust::raw_pointer_cast(ev_q1_.data()),
@@ -1086,7 +1090,6 @@ void
              n2p   = thrust::raw_pointer_cast(ev_n2_.data());
   const auto n3p   = thrust::raw_pointer_cast(ev_n3_.data());
   const auto ecell = thrust::raw_pointer_cast(ev_cell_.data());
-  const auto ep    = thrust::raw_pointer_cast(ev_p_.data());
   const auto efs   = thrust::raw_pointer_cast(ev_fs_.data());  // weight moved
 
   const auto wl  = box.w_lep;
@@ -1097,63 +1100,21 @@ void
     ev0,
     ev0 + static_cast<std::ptrdiff_t>(na),
     [=](const I e) {
-      auto rng        = runko::Rng { keyC, e };
       const auto lane = acc[e];
-      const auto i = li[lane], j = lj[lane];
-      const auto f = lf[lane];  // events merged into this one
-      ecell[e]     = lg[lane] / (nb * nb);
-
-      const auto p1v = v1.u(i), p2v = v2.u(j);
-      const auto wi = v1.w(i), wj = v2.w(j);
+      const auto wi = v1.w(li[lane]), wj = v2.w(lj[lane]);
+      const auto f = lf[lane];           // events merged into this one
       const auto s = sstd::min(wi, wj);  // the weight one event transfers
+      ecell[e]     = lg[lane] / (nb * nb);
       efs[e]       = f * s;
 
-      auto ntry = 0;  // proposals of the rejection sampler, which the tests count
-      Vec3 pa, pb;    // (k1, kick), (f x, -), (k0, k1) or (e-, e+)
-
-      if constexpr(Ch::kind == Kind::scatter) {
-        // Compton: the photon scatters with the weight f s; the lepton takes the f
-        // exchanges as one momentum kick, summed with those of other lanes
-        const auto P = comp::sample(p1v, p2v, rng, ntry);
-        pa           = P.k1;
-        pb           = (-f) * (P.k1 - p1v);
-        q1[e]        = sstd::min(f * s / wi, 1.0);
-        q2[e]        = sstd::min(s / wj, 1.0);
-        q3[e]        = 0.0;
-      } else if constexpr(Ch::kind == Kind::absorb) {
-        // self-absorption: the photon loses the weight f s, the lepton gains energy f x
-        pa    = Vec3(f * toolbox::norm(p1v), 0.0, 0.0);
-        pb    = Vec3(0.0, 0.0, 0.0);
-        q1[e] = sstd::min(f * s / wi, 1.0);
-        q2[e] = sstd::min(s / wj, 1.0);
-        q3[e] = 0.0;
-      } else if constexpr(Ch::t2 == Species::ep) {
-        // pair annihilation: two photons of weight s, both parents removed
-        const auto P = ann::sample(p1v, p2v, rng, ntry);
-        pa           = P.k0;
-        pb           = P.k1;
-        q1[e]        = sstd::min(s / wi, 1.0);
-        q2[e]        = sstd::min(s / wj, 1.0);
-        q3[e]        = 0.0;
-      } else {
-        // photon-photon: the weight s becomes lepton pairs at the lepton weight
-        const auto P    = gg::sample(p1v, p2v, rng, ntry);
-        const auto flip = rng.uniform() < 0.5;
-        pa              = flip ? P.p1 : P.p2;  // e-
-        pb              = flip ? P.p2 : P.p1;  // e+
-        q1[e]           = sstd::min(s / wi, 1.0);
-        q2[e]           = sstd::min(s / wj, 1.0);
-        q3[e]           = s / wl;
-      }
-
-      for(auto k = 0uz; k < 3uz; ++k) {
-        ep[6 * e + k]     = static_cast<float>(pa[k]);
-        ep[6 * e + 3 + k] = static_cast<float>(pb[k]);
-      }
+      // the incident gives up the weight f s, the partner takes f exchanges at once
+      q1[e] = sstd::min(f * s / wi, 1.0);
+      q2[e] = sstd::min(s / wj, 1.0);
+      q3[e] = Ch::pairs ? s / wl : 0.0;
     });
-  // no wait: the decisions and the second half follow on the same queue
+  // no wait: the rounding and the reactions follow on the same queue
 
-  // ---- decisions: the systematic rounding of the probabilities in every cell
+  // the systematic rounding of the probabilities in every cell
   if constexpr(Ch::kind == Kind::scatter) {
     select(w, true, Decision::update, Ch::t1, ncell, na, ecell, q1, n1p);
     select(w, true, Decision::kick, ch.t2, ncell, na, ecell, q2, n2p);
@@ -1163,17 +1124,22 @@ void
   } else {
     select(w, true, Decision::remove, Ch::t1, ncell, na, ecell, q1, n1p);
     select(w, true, Decision::remove, ch.t2, ncell, na, ecell, q2, n2p);
-    if constexpr(Ch::t2 == Species::ph) {
+    if constexpr(Ch::pairs) {
       select(w, true, Decision::pairs, Species::ph, ncell, na, ecell, q3, n3p);
     }
   }
 
-  // ---- react kernel, second half: parents updated in place, products staged
+  // ---- react: the final state of every event; the incident is updated in place, the
+  // products are staged. Lanes may share a partner, so its state is only read here:
+  // what the events give it is summed (kicks per event, absorbed energy per slot) and
+  // applied once the kernel is through.
   staged_.resize(2 * na);  // at most two products per event
   const auto stg = thrust::raw_pointer_cast(staged_.data());
   const auto cnt = thrust::raw_pointer_cast(counters_.data());
 
   thrust::fill(counters_.begin(), counters_.begin() + 1, 0);
+
+  if constexpr(Ch::kind == Kind::scatter) { ev_kick_.resize(3 * na); }
 
   // dgam is zero between passes (apply_dgam clears what it reads): only growth needs
   // new zeros
@@ -1183,6 +1149,7 @@ void
     }
   }
 
+  const auto kick  = thrust::raw_pointer_cast(ev_kick_.data());
   const auto dgam  = thrust::raw_pointer_cast(dgam_.data());
   const auto a_res = par.a_res, x_ref = par.x_ref;
   const auto n_cap = par.n_cap;
@@ -1206,93 +1173,72 @@ void
     ev0,
     ev0 + static_cast<std::ptrdiff_t>(na),
     [=](const I e) {
-      // stream counters past the first half's
-      auto rng        = runko::Rng { keyC, e + (std::uint64_t { 1 } << 32) };
+      auto rng        = runko::Rng { keyC, e };
       const auto lane = acc[e];
       const auto i = li[lane], j = lj[lane];
+      const auto f    = lf[lane];
       const auto cell = ecell[e];
-
-      const auto pa = Vec3(
-        static_cast<double>(ep[6 * e]),
-        static_cast<double>(ep[6 * e + 1]),
-        static_cast<double>(ep[6 * e + 2]));
-      const auto pb = Vec3(
-        static_cast<double>(ep[6 * e + 3]),
-        static_cast<double>(ep[6 * e + 4]),
-        static_cast<double>(ep[6 * e + 5]));
+      const auto p1v = v1.u(i), p2v = v2.u(j);
 
       // products are born where the incident is
       const float posi[3] = { v1.pos[i][0], v1.pos[i][1], v1.pos[i][2] };
 
+      [[maybe_unused]] auto ntry = 0;  // proposals of the rejection samplers
+
       if constexpr(Ch::kind == Kind::scatter) {
+        // Compton: the lepton takes the f exchanges as one momentum kick
+        const auto P  = comp::sample(p1v, p2v, rng, ntry);
+        const auto dp = (-f) * (P.k1 - p1v);
+        for(auto k = 0uz; k < 3uz; ++k) { kick[3 * e + k] = static_cast<float>(dp[k]); }
+
         if(n1p[e] > 0) {
           // the parent takes the new state as the copies the resolution function asks
           // for, itself the first copy
-          const auto x0 = v1.e(i), x1 = toolbox::norm(pa);
+          const auto x0 = v1.e(i), x1 = toolbox::norm(P.k1);
           const auto n  = f_res(x1, a_res, x_ref) / f_res(x0, a_res, x_ref);
           const auto cp = copies(n, v1.w(i), rng, n_cap);
 
           if(cp.n_r >= 1) {
             // read before the touch, which drops a parent that left its bin from its key
             const auto bit = v1.lay.skey[i] % 2;
-            v1.set_u(i, pa);
+            v1.set_u(i, P.k1);
             v1.set_w(i, cp.w_each);
             v1.touch(i);
-            if(cp.n_r > 1) { stage(pa, posi, cp.w_each, cp.n_r - 1, cell, 0, bit); }
+            if(cp.n_r > 1) { stage(P.k1, posi, cp.w_each, cp.n_r - 1, cell, 0, bit); }
           } else {
             v1.kill(i);  // the roulette merged it away
           }
         }
-
-        if(n2p[e] > 0) {
-          // atomic: other lanes may kick the same lepton
-          for(auto k = 0uz; k < 3uz; ++k) {
-            sstd::atomic_add(&v2.vel[j][k], static_cast<float>(pb[k]));
-          }
-        }
       } else if constexpr(Ch::kind == Kind::absorb) {
+        // self-absorption: the lepton gains the energy f x, summed per lepton
         if(n2p[e] > 0) {
-          // summed per lepton, applied after the kernel by apply_dgam
-          sstd::atomic_add(&dgam[j], static_cast<float>(pa[0]));
+          sstd::atomic_add(&dgam[j], static_cast<float>(f * toolbox::norm(p1v)));
         }
         if(n1p[e] > 0) { v1.kill(i); }
-      } else if constexpr(Ch::t2 == Species::ep) {
-        // annihilation: each photon realized as the copies its resolution asks for
-        const auto s  = sstd::min(v1.w(i), v2.w(j));
-        const auto x0 = toolbox::norm(pa), x1 = toolbox::norm(pb);
-        const auto ca = copies(f_res(x0, a_res, x_ref), s, rng, n_cap);
-        if(ca.n_r >= 1) {
-          stage(
-            pa,
-            posi,
-            ca.w_each,
-            ca.n_r,
-            cell,
-            0,
-            static_cast<int>(rng.uniform() < 0.5));
+      } else if constexpr(Ch::pairs) {
+        // photon-photon: the weight s becomes lepton pairs at the lepton weight
+        const auto P    = gg::sample(p1v, p2v, rng, ntry);
+        const auto flip = rng.uniform() < 0.5;
+        const auto nl   = n3p[e];
+        if(nl > 0) {
+          // a pair born on top of itself adds no charge density: div E is unchanged
+          stage(flip ? P.p1 : P.p2, posi, wl, nl, cell, 1, 0);
+          stage(flip ? P.p2 : P.p1, posi, wl, nl, cell, 2, 0);
         }
-
-        const auto cb = copies(f_res(x1, a_res, x_ref), s, rng, n_cap);
-        if(cb.n_r >= 1) {
-          stage(
-            pb,
-            posi,
-            cb.w_each,
-            cb.n_r,
-            cell,
-            0,
-            static_cast<int>(rng.uniform() < 0.5));
-        }
-
         if(n1p[e] > 0) { v1.kill(i); }
         if(n2p[e] > 0) { v2.kill(j); }
       } else {
-        const auto nl = n3p[e];
-        if(nl > 0) {
-          // a pair born on top of itself adds no charge density: div E is unchanged
-          stage(pa, posi, wl, nl, cell, 1, 0);
-          stage(pb, posi, wl, nl, cell, 2, 0);
-        }
+        // pair annihilation: two photons of weight s, each realized as the copies its
+        // resolution asks for
+        const auto P = ann::sample(p1v, p2v, rng, ntry);
+        const auto s = sstd::min(v1.w(i), v2.w(j));
+        auto photon  = [&](const Vec3& k) {
+          const auto cp = copies(f_res(toolbox::norm(k), a_res, x_ref), s, rng, n_cap);
+          const auto bit = static_cast<int>(rng.uniform() < 0.5);
+          if(cp.n_r >= 1) { stage(k, posi, cp.w_each, cp.n_r, cell, 0, bit); }
+        };
+        photon(P.k0);
+        photon(P.k1);
         if(n1p[e] > 0) { v1.kill(i); }
         if(n2p[e] > 0) { v2.kill(j); }
       }
@@ -1309,9 +1255,9 @@ void
   st.wmoved += sums[0];
   st.facc += sums[1];
 
-  // ---- the kicked leptons take their summed changes, then the products are placed
+  // ---- the partners take their summed changes, then the products are placed
   if constexpr(Ch::kind == Kind::absorb) { apply_dgam(c, ch.t2, na); }
-  if constexpr(Ch::kind == Kind::scatter) { touch_kicked(c, ch.t2, na); }
+  if constexpr(Ch::kind == Kind::scatter) { apply_kicks(c, ch.t2, na); }
   this->place(c);
 }
 
@@ -1351,13 +1297,26 @@ void
 }
 
 void
-  Sampler::touch_kicked(Ctx& c, const Species s, const std::size_t na)
+  Sampler::apply_kicks(Ctx& c, const Species s, const std::size_t na)
 {
-  const auto v   = c.v[static_cast<std::size_t>(s)];
-  const auto acc = thrust::raw_pointer_cast(acc_.data());
-  const auto lj  = thrust::raw_pointer_cast(lane_j_.data());
-  const auto w   = tyvi::mdgrid_work {};
-  const auto e0  = thrust::counting_iterator<I>(0);
+  const auto v    = c.v[static_cast<std::size_t>(s)];
+  const auto acc  = thrust::raw_pointer_cast(acc_.data());
+  const auto lj   = thrust::raw_pointer_cast(lane_j_.data());
+  const auto kick = thrust::raw_pointer_cast(ev_kick_.data());
+  const auto n2p  = thrust::raw_pointer_cast(ev_n2_.data());
+  const auto w    = tyvi::mdgrid_work {};
+  const auto e0   = thrust::counting_iterator<I>(0);
+
+  // atomic: several events may kick one lepton
+  thrust::for_each(
+    w.on_this(),
+    e0,
+    e0 + static_cast<std::ptrdiff_t>(na),
+    [=](const I e) {
+      if(n2p[e] <= 0) { return; }
+      const auto i = lj[acc[e]];
+      for(auto k = 0uz; k < 3uz; ++k) { sstd::atomic_add(&v.vel[i][k], kick[3 * e + k]); }
+    });
 
   // once all kicks are in; touching a lepton hit by several events repeats the same
   thrust::for_each(

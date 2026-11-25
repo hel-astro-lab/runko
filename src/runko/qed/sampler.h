@@ -225,7 +225,7 @@ private:
   thrust::device_vector<std::int32_t> ev_n1_, ev_n2_, ev_n3_, ev_cell_;
   thrust::device_vector<runko::index_t> ev_perm_;  // cell order of unsorted events
   thrust::device_vector<std::int32_t> ev_keys_;    // their cells, sorted alongside
-  thrust::device_vector<float> ev_p_;              // product momenta, 6 per event
+  thrust::device_vector<float> ev_kick_;           // partner kick, 3 per event
 
   std::uint64_t istep_ { 0 };  // steps taken: the time index of the random streams
 
@@ -256,8 +256,9 @@ private:
   /// Adds the energy absorbed in the na events to the fed leptons, along their momenta.
   void apply_dgam(Ctx& c, Species s, std::size_t na);
 
-  /// Rewidens the bounds of the keys of the leptons kicked in the na events.
-  void touch_kicked(Ctx& c, Species s, std::size_t na);
+  /// Adds the kicks of the na events to the leptons and rewidens the bounds of their
+  /// keys.
+  void apply_kicks(Ctx& c, Species s, std::size_t na);
 
   /// Carry array of a decision site, created on first use.
   thrust::device_vector<double>& carry(Decision d, Species s, int ncell);
