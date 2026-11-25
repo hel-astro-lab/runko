@@ -21,7 +21,9 @@ using I = runko::index_t;
 template<typename T>
 [[nodiscard]] T*
   ptr(thrust::device_vector<T>& v)
-{ return thrust::raw_pointer_cast(v.data()); }
+{
+  return thrust::raw_pointer_cast(v.data());
+}
 
 /// Species roles; each container is found from its charge and mass.
 enum class Species : std::size_t { ph = 0, em = 1, ep = 2 };
@@ -48,7 +50,9 @@ struct PView {
   LayoutView lay;
 
   [[nodiscard]] constexpr bool alive(const I i) const
-  { return ids[i][] != runko::dead_prtc_id; }
+  {
+    return ids[i][] != runko::dead_prtc_id;
+  }
 
   [[nodiscard]] constexpr Vec3 u(const I i) const
   {
@@ -59,10 +63,14 @@ struct PView {
   }
 
   [[nodiscard]] constexpr double w(const I i) const
-  { return static_cast<double>(weighted ? wgt[i][] : w0); }
+  {
+    return static_cast<double>(weighted ? wgt[i][] : w0);
+  }
 
   [[nodiscard]] constexpr double e(const I i) const
-  { return static_cast<double>(energy_of(mass, vel[i][0], vel[i][1], vel[i][2])); }
+  {
+    return static_cast<double>(energy_of(mass, vel[i][0], vel[i][1], vel[i][2]));
+  }
 
   constexpr void set_u(const I i, const Vec3& v) const
   {

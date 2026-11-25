@@ -36,7 +36,9 @@ T&
 
 pic::particle_containers&
   containers(runko::simulation_context& sim, const tile_id id)
-{ return component<pic::particle_containers>(sim, id, "particle containers"); }
+{
+  return component<pic::particle_containers>(sim, id, "particle containers");
+}
 
 runko::global_coordinates_closure<3>
   coordinates(runko::simulation_context& sim, const tile_id id)
@@ -178,12 +180,14 @@ tile_state
   }
 
   // one layout per role; only the photon keys carry the sub-range bit
-  return tile_state { .sp   = sp,
-                      .layouts = { Layout { true, 0.0, runko::species_weight(conf, sp[0]) },
-                                Layout { false, pc.at(sp[1]).args().mass, box.w_lep },
-                                Layout { false, pc.at(sp[2]).args().mass, box.w_lep } },
-                      .sampler = Sampler { box, par, channels },
-                      .B0      = conf.get<double>("qed_B0").value_or(0.0) };
+  return tile_state {
+    .sp      = sp,
+    .layouts = { Layout { true, 0.0, runko::species_weight(conf, sp[0]) },
+                 Layout { false, pc.at(sp[1]).args().mass, box.w_lep },
+                 Layout { false, pc.at(sp[2]).args().mass, box.w_lep } },
+    .sampler = Sampler { box, par, channels },
+    .B0      = conf.get<double>("qed_B0").value_or(0.0)
+  };
 }
 
 /// Summarizes the lattice field: median |B| over the cells and mean direction.
@@ -590,7 +594,9 @@ std::vector<pic::ParticleContainer::value_type>
 
 double
   tau_T(runko::simulation_context& sim, const tile_id id)
-{ return totals(sim, id, Species::em).W + totals(sim, id, Species::ep).W; }
+{
+  return totals(sim, id, Species::em).W + totals(sim, id, Species::ep).W;
+}
 
 double
   pair_sum(

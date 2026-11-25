@@ -48,13 +48,17 @@ inline constexpr std::uint64_t layout = 0;
 [[nodiscard]]
 constexpr std::uint64_t
   twobody(const Channel l, const int k)
-{ return static_cast<std::uint64_t>(1 + 4 * static_cast<int>(l) + k); }
+{
+  return static_cast<std::uint64_t>(1 + 4 * static_cast<int>(l) + k);
+}
 
 /// One-body channel l: k = 0 fires, 1 draws the products and their copies.
 [[nodiscard]]
 constexpr std::uint64_t
   onebody(const Channel l, const int k)
-{ return static_cast<std::uint64_t>(100 + 2 * static_cast<int>(l) + k); }
+{
+  return static_cast<std::uint64_t>(100 + 2 * static_cast<int>(l) + k);
+}
 
 // Sources and sinks: the count and the draws of an injection, the heating kicks
 // (sub = species), the escape
@@ -66,7 +70,9 @@ inline constexpr std::uint64_t heating = 304, escape = 305;
 [[nodiscard]]
 constexpr std::uint64_t
   carry(const int l, const int role)
-{ return static_cast<std::uint64_t>(400 + 3 * l + role); }
+{
+  return static_cast<std::uint64_t>(400 + 3 * l + role);
+}
 
 /// Order of the channels in a step.
 inline constexpr std::uint64_t channel_order = 500;
@@ -143,9 +149,13 @@ struct ChCompton {
   static constexpr double g_min          = 1.0;
 
   constexpr double rate(const Vec3& k, const Vec3& u, const FieldView&) const
-  { return comp::rate(k, u); }
+  {
+    return comp::rate(k, u);
+  }
   constexpr double bound(double lo1, double hi1, double lo2, double hi2) const
-  { return comp::bound(lo1, hi1, lo2, hi2); }
+  {
+    return comp::bound(lo1, hi1, lo2, hi2);
+  }
   /// Most energy one scattering of a photon x gives the lepton g.
   constexpr double dgmax(double x, double g) const { return comp::dgmax(x, g); }
 };
@@ -163,9 +173,13 @@ struct ChAnn {
   static constexpr bool makes_pairs      = false;
 
   constexpr double rate(const Vec3& um, const Vec3& up, const FieldView&) const
-  { return ann::rate(um, up); }
+  {
+    return ann::rate(um, up);
+  }
   constexpr double bound(double lo1, double hi1, double lo2, double hi2) const
-  { return ann::bound(lo1, hi1, lo2, hi2); }
+  {
+    return ann::bound(lo1, hi1, lo2, hi2);
+  }
 };
 
 /// Pair production by two photons, one of each sub-range; bounded by sigma_gg.
@@ -180,9 +194,13 @@ struct ChGG {
   static constexpr bool makes_pairs      = true;
 
   constexpr double rate(const Vec3& k1, const Vec3& k2, const FieldView&) const
-  { return gg::rate(k1, k2); }
+  {
+    return gg::rate(k1, k2);
+  }
   constexpr double bound(double lo1, double hi1, double lo2, double hi2) const
-  { return gg::bound(lo1, hi1, lo2, hi2); }
+  {
+    return gg::bound(lo1, hi1, lo2, hi2);
+  }
 };
 
 /// Synchrotron self-absorption of a photon by an electron or a positron, at the tile
@@ -210,7 +228,9 @@ struct ChSSA {
     return ssa::rate(k, u, fv.b_ssa(u / sstd::max(toolbox::norm(u), 1e-300)), x_min);
   }
   constexpr double bound(double lo1, double /*hi1*/, double lo2, double hi2) const
-  { return ssa::bound(b_tile, x_min, lo1, lo2, hi2); }
+  {
+    return ssa::bound(b_tile, x_min, lo1, lo2, hi2);
+  }
   /// Most energy one absorption of a photon x gives the lepton.
   constexpr double dgmax(double x, double) const { return ssa::dgmax(x, 0.0); }
 };

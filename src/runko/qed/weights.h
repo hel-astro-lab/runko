@@ -34,7 +34,9 @@ constexpr double
 [[nodiscard]]
 constexpr double
   event_size(const double wi, const double wj, const double fk)
-{ return sstd::min(wi, fk * wj); }
+{
+  return sstd::min(wi, fk * wj);
+}
 
 /// Weight of the pair in its event probability, w_i w_j / event_size.
 ///
@@ -43,14 +45,18 @@ constexpr double
 [[nodiscard]]
 constexpr double
   pair_weight(const double wi, const double wj, const double fk)
-{ return sstd::max(wj, wi / fk); }
+{
+  return sstd::max(wj, wi / fk);
+}
 
 
 /// Photon resolution function: LPs per unit weight go as (x/x_ref)^a.
 [[nodiscard]]
 constexpr double
   f_res(const double e, const double a, const double x_ref)
-{ return sstd::pow(e / x_ref, a); }
+{
+  return sstd::pow(e / x_ref, a);
+}
 
 /// A product realized as n_r copies of weight w_each.
 struct Copies {
@@ -144,11 +150,12 @@ constexpr EmissionPlan
 {
   const auto resolved = lam <= 1.0;
   const auto f        = resolved ? facc_syn(gam, xm, acc_syn, kappa) : 1.0;
-  return EmissionPlan { .resolved = resolved,
-                        .fire     = resolved ? z < lam / f : true,
-                        .f        = f,
-                        .g_cooled =
-                          resolved ? gam : sstd::max(gamma_cooled(gam, lam, xm, b, N1), 1.0) };
+  return EmissionPlan {
+    .resolved = resolved,
+    .fire     = resolved ? z < lam / f : true,
+    .f        = f,
+    .g_cooled = resolved ? gam : sstd::max(gamma_cooled(gam, lam, xm, b, N1), 1.0)
+  };
 }
 
 /// The emitted LP and its parent once the photon energy x is drawn.
@@ -179,7 +186,8 @@ constexpr Emitted
   const auto dg   = p.resolved ? p.f * x : dgu;
   const auto dgc  = sstd::min(dg, gam - 1.0);
   const auto wem  = w * p.f * mult * (dg > 0.0 ? dgc / sstd::max(dg, 1e-300) : 1.0);
-  return Emitted { .g1 = p.resolved ? sstd::max(gam - dgc, 1.0) : p.g_cooled, .wem = wem };
+  return Emitted { .g1  = p.resolved ? sstd::max(gam - dgc, 1.0) : p.g_cooled,
+                   .wem = wem };
 }
 
 }  // namespace qed

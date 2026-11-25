@@ -21,7 +21,9 @@ namespace qed {
 [[nodiscard]]
 constexpr float
   energy_of(const float mass, const float vx, const float vy, const float vz)
-{ return sstd::sqrt(mass * mass + vx * vx + vy * vy + vz * vz); }
+{
+  return sstd::sqrt(mass * mass + vx * vx + vy * vy + vz * vz);
+}
 
 /// Binning and slack rule of an epoch.
 struct LayoutParams {
@@ -103,7 +105,9 @@ struct LayoutView {
 
   /// Energy bin of a key.
   [[nodiscard]] constexpr int bin_of_key(const int k) const
-  { return (keyed ? k / 2 : k) % nbin; }
+  {
+    return (keyed ? k / 2 : k) % nbin;
+  }
 
   /// Widens the bounds of key k over a member of energy e and weight w.
   constexpr void widen(const int k, const float e, const float w) const
@@ -172,7 +176,9 @@ public:
   /// Whether the tables describe con: built, not reordered since (a sort drops the
   /// layout), and at the size they were built or resized for.
   [[nodiscard]] bool laid(const pic::ParticleContainer& con) const
-  { return laid_ and con.reorder_count() == reorders_ and skey_.size() == con.size(); }
+  {
+    return laid_ and con.reorder_count() == reorders_ and skey_.size() == con.size();
+  }
   void invalidate() { laid_ = false; }
 
   /// Groups the live LPs by key with slack behind each group (one reorder of the

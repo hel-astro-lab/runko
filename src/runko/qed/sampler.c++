@@ -32,11 +32,15 @@ constexpr const char* names[] = { "compton-", "compton+", "pairann", "photann", 
 
 const char*
   channel_name(const Channel c)
-{ return names[static_cast<int>(c)]; }
+{
+  return names[static_cast<int>(c)];
+}
 
 bool
   is_twobody(const Channel c)
-{ return static_cast<int>(c) <= static_cast<int>(Channel::ssa_p); }
+{
+  return static_cast<int>(c) <= static_cast<int>(Channel::ssa_p);
+}
 
 Sampler::Sampler(
   const Box& b,
@@ -66,7 +70,8 @@ Sampler::Sampler(
 thrust::device_vector<double>&
   Sampler::carry(const int l, const int role, const int ncell)
 {
-  auto& car = round_.carry[3 * static_cast<std::size_t>(l) + static_cast<std::size_t>(role)];
+  auto& car =
+    round_.carry[3 * static_cast<std::size_t>(l) + static_cast<std::size_t>(role)];
 
   if(car.size() != static_cast<std::size_t>(ncell)) {
     auto h   = thrust::host_vector<double>(static_cast<std::size_t>(ncell));
@@ -156,8 +161,12 @@ void
                                  .smin       = par.smin };
 
   for(auto s = 0uz; s < 3uz; ++s) {
-    t.layout[s]
-      ->build(*t.con[s], lp, t.mins, t.maxs, runko::rng_key(par.seed, istep_, s, stream::layout));
+    t.layout[s]->build(
+      *t.con[s],
+      lp,
+      t.mins,
+      t.maxs,
+      runko::rng_key(par.seed, istep_, s, stream::layout));
   }
 }
 
@@ -200,7 +209,8 @@ void
   }
 
   // Fisher-Yates shuffle
-  auto rng = runko::Rng { runko::rng_key(par.seed, istep_, 0, stream::channel_order), 0 };
+  auto rng =
+    runko::Rng { runko::rng_key(par.seed, istep_, 0, stream::channel_order), 0 };
   for(auto i = order.size(); i > 1; --i) {
     const auto j = static_cast<std::size_t>(rng.integer(i));
     std::swap(order[i - 1], order[j]);
@@ -285,9 +295,8 @@ void
 
       for(auto n = 0; n < rec.n_r; ++n) {
         const auto id =
-          idb[s] +
-          static_cast<runko::prtc_id_type>(
-            sstd::atomic_fetch_add(&cnt->id[rec.species], std::int32_t { 1 }));
+          idb[s] + static_cast<runko::prtc_id_type>(
+                     sstd::atomic_fetch_add(&cnt->id[rec.species], std::int32_t { 1 }));
 
         // the copy's rank behind what the key already holds
         const auto f    = sstd::atomic_fetch_add(&lay.fill[kk], I { 1 });
@@ -346,9 +355,8 @@ void
 // Each field is written by one side only, so the sum is exact; fired is the one-body
 // accepted count.
 ChannelStats
-  Sampler::channel_snap(
-    const std::size_t l,
-    const thrust::host_vector<DeviceStats>& h) const
+  Sampler::channel_snap(const std::size_t l, const thrust::host_vector<DeviceStats>& h)
+    const
 {
   auto s        = stats.ch[l];
   const auto& d = h[l];

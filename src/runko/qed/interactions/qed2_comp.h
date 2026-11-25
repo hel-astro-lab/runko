@@ -58,7 +58,9 @@ constexpr double
 [[nodiscard]]
 constexpr double
   dgmax(const double x, const double g)
-{ return 4.0 * x * g * g; }
+{
+  return 4.0 * x * g * g;
+}
 
 struct Products {
   /// Scattered photon.

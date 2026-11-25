@@ -62,7 +62,9 @@ struct FieldView {
   ///
   /// The uniform box keeps every lepton perpendicular.
   [[nodiscard]] constexpr double b_ssa(const Vec3& n) const
-  { return uniform ? b0 : b_tile * toolbox::norm(toolbox::cross(n, bhat)); }
+  {
+    return uniform ? b0 : b_tile * toolbox::norm(toolbox::cross(n, bhat));
+  }
 };
 
 }  // namespace qed

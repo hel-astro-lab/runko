@@ -17,7 +17,9 @@ using qed::Vec3;
 
 constexpr bool
   close(const double a, const double b, const double rtol, const double atol = 0.0)
-{ return std::abs(a - b) <= rtol * std::abs(b) + atol; }
+{
+  return std::abs(a - b) <= rtol * std::abs(b) + atol;
+}
 
 Vec3
   random_u(runko::Rng& rng, const double pmax)
@@ -28,7 +30,9 @@ Vec3
 
 double
   gam(const Vec3& u)
-{ return std::sqrt(1.0 + toolbox::dot(u, u)); }
+{
+  return std::sqrt(1.0 + toolbox::dot(u, u));
+}
 
 [[maybe_unused]]
 const suite<"two-body qed physics"> _ = [] {
@@ -253,4 +257,6 @@ const suite<"two-body qed physics"> _ = [] {
 
 int
   main(int argc, const char** argv)
-{ return static_cast<int>(cfg<override>.run(run_cfg { .argc = argc, .argv = argv })); }
+{
+  return static_cast<int>(cfg<override>.run(run_cfg { .argc = argc, .argv = argv }));
+}

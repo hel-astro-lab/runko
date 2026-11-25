@@ -1,10 +1,9 @@
 // Copyright 2026 - 2026, Miro Palmu, Joonas Nättilä and the runko contributors
 // SPDX-License-Identifier: GPL-3.0-or-later
 
-#include "runko/qed/sampler.h"
-
 #include "runko/qed/interactions/qed1_bw.h"
 #include "runko/qed/interactions/qed1_syn.h"
+#include "runko/qed/sampler.h"
 #include "runko/qed/weights.h"
 #include "runko/tools/math.h"
 #include "runko/tools/random.h"
@@ -42,9 +41,9 @@ struct AtParent {
 void
   Sampler::synchrotron(Ctx& c, const Channel which)
 {
-  const auto l  = static_cast<std::size_t>(which);
-  const auto is = static_cast<std::size_t>(
-    which == Channel::syn_m ? Species::em : Species::ep);
+  const auto l = static_cast<std::size_t>(which);
+  const auto is =
+    static_cast<std::size_t>(which == Channel::syn_m ? Species::em : Species::ep);
 
   c.refresh_all();
   const auto v = c.v[is];
@@ -154,8 +153,10 @@ void
   st.M += static_cast<double>(n);
 
   // random streams, the lane being the slot: A fires, C draws the pair
-  const auto keyA  = runko::rng_key(par.seed, istep_, 0, stream::onebody(Channel::bw, 0));
-  const auto keyC  = runko::rng_key(par.seed, istep_, 0, stream::onebody(Channel::bw, 1));
+  const auto keyA =
+    runko::rng_key(par.seed, istep_, 0, stream::onebody(Channel::bw, 0));
+  const auto keyC =
+    runko::rng_key(par.seed, istep_, 0, stream::onebody(Channel::bw, 1));
   const auto stage = AtParent { v, this->stager(2 * n) };  // a pair per photon
 
   const auto fv = c.t->field;

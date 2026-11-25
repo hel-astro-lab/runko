@@ -96,7 +96,7 @@ constexpr double
   const auto rs           = up ? r : 1.0 - r;
   const auto [a, b, c, n] = shape(chi_gam);
   const auto v            = 1.0 - rs;
-  const auto ph = 1.0 - a * sstd::pow(v, 4.0 * n) /
+  const auto ph           = 1.0 - a * sstd::pow(v, 4.0 * n) /
                           (1.0 + b * sstd::pow(v, n) + c * sstd::pow(v, 2.0 * n));
   return up ? ph : 1.0 - ph;
 }

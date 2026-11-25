@@ -16,7 +16,9 @@ inline constexpr double bq_gauss = 4.4140094e13;
 [[nodiscard]]
 constexpr double
   b_from_ellB(const double ell_B, const double size_lamC)
-{ return sstd::sqrt(3.0 * ell_B / (alpha * size_lamC)); }
+{
+  return sstd::sqrt(3.0 * ell_B / (alpha * size_lamC));
+}
 
 /// Synchrotron self-absorption, photon + lepton -> lepton.
 ///
@@ -74,7 +76,9 @@ constexpr double
 [[nodiscard]]
 constexpr double
   int_K53(const double z)
-{ return F_syn(z) / z; }
+{
+  return F_syn(z) / z;
+}
 
 /// Returns the spectral function G(chi_e, chi_gamma) of quantum synchrotron emission;
 /// zero for chi_gamma >= chi_e.
@@ -94,7 +98,9 @@ constexpr double
 [[nodiscard]]
 constexpr double
   h_syn(const double g, const double chi_gam, const double b_perp)
-{ return sstd::sqrt(sstd::max(g * g - 1.0, 0.0)) * G_syn(g * b_perp, chi_gam); }
+{
+  return sstd::sqrt(sstd::max(g * g - 1.0, 0.0)) * G_syn(g * b_perp, chi_gam);
+}
 
 /// Returns sigma-hat_ssa F/2 for photon k and lepton u, the net of absorption and
 /// stimulated emission; zero for gamma < gamma_min or x < x_min.
@@ -186,7 +192,9 @@ constexpr Vec3
 [[nodiscard]]
 constexpr double
   dgmax(const double x, const double /*g*/)
-{ return x; }
+{
+  return x;
+}
 
 }  // namespace ssa
 }  // namespace qed

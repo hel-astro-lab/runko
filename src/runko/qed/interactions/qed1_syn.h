@@ -53,7 +53,9 @@ constexpr double
 [[nodiscard]]
 constexpr double
   r_floor(const double x_min, const double gam, const bool kinetic)
-{ return x_min / (kinetic ? gam - 1.0 : gam); }
+{
+  return x_min / (kinetic ? gam - 1.0 : gam);
+}
 
 /// Pade parameters (a, b, n) of the cumulative spectrum and the parameters
 /// (l0, linf, kappa) of the effective point of its mean (see rmean).
@@ -64,17 +66,18 @@ struct Shape {
 // Effective point of the mean: l0, linf, ln kappa as a cubic in
 // s = (ln chi_e - s_mid)/s_half plus one logistic step, fitted on 1e-12 <= chi_e <= 10.
 inline constexpr double s_mid = -12.66422, s_half = 14.9668;
-inline constexpr std::array<double, 7> l0_fit = { 4.749836e-01, 5.957273e-02, 2.173267e-02,
-                                              1.045624e-02, 2.865377e-01, 5.673384e-01,
-                                              1.583990e+00 };
+inline constexpr std::array<double, 7> l0_fit      = { 4.749836e-01, 5.957273e-02,
+                                                       2.173267e-02, 1.045624e-02,
+                                                       2.865377e-01, 5.673384e-01,
+                                                       1.583990e+00 };
 inline constexpr std::array<double, 7> linf_fit    = { 8.268931e-01,  -1.466373e-02,
-                                                   -1.051902e-02, -8.028332e-03,
-                                                   8.251289e-02,  6.572695e-02,
-                                                   7.165592e-01 };
+                                                       -1.051902e-02, -8.028332e-03,
+                                                       8.251289e-02,  6.572695e-02,
+                                                       7.165592e-01 };
 inline constexpr std::array<double, 7> lnkappa_fit = { -9.414223e-01, 3.268251e-01,
-                                                   6.384624e-02,  2.694743e-02,
-                                                   2.905601e+00,  2.529502e+00,
-                                                   2.155030e+00 };
+                                                       6.384624e-02,  2.694743e-02,
+                                                       2.905601e+00,  2.529502e+00,
+                                                       2.155030e+00 };
 /// Stretching exponent of the point.
 inline constexpr double p_stretch = 1.060691e+00;
 
@@ -122,7 +125,9 @@ constexpr Shape
                            0.30839327 * sstd::pow(x, 1.74193071));
 
   const auto t = sstd::log(x);
-  return Shape { a, b, n, curve(l0_fit, t), curve(linf_fit, t), sstd::exp(curve(lnkappa_fit, t)) };
+  return Shape {
+    a, b, n, curve(l0_fit, t), curve(linf_fit, t), sstd::exp(curve(lnkappa_fit, t))
+  };
 }
 
 /// Returns the probability that a photon takes at most the fraction r of chi_e.
@@ -142,7 +147,9 @@ constexpr double
 [[nodiscard]]
 constexpr double
   P(const double chi_e, const double r)
-{ return P(shape(chi_e), r); }
+{
+  return P(shape(chi_e), r);
+}
 
 /// Returns chi_gamma/chi_e of the photon from a uniform deviate z by inverting P.
 [[nodiscard]]
@@ -194,7 +201,9 @@ constexpr double
 [[nodiscard]]
 constexpr double
   r_of(const double z, const double chi_e)
-{ return r_of(z, shape(chi_e), chi_e); }
+{
+  return r_of(z, shape(chi_e), chi_e);
+}
 
 /// Returns the fraction 1 - P(chi_e, r_min) of photons above the floor, or 0 (channel
 /// closed) when it is thinner than frac_min.
@@ -209,7 +218,9 @@ constexpr double
 [[nodiscard]]
 constexpr double
   frac(const double chi_e, const double r_min)
-{ return frac(shape(chi_e), r_min); }
+{
+  return frac(shape(chi_e), r_min);
+}
 
 /// Returns the one-body rate function (chi_e/gamma) T_S(chi_e) of the photons above
 /// x_min, for a lepton of Lorentz factor gam at chi_e with shape s.
@@ -270,8 +281,8 @@ constexpr double
   const auto rho = sstd::cbrt(r_min);
   const auto v   = sstd::max(1.0 - rho, tiny);
   const auto d1  = 3.0 * v *
-                   (2.0 + 2.0 * rho * (m + 1.0) + rho * rho * (m + 1.0) * (m + 2.0)) /
-                   ((m + 1.0) * (m + 2.0) * (m + 3.0));
+                  (2.0 + 2.0 * rho * (m + 1.0) + rho * rho * (m + 1.0) * (m + 2.0)) /
+                  ((m + 1.0) * (m + 2.0) * (m + 3.0));
 
   const auto z = -m * sstd::log(v);
   const auto u = sstd::exp(-z / 4.0);  // u_m = v_m^n
@@ -284,7 +295,9 @@ constexpr double
 [[nodiscard]]
 constexpr double
   rmean(const double chi_e, const double r_min)
-{ return rmean(shape(chi_e), r_min); }
+{
+  return rmean(shape(chi_e), r_min);
+}
 
 /// Returns the mean energy of a drawn photon above x_min, x_scale rmean.
 [[nodiscard]]
@@ -298,7 +311,9 @@ constexpr double
 [[nodiscard]]
 constexpr double
   xmean(const double chi_e, const double gam, const bool kinetic, const double x_min)
-{ return xmean(shape(chi_e), gam, kinetic, x_min); }
+{
+  return xmean(shape(chi_e), gam, kinetic, x_min);
+}
 
 struct Products {
   /// Emitted photon.

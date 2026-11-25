@@ -88,9 +88,9 @@ constexpr void
   reaction(const ChCompton&, const Event& r, runko::Rng& rng)
 {
   const auto p1v = r.v1.u(r.i), p2v = r.v2.u(r.j);
-  auto ntry      = 0;  // proposals of the rejection sampler
-  const auto P   = comp::sample(p1v, p2v, rng, ntry);
-  const auto dp  = (-r.f) * (P.k1 - p1v);
+  auto ntry     = 0;  // proposals of the rejection sampler
+  const auto P  = comp::sample(p1v, p2v, rng, ntry);
+  const auto dp = (-r.f) * (P.k1 - p1v);
   for(auto k = 0uz; k < 3uz; ++k) { r.kick[k] = static_cast<float>(dp[k]); }
 
   if(r.n1 <= 0) { return; }
@@ -457,7 +457,8 @@ private:
   /// The lanes run row by row, so a lane's rank in its row is its incident stratum; a
   /// consumed partner gets strata of its own along the columns.
   [[nodiscard]]
-  std::size_t strata(const tyvi::mdgrid_work& w, const std::uint64_t keyA, const int nsub)
+  std::size_t
+    strata(const tyvi::mdgrid_work& w, const std::uint64_t keyA, const int nsub)
   {
     const auto nb = nb_, ncb = ncb_, npair = npair_;
     auto& t = sam_.strata_;
@@ -635,10 +636,12 @@ private:
     });
 
     sam_.acc_.resize(Mtot);
-    const auto acc_end =
-      thrust::copy_if(w.on_this(), ord0, ord0 + nlane, sam_.acc_.begin(), [=](const I lane) {
-        return rec[lane].outcome == Outcome::accepted;
-      });
+    const auto acc_end = thrust::copy_if(
+      w.on_this(),
+      ord0,
+      ord0 + nlane,
+      sam_.acc_.begin(),
+      [=](const I lane) { return rec[lane].outcome == Outcome::accepted; });
     const auto na = static_cast<std::size_t>(acc_end - sam_.acc_.begin());
     st_.acc += static_cast<double>(na);
 
@@ -669,7 +672,7 @@ private:
   void decide(const tyvi::mdgrid_work& w, const std::size_t na)
   {
     const auto nb = nb_;
-    auto& ev = sam_.ev_;
+    auto& ev      = sam_.ev_;
     ev.q1.resize(na);
     ev.q2.resize(na);
     ev.q3.resize(na);
@@ -684,8 +687,8 @@ private:
     const auto acc   = ptr(sam_.acc_);
     const auto rec   = ptr(sam_.lanes_);
     const auto v1 = c_.v[i1_], v2 = c_.v[i2_];
-    const auto wl    = sam_.box.w_lep;
-    const auto nev   = static_cast<std::ptrdiff_t>(na);
+    const auto wl  = sam_.box.w_lep;
+    const auto nev = static_cast<std::ptrdiff_t>(na);
 
     thrust::for_each(w.on_this(), ord0, ord0 + nev, [=](const I e) {
       const auto ln = rec[acc[e]];
@@ -738,10 +741,10 @@ private:
     const auto acc   = ptr(sam_.acc_);
     const auto rec   = ptr(sam_.lanes_);
     const auto v1 = c_.v[i1_], v2 = c_.v[i2_];
-    const auto ch    = ch_;
-    const auto par   = sam_.par;
-    const auto wl    = sam_.box.w_lep;
-    const auto nev   = static_cast<std::ptrdiff_t>(na);
+    const auto ch  = ch_;
+    const auto par = sam_.par;
+    const auto wl  = sam_.box.w_lep;
+    const auto nev = static_cast<std::ptrdiff_t>(na);
 
     thrust::for_each(w.on_this(), ord0, ord0 + nev, [=](const I e) {
       auto rng      = runko::Rng { keyC, e };
@@ -774,12 +777,12 @@ private:
   /// statistics of the pass are read.
   void settle(const std::size_t na)
   {
-    const auto w     = tyvi::mdgrid_work {};
-    const auto v     = c_.v[i2_];
-    const auto acc   = ptr(sam_.acc_);
-    const auto rec   = ptr(sam_.lanes_);
-    const auto ef    = ptr(sam_.ev_.f);
-    const auto nev   = static_cast<std::ptrdiff_t>(na);
+    const auto w   = tyvi::mdgrid_work {};
+    const auto v   = c_.v[i2_];
+    const auto acc = ptr(sam_.acc_);
+    const auto rec = ptr(sam_.lanes_);
+    const auto ef  = ptr(sam_.ev_.f);
+    const auto nev = static_cast<std::ptrdiff_t>(na);
 
     // weight moved and exchanges merged
     using V2        = toolbox::VecD<double, 2>;

@@ -132,4 +132,6 @@ const suite<"portable atomics"> atomics = [] {
 
 int
   main(int argc, const char** argv)
-{ return static_cast<int>(cfg<override>.run(run_cfg { .argc = argc, .argv = argv })); }
+{
+  return static_cast<int>(cfg<override>.run(run_cfg { .argc = argc, .argv = argv }));
+}

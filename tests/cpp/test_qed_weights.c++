@@ -13,7 +13,9 @@ using namespace boost::ut;
 
 constexpr bool
   close(const double a, const double b, const double rtol)
-{ return std::abs(a - b) <= rtol * std::abs(b); }
+{
+  return std::abs(a - b) <= rtol * std::abs(b);
+}
 
 [[maybe_unused]]
 const suite<"qed weight bookkeeping"> _ = [] {
@@ -79,7 +81,7 @@ const suite<"qed weight bookkeeping"> _ = [] {
   };
 
   "a resolved emission averages lam and its parent pays for the photon"_test = [] {
-    auto rng = runko::Rng { runko::rng_key(3, 0, 0, 0), 0 };
+    auto rng         = runko::Rng { runko::rng_key(3, 0, 0, 0), 0 };
     constexpr auto b = 1e-3, N1 = 1.0, w = 0.7, draws = 400000.0;
 
     for(const auto gam: { 5.0, 50.0, 5e3 }) {
@@ -88,7 +90,8 @@ const suite<"qed weight bookkeeping"> _ = [] {
         auto emissions    = 0.0;
 
         for(auto k = 0; k < static_cast<int>(draws); ++k) {
-          const auto p = qed::emission_plan(gam, lam, xm, b, N1, 3.0, 0.1, rng.uniform());
+          const auto p =
+            qed::emission_plan(gam, lam, xm, b, N1, 3.0, 0.1, rng.uniform());
           expect(p.resolved and p.f >= 1.0 and p.g_cooled == gam);
           if(not p.fire) { continue; }
           emissions += p.f;
@@ -128,4 +131,6 @@ const suite<"qed weight bookkeeping"> _ = [] {
 
 int
   main(int argc, const char** argv)
-{ return static_cast<int>(cfg<override>.run(run_cfg { .argc = argc, .argv = argv })); }
+{
+  return static_cast<int>(cfg<override>.run(run_cfg { .argc = argc, .argv = argv }));
+}

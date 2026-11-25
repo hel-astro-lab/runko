@@ -16,7 +16,9 @@ using qed::Vec3;
 
 constexpr bool
   close(const double a, const double b, const double rtol, const double atol = 0.0)
-{ return std::abs(a - b) <= rtol * std::abs(b) + atol; }
+{
+  return std::abs(a - b) <= rtol * std::abs(b) + atol;
+}
 
 [[maybe_unused]]
 const suite<"one-body and self-absorption physics"> _ = [] {
@@ -102,8 +104,8 @@ const suite<"one-body and self-absorption physics"> _ = [] {
     auto bad = 0;
     for(auto n = 0; n < 20000; ++n) {
       const auto chi = std::exp(-12.0 + 16.0 * rng.uniform());
-      const auto z   = qed::syn::z_clip + (1.0 - 2.0 * qed::syn::z_clip) * rng.uniform();
-      const auto r   = qed::syn::r_of(z, chi);
+      const auto z = qed::syn::z_clip + (1.0 - 2.0 * qed::syn::z_clip) * rng.uniform();
+      const auto r = qed::syn::r_of(z, chi);
       expect(r >= 0.0 and r <= 1.0);
       if(r > 0.0 and r < 1.0) { bad += std::abs(qed::syn::P(chi, r) - z) > 1e-4; }
     }
@@ -280,4 +282,6 @@ const suite<"one-body and self-absorption physics"> _ = [] {
 
 int
   main(int argc, const char** argv)
-{ return static_cast<int>(cfg<override>.run(run_cfg { .argc = argc, .argv = argv })); }
+{
+  return static_cast<int>(cfg<override>.run(run_cfg { .argc = argc, .argv = argv }));
+}

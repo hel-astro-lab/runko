@@ -1,10 +1,9 @@
 // Copyright 2026 - 2026, Miro Palmu, Joonas Nättilä and the runko contributors
 // SPDX-License-Identifier: GPL-3.0-or-later
 
-#include "runko/qed/sampler.h"
-
 #include "runko/qed/interactions/qed2_ssa.h"
 #include "runko/qed/interactions/qed_kinematics.h"
+#include "runko/qed/sampler.h"
 #include "runko/tools/math.h"
 #include "runko/tools/random.h"
 #include "thrust/fill.h"
@@ -44,13 +43,14 @@ void
 
   const auto wl    = box.w_lep;
   const auto npair = box.dE(ell) / (2.0 * gm * wl);
-  auto rng0        = runko::Rng { runko::rng_key(par.seed, istep_, 0, stream::pairs_count), 0 };
-  const auto n     = static_cast<std::size_t>(std::floor(npair + rng0.uniform()));
+  auto rng0 =
+    runko::Rng { runko::rng_key(par.seed, istep_, 0, stream::pairs_count), 0 };
+  const auto n = static_cast<std::size_t>(std::floor(npair + rng0.uniform()));
   if(n == 0) { return; }
 
   Ctx c { t, par.nbin };
   const auto stage = this->stager(2 * n);
-  tally_[0] = Tally {};
+  tally_[0]        = Tally {};
 
   const auto db   = ptr(tally_);
   const auto key  = runko::rng_key(par.seed, istep_, 0, stream::pairs);
@@ -114,13 +114,14 @@ void
   // stochastically
   const auto xmean = (planck ? 2.701 : 3.0) * theta;
   const auto nph   = box.dE(ell) / (xmean * wph);
-  auto rng0        = runko::Rng { runko::rng_key(par.seed, istep_, 0, stream::photons_count), 0 };
-  const auto n     = static_cast<std::size_t>(std::floor(nph + rng0.uniform()));
+  auto rng0 =
+    runko::Rng { runko::rng_key(par.seed, istep_, 0, stream::photons_count), 0 };
+  const auto n = static_cast<std::size_t>(std::floor(nph + rng0.uniform()));
   if(n == 0) { return; }
 
   Ctx c { t, par.nbin };
   const auto stage = this->stager(n);
-  tally_[0] = Tally {};
+  tally_[0]        = Tally {};
 
   const auto db   = ptr(tally_);
   const auto key  = runko::rng_key(par.seed, istep_, 0, stream::photons);
@@ -209,7 +210,7 @@ void
   if(tot <= 0.0) { return; }
 
   const auto D0 = box.dE(ell) / tot;
-  tally_[0] = Tally {};
+  tally_[0]     = Tally {};
   const auto db = ptr(tally_);
 
   // the kicks: one lane per lepton slot of either species
@@ -255,16 +256,16 @@ void
 
   // Pair depth and step in slab crossings: the slab's, given by the driver, or this
   // tile's own
-  const auto tau_T  = tau_ext >= 0.0
-                        ? tau_ext
-                        : t.layout[1]->totals(*t.con[1]).W + t.layout[2]->totals(*t.con[2]).W;
+  const auto tau_T  = tau_ext >= 0.0 ? tau_ext
+                                     : t.layout[1]->totals(*t.con[1]).W +
+                                        t.layout[2]->totals(*t.con[2]).W;
   const auto dt_esc = dt_ext > 0.0 ? dt_ext : box.dt;
   if(esc_hist_.size() != static_cast<std::size_t>(n_esc)) {
     esc_hist_.assign(n_esc, 0.0);
     esc_mu_hist_.assign(static_cast<std::size_t>(n_esc) * n_mu, 0.0);
   }
 
-  tally_[0] = Tally {};
+  tally_[0]       = Tally {};
   const auto db   = ptr(tally_);
   const auto hist = thrust::raw_pointer_cast(esc_hist_.data());
   const auto hmu  = thrust::raw_pointer_cast(esc_mu_hist_.data());
@@ -301,8 +302,10 @@ void
       sstd::atomic_add(&hist[b], x * wg);
 
       const auto mu = static_cast<double>(v.vel[i][2]) / x;
-      const auto m =
-        sstd::clamp(static_cast<int>(sstd::floor((mu + 1.0) * 0.5 * n_mu)), 0, n_mu - 1);
+      const auto m  = sstd::clamp(
+        static_cast<int>(sstd::floor((mu + 1.0) * 0.5 * n_mu)),
+        0,
+        n_mu - 1);
       sstd::atomic_add(&hmu[b * n_mu + m], x * wg);
     });
   w.wait();

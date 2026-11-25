@@ -48,8 +48,8 @@ constexpr double
   bound(const double g1lo, const double g1hi, const double g2lo, const double g2hi)
 {
   // largest q_e (head-on at the top corner) over the smallest g- g+
-  const auto q  = g1hi * g2hi + sstd::sqrt(sstd::max(g1hi * g1hi - 1.0, 0.0)) *
-                                  sstd::sqrt(sstd::max(g2hi * g2hi - 1.0, 0.0));
+  const auto q = g1hi * g2hi + sstd::sqrt(sstd::max(g1hi * g1hi - 1.0, 0.0)) *
+                                 sstd::sqrt(sstd::max(g2hi * g2hi - 1.0, 0.0));
   const auto sh = (3.0 / 32.0) * bracket(q) / (g1lo * g2lo);
   return sh == sh and sh < 1e300 ? sstd::min(sh, rate_max) : 0.0;
 }
@@ -80,6 +80,7 @@ constexpr Products
   // y = cosine of the electron's CM direction to the axis
   const auto deg  = vc < 1e-10;
   const auto kvec = deg ? omm : bc / sstd::max(vc, 1e-300);
+
   auto y = deg
              ? 1.0
              : (gp - gm) / ((gp + gm) * sstd::max(vc, 1e-300) * sstd::max(vcm, 1e-300));

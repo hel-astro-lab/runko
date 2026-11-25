@@ -38,7 +38,9 @@ struct Box {
 
   /// Field B_perp/B_Q from the magnetic compactness of the box.
   [[nodiscard]] constexpr double b_perp() const
-  { return ell_B > 0.0 ? b_from_ellB(ell_B, H_box_lamC) : 0.0; }
+  {
+    return ell_B > 0.0 ? b_from_ellB(ell_B, H_box_lamC) : 0.0;
+  }
 
   /// Energy per step, in W_0 m_e c^2, that the compactness ell injects or removes.
   [[nodiscard]] constexpr double dE(const double ell) const { return ell * dt; }

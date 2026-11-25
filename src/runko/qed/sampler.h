@@ -167,8 +167,8 @@ public:
 
   /// Escape spectrum: n_esc log bins of x over [esc_lo, esc_hi], n_mu linear bins of
   /// mu = k_z/x over [-1, 1].
-  static constexpr int n_esc      = 100;
-  static constexpr int n_mu       = 32;
+  static constexpr int n_esc     = 100;
+  static constexpr int n_mu      = 32;
   static constexpr double esc_lo = 1e-8, esc_hi = 1e2;
 
 private:
