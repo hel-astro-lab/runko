@@ -395,17 +395,17 @@ Sampler::Sampler(
 //   1+4l, 2+4l, 3+4l  two-body l: cell kernels, thinning, react (sub = sub-step)
 //   100+2l, 101+2l    one-body l: firing, products
 //   300 .. 305        sources and sinks (304: sub = species)
-//   400 + site        seeds of the systematic-rounding carries (step 0)
+//   400 + 3l + role   seeds of the systematic-rounding carries of channel l (step 0)
 //   500               order of the channels in a step
 //   501               positions of qed::set_particles (sub = species)
 
 thrust::device_vector<double>&
-  Sampler::carry(const Decision d, const Species s, const int ncell)
+  Sampler::carry(const int l, const int role, const int ncell)
 {
-  const auto site = 3 * static_cast<std::size_t>(d) + static_cast<std::size_t>(s);
+  const auto site = 3 * static_cast<std::size_t>(l) + static_cast<std::size_t>(role);
   auto& car       = carry_[site];
 
-  if(car.empty()) {
+  if(car.size() != static_cast<std::size_t>(ncell)) {
     auto h   = thrust::host_vector<double>(static_cast<std::size_t>(ncell));
     auto rng = runko::Rng { runko::rng_key(par.seed, 0, 0, 400 + site), 0 };
     for(auto& x: h) { x = rng.uniform(); }
@@ -423,8 +423,8 @@ void
   Sampler::select(
     const tyvi::mdgrid_work& w,
     bool sorted,
-    const Decision d,
-    const Species s,
+    const int l,
+    const int role,
     const int ncell,
     const std::size_t n,
     const std::int32_t* cell,
@@ -433,7 +433,7 @@ void
 {
   if(n == 0) { return; }
 
-  auto& car        = carry(d, s, ncell);
+  auto& car        = carry(l, role, ncell);
   const auto car_p = thrust::raw_pointer_cast(car.data());  // remainder per cell
 
   // one buffer, of the pass's event count, serves every select of the pass: no resize
@@ -1101,19 +1101,9 @@ void
   // no wait: the rounding and the reactions follow on the same queue
 
   // the systematic rounding of the probabilities in every cell
-  if constexpr(Ch::kind == Kind::scatter) {
-    select(w, true, Decision::update, Ch::t1, ncell, na, ecell, q1, n1p);
-    select(w, true, Decision::kick, ch.t2, ncell, na, ecell, q2, n2p);
-  } else if constexpr(Ch::kind == Kind::absorb) {
-    select(w, true, Decision::remove, Ch::t1, ncell, na, ecell, q1, n1p);
-    select(w, true, Decision::kick, ch.t2, ncell, na, ecell, q2, n2p);
-  } else {
-    select(w, true, Decision::remove, Ch::t1, ncell, na, ecell, q1, n1p);
-    select(w, true, Decision::remove, ch.t2, ncell, na, ecell, q2, n2p);
-    if constexpr(Ch::pairs) {
-      select(w, true, Decision::pairs, Species::ph, ncell, na, ecell, q3, n3p);
-    }
-  }
+  select(w, true, l, 0, ncell, na, ecell, q1, n1p);
+  select(w, true, l, 1, ncell, na, ecell, q2, n2p);
+  if constexpr(Ch::pairs) { select(w, true, l, 2, ncell, na, ecell, q3, n3p); }
 
   // ---- react: the final state of every event; the incident is updated in place, the
   // products are staged. Lanes may share a partner, so its state is only read here:
@@ -1657,7 +1647,7 @@ void
     w.wait();
 
     // the pair counts, rounded systematically within every cell
-    select(w, false, Decision::pairs, Species::ph, c.ncell, na, ecell, q3, n3);
+    select(w, false, l, 2, c.ncell, na, ecell, q3, n3);
 
     // one lane per fired photon: draw the pair, stage its copies, remove the photon
     thrust::for_each(

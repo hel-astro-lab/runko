@@ -184,13 +184,9 @@ public:
   Stats stats;
 
 private:
-  /// Decisions taken by systematic rounding: parent updated, kicked or removed; pairs.
-  enum class Decision : int { update = 0, kick, remove, pairs, count };
-
-  /// Per-cell running remainders of the rounding, one array per (decision, species).
-  std::
-    array<thrust::device_vector<double>, 3 * static_cast<std::size_t>(Decision::count)>
-      carry_;
+  /// Per-cell running remainders of the systematic rounding, one array per channel
+  /// and role: what becomes of parent 1 (0), of parent 2 (1), the pair count (2).
+  std::array<thrust::device_vector<double>, 3 * N_CHANNELS> carry_;
 
   thrust::device_vector<Staged> staged_;          // products of one channel pass
   thrust::device_vector<std::int32_t> counters_;  // staged count, tail and id counters
@@ -260,8 +256,8 @@ private:
   /// keys.
   void apply_kicks(Ctx& c, Species s, std::size_t na);
 
-  /// Carry array of a decision site, created on first use.
-  thrust::device_vector<double>& carry(Decision d, Species s, int ncell);
+  /// Carry array of a role of channel l, seeded on first use and for a new cell count.
+  thrust::device_vector<double>& carry(int l, int role, int ncell);
 
   /// Statistics of channel l: the host half plus its slice of the device read-back h.
   [[nodiscard]] ChannelStats
@@ -272,8 +268,8 @@ private:
   void select(
     const tyvi::mdgrid_work& w,
     bool sorted,
-    Decision d,
-    Species s,
+    int l,
+    int role,
     int ncell,
     std::size_t n,
     const std::int32_t* cell,
