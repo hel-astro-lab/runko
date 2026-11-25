@@ -1259,19 +1259,12 @@ void
           const auto cp = copies(n, v1.w(i), rng, n_cap);
 
           if(cp.n_r >= 1) {
+            // read before the touch, which drops a parent that left its bin from its key
+            const auto bit = v1.lay.skey[i] % 2;
             v1.set_u(i, pa);
             v1.set_w(i, cp.w_each);
             v1.touch(i);
-            if(cp.n_r > 1) {
-              stage(
-                pa,
-                posi,
-                cp.w_each,
-                cp.n_r - 1,
-                cell,
-                0,
-                v1.lay.skey[i] >= 0 ? v1.lay.skey[i] % 2 : 0);
-            }
+            if(cp.n_r > 1) { stage(pa, posi, cp.w_each, cp.n_r - 1, cell, 0, bit); }
           } else {
             v1.kill(i);  // the roulette merged it away
           }

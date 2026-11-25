@@ -379,6 +379,25 @@ class qed_layout(unittest.TestCase):
             state = after
         self.assertGreater(held, 0.0, "no product found an arrival in slack")
 
+    def test_copies_keep_the_bit_of_their_parent(self):
+        """
+        the copies of a photon scattered out of its energy bin land in the parent's sub-range:
+        hot leptons lift most photons across bins, and the copies split evenly over the bits
+        """
+        config, tile = make_tile(qed_channels=["compton-", "compton+"], qed_n_reaction_cells=1,
+                                 qed_slack=50.0, qed_a_res=0.7, qed_x_ref=1e-5, qed_nsort=1000)
+        populate(tile, np.random.default_rng(31))
+        sp = tile.species("ph")
+        tile.layout()
+        old = set(np.asarray(tile.get_ids(sp)))
+
+        tile.interact()
+        keys = np.asarray(tile.get_slot_keys("ph"))
+        new = np.array([i not in old for i in np.asarray(tile.get_ids(sp))])
+        placed = keys[new & (keys >= 0)]
+        self.assertGreater(len(placed), 500)
+        self.assertAlmostEqual(np.mean(placed % 2), 0.5, delta=0.1)
+
     def test_arrival_in_slack_widens_no_bound(self):
         """
         an LP appended into a key's slack is no member of the key until the fill reaches it:
