@@ -121,6 +121,20 @@ public:
   std::array<bool, n_channels> enabled {};  // per Channel
   Stats stats;
 
+  /// What the sources and sinks of the open box moved since the last reset.
+  struct Budget {
+    double inj_E { 0 }, inj_W { 0 };  // energy and pair depth injected
+    double heat_E { 0 };              // energy of the diffusive heating
+    double esc_E { 0 }, esc_W { 0 };  // energy and weight escaped
+  };
+  Budget budget;
+
+  // escape spectrum: n_esc log bins of x over [esc_lo, esc_hi], n_mu linear bins of
+  // mu = k_z/x over [-1, 1]
+  static constexpr int n_esc      = 100;
+  static constexpr int n_mu       = 32;
+  static constexpr double esc_lo = 1e-8, esc_hi = 1e2;
+
 private:
   template<typename Ch>
   friend class TwoBody;
@@ -210,6 +224,14 @@ private:
   };
   thrust::device_vector<DeviceStats> dstat_;  // per channel
 
+  thrust::device_vector<double> esc_hist_;     // x ell_x per log bin
+  thrust::device_vector<double> esc_mu_hist_;  // the same per (log bin, mu bin)
+  /// Energy and weight a source or sink moved in one call, summed on the device.
+  struct Tally {
+    double E, W;
+  };
+  thrust::device_vector<Tally> tally_;  // one element
+
   std::uint64_t istep_ { 0 };  // steps taken: the time index of the random streams
 
   /// Two-body channel: sides, envelope, sub-steps of strata, thinning and reactions.
@@ -272,19 +294,6 @@ public:
 
   // ---- sources and sinks of the open box; each accumulates into the budget
 
-  struct Budget {
-    double inj_E { 0 }, inj_W { 0 };  // energy and pair depth injected
-    double heat_E { 0 };              // energy of the diffusive heating
-    double esc_E { 0 }, esc_W { 0 };  // energy and weight escaped
-  };
-  Budget budget;
-
-  // escape spectrum: n_esc log bins of x over [esc_lo, esc_hi], n_mu linear bins of
-  // mu = k_z/x over [-1, 1]
-  static constexpr int n_esc      = 100;
-  static constexpr int n_mu       = 32;
-  static constexpr double esc_lo = 1e-8, esc_hi = 1e2;
-
   /// Injects pairs at the power ell per step: dN/dgamma ~ gamma^-p on [gmin, gmax],
   /// each lepton isotropic.
   void inject_pairs_plaw(TileView& t, double ell, double p, double gmin, double gmax);
@@ -311,14 +320,6 @@ public:
   /// Self-absorption depth across the box of a photon of energy x.
   [[nodiscard]] double tau_ssa(const TileView& t, double x) const;
 
-private:
-  thrust::device_vector<double> esc_hist_;     // x ell_x per log bin
-  thrust::device_vector<double> esc_mu_hist_;  // the same per (log bin, mu bin)
-  /// Energy and weight a source or sink moved in one call, summed on the device.
-  struct Tally {
-    double E, W;
-  };
-  thrust::device_vector<Tally> tally_;  // one element
 };
 
 }  // namespace qed
