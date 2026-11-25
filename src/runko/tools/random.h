@@ -9,10 +9,9 @@
 
 namespace runko {
 
-// Counter-based random numbers: a draw is a hash of (stream key, counter) and nothing
-// else, so a kernel lane owns a stream fixed by (seed, step, sub-step, kernel, lane)
-// and no state is carried between lanes or launches. Reproducible whatever the launch
-// order, and free of the per-lane state a Mersenne twister would need.
+// Counter-based random numbers: a draw is a hash of (stream key, counter) alone. A
+// kernel lane owns the stream of (seed, step, sub-step, kernel, lane): no state is
+// carried between lanes or launches, and the draws do not depend on launch order.
 
 /// splitmix64 finalizer: a bijection of the 64-bit integers with full avalanche.
 [[nodiscard]]
@@ -25,8 +24,7 @@ constexpr std::uint64_t
   return z ^ (z >> 31);
 }
 
-/// Stream key of one kernel launch: seed, time step, sub-step and kernel id folded
-/// together.
+/// Stream key of one kernel launch: seed, time step, sub-step and kernel id mixed.
 [[nodiscard]]
 constexpr std::uint64_t
   rng_key(
@@ -38,10 +36,10 @@ constexpr std::uint64_t
 
 /// The stream of one lane: uniform, normal and integer draws numbered by a counter.
 struct [[nodiscard]] Rng {
-  std::uint64_t key;  // the stream of the launch (seed, step, sub-step, kernel)
-  std::uint64_t ctr;  // the next draw of this lane
+  std::uint64_t key;
+  std::uint64_t ctr;  // counter of the next draw
 
-  // counter space of one lane
+  // lanes of one key own disjoint counter ranges of this length
   static constexpr std::uint64_t draws_per_lane = std::uint64_t { 1 } << 24;
 
   constexpr Rng(const std::uint64_t stream_key, const std::uint64_t lane) :
@@ -54,13 +52,11 @@ struct [[nodiscard]] Rng {
   [[nodiscard]]
   constexpr std::uint64_t next()
   {
-    const auto x = mix64(ctr++ + key);  // first mix of counter and key
-    return mix64(
-      x ^ ((key << 32) | (key >> 32)));  // second mix against the rotated key
+    const auto x = mix64(ctr++ + key);
+    return mix64(x ^ ((key << 32) | (key >> 32)));
   }
 
-  /// Uniform on the open interval (0, 1): 53 random bits plus a half-ulp offset, never
-  /// 0 or 1.
+  /// Uniform on the open interval (0, 1): 53 random bits plus a half-ulp offset.
   [[nodiscard]]
   constexpr double uniform()
   { return (static_cast<double>(next() >> 11) + 0.5) * 0x1.0p-53; }
@@ -74,8 +70,8 @@ struct [[nodiscard]] Rng {
   [[nodiscard]]
   constexpr double normal()
   {
-    const auto r   = sstd::sqrt(-2.0 * sstd::log(uniform()));  // Rayleigh radius
-    const auto phi = sstd::TWOPI * uniform();                  // uniform angle
+    const auto r   = sstd::sqrt(-2.0 * sstd::log(uniform()));
+    const auto phi = sstd::TWOPI * uniform();
     return r * sstd::cos(phi);
   }
 };

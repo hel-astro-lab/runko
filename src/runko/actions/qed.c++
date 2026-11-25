@@ -45,22 +45,18 @@ runko::global_coordinates_closure<3>
   return runko::global_coordinates(sim, idx.as<double>().data);
 }
 
-/// The state of a tile from the config: the roles of its species, the box and the
-/// knobs.
+/// Builds the state of a tile from the config: species roles, box and sampler knobs.
 tile_state
   make_state(
     const toolbox::ConfigParser& conf,
     const pic::particle_containers& pc,
     const runko::cartesian_index<3>& idx)
 {
-  // ---- the roles of the species, from their mass and charge: a massless species holds
-  // the photons, a species of unit mass the leptons (electrons by a negative charge,
-  // positrons by a positive one), and heavier species (protons, ions) take no part in
-  // the reactions
-  auto sp = std::array<std::size_t, 3> {};
-  auto found =
-    std::array { false, false, false };  // photons, electrons, positrons seen
-  // every species of the tile is assigned a role or skipped
+  // ---- species roles: massless = photons, unit mass = leptons (the sign of the charge
+  // picks e- or e+); heavier species (protons, ions) take no part
+  auto sp    = std::array<std::size_t, 3> {};
+  auto found = std::array { false, false, false };
+
   for(const auto& [i, con]: pc) {
     const auto a = con.args();
     if(a.mass == 0.0) {
@@ -79,7 +75,7 @@ tile_state
       sp[r]    = i;
       found[r] = true;
     } else if(a.mass > 1.0) {
-      continue;  // proton or ion: not a QED species
+      continue;
     } else {
       throw std::runtime_error { std::format(
         "qed tile: species {} with mass {} and charge {} is neither a photon (m = 0), "
@@ -89,13 +85,14 @@ tile_state
         a.charge) };
     }
   }
+
   if(not(found[0] and found[1] and found[2])) {
     throw std::runtime_error {
       "qed tile needs a massless species (photons) and lepton species (m = 1) of both "
       "charge signs."
     };
   }
-  // a photon carries its weight as payload component 0, a lepton the species weight
+
   if(pc.at(sp[0]).n_payload() < 1uz) {
     throw std::runtime_error { std::format(
       "qed tile: the photons carry their weights as payload: set n_payload{}: 1 for "
@@ -110,31 +107,34 @@ tile_state
 
   // ---- the box: tile edge in Compton wavelengths, step in light crossings
   const auto cells = conf.get_or_throw<std::vector<std::ptrdiff_t>>("n_cells_per_tile");
+
   // the weight unit W_0 = H^2/sigma_T assumes V = H^3
   if(cells[0] != cells[1] or cells[1] != cells[2]) {
     throw std::runtime_error {
       "qed tile needs a cubic tile (n_cells_per_tile equal)."
     };
   }
-  const auto cfl    = conf.get_or_throw<double>("cfl");  // c dt/dx: the step in cells
+
+  const auto cfl    = conf.get_or_throw<double>("cfl");  // c dt/dx
   const auto tiles  = conf.get_or_throw<std::vector<std::ptrdiff_t>>("n_tiles");
   const auto H_tile = conf.get_or_throw<double>("qed_H_lamC");
-  const auto box =
-    Box { .H_lamC     = H_tile,
-          .H_box_lamC = H_tile * static_cast<double>(
-                                   tiles[0]),  // the compactness is defined on the box
-          .dt         = cfl / static_cast<double>(cells[0]),
-          .w_lep      = runko::species_weight(conf, sp[1]),
-          .ell_B      = conf.get<double>("qed_ell_B").value_or(0.0),
-          .x_min      = conf.get<double>("qed_x_min").value_or(0.0) };
+
+  // the compactness is defined on the box, not the tile
+  const auto box = Box { .H_lamC     = H_tile,
+                         .H_box_lamC = H_tile * static_cast<double>(tiles[0]),
+                         .dt         = cfl / static_cast<double>(cells[0]),
+                         .w_lep      = runko::species_weight(conf, sp[1]),
+                         .ell_B      = conf.get<double>("qed_ell_B").value_or(0.0),
+                         .x_min      = conf.get<double>("qed_x_min").value_or(0.0) };
   if(runko::species_weight(conf, sp[2]) != box.w_lep) {
     throw std::runtime_error { "qed tile: electron and positron weights must agree." };
   }
 
-  // ---- the sampler: every knob from the config, with its default
+  // ---- the sampler knobs
   const auto geti = [&](const char* key, const int def) {
     return static_cast<int>(conf.get<std::ptrdiff_t>(key).value_or(def));
   };
+
   auto par       = Params {};
   par.nbin       = geti("qed_nbin", par.nbin);
   par.ncell_edge = geti("qed_n_reaction_cells", par.ncell_edge);
@@ -149,25 +149,24 @@ tile_state
   par.kappa      = conf.get<double>("qed_kappa_acc").value_or(par.kappa);
   par.seed =
     static_cast<std::uint64_t>(conf.get<std::ptrdiff_t>("qed_seed").value_or(1));
-  // every tile draws its own streams: the seed folded with the grid index, so that no
-  // two tiles use one uniform for the same slot or lane (the streams are keyed by seed,
-  // step and lane only)
+
+  // the streams are keyed by seed, step and lane only: fold the grid index into the
+  // seed so that no two tiles share a stream
   for(auto q = 0uz; q < 3uz; ++q) {
     par.seed = runko::mix64(par.seed ^ static_cast<std::uint64_t>(idx[q]));
   }
+
   if(par.nbin < 1 or par.ncell_edge < 1 or par.nsort < 1 or par.smin < 1) {
     throw std::runtime_error {
       "qed tile: nbin, n_reaction_cells, nsort and smin must be >= 1."
     };
   }
 
-  // the channels to run: a list, a comma-separated string, or absent (all the field
-  // allows)
+  // channels: a list, a comma-separated string, or absent (all the field allows)
   auto channels = std::vector<std::string> {};
   if(const auto cs = conf.get<std::vector<std::string>>("qed_channels")) {
     channels = cs.value();
   } else if(const auto c1 = conf.get<std::string>("qed_channels")) {
-    // a comma-separated list
     auto rest = c1.value();
     while(not rest.empty()) {
       const auto pos = rest.find(',');
@@ -179,19 +178,16 @@ tile_state
     }
   }
 
-  // one layout per role: photons keyed by the sub-range bit, leptons by cell and bin
-  // only
-  return tile_state {
-    .sp      = sp,
-    .pops    = { Pop { true, 0.0, runko::species_weight(conf, sp[0]) },
-                 Pop { false, pc.at(sp[1]).args().mass, box.w_lep },
-                 Pop { false, pc.at(sp[2]).args().mass, box.w_lep } },
-    .sampler = Sampler { box, par, channels },
-    .B0      = conf.get<double>("qed_B0").value_or(0.0)
-  };  // set by a PIC driver: the field of ell_B in code units
+  // one layout per role; only the photon keys carry the sub-range bit
+  return tile_state { .sp   = sp,
+                      .pops = { Pop { true, 0.0, runko::species_weight(conf, sp[0]) },
+                                Pop { false, pc.at(sp[1]).args().mass, box.w_lep },
+                                Pop { false, pc.at(sp[2]).args().mass, box.w_lep } },
+                      .sampler = Sampler { box, par, channels },
+                      .B0      = conf.get<double>("qed_B0").value_or(0.0) };
 }
 
-/// the median |B| and the mean direction of the lattice field
+/// Summarizes the lattice field: median |B| over the cells and mean direction.
 void
   summarize_field(tile_state& st, emf::YeeLattice& yee)
 {
@@ -199,7 +195,8 @@ void
   const auto Bmds = std::get<1>(yee.view_EBJ_on_device());
   const auto n1 = static_cast<I>(Bmds.extent(1)), n2 = static_cast<I>(Bmds.extent(2));
   const auto n = static_cast<I>(Bmds.extent(0)) * n1 * n2;
-  // the field of cell f in flat order
+
+  // B of cell f in flat order
   const auto at = [=](const I f) {
     const auto i = f / (n1 * n2), j = (f / n2) % n1, k = f % n2;
     return Vec3(
@@ -207,14 +204,15 @@ void
       static_cast<double>(Bmds[i, j, k][1]),
       static_cast<double>(Bmds[i, j, k][2]));
   };
+
   const auto w  = tyvi::mdgrid_work {};
   const auto f0 = thrust::counting_iterator<I>(0);
-  // |B| per cell for the median, in code units; the summed vector for the direction
   st.babs.resize(static_cast<std::size_t>(n));
   const auto babs = thrust::raw_pointer_cast(st.babs.data());
   thrust::for_each(w.on_this(), f0, f0 + n, [=](const I f) {
     babs[f] = static_cast<float>(toolbox::norm(at(f)));
   });
+
   const auto bsum = thrust::transform_reduce(
     w.on_this(),
     f0,
@@ -223,6 +221,7 @@ void
     Vec3(0.0, 0.0, 0.0),
     [](const Vec3& a, const Vec3& b) { return a + b; });
   w.wait();
+
   thrust::sort(st.babs.begin(), st.babs.end());
   st.b_tile     = static_cast<double>(st.babs[st.babs.size() / 2]);
   const auto nb = toolbox::norm(bsum);
@@ -230,7 +229,7 @@ void
   st.summarized = true;
 }
 
-/// whether any cell of the lattice carries a magnetic field
+/// Whether any cell of the lattice carries a magnetic field.
 bool
   lattice_has_field(emf::YeeLattice& yee)
 {
@@ -239,6 +238,7 @@ bool
   const auto n1 = static_cast<I>(Bmds.extent(1)), n2 = static_cast<I>(Bmds.extent(2));
   const auto n  = static_cast<I>(Bmds.extent(0)) * n1 * n2;
   const auto f0 = thrust::counting_iterator<I>(0);
+
   return thrust::any_of(tyvi::mdgrid_work {}.on_this(), f0, f0 + n, [=](const I f) {
     const auto i = f / (n1 * n2), j = (f / n2) % n1, k = f % n2;
     return Bmds[i, j, k][0] != 0.0f or Bmds[i, j, k][1] != 0.0f or
@@ -246,8 +246,8 @@ bool
   });
 }
 
-/// the field the channels see: uniform, or the lattice scaled to the critical field
-/// with the tile summary of the last interact() (of the first call if none ran)
+/// The field the channels see: uniform, or the lattice scaled to the critical field,
+/// with the tile summary of the last interact() (of the first call if none ran).
 FieldView
   field_view(
     tile_state& st,
@@ -261,6 +261,7 @@ FieldView
                  static_cast<yee_value_type>(gc.mins()[2]) - emf::halo_size };
   const auto at = yee.interpolate_EB_linear_1st(origo_pos);
   const auto b0 = st.sampler.box.b_perp();
+
   if(st.B0 <= 0.0 or b0 <= 0.0) {
     return FieldView { .uniform = true,
                        .b0      = b0,
@@ -269,6 +270,7 @@ FieldView
                        .bhat    = Vec3(0.0, 0.0, 1.0),
                        .at      = at };
   }
+
   if(not st.summarized) { summarize_field(st, yee); }
   return FieldView { .uniform = false,
                      .b0      = b0,
@@ -278,7 +280,7 @@ FieldView
                      .at      = at };
 }
 
-/// the containers, layouts and extent of a tile as the sampler takes them
+/// The tile as the sampler takes it: field, containers, layouts and extent.
 TileView
   view(runko::simulation_context& sim, const tile_id id)
 {
@@ -286,6 +288,7 @@ TileView
   auto& pc      = containers(sim, id);
   const auto gc = coordinates(sim, id);
   using F       = pic::ParticleContainer::value_type;
+
   return TileView {
     .field    = field_view(st, component<emf::YeeLattice>(sim, id, "yee lattice"), gc),
     .con      = { &pc.at(st.sp[0]), &pc.at(st.sp[1]), &pc.at(st.sp[2]) },
@@ -297,8 +300,8 @@ TileView
   };
 }
 
-/// f(sampler, view) with the products taking ids from the next free one of their
-/// species; the sampler reports how many it used
+/// Calls f(sampler, view) with the products numbered from the next free id of their
+/// species, then reserves the ids the sampler reports used.
 template<typename F>
 void
   with_ids(runko::simulation_context& sim, const tile_id id, F&& f)
@@ -306,8 +309,10 @@ void
   auto t    = view(sim, id);
   auto& st  = state(sim, id);
   auto& gen = component<pic::particle_id_generator>(sim, id, "particle id generator");
+
   for(auto s = 0uz; s < 3uz; ++s) { t.id_base[s] = gen.reserve_ids(st.sp[s], 0); }
   f(st.sampler, t);
+
   for(auto s = 0uz; s < 3uz; ++s) {
     std::ignore = gen.reserve_ids(st.sp[s], t.ids_used[s]);
   }
@@ -320,12 +325,14 @@ void
 {
   emf::ensure_constructed_yee_lattices(sim);
   pic::ensure_constructed_particle_containers(sim);
+
   // collected first: the states are emplaced outside the view that excludes them
   auto todo = std::vector<tile_id> {};
   for(const auto id: sim.tiles.view<pic::particle_containers, runko::local_tile_tag>(
         entt::exclude<tile_state>)) {
     todo.push_back(id);
   }
+
   for(const auto id: todo) {
     const auto& idx = component<runko::cartesian_index<3>>(sim, id, "cartesian index");
     sim.tiles.emplace<tile_state>(id, make_state(sim.config, containers(sim, id), idx));
@@ -338,8 +345,9 @@ tile_state&
   auto& st =
     component<tile_state>(sim, id, "qed state (build it with runko.qed.threeD.Tile)");
   auto& pc = containers(sim, id);
-  // the particle exchange appends arrivals behind the last alive slot, which grows or
-  // shrinks the container: the tables follow its size
+
+  // the particle exchange appends arrivals behind the last alive slot and so resizes
+  // the container; the tables follow it on every access
   for(auto s = 0uz; s < 3uz; ++s) { st.pops[s].resized(pc.at(st.sp[s])); }
   return st;
 }
@@ -348,19 +356,20 @@ void
   interact(runko::simulation_context& sim, const tile_id id)
 {
   auto& st = state(sim, id);
-  // the reaction cell of an LP is fixed at the layout, and any push between layouts
-  // moves LPs across cells; widened bounds cannot repair a stale cell key (energies
-  // they can: the step re-widens every bound on non-layout laps)
+
+  // an LP's reaction cell is fixed at the layout and a push between layouts moves it:
+  // the step re-widens energy bounds, but nothing repairs a stale cell key
   if(st.sampler.par.ncell_edge > 1 and st.sampler.par.nsort > 1) {
     throw std::runtime_error {
       "qed interact: qed_n_reaction_cells > 1 needs qed_nsort = 1 (a cell key cannot "
       "survive a push)."
     };
   }
+
   if(st.sampler.box.b_perp() > 0.0) {
     auto& yee = component<emf::YeeLattice>(sim, id, "yee lattice");
     if(st.B0 > 0.0) {
-      // the lattice moved since the last lap; only self-absorption reads its summary
+      // the lattice moved since the last lap; only self-absorption reads the summary
       const auto ssa = st.sampler.enabled[static_cast<std::size_t>(Channel::ssa_m)] or
                        st.sampler.enabled[static_cast<std::size_t>(Channel::ssa_p)];
       if(ssa) { summarize_field(st, yee); }
@@ -371,6 +380,7 @@ void
       };
     }
   }
+
   with_ids(sim, id, [](Sampler& s, TileView& t) { s.step(t); });
 }
 
@@ -440,27 +450,30 @@ void
       "qed set_particles: u and w must have the same length."
     };
   }
+
   auto& st      = state(sim, id);
   const auto sp = st.sp[static_cast<std::size_t>(s)];
   auto& con     = containers(sim, id).at(sp);
   auto args     = con.args();
   args.N        = 0;  // args().N is the old size, and fresh slots carry no dead tag
-  con           = pic::ParticleContainer { args };  // empty, same species
+  con           = pic::ParticleContainer { args };
+
   // the species' own stream: species set in one step must not share positions
-  auto rng      = runko::Rng { runko::rng_key(
-                                 st.sampler.par.seed,
-                                 st.sampler.step(),
-                                 static_cast<std::uint64_t>(s),
-                                 501),
-                               0 };
+  auto rng = runko::Rng { runko::rng_key(
+                            st.sampler.par.seed,
+                            st.sampler.step(),
+                            static_cast<std::uint64_t>(s),
+                            501),
+                          0 };
+
   auto states   = std::vector<runko::ParticleState<double>>(u.size());
-  const auto np = con.n_payload();  // photons: the weight is component 0
+  const auto np = con.n_payload();
   auto payload  = std::vector<pic::ParticleContainer::value_type>(u.size() * np, 0.0f);
   const auto gc = coordinates(sim, id);
-  const auto lo = gc.mins();  // tile extent, for the random positions
+  const auto lo = gc.mins();
   const auto hi = gc.maxs();
   auto& gen = component<pic::particle_id_generator>(sim, id, "particle id generator");
-  // one state per LP: a uniform position in the tile, the given momentum and weight
+
   for(auto i = 0uz; i < u.size(); ++i) {
     states[i] =
       runko::ParticleState<double> { .pos = { lo[0] + (hi[0] - lo[0]) * rng.uniform(),
@@ -470,11 +483,13 @@ void
                                      .id  = 0 };
     if(np > 0uz) { payload[i * np] = static_cast<float>(w[i]); }
   }
-  for(auto& p: states) {
-    p.id = gen.consume_next_id(sp);
-  }  // the pic path: ids assigned, appended
+
+  // the pic path: ids assigned, then appended
+  for(auto& p: states) { p.id = gen.consume_next_id(sp); }
   con.add_particles(states, payload);
-  st.pops[static_cast<std::size_t>(s)].invalidate();  // laid out again at the next step
+
+  // the container was rebuilt: lay it out again at the next step
+  st.pops[static_cast<std::size_t>(s)].invalidate();
 }
 
 void
@@ -487,20 +502,22 @@ void
   auto& st     = state(sim, id);
   auto& con    = containers(sim, id).at(st.sp[static_cast<std::size_t>(s)]);
   const auto n = con.size();
-  // one momentum per live LP, no more, no less
+
   if(con.number_alive() != u.size()) {
     throw std::runtime_error { "reset_momenta: one momentum per live LP is needed" };
   }
-  // the momenta flattened to the device
+
   auto h = thrust::host_vector<float>(3 * u.size());
   for(auto i = 0uz; i < u.size(); ++i) {
     for(auto q = 0uz; q < 3uz; ++q) { h[3 * i + q] = static_cast<float>(u[i][q]); }
   }
+
   const auto d       = thrust::device_vector<float>(h);
   const auto ids_mds = con.ids_mds();
   const auto vel_mds = con.vel_mds();
   const auto w       = tyvi::mdgrid_work {};
-  // rank of every slot among the alive ones, in slot order
+
+  // rank of every slot among the live ones
   auto rank     = thrust::device_vector<runko::index_t>(n);
   const auto i0 = thrust::counting_iterator<runko::index_t>(0);
   thrust::transform_exclusive_scan(
@@ -516,7 +533,8 @@ void
     thrust::plus<runko::index_t> {});
   const auto rk = thrust::raw_pointer_cast(rank.data());
   const auto dp = thrust::raw_pointer_cast(d.data());
-  // one lane per slot: a live slot takes the momentum of its rank
+
+  // a live slot takes the momentum of its rank
   thrust::for_each(
     w.on_this(),
     i0,
@@ -525,9 +543,9 @@ void
       if(ids_mds[i][] == runko::dead_prtc_id) { return; }
       for(auto q = 0uz; q < 3uz; ++q) { vel_mds[i][q] = dp[3 * rk[i] + q]; }
     });
-  st.pops[static_cast<std::size_t>(s)].touch_all(
-    con,
-    w);  // the new energies may lie outside the bounds of their keys
+
+  // the new energies may lie outside the bounds of their keys
+  st.pops[static_cast<std::size_t>(s)].touch_all(con, w);
   w.wait();
 }
 
@@ -539,6 +557,7 @@ bool
   for(auto s = 0uz; s < 3uz; ++s) {
     if(not st.pops[s].laid(pc.at(st.sp[s]))) { return false; }
   }
+
   return true;
 }
 
@@ -581,7 +600,7 @@ double
     const bool weight)
 {
   const auto t = view(sim, id);
-  // the channel by name
+
   for(auto i = 0uz; i < N_CHANNELS; ++i) {
     if(channel == channel_name(static_cast<Channel>(i))) {
       return state(sim, id).sampler.pair_sum(static_cast<Channel>(i), t, weight);

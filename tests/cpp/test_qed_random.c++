@@ -28,6 +28,7 @@ const suite<"counter-based rng"> _ = [] {
     constexpr auto n = 1000000;
     auto sum = 0.0, sum2 = 0.0, corr = 0.0, prev = 0.5;
     auto bins = std::array<int, 16> {};
+
     for(auto i = 0; i < n; ++i) {
       const auto u = rng.uniform();
       expect(u > 0.0 and u < 1.0);
@@ -37,6 +38,7 @@ const suite<"counter-based rng"> _ = [] {
       prev = u;
       ++bins[static_cast<std::size_t>(u * 16.0)];
     }
+
     const auto mean = sum / n;
     const auto var  = sum2 / n - mean * mean;
     expect(std::abs(mean - 0.5) < 2e-3);
@@ -50,6 +52,7 @@ const suite<"counter-based rng"> _ = [] {
     auto a         = runko::Rng { key, 5 };
     auto b         = runko::Rng { key, 5 };
     for(auto i = 0; i < 100; ++i) { expect(a.uniform() == b.uniform()); }
+
     auto c = runko::Rng { key, 6 };
     auto d = runko::Rng { runko::rng_key(7, 11, 1, 3), 5 };
     auto e = runko::Rng { key, 5 };
@@ -62,12 +65,14 @@ const suite<"counter-based rng"> _ = [] {
     const auto key   = runko::rng_key(3, 0, 0, 0);
     constexpr auto n = 200000;
     auto sum = 0.0, corr = 0.0, prev = 0.5;
+
     for(auto lane = 0; lane < n; ++lane) {
       const auto u = runko::Rng { key, static_cast<std::uint64_t>(lane) }.uniform();
       sum += u;
       corr += (u - 0.5) * (prev - 0.5);
       prev = u;
     }
+
     expect(std::abs(sum / n - 0.5) < 3e-3);
     expect(std::abs(corr / n) < 3e-3);
   };
@@ -76,12 +81,14 @@ const suite<"counter-based rng"> _ = [] {
     auto rng         = runko::Rng { runko::rng_key(5, 0, 0, 0), 0 };
     constexpr auto n = 400000;
     auto s = 0.0, s2 = 0.0, s4 = 0.0;
+
     for(auto i = 0; i < n; ++i) {
       const auto z = rng.normal();
       s += z;
       s2 += z * z;
       s4 += z * z * z * z;
     }
+
     expect(std::abs(s / n) < 5e-3);
     expect(std::abs(s2 / n - 1.0) < 1e-2);
     expect(std::abs(s4 / n - 3.0) < 6e-2);
@@ -106,10 +113,14 @@ const suite<"portable atomics"> atomics = [] {
     const auto wp    = thrust::raw_pointer_cast(won.data());
     const auto w     = tyvi::mdgrid_work {};
     const auto i0    = thrust::counting_iterator<int>(0);
+
     thrust::for_each(w.on_this(), i0, i0 + n, [=](const int i) {
-      wp[i] = sstd::atomic_compare_exchange(s, std::uint64_t { 0 }, std::uint64_t(i) + 1) ? 1 : 0;
+      wp[i] =
+        sstd::atomic_compare_exchange(s, std::uint64_t { 0 }, std::uint64_t(i) + 1) ? 1
+                                                                                    : 0;
     });
     w.wait();
+
     const auto h      = thrust::host_vector<int>(won);
     const auto winner = std::find(h.begin(), h.end(), 1) - h.begin();
     expect(std::count(h.begin(), h.end(), 1) == 1);

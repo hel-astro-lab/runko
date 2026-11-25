@@ -18,7 +18,7 @@
 
 namespace {
 
-/// the log edges of the escaping spectrum and the linear edges of its direction cosine
+/// Bin edges of the escaping spectrum (log in x) and of its direction cosine (linear).
 std::vector<double>
   esc_edges()
 {
@@ -28,8 +28,10 @@ std::vector<double>
                                     qed::Sampler::ESC_HI / qed::Sampler::ESC_LO,
                                     static_cast<double>(i) / qed::Sampler::NESC);
   }
+
   return e;
 }
+
 std::vector<double>
   mu_edges()
 {
@@ -37,10 +39,10 @@ std::vector<double>
   for(auto i = 0uz; i < e.size(); ++i) {
     e[i] = -1.0 + 2.0 * static_cast<double>(i) / qed::Sampler::NMU;
   }
+
   return e;
 }
 
-/// the species role of its python name
 qed::Species
   species_of(const std::string& name)
 {
@@ -55,16 +57,18 @@ namespace qed {
 namespace py = pybind11;
 
 namespace {
-/// the physics functions, vectorized over numpy arrays, for tests and analysis
+/// The physics functions, vectorized over numpy arrays, for tests and analysis.
 void
   bind_physics(py::module& m)
 {
   using qed::Vec3;
+
   // ---- constants and thresholds
   m.attr("ALPHA")    = qed::ALPHA;
   m.attr("BQ_G")     = qed::BQ_G;
   m.attr("SYN_GMIN") = qed::syn::GMIN;
   m.attr("BW_XMIN")  = qed::bw::XMIN;
+
   // ---- two-body: cross sections and rates of (incident, partner) momenta
   m.def("b_from_ellB", py::vectorize([](const double ell_B, const double H) {
           return qed::b_from_ellB(ell_B, H);
@@ -72,6 +76,7 @@ void
   m.def("sigma_kn", py::vectorize([](const double x) {
           return qed::comp::sigma_kn(x);
         }));
+
   m.def(
     "rate_compton",
     py::vectorize([](double kx, double ky, double kz, double ux, double uy, double uz) {
@@ -105,7 +110,8 @@ void
     py::vectorize([](double b, double x_min, double xlo, double glo, double ghi) {
       return qed::ssa::bound(b, x_min, xlo, glo, ghi);
     }));
-  // ---- synchrotron: spectral function, rate, cumulative and its inverse, moments
+
+  // ---- synchrotron: spectrum, rate, cumulative and its inverse, moments
   m.def("G_syn", py::vectorize([](double ce, double cg) {
           return qed::ssa::G_syn(ce, cg);
         }));
@@ -131,6 +137,7 @@ void
       [](double ux, double uy, double uz, double b, double x_min, bool kinetic) {
         return qed::syn::rate(Vec3(ux, uy, uz), b, x_min, kinetic);
       }));
+
   // ---- Breit-Wheeler: rate, cumulative and its inverse
   m.def("T_bw", py::vectorize([](double chi) { return qed::bw::T(chi); }));
   m.def("P_bw", py::vectorize([](double chi, double r) { return qed::bw::P(chi, r); }));
@@ -140,7 +147,8 @@ void
   m.def("rate_bw", py::vectorize([](double kx, double ky, double kz, double b) {
           return qed::bw::rate(Vec3(kx, ky, kz), b);
         }));
-  // ---- the one-body bookkeeping of the sampler: accumulation factor and cooling law
+
+  // ---- one-body bookkeeping of the sampler: accumulation factor, cooling law
   m.def("facc_syn", py::vectorize([](double gam, double xm, double acc, double kappa) {
           return qed::facc_syn(gam, xm, acc, kappa);
         }));
@@ -155,30 +163,27 @@ void
 void
   bind_qed(py::module& m_sub)
 {
-  // runko.qed.threeD.Tile is the python factory of a single QED tile
-  // (runko/__init__.py)
+  // runko.qed.threeD.Tile, the factory of a QED tile, lives in runko/__init__.py
   m_sub.def_submodule("threeD", "3D specializations");
   py::module m_ph =
     m_sub.def_submodule("physics", "the QED process functions, vectorized");
   bind_physics(m_ph);
-  m_sub.attr("LAMC_CM") = qed::LAMC_CM;
-  m_sub.attr("ESC_EDGES") =
-    to_ndarray(esc_edges());  // log bins of the escaping spectrum
-  m_sub.attr("MU_EDGES") =
-    to_ndarray(mu_edges());  // linear bins of its direction cosine
+  m_sub.attr("LAMC_CM")   = qed::LAMC_CM;
+  m_sub.attr("ESC_EDGES") = to_ndarray(esc_edges());
+  m_sub.attr("MU_EDGES")  = to_ndarray(mu_edges());
 
-  // ---- one tile of a simulation context, by its id: the per-tile methods of
-  // runko.ProxyTile
+  // ---- per-tile methods of runko.ProxyTile, by tile id
   using sim_t        = runko::simulation_context;
   using id_t         = qed::tile_id;
   const auto sampler = [](sim_t& sim, const id_t id) -> qed::Sampler& {
     return qed::state(sim, id).sampler;
   };
 
-  // layout: its state, the species roles and the box clocks
+  // layout, species roles, box and clocks
   m_sub.def("laid", &qed::laid);
   m_sub.def("layout", &qed::layout);
   m_sub.def("step", [=](sim_t& sim, const id_t id) { return sampler(sim, id).step(); });
+
   m_sub.def("species", [](sim_t& sim, const id_t id, const std::string& s) {
     return qed::state(sim, id).sp[static_cast<std::size_t>(species_of(s))];
   });
@@ -195,7 +200,8 @@ void
     d["b_perp"] = b.b_perp();
     return d;
   });
-  // population IO (host round trips): replace, inspect the layout tables and keys
+
+  // population IO (host round trips)
   m_sub.def(
     "set_particles",
     [](
@@ -227,7 +233,8 @@ void
     d["dl"]   = tb.dl;
     return d;
   });
-  // diagnostics: totals, pair depth, the sampler step and its counters
+
+  // diagnostics and the step
   m_sub.def("totals", [](sim_t& sim, const id_t id, const std::string& s) {
     const auto tt = qed::totals(sim, id, species_of(s));
     py::dict d;
@@ -237,6 +244,7 @@ void
     d["P"] = tt.P;
     return d;
   });
+
   m_sub.def("tau_T", &qed::tau_T);
   m_sub.def("interact", &qed::interact);
   m_sub.def("counts", [=](sim_t& sim, const id_t id) {
@@ -255,7 +263,8 @@ void
     py::arg("id"),
     py::arg("channel"),
     py::arg("weight") = false);
-  // the open box: sources, the sink, its budgets and the escaping spectrum
+
+  // the open box: sources, sink, budgets, escaping spectrum
   m_sub.def(
     "inject_pairs_plaw",
     &qed::inject_pairs_plaw,
@@ -265,6 +274,7 @@ void
     py::arg("p"),
     py::arg("gmin"),
     py::arg("gmax"));
+
   m_sub.def(
     "inject_photons",
     &qed::inject_photons,
@@ -274,12 +284,14 @@ void
     py::arg("theta"),
     py::arg("w"),
     py::arg("planck") = true);
+
   m_sub.def(
     "heat_diffusive",
     &qed::heat_diffusive,
     py::arg("sim"),
     py::arg("id"),
     py::arg("ell"));
+
   m_sub.def(
     "escape_photons",
     &qed::escape_photons,
@@ -287,6 +299,7 @@ void
     py::arg("id"),
     py::arg("tau_T")  = -1.0,
     py::arg("dt_esc") = -1.0);
+
   m_sub.def("escaped_mu_spectrum", [=](sim_t& sim, const id_t id) {
     // (log x bins, mu bins) as a (NESC, NMU) array of x ell_x sums
     auto a = to_ndarray(sampler(sim, id).escaped_mu_spectrum());
@@ -309,13 +322,13 @@ void
     return d;
   });
   m_sub.def("escaped_spectrum", [=](sim_t& sim, const id_t id) {
-    // (bin edges, x ell_x per bin) -- the sums are in energy units, the caller divides
-    // by steps
+    // (bin edges, x ell_x per bin) summed since the reset; the caller divides by steps
     return py::make_tuple(
       to_ndarray(esc_edges()),
       to_ndarray(sampler(sim, id).escaped_spectrum()));
   });
-  // in-place momentum reset of the live LPs (thermostats of the tests)
+
+  // the thermostats of the tests
   m_sub.def(
     "reset_momenta",
     [](
