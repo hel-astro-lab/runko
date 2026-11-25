@@ -65,7 +65,7 @@ struct [[nodiscard]] ChannelStats {
 struct [[nodiscard]] Stats {
   std::size_t steps { 0 };
   double cell_lanes { 0 };  // (cell, bin, bin) lanes of the envelope kernels
-  std::array<ChannelStats, N_CHANNELS> ch {};
+  std::array<ChannelStats, n_channels> ch {};
   double slackprod { 0 }, tailprod { 0 };   // products placed in slack / in the tail
   double heldprod { 0 };                    // tail ones whose slack held an arrival
   std::array<double, 3> slots {}, live {};  // per species
@@ -118,7 +118,7 @@ class [[nodiscard]] Sampler {
 public:
   Box box;
   Params par;
-  std::array<bool, N_CHANNELS> enabled {};  // per Channel
+  std::array<bool, n_channels> enabled {};  // per Channel
   Stats stats;
 
 private:
@@ -183,7 +183,7 @@ private:
   /// (what becomes of parent 1 (0), of parent 2 (1), the pair count (2)); the scan of
   /// the probabilities; the cell order of unsorted events and their cells alongside.
   struct Rounding {
-    std::array<thrust::device_vector<double>, 3 * N_CHANNELS> carry;
+    std::array<thrust::device_vector<double>, 3 * n_channels> carry;
     thrust::device_vector<double> cs;
     thrust::device_vector<runko::index_t> perm;
     thrust::device_vector<std::int32_t> keys;
@@ -279,11 +279,11 @@ public:
   };
   Budget budget;
 
-  // escape spectrum: NESC log bins of x over [ESC_LO, ESC_HI], NMU linear bins of
+  // escape spectrum: n_esc log bins of x over [esc_lo, esc_hi], n_mu linear bins of
   // mu = k_z/x over [-1, 1]
-  static constexpr int NESC      = 100;
-  static constexpr int NMU       = 32;
-  static constexpr double ESC_LO = 1e-8, ESC_HI = 1e2;
+  static constexpr int n_esc      = 100;
+  static constexpr int n_mu       = 32;
+  static constexpr double esc_lo = 1e-8, esc_hi = 1e2;
 
   /// Injects pairs at the power ell per step: dN/dgamma ~ gamma^-p on [gmin, gmax],
   /// each lepton isotropic.
@@ -303,7 +303,7 @@ public:
   /// x ell_x of the escaped photons per log bin since the budget was reset.
   [[nodiscard]] std::vector<double> escaped_spectrum() const;
 
-  /// The same per (log x, mu) bin, NESC x NMU row-major.
+  /// The same per (log x, mu) bin, n_esc x n_mu row-major.
   [[nodiscard]] std::vector<double> escaped_mu_spectrum() const;
 
   void reset_budget();

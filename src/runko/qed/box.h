@@ -14,7 +14,7 @@
 
 namespace qed {
 
-inline constexpr double LAMC_CM = 3.8615926796e-11;  // reduced Compton wavelength, cm
+inline constexpr double lamc_cm = 3.8615926796e-11;  // reduced Compton wavelength, cm
 
 struct [[nodiscard]] Box {
   double H_lamC;      // tile edge in Compton wavelengths, H/lamC
@@ -25,7 +25,7 @@ struct [[nodiscard]] Box {
   double x_min;       // floor of the synchrotron band: emission and absorption above it
 
   [[nodiscard]] constexpr double N2() const { return 1.0 / dt; }
-  [[nodiscard]] constexpr double N1() const { return 1.0 / (ALPHA * dt * H_lamC); }
+  [[nodiscard]] constexpr double N1() const { return 1.0 / (alpha * dt * H_lamC); }
 
   /// Field B_perp/B_Q from the magnetic compactness of the box.
   [[nodiscard]] constexpr double b_perp() const

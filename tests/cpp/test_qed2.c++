@@ -75,9 +75,9 @@ const suite<"two-body qed physics"> _ = [] {
 
     for(auto n = 0; n < 200000; ++n) {
       const auto k = random_u(rng, 20.0), u = random_u(rng, 20.0);
-      expect(qed::comp::rate(k, u) <= qed::comp::SHMAX);
-      expect(qed::ann::rate(k, u) <= qed::ann::SHMAX);
-      expect(qed::gg::rate(k, u) <= qed::gg::SHMAX);
+      expect(qed::comp::rate(k, u) <= qed::comp::rate_max);
+      expect(qed::ann::rate(k, u) <= qed::ann::rate_max);
+      expect(qed::gg::rate(k, u) <= qed::gg::rate_max);
     }
   };
 

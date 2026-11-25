@@ -13,20 +13,20 @@
 
 namespace qed {
 
-inline constexpr double ALPHA = 7.2973525693e-3;  // fine structure constant
-inline constexpr double BQ_G  = 4.4140094e13;     // quantum critical field, G
+inline constexpr double alpha = 7.2973525693e-3;  // fine structure constant
+inline constexpr double bq_gauss  = 4.4140094e13;     // quantum critical field, G
 
 /// Returns b_perp = B_perp/B_Q from the magnetic compactness
 /// ell_B = sigma_T H U_B/(m_e c^2) = (alpha/3) b_perp^2 (H/lamC).
 [[nodiscard]]
 constexpr double
   b_from_ellB(const double ell_B, const double size_lamC)
-{ return sstd::sqrt(3.0 * ell_B / (ALPHA * size_lamC)); }
+{ return sstd::sqrt(3.0 * ell_B / (alpha * size_lamC)); }
 
 namespace ssa {
 
-inline constexpr double GMIN = 3.0;   // lepton threshold, as for synchrotron emission
-inline constexpr double XREL = 1e-3;  // x/gamma below which the derivative form is used
+inline constexpr double gamma_min = 3.0;   // lepton threshold, as for synchrotron emission
+inline constexpr double x_rel = 1e-3;  // x/gamma below which the derivative form is used
 
 // ---- synchrotron functions F(nu) = nu int_nu^inf K_5/3 and G(nu) = nu K_2/3(nu): the
 // fits of Fouka & Ouichaoui, two asymptotes bridged by exp(H1) and 1 - exp(H2);
@@ -36,17 +36,17 @@ inline constexpr double XREL = 1e-3;  // x/gamma below which the derivative form
 constexpr double
   F_syn(const double nu)
 {
-  // F -> F1 nu^(1/3) at nu << 1, F -> F2 e^-nu nu^(1/2) at nu >> 1
-  constexpr auto F1 = 2.1495282415344787;  // pi 2^(5/3)/(sqrt 3 Gamma(1/3))
-  constexpr auto F2 = 1.2533141373155003;  // sqrt(pi/2)
+  // F -> f1 nu^(1/3) at nu << 1, F -> f2 e^-nu nu^(1/2) at nu >> 1
+  constexpr auto f1 = 2.1495282415344787;  // pi 2^(5/3)/(sqrt 3 Gamma(1/3))
+  constexpr auto f2 = 1.2533141373155003;  // sqrt(pi/2)
 
   const auto x3 = sstd::cbrt(nu);
   const auto H1 = -0.97947838884478688 * nu - 0.83333239129525072 * sstd::sqrt(nu) +
                   0.15541796026816246 * x3;
   const auto H2 = -4.69247165562628882e-2 * nu - 0.70055018056462881 * sstd::sqrt(nu) +
                   1.03876297841949544e-2 * x3;
-  return F1 * x3 * sstd::exp(H1) +
-         F2 * sstd::exp(-nu) * sstd::sqrt(nu) * (1.0 - sstd::exp(H2));
+  return f1 * x3 * sstd::exp(H1) +
+         f2 * sstd::exp(-nu) * sstd::sqrt(nu) * (1.0 - sstd::exp(H2));
 }
 
 /// Returns K_2/3(nu) = G(nu)/nu.
@@ -93,22 +93,22 @@ constexpr double
 { return sstd::sqrt(sstd::max(g * g - 1.0, 0.0)) * G_syn(g * b_perp, chi_gam); }
 
 /// Returns sigma-hat_ssa F/2 for photon k and lepton u, the net of absorption and
-/// stimulated emission; zero for gamma < GMIN or x < x_min.
+/// stimulated emission; zero for gamma < gamma_min or x < x_min.
 [[nodiscard]]
 constexpr double
   rate(const Vec3& k, const Vec3& u, const double b_perp, const double x_min)
 {
   // The opacity is h(gamma + x) - h(gamma); the Moller factor cancels the angular
-  // dependence. For x < XREL gamma the difference is ill-conditioned: x h'(gamma) by a
+  // dependence. For x < x_rel gamma the difference is ill-conditioned: x h'(gamma) by a
   // central difference instead, accurate to O(x/gamma).
   const auto x   = toolbox::norm(k);
   const auto gam = sstd::sqrt(1.0 + toolbox::dot(u, u));
-  if(gam < GMIN or x < x_min or x <= 0.0) { return 0.0; }
+  if(gam < gamma_min or x < x_min or x <= 0.0) { return 0.0; }
 
   const auto chi_gam = x * b_perp;
   const auto us      = sstd::sqrt(sstd::max(gam * gam - 1.0, 1e-300));
   double diff;
-  if(x < XREL * gam) {
+  if(x < x_rel * gam) {
     const auto d = 1e-6 * gam;
     diff = x * (h_syn(gam + d, chi_gam, b_perp) - h_syn(gam - d, chi_gam, b_perp)) /
            (2.0 * d);
@@ -116,7 +116,7 @@ constexpr double
     diff = h_syn(gam + x, chi_gam, b_perp) - h_syn(gam, chi_gam, b_perp);
   }
 
-  return (sstd::PI / (8.0 * ALPHA)) * diff / (us * gam * x * x * x);
+  return (sstd::PI / (8.0 * alpha)) * diff / (us * gam * x * x * x);
 }
 
 /// Returns a bound on rate over photons above x_lo and leptons in [g_lo, g_hi]: the
@@ -127,7 +127,7 @@ constexpr double
 constexpr double
   shmax(const double b_perp, const double x_lo, double g_lo, double g_hi)
 {
-  g_lo = sstd::max(g_lo, GMIN);
+  g_lo = sstd::max(g_lo, gamma_min);
   g_hi = sstd::max(g_hi, g_lo);
 
   const auto gpk = sstd::sqrt(0.4435 * x_lo / b_perp);
@@ -158,7 +158,7 @@ constexpr double
     const double glo,
     const double ghi)
 {
-  if(not(xlo < 1e300) or not(glo < 1e300) or not(ghi >= GMIN) or b_perp <= 0.0) {
+  if(not(xlo < 1e300) or not(glo < 1e300) or not(ghi >= gamma_min) or b_perp <= 0.0) {
     return 0.0;
   }
   return shmax(b_perp, sstd::max(xlo, x_min), glo, ghi);

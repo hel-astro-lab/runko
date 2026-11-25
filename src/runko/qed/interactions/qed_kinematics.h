@@ -17,7 +17,7 @@ using Vec3 = toolbox::Vec3<double>;
 
 /// Largest number of proposals of a rejection loop; beyond it the last proposal is
 /// taken. At acceptance > 0.5 per trip the cap is hit with probability below 1e-19.
-inline constexpr int TRIP_CAP = 64;
+inline constexpr int trip_cap = 64;
 
 /// Right-handed triad (i, j, k) with k = kvec and ref in the (i, k) plane.
 struct [[nodiscard]] Triad {
@@ -105,7 +105,7 @@ constexpr Vec3
   auto w          = 0.0;
   ntry            = 0;
 
-  while(ntry < TRIP_CAP) {
+  while(ntry < trip_cap) {
     ++ntry;
     const auto u1 = rng.uniform();
     w             = slow ? 2.0 * u1 - 1.0

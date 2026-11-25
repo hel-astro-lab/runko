@@ -4,7 +4,7 @@
 #pragma once
 
 // Nonlinear Breit-Wheeler pair production, photon -> electron + positron, in the local
-// field: the one-body rate function r(chi, eps) (zero below XMIN), the closed-form
+// field: the one-body rate function r(chi, eps) (zero below x_threshold), the closed-form
 // inversion of the pair spectrum (Sarjomaa & Nattila), and the product sampler. The
 // field enters through chi_gamma = x b_perp. Units: m_e c^2, m_e c.
 
@@ -12,11 +12,11 @@
 
 namespace qed::bw {
 
-inline constexpr double XMIN  = 2.0;   // photon threshold: one pair's mass
-inline constexpr double ZCLIP = 1e-4;  // deviate clipped off both ends before inversion
-inline constexpr double CHI_LO = 0.5;  // validity window of the spectrum shape
-inline constexpr double CHI_HI = 1e4;
-inline constexpr double TINY   = 1e-300;
+inline constexpr double x_threshold  = 2.0;   // photon threshold: one pair's mass
+inline constexpr double z_clip = 1e-4;  // deviate clipped off both ends before inversion
+inline constexpr double chi_lo = 0.5;  // validity window of the spectrum shape
+inline constexpr double chi_hi = 1e4;
+inline constexpr double tiny   = 1e-300;
 
 /// Returns T_BW(chi_gamma) of the conversion rate: (3/16) sqrt(3/2) exp(-8/(3 chi)) in
 /// the tunnelling regime, 0.38 chi^(-1/3) at large chi; fit accurate to 0.6 % from 0.1
@@ -38,7 +38,7 @@ constexpr double
   rate(const Vec3& k, const double b_perp)
 {
   const auto x = toolbox::norm(k);
-  if(x < XMIN) { return 0.0; }
+  if(x < x_threshold) { return 0.0; }
   return b_perp * T(x * b_perp);
 }
 
@@ -48,13 +48,13 @@ struct [[nodiscard]] Shape {
   double a, b, c, n;
 };
 
-/// Returns the Pade parameters at chi_gamma clamped to [CHI_LO, CHI_HI]. The
+/// Returns the Pade parameters at chi_gamma clamped to [chi_lo, chi_hi]. The
 /// denominator crosses zero at chi = 0.205, so the lower clamp is mandatory.
 [[nodiscard]]
 constexpr Shape
   shape(const double chi_gam)
 {
-  const auto x = sstd::clamp(chi_gam, CHI_LO, CHI_HI);
+  const auto x = sstd::clamp(chi_gam, chi_lo, chi_hi);
   const auto y = x / 100.0;
 
   const auto n =
@@ -98,7 +98,7 @@ constexpr double
   r_of(double z, const double chi_gam)
 {
   // fold z into the upper half, invert there, reflect back
-  z                       = sstd::clamp(z, ZCLIP, 1.0 - ZCLIP);
+  z                       = sstd::clamp(z, z_clip, 1.0 - z_clip);
   const auto up           = z >= 0.5;
   const auto zs           = up ? z : 1.0 - z;
   const auto [a, b, c, n] = shape(chi_gam);
@@ -116,7 +116,7 @@ constexpr double
   const auto s = sstd::sqrt(sstd::max(2.0 * y + wc, 0.0));
   const auto u =
     (-s +
-     sstd::sqrt(sstd::max(-2.0 * y + wc - 2.0 * w * b / sstd::max(s, TINY), 0.0))) /
+     sstd::sqrt(sstd::max(-2.0 * y + wc - 2.0 * w * b / sstd::max(s, tiny), 0.0))) /
     2.0;
 
   const auto re = 1.0 - sstd::pow(sstd::max(u, 0.0), 1.0 / n);
@@ -135,7 +135,7 @@ constexpr Products
   sample(const Vec3& k, const double b_perp, runko::Rng& rng)
 {
   const auto x  = toolbox::norm(k);
-  const auto om = k / sstd::max(x, TINY);
+  const auto om = k / sstd::max(x, tiny);
   const auto r  = r_of(rng.uniform(), x * b_perp);
 
   const auto gm = 1.0 + (x - 2.0) * r;

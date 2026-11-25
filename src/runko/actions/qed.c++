@@ -601,7 +601,7 @@ double
 {
   const auto t = view(sim, id);
 
-  for(auto i = 0uz; i < N_CHANNELS; ++i) {
+  for(auto i = 0uz; i < n_channels; ++i) {
     if(channel == channel_name(static_cast<Channel>(i))) {
       return state(sim, id).sampler.pair_sum(static_cast<Channel>(i), t, weight);
     }

@@ -34,7 +34,7 @@ enum class Channel : int {
   bw,
   count
 };
-inline constexpr auto N_CHANNELS = static_cast<std::size_t>(Channel::count);
+inline constexpr auto n_channels = static_cast<std::size_t>(Channel::count);
 
 [[nodiscard]] const char* channel_name(Channel c);
 [[nodiscard]] bool is_twobody(Channel c);
@@ -192,7 +192,7 @@ struct ChSSA {
   static constexpr bool consumes_partner = false;
   static constexpr bool merges           = true;
   static constexpr bool makes_pairs      = false;
-  static constexpr double g_min          = ssa::GMIN;  // no absorption below it
+  static constexpr double g_min          = ssa::gamma_min;  // no absorption below it
 
   constexpr double rate(const Vec3& k, const Vec3& u, const FieldView& fv) const
   {

@@ -273,9 +273,9 @@ void
                         ? tau_ext
                         : t.layout[1]->totals(*t.con[1]).W + t.layout[2]->totals(*t.con[2]).W;
   const auto dt_esc = dt_ext > 0.0 ? dt_ext : box.dt;
-  if(esc_hist_.size() != static_cast<std::size_t>(NESC)) {
-    esc_hist_.assign(NESC, 0.0);
-    esc_mu_hist_.assign(static_cast<std::size_t>(NESC) * NMU, 0.0);
+  if(esc_hist_.size() != static_cast<std::size_t>(n_esc)) {
+    esc_hist_.assign(n_esc, 0.0);
+    esc_mu_hist_.assign(static_cast<std::size_t>(n_esc) * n_mu, 0.0);
   }
 
   tally_[0] = Tally {};
@@ -286,7 +286,7 @@ void
   const auto v   = c.v[0];
   const auto n   = t.con[0]->size();
   const auto key = runko::rng_key(par.seed, istep_, 0, stream::escape);
-  const auto llo = std::log(ESC_LO), dl = (std::log(ESC_HI) - std::log(ESC_LO)) / NESC;
+  const auto llo = std::log(esc_lo), dl = (std::log(esc_hi) - std::log(esc_lo)) / n_esc;
   const auto w  = tyvi::mdgrid_work {};
   const auto i0 = thrust::counting_iterator<I>(0);
 
@@ -310,13 +310,13 @@ void
       const auto b = sstd::clamp(
         static_cast<int>(sstd::floor((sstd::log(x) - llo) / dl)),
         0,
-        NESC - 1);
+        n_esc - 1);
       sstd::atomic_add(&hist[b], x * wg);
 
       const auto mu = static_cast<double>(v.vel[i][2]) / x;
       const auto m =
-        sstd::clamp(static_cast<int>(sstd::floor((mu + 1.0) * 0.5 * NMU)), 0, NMU - 1);
-      sstd::atomic_add(&hmu[b * NMU + m], x * wg);
+        sstd::clamp(static_cast<int>(sstd::floor((mu + 1.0) * 0.5 * n_mu)), 0, n_mu - 1);
+      sstd::atomic_add(&hmu[b * n_mu + m], x * wg);
     });
   w.wait();
 
@@ -330,7 +330,7 @@ std::vector<double>
   Sampler::escaped_mu_spectrum() const
 {
   if(esc_mu_hist_.empty()) {
-    return std::vector<double>(static_cast<std::size_t>(NESC) * NMU, 0.0);
+    return std::vector<double>(static_cast<std::size_t>(n_esc) * n_mu, 0.0);
   }
   thrust::host_vector<double> h = esc_mu_hist_;
   return std::vector<double>(h.begin(), h.end());
@@ -340,7 +340,7 @@ std::vector<double>
 std::vector<double>
   Sampler::escaped_spectrum() const
 {
-  if(esc_hist_.empty()) { return std::vector<double>(NESC, 0.0); }
+  if(esc_hist_.empty()) { return std::vector<double>(n_esc, 0.0); }
   thrust::host_vector<double> h = esc_hist_;
   return std::vector<double>(h.begin(), h.end());
 }

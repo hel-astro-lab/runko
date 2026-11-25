@@ -39,14 +39,14 @@ namespace qed {
 namespace {
 
 // in Channel order; the keys of counts() and moved()
-constexpr const char* NAMES[] = { "compton-", "compton+", "pairann", "photann", "ssa-",
+constexpr const char* names[] = { "compton-", "compton+", "pairann", "photann", "ssa-",
                                   "ssa+",     "syn-",     "syn+",    "bw" };
 
 }  // namespace
 
 const char*
   channel_name(const Channel c)
-{ return NAMES[static_cast<int>(c)]; }
+{ return names[static_cast<int>(c)]; }
 
 bool
   is_twobody(const Channel c)
@@ -61,19 +61,19 @@ Sampler::Sampler(
 {
   // channels from ssa_m on need a field, b_perp > 0; a given list restricts further
   const auto field = b.b_perp() > 0.0;
-  for(auto i = 0uz; i < N_CHANNELS; ++i) {
+  for(auto i = 0uz; i < n_channels; ++i) {
     const auto c    = static_cast<Channel>(i);
     const auto need = static_cast<int>(c) >= static_cast<int>(Channel::ssa_m);
     auto on         = not need or field;
     if(not channels.empty()) {
-      on = on and std::ranges::find(channels, std::string(NAMES[i])) != channels.end();
+      on = on and std::ranges::find(channels, std::string(names[i])) != channels.end();
     }
     enabled[i] = on;
   }
 
   nstaged_.assign(1, 0);
   placed_.assign(1, Placed {});
-  dstat_.assign(N_CHANNELS, DeviceStats {});
+  dstat_.assign(n_channels, DeviceStats {});
   tally_.assign(1, Tally {});
 }
 
@@ -210,7 +210,7 @@ void
   // ---- the channels in random order, each reading the states the previous one left;
   // the splitting error is second order in the rates and cancels in expectation
   auto order = std::vector<int> {};
-  for(auto i = 0uz; i < N_CHANNELS; ++i) {
+  for(auto i = 0uz; i < n_channels; ++i) {
     if(enabled[i]) { order.push_back(static_cast<int>(i)); }
   }
 
@@ -383,8 +383,8 @@ std::map<std::string, double>
 {
   const thrust::host_vector<DeviceStats> h = dstat_;
   std::map<std::string, double> m;
-  for(auto i = 0uz; i < N_CHANNELS; ++i) {
-    if(enabled[i]) { m[NAMES[i]] = channel_snap(i, h).acc; }
+  for(auto i = 0uz; i < n_channels; ++i) {
+    if(enabled[i]) { m[names[i]] = channel_snap(i, h).acc; }
   }
   return m;
 }
@@ -395,8 +395,8 @@ std::map<std::string, double>
 {
   const thrust::host_vector<DeviceStats> h = dstat_;
   std::map<std::string, double> m;
-  for(auto i = 0uz; i < N_CHANNELS; ++i) {
-    if(enabled[i]) { m[NAMES[i]] = channel_snap(i, h).wmoved; }
+  for(auto i = 0uz; i < n_channels; ++i) {
+    if(enabled[i]) { m[names[i]] = channel_snap(i, h).wmoved; }
   }
   return m;
 }
@@ -426,7 +426,7 @@ std::string
   o << std::format("   cell-kernel lanes      : {:.0f}\n", stats.cell_lanes / ns);
 
   const thrust::host_vector<DeviceStats> h = dstat_;
-  for(auto i = 0uz; i < N_CHANNELS; ++i) {
+  for(auto i = 0uz; i < n_channels; ++i) {
     if(not enabled[i]) { continue; }
     const auto s = channel_snap(i, h);
 
@@ -434,7 +434,7 @@ std::string
       o << std::format(
         "   {:9s}: lanes {:.1f}, virtual {:.1f}%, weight-stage {:.3f}, accepted "
         "{:.2f}, <sigmahat> {:.4f}, <f> {:.2f}, nsub {} ({} steps), clamped {:.0f}\n",
-        NAMES[i],
+        names[i],
         s.M / ns,
         100.0 * s.virt / std::max(1.0, s.M),
         s.wpass / std::max(1.0, s.M - s.virt),
@@ -453,7 +453,7 @@ std::string
       o << std::format(
         "   {:9s}: lanes {:.0f}, events {:.2f} (dead {:.1f}%), emitted weight/step "
         "{:.3g}, <f> {:.2f}\n",
-        NAMES[i],
+        names[i],
         s.M / ns,
         s.acc / ns,
         dead,

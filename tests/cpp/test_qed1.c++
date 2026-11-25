@@ -80,7 +80,7 @@ const suite<"one-body and self-absorption physics"> _ = [] {
                       (1.0 - P0);
     };
 
-    // the fitted range, every floor that leaves the channel open (1 - P0 >= FMIN)
+    // the fitted range, every floor that leaves the channel open (1 - P0 >= frac_min)
     for(const auto chi: { 1e-8, 1e-6, 1e-4, 1e-3, 1e-2, 0.1, 1.0, 10.0 }) {
       const auto s   = qed::syn::shape(chi);
       const auto tol = chi <= 1e-2 ? 3e-3 : (chi <= 1.0 ? 5e-3 : 8e-3);
@@ -102,7 +102,7 @@ const suite<"one-body and self-absorption physics"> _ = [] {
     auto bad = 0;
     for(auto n = 0; n < 20000; ++n) {
       const auto chi = std::exp(-12.0 + 16.0 * rng.uniform());
-      const auto z   = qed::syn::ZCLIP + (1.0 - 2.0 * qed::syn::ZCLIP) * rng.uniform();
+      const auto z   = qed::syn::z_clip + (1.0 - 2.0 * qed::syn::z_clip) * rng.uniform();
       const auto r   = qed::syn::r_of(z, chi);
       expect(r >= 0.0 and r <= 1.0);
       if(r > 0.0 and r < 1.0) { bad += std::abs(qed::syn::P(chi, r) - z) > 1e-4; }
@@ -167,7 +167,7 @@ const suite<"one-body and self-absorption physics"> _ = [] {
 
     for(auto n = 0; n < 20000; ++n) {
       const auto chi = std::exp(-2.0 + 12.0 * rng.uniform());
-      const auto z   = qed::bw::ZCLIP + (1.0 - 2.0 * qed::bw::ZCLIP) * rng.uniform();
+      const auto z   = qed::bw::z_clip + (1.0 - 2.0 * qed::bw::z_clip) * rng.uniform();
       const auto r   = qed::bw::r_of(z, chi);
       expect(close(r + qed::bw::r_of(1.0 - z, chi), 1.0, 0.0, 1e-12)) << "reflection";
       expect(close(qed::bw::P(chi, r), z, 0.0, 2e-6)) << chi << " " << z;
@@ -232,8 +232,8 @@ const suite<"one-body and self-absorption physics"> _ = [] {
 
     // the derivative branch joins the difference branch continuously
     for(const auto g: { 5.0, 20.0, 100.0 }) {
-      const auto lo = at(g, 0.999 * qed::ssa::XREL * g);
-      const auto hi = at(g, 1.001 * qed::ssa::XREL * g);
+      const auto lo = at(g, 0.999 * qed::ssa::x_rel * g);
+      const auto hi = at(g, 1.001 * qed::ssa::x_rel * g);
       expect(close(lo, hi, 2e-2)) << g << " " << lo << " " << hi;
     }
 

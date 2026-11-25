@@ -16,12 +16,12 @@
 
 namespace qed::syn {
 
-inline constexpr double GMIN   = 3.0;         // lepton threshold of the channel
-inline constexpr double ZCLIP  = 5e-4;        // deviate clipped off both ends
-inline constexpr double CHI_HI = 1e2;         // top of the fitted range of the shape
-inline constexpr double RMIN   = 1e-9;        // floor of a divisor in the inversion
-inline constexpr double FMIN   = 10 * ZCLIP;  // thinnest drawable tail
-inline constexpr double TINY   = 1e-300;
+inline constexpr double gamma_min   = 3.0;         // lepton threshold of the channel
+inline constexpr double z_clip  = 5e-4;        // deviate clipped off both ends
+inline constexpr double chi_hi = 1e2;         // top of the fitted range of the shape
+inline constexpr double r_tiny   = 1e-9;        // floor of a divisor in the inversion
+inline constexpr double frac_min   = 10 * z_clip;  // thinnest drawable tail
+inline constexpr double tiny   = 1e-300;
 
 /// Returns T_S(chi_e), the photon-number integral of the spectrum: the rate function is
 /// (chi_e/gamma) T_S. Tends to 5/(2 sqrt 3) as chi_e -> 0; fit accurate to 0.5 % from
@@ -56,39 +56,39 @@ struct [[nodiscard]] Shape {
 };
 
 // Effective point of the mean: l0, linf, ln kappa as a cubic in
-// s = (ln chi_e - S_MID)/S_HALF plus one logistic step, fitted on 1e-12 <= chi_e <= 10.
-inline constexpr double S_MID = -12.66422, S_HALF = 14.9668;
-inline constexpr std::array<double, 7> L0 = { 4.749836e-01, 5.957273e-02, 2.173267e-02,
+// s = (ln chi_e - s_mid)/s_half plus one logistic step, fitted on 1e-12 <= chi_e <= 10.
+inline constexpr double s_mid = -12.66422, s_half = 14.9668;
+inline constexpr std::array<double, 7> l0_fit = { 4.749836e-01, 5.957273e-02, 2.173267e-02,
                                               1.045624e-02, 2.865377e-01, 5.673384e-01,
                                               1.583990e+00 };
-inline constexpr std::array<double, 7> LINF    = { 8.268931e-01,  -1.466373e-02,
+inline constexpr std::array<double, 7> linf_fit    = { 8.268931e-01,  -1.466373e-02,
                                                    -1.051902e-02, -8.028332e-03,
                                                    8.251289e-02,  6.572695e-02,
                                                    7.165592e-01 };
-inline constexpr std::array<double, 7> LNKAPPA = { -9.414223e-01, 3.268251e-01,
+inline constexpr std::array<double, 7> lnkappa_fit = { -9.414223e-01, 3.268251e-01,
                                                    6.384624e-02,  2.694743e-02,
                                                    2.905601e+00,  2.529502e+00,
                                                    2.155030e+00 };
-inline constexpr double P_STRETCH = 1.060691e+00;  // stretching exponent of the point
+inline constexpr double p_stretch = 1.060691e+00;  // stretching exponent of the point
 
 /// Returns c0 + c1 s + c2 s^2 + c3 s^3 + E/(1 + exp(-(t - t_s)/w_s)) at t = ln chi_e.
 [[nodiscard]]
 constexpr double
   curve(const std::array<double, 7>& q, const double t)
 {
-  const auto s = (t - S_MID) / S_HALF;
+  const auto s = (t - s_mid) / s_half;
   return q[0] + q[1] * s + q[2] * s * s + q[3] * s * s * s +
          q[4] / (1.0 + sstd::exp(-(t - q[5]) / q[6]));
 }
 
 /// Returns the shape at chi_e. Downwards the fit extrapolates (still a probability to
-/// chi_e = 1e-8; 1e-12 floors zero field); above CHI_HI it is frozen, the far better
+/// chi_e = 1e-8; 1e-12 floors zero field); above chi_hi it is frozen, the far better
 /// extrapolation.
 [[nodiscard]]
 constexpr Shape
   shape(const double chi_e)
 {
-  const auto x  = sstd::clamp(chi_e, 1e-12, CHI_HI);
+  const auto x  = sstd::clamp(chi_e, 1e-12, chi_hi);
   const auto lx = sstd::log(x);
 
   const auto a =
@@ -114,7 +114,7 @@ constexpr Shape
                            0.30839327 * sstd::pow(x, 1.74193071));
 
   const auto t = sstd::log(x);
-  return Shape { a, b, n, curve(L0, t), curve(LINF, t), sstd::exp(curve(LNKAPPA, t)) };
+  return Shape { a, b, n, curve(l0_fit, t), curve(linf_fit, t), sstd::exp(curve(lnkappa_fit, t)) };
 }
 
 /// Returns the probability that a photon takes at most the fraction r of chi_e:
@@ -139,7 +139,7 @@ constexpr double
 constexpr double
   r_of(double z, const Shape& s, const double chi_e)
 {
-  z            = sstd::clamp(z, ZCLIP, 1.0 - ZCLIP);
+  z            = sstd::clamp(z, z_clip, 1.0 - z_clip);
   const auto a = s.a, b = s.b, n = s.n;
   const auto c = a - b - 1.0;
 
@@ -160,12 +160,12 @@ constexpr double
 
   // the sign of hi picks the branch that stays real and positive
   const auto root = sstd::sqrt(sstd::max(2.0 * y - K, 0.0));
-  const auto rs   = sstd::max(root, RMIN);
+  const auto rs   = sstd::max(root, r_tiny);
   const auto hi   = -2.0 * y - K - 2.0 * M / rs;
   const auto u =
     hi >= 0.0 ? (root + sstd::sqrt(sstd::max(hi, 0.0))) / 2.0
               : (-root + sstd::sqrt(sstd::max(-2.0 * y - K + 2.0 * M / rs, 0.0))) / 2.0;
-  const auto us = sstd::max(u, TINY);
+  const auto us = sstd::max(u, tiny);
   const auto x  = u - C / (4.0 * a);  // (1 - r^(1/3))^n, the depression shift undone
 
   // classical corner (soft emission, z near 1): C/(4a) is minute beside u, so x^(1/n)
@@ -187,13 +187,13 @@ constexpr double
 { return r_of(z, shape(chi_e), chi_e); }
 
 /// Returns the fraction 1 - P(chi_e, r_min) of photons above the floor, or 0 (channel
-/// closed) when it is thinner than FMIN.
+/// closed) when it is thinner than frac_min.
 [[nodiscard]]
 constexpr double
   frac(const Shape& s, const double r_min)
 {
   const auto f = 1.0 - P(s, r_min);
-  return f >= FMIN ? f : 0.0;
+  return f >= frac_min ? f : 0.0;
 }
 
 [[nodiscard]]
@@ -212,7 +212,7 @@ constexpr double
     const double x_min,
     const bool kinetic)
 {
-  if(gam < GMIN) { return 0.0; }
+  if(gam < gamma_min) { return 0.0; }
   return (chi_e / gam) * T(chi_e) * frac(s, r_floor(x_min, gam, kinetic));
 }
 
@@ -222,7 +222,7 @@ constexpr double
   rate(const Vec3& u, const double b_perp, const double x_min, const bool kinetic)
 {
   const auto gam = sstd::sqrt(1.0 + toolbox::dot(u, u));
-  if(gam < GMIN) { return 0.0; }
+  if(gam < gamma_min) { return 0.0; }
 
   const auto chi_e = gam * b_perp;
   return rate(shape(chi_e), chi_e, gam, x_min, kinetic);
@@ -256,7 +256,7 @@ constexpr double
   const auto c   = s.a - s.b - 1.0;
   const auto m   = 4.0 * s.n;
   const auto rho = sstd::cbrt(r_min);
-  const auto v   = sstd::max(1.0 - rho, TINY);
+  const auto v   = sstd::max(1.0 - rho, tiny);
   const auto d1  = 3.0 * v *
                    (2.0 + 2.0 * rho * (m + 1.0) + rho * rho * (m + 1.0) * (m + 2.0)) /
                    ((m + 1.0) * (m + 2.0) * (m + 3.0));
@@ -264,7 +264,7 @@ constexpr double
   const auto z = -m * sstd::log(v);
   const auto u = sstd::exp(-z / 4.0);  // u_m = v_m^n
   const auto lam =
-    s.linf - (s.linf - s.l0) * sstd::exp(-s.kappa * sstd::pow(z, P_STRETCH));
+    s.linf - (s.linf - s.l0) * sstd::exp(-s.kappa * sstd::pow(z, p_stretch));
   const auto D = [&](const double t) { return 1.0 + s.b * t * t + c * t * t * t; };
   return r_min + d1 * D(u) / D(lam * u);
 }
@@ -307,7 +307,7 @@ constexpr Products
     const double x_min)
 {
   const auto gam = sstd::sqrt(1.0 + toolbox::dot(u, u));
-  const auto us  = sstd::sqrt(sstd::max(gam * gam - 1.0, TINY));
+  const auto us  = sstd::sqrt(sstd::max(gam * gam - 1.0, tiny));
   const auto om  = u / us;
 
   // the deviate covers only the cumulative above the floor: no rejection

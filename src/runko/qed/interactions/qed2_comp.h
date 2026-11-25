@@ -11,7 +11,7 @@
 
 namespace qed::comp {
 
-inline constexpr double SHMAX = 1.0;  // sup of rate: sigma_KN -> 1 as x_R -> 0
+inline constexpr double rate_max = 1.0;  // sup of rate: sigma_KN -> 1 as x_R -> 0
 
 /// Returns the Klein-Nishina cross section from the rest-frame photon energy x_R.
 [[nodiscard]]
@@ -50,7 +50,7 @@ constexpr double
   // over the smallest x gamma
   const auto y  = xhi * (ghi + sstd::sqrt(sstd::max(ghi * ghi - 1.0, 0.0)));
   const auto sh = sigma_kn(y) * y / 2.0 / (xlo * glo);
-  return sh == sh and sh < 1e300 ? sstd::min(sh, SHMAX) : 0.0;  // NaN/inf: empty bin
+  return sh == sh and sh < 1e300 ? sstd::min(sh, rate_max) : 0.0;  // NaN/inf: empty bin
 }
 
 /// Returns the largest energy change of the lepton per event, 4 x gamma^2.
@@ -90,7 +90,7 @@ constexpr Products
   auto mu        = 1.0;
   ntry           = 0;
 
-  while(ntry < TRIP_CAP) {
+  while(ntry < trip_cap) {
     ++ntry;
     const auto tm1 = sstd::expm1(rng.uniform() * lnT);  // t - 1, exact for soft photons
     const auto tt  = 1.0 + tm1;

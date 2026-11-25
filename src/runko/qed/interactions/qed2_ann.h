@@ -11,7 +11,7 @@
 
 namespace qed::ann {
 
-inline constexpr double SHMAX = 0.208;  // sup of rate, 0.20798 at gamma_cm = 1.1354
+inline constexpr double rate_max = 0.208;  // sup of rate, 0.20798 at gamma_cm = 1.1354
 
 /// Returns the energy bracket of the pair invariant q_e = p+ . p-, with
 /// sigma_ann F/2 = (3/32) bracket(q_e)/(g- g+); increasing in q_e.
@@ -50,7 +50,7 @@ constexpr double
   const auto q  = g1hi * g2hi + sstd::sqrt(sstd::max(g1hi * g1hi - 1.0, 0.0)) *
                                   sstd::sqrt(sstd::max(g2hi * g2hi - 1.0, 0.0));
   const auto sh = (3.0 / 32.0) * bracket(q) / (g1lo * g2lo);
-  return sh == sh and sh < 1e300 ? sstd::min(sh, SHMAX) : 0.0;
+  return sh == sh and sh < 1e300 ? sstd::min(sh, rate_max) : 0.0;
 }
 
 struct [[nodiscard]] Products {

@@ -100,7 +100,7 @@ void
       auto rngC      = runko::Rng { keyC, i };
       const auto u   = v.u(i);
       const auto gam = sstd::sqrt(1.0 + toolbox::dot(u, u));
-      if(gam < syn::GMIN) { return; }  // below the channel's threshold
+      if(gam < syn::gamma_min) { return; }  // below the channel's threshold
 
       const auto b     = fv.b_eff(v.pos[i][0], v.pos[i][1], v.pos[i][2], u / gam);
       const auto chi_e = gam * b;
@@ -167,7 +167,7 @@ void
       [=](const int k) { return lay.emax[k]; },
       0.0f,
       thrust::maximum<float> {});
-    if(emax < static_cast<float>(bw::XMIN)) { return; }
+    if(emax < static_cast<float>(bw::x_threshold)) { return; }
   }
 
   auto& st = stats.ch[l];

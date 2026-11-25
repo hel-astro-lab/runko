@@ -11,7 +11,7 @@
 
 namespace qed::gg {
 
-inline constexpr double SHMAX = 0.256;  // sup of rate 0.25564 at q = 3.94
+inline constexpr double rate_max = 0.256;  // sup of rate 0.25564 at q = 3.94
 
 /// Returns the Breit-Wheeler cross section of q = x1 x2 (1 - mu) = 2 gamma_cm^2.
 [[nodiscard]]
@@ -45,7 +45,7 @@ constexpr double
   // largest q (head-on at the top corner) over the smallest x1 x2
   const auto q  = 2.0 * x1hi * x2hi;
   const auto sh = sigma_gg(q) * q / 2.0 / (x1lo * x2lo);
-  return sh == sh and sh < 1e300 ? sstd::min(sh, SHMAX) : 0.0;
+  return sh == sh and sh < 1e300 ? sstd::min(sh, rate_max) : 0.0;
 }
 
 struct [[nodiscard]] Products {

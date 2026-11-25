@@ -22,11 +22,11 @@ namespace {
 std::vector<double>
   esc_edges()
 {
-  auto e = std::vector<double>(qed::Sampler::NESC + 1);
+  auto e = std::vector<double>(qed::Sampler::n_esc + 1);
   for(auto i = 0uz; i < e.size(); ++i) {
-    e[i] = qed::Sampler::ESC_LO * std::pow(
-                                    qed::Sampler::ESC_HI / qed::Sampler::ESC_LO,
-                                    static_cast<double>(i) / qed::Sampler::NESC);
+    e[i] = qed::Sampler::esc_lo * std::pow(
+                                    qed::Sampler::esc_hi / qed::Sampler::esc_lo,
+                                    static_cast<double>(i) / qed::Sampler::n_esc);
   }
 
   return e;
@@ -35,9 +35,9 @@ std::vector<double>
 std::vector<double>
   mu_edges()
 {
-  auto e = std::vector<double>(qed::Sampler::NMU + 1);
+  auto e = std::vector<double>(qed::Sampler::n_mu + 1);
   for(auto i = 0uz; i < e.size(); ++i) {
-    e[i] = -1.0 + 2.0 * static_cast<double>(i) / qed::Sampler::NMU;
+    e[i] = -1.0 + 2.0 * static_cast<double>(i) / qed::Sampler::n_mu;
   }
 
   return e;
@@ -64,10 +64,10 @@ void
   using qed::Vec3;
 
   // ---- constants and thresholds
-  m.attr("ALPHA")    = qed::ALPHA;
-  m.attr("BQ_G")     = qed::BQ_G;
-  m.attr("SYN_GMIN") = qed::syn::GMIN;
-  m.attr("BW_XMIN")  = qed::bw::XMIN;
+  m.attr("ALPHA")    = qed::alpha;
+  m.attr("BQ_G")     = qed::bq_gauss;
+  m.attr("SYN_GMIN") = qed::syn::gamma_min;
+  m.attr("BW_XMIN")  = qed::bw::x_threshold;
 
   // ---- two-body: cross sections and rates of (incident, partner) momenta
   m.def("b_from_ellB", py::vectorize([](const double ell_B, const double H) {
@@ -168,7 +168,7 @@ void
   py::module m_ph =
     m_sub.def_submodule("physics", "the QED process functions, vectorized");
   bind_physics(m_ph);
-  m_sub.attr("LAMC_CM")   = qed::LAMC_CM;
+  m_sub.attr("LAMC_CM")   = qed::lamc_cm;
   m_sub.attr("ESC_EDGES") = to_ndarray(esc_edges());
   m_sub.attr("MU_EDGES")  = to_ndarray(mu_edges());
 
@@ -301,11 +301,11 @@ void
     py::arg("dt_esc") = -1.0);
 
   m_sub.def("escaped_mu_spectrum", [=](sim_t& sim, const id_t id) {
-    // (log x bins, mu bins) as a (NESC, NMU) array of x ell_x sums
+    // (log x bins, mu bins) as a (n_esc, n_mu) array of x ell_x sums
     auto a = to_ndarray(sampler(sim, id).escaped_mu_spectrum());
     return a.reshape(
-      { static_cast<py::ssize_t>(qed::Sampler::NESC),
-        static_cast<py::ssize_t>(qed::Sampler::NMU) });
+      { static_cast<py::ssize_t>(qed::Sampler::n_esc),
+        static_cast<py::ssize_t>(qed::Sampler::n_mu) });
   });
   m_sub.def("reset_budget", [=](sim_t& sim, const id_t id) {
     sampler(sim, id).reset_budget();
