@@ -853,24 +853,19 @@ void
   const auto wmp = thrust::raw_pointer_cast(wm_.data());
 
   // ---- counts per bin pair, clamps, strata bases and shifts
-  // M events per bin pair, off1 and off2 its strata bases along b and along a, kk its
-  // partner stratum offset; M1, M2 events per incident, partner bin; sh1, sh2 the
-  // cyclic shift of each range
+  // M events per bin pair, off2 its strata base along a, kk its partner stratum
+  // offset; M2 events per partner bin; sh1, sh2 the cyclic shift of each range
   M_.resize(static_cast<std::size_t>(npair));
-  off1_.resize(static_cast<std::size_t>(npair));
   off2_.resize(static_cast<std::size_t>(npair));
   kk_.resize(static_cast<std::size_t>(npair));
-  M1_.resize(static_cast<std::size_t>(ncb));
   M2_.resize(static_cast<std::size_t>(ncb));
   sh1_.resize(static_cast<std::size_t>(ncb));
   sh2_.resize(static_cast<std::size_t>(ncb));
 
-  const auto M    = thrust::raw_pointer_cast(M_.data()),
-             off1 = thrust::raw_pointer_cast(off1_.data());
+  const auto M    = thrust::raw_pointer_cast(M_.data());
   const auto off2 = thrust::raw_pointer_cast(off2_.data()),
              kk   = thrust::raw_pointer_cast(kk_.data());
-  const auto M1   = thrust::raw_pointer_cast(M1_.data()),
-             M2   = thrust::raw_pointer_cast(M2_.data());
+  const auto M2   = thrust::raw_pointer_cast(M2_.data());
   const auto sh1  = thrust::raw_pointer_cast(sh1_.data()),
              sh2  = thrust::raw_pointer_cast(sh2_.data());
   const auto cb0  = thrust::counting_iterator<int>(0);
@@ -939,24 +934,21 @@ void
       rng.uniform() * static_cast<double>(sstd::max(s2.N(cb), I { 1 })));
   });
 
-  // incident rows: strata bases along b, partner stratum offsets, the incident shift
+  // incident rows: partner stratum offsets, the incident shift
   thrust::for_each(w.on_this(), cb0, cb0 + ncb, [=](const int ca) {
     auto rng = runko::Rng { keyA, static_cast<std::uint64_t>(2 * ncb + ca) };
-    auto sum = 0;
     for(auto bb = 0; bb < nb; ++bb) {
       const auto g = ca * nb + bb;
-      off1[g]      = sum;
-      sum += M[g];
       kk[g] = static_cast<std::int32_t>(
         rng.uniform() * static_cast<double>(sstd::max(M[g], 1)));
     }
-    M1[ca] = sum;
 
     sh1[ca] = static_cast<std::int32_t>(
       rng.uniform() * static_cast<double>(sstd::max(s1.N(ca), I { 1 })));
   });
 
-  // first lane of every bin pair; the last entry, the lane total, is read on the host
+  // first lane of every bin pair; the last entry, the lane total, is read on the host.
+  // The lanes run row by row, so a lane's rank in its row is its incident stratum.
   Mstart_.resize(static_cast<std::size_t>(npair) + 1);
   Mstart_[0] = I { 0 };
   thrust::inclusive_scan(w.on_this(), M_.begin(), M_.end(), Mstart_.begin() + 1);
@@ -1002,11 +994,11 @@ void
       const auto Mg = static_cast<std::uint64_t>(M[g]);
       const auto n1 = s1.N(cb1), n2 = s2.N(cb2);
 
-      // incident: a slot drawn in stratum p1 of M1 over the group, shifted cyclically
-      const auto p1  = static_cast<std::uint64_t>(off1[g]) + e;
-      const auto vv1 = (static_cast<I>(sh1[cb1]) +
-                        stratum(p1, static_cast<std::uint64_t>(M1[cb1]), n1, rng)) %
-                       n1;
+      // incident: a slot drawn in stratum p1 of the row's M1, shifted cyclically
+      const auto row = Mstart[cb1 * nb];
+      const auto p1  = static_cast<std::uint64_t>(lane - row);
+      const auto M1  = static_cast<std::uint64_t>(Mstart[(cb1 + 1) * nb] - row);
+      const auto vv1 = (static_cast<I>(sh1[cb1]) + stratum(p1, M1, n1, rng)) % n1;
 
       I vv2;
       if constexpr(Ch::kind == Kind::convert) {
