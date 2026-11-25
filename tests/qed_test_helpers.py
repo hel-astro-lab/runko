@@ -1,13 +1,16 @@
 # Copyright 2026 - 2026, Miro Palmu, Joonas Nättilä and the runko contributors
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-"""What the qed tests share: the closed-box tile from its physical inputs, the population
-setters and samplers, the state readers, and the relative-error check."""
+"""
+What the qed tests share: the closed-box tile from its physical inputs, the population
+setters and samplers, the state readers, and the relative-error check.
+"""
 
 import numpy as np
 import runko
 
 ph = runko.qed.physics
+
 # one runko runtime for the process: a tile's own ends with the tile, and the runtime cannot
 # start a second time
 _runtime = runko.actions.RuntimeInstance()
@@ -17,21 +20,26 @@ H = 4.111e9        # tile edge in Compton wavelengths: ell_B = 10 -> b_perp = 1e
 NC = 64            # cells per tile edge; dt = cfl/NC crossings
 
 
-def make_conf(seed, dt, H_lamC=H, w_lep=WL, ell_B=0.0, x_min=0.0, channels=None, nbin=8, nsort=1, slack=0.1,
-              a_res=0.0, x_ref=1e-2, kappa=0.1, acc_syn=3.0, smin=4, nsub_max=8, nc=NC, **extra):
-    """one cubic tile of nc^3 cells, electrons (w0), positrons (w1) and photons, stepping dt crossings;
-    extra keys go to the config as they are"""
+def make_conf(seed, dt, H_lamC=H, w_lep=WL, ell_B=0.0, x_min=0.0, channels=None,
+              nbin=8, nsort=1, slack=0.1, a_res=0.0, x_ref=1e-2,
+              kappa=0.1, acc_syn=3.0, smin=4, nsub_max=8, nc=NC, **extra):
+    """
+    one cubic tile of nc^3 cells, electrons (w0), positrons (w1) and photons, stepping dt
+    crossings; extra keys go to the config as they are
+    """
     c = runko.Configuration(None)
     c.n_tiles = [1, 1, 1]
     c.n_cells_per_tile = [nc, nc, nc]
     c.cfl = dt * nc
     c.field_propagator = "fdtd2"
+
     c.q0, c.m0, c.w0 = -1, 1, w_lep
     c.q1, c.m1, c.w1 = 1, 1, w_lep
     c.q2, c.m2, c.n_payload2 = 0, 0, 1   # photons: the weight is payload component 0
     c.particle_pusher = ["boris", "boris", "ballistic"]
     c.field_interpolator = "linear_1st"
     c.current_depositer = "zigzag_1st"
+
     c.qed_H_lamC = H_lamC
     c.qed_ell_B = ell_B
     c.qed_x_min = x_min
@@ -41,6 +49,7 @@ def make_conf(seed, dt, H_lamC=H, w_lep=WL, ell_B=0.0, x_min=0.0, channels=None,
     c.qed_seed = seed
     if channels:
         c.qed_channels = list(channels)
+
     for k, v in extra.items():
         setattr(c, k, v)
     return c
@@ -56,7 +65,8 @@ def make_tile(seed, dt, Bz=None, **kw):
 
 def box_N1(seed, N1, ell_B=10.0, H_lamC=H, x_min=0.0, **kw):
     """the box whose one-body clock is N1: the step follows from the size"""
-    return make_tile(seed, 1.0 / (ph.ALPHA * N1 * H_lamC), H_lamC=H_lamC, ell_B=ell_B, x_min=x_min, **kw)
+    return make_tile(seed, 1.0 / (ph.ALPHA * N1 * H_lamC),
+                     H_lamC=H_lamC, ell_B=ell_B, x_min=x_min, **kw)
 
 
 def rows(u):
@@ -73,7 +83,9 @@ def empty(t, species):
 
 
 def iso_dirs(n, rng):
-    cz = -1 + 2 * rng.random(n); phi = 2 * np.pi * rng.random(n); sz = np.sqrt(1 - cz * cz)
+    cz = -1 + 2 * rng.random(n)
+    phi = 2 * np.pi * rng.random(n)
+    sz = np.sqrt(1 - cz * cz)
     return np.stack([sz * np.cos(phi), sz * np.sin(phi), cz], 1)
 
 
@@ -88,7 +100,10 @@ def spread(n, rng):
 
 
 def mono_pop(n, e, mass, rng, w=None):
-    """n isotropic LPs of energy e; leptons at the lepton weight, photons at spread weights, or all at w"""
+    """
+    n isotropic LPs of energy e; leptons at the lepton weight, photons at spread weights, or
+    all at w
+    """
     p = np.sqrt(max(e * e - mass * mass, 0.0)) if mass > 0 else e
     ww = (WL * np.ones(n) if mass > 0 else spread(n, rng)) if w is None else w * np.ones(n)
     return p * iso_dirs(n, rng), ww
@@ -113,4 +128,5 @@ class CheckMixin:
 
     def check(self, name, pred, meas, tol):
         err = abs(meas - pred) / (abs(pred) if pred != 0 else 1.0)
-        self.assertLessEqual(err, tol, f"{name}: predicted {pred:.5g}, measured {meas:.5g}, tol {tol}")
+        self.assertLessEqual(err, tol,
+                             f"{name}: predicted {pred:.5g}, measured {meas:.5g}, tol {tol}")
