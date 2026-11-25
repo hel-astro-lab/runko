@@ -202,9 +202,8 @@ private:
   // envelope tables per (cell, bin, bin): envelope, rate bound, weight bound; and their
   // sums per (cell, bin)
   thrust::device_vector<double> Lam_, sh_, wm_, rowsum_, colsum_;
-  // events per bin pair; the partner's strata bases and per-bin sums; shifts and
-  // stratum offsets
-  thrust::device_vector<std::int32_t> M_, off2_, M2_, sh1_, sh2_, kk_;
+  // events per bin pair; the strata bases and per-bin sums of a consumed partner
+  thrust::device_vector<std::int32_t> M_, off2_, M2_;
   // first lane of every bin pair, the exclusive scan of M_
   thrust::device_vector<runko::index_t> Mstart_;
 

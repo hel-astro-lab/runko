@@ -827,8 +827,8 @@ void
   const auto w    = tyvi::mdgrid_work {};
   const auto step = istep_;
 
-  // random streams of this (channel, sub-step): A counts and shifts, B the thinning,
-  // C the reactions
+  // random streams of this (channel, sub-step): A the counts (lane = incident group)
+  // and the shifts (lanes past them), B the thinning, C the reactions
   const auto keyA = runko::rng_key(
     par.seed,
     step,
@@ -853,21 +853,15 @@ void
   const auto wmp = thrust::raw_pointer_cast(wm_.data());
 
   // ---- counts per bin pair, clamps, strata bases and shifts
-  // M events per bin pair, off2 its strata base along a, kk its partner stratum
-  // offset; M2 events per partner bin; sh1, sh2 the cyclic shift of each range
+  // M events per bin pair; for a consumed partner off2, its strata base along a, and
+  // M2, the events per partner bin
   M_.resize(static_cast<std::size_t>(npair));
   off2_.resize(static_cast<std::size_t>(npair));
-  kk_.resize(static_cast<std::size_t>(npair));
   M2_.resize(static_cast<std::size_t>(ncb));
-  sh1_.resize(static_cast<std::size_t>(ncb));
-  sh2_.resize(static_cast<std::size_t>(ncb));
 
   const auto M    = thrust::raw_pointer_cast(M_.data());
-  const auto off2 = thrust::raw_pointer_cast(off2_.data()),
-             kk   = thrust::raw_pointer_cast(kk_.data());
+  const auto off2 = thrust::raw_pointer_cast(off2_.data());
   const auto M2   = thrust::raw_pointer_cast(M2_.data());
-  const auto sh1  = thrust::raw_pointer_cast(sh1_.data()),
-             sh2  = thrust::raw_pointer_cast(sh2_.data());
   const auto cb0  = thrust::counting_iterator<int>(0);
 
   // incident rows: M[a, b] by cumulative rounding with one uniform for the whole row
@@ -902,10 +896,10 @@ void
     }
   });
 
-  // partner columns: clamp for a consumed partner, strata bases along a, the shift
-  thrust::for_each(w.on_this(), cb0, cb0 + ncb, [=](const int cb) {
-    const auto cc = cb / nb, bb = cb % nb;
-    if constexpr(Ch::kind == Kind::convert) {
+  // partner columns of a consumed partner: the clamp, then the strata bases along a
+  if constexpr(Ch::kind == Kind::convert) {
+    thrust::for_each(w.on_this(), cb0, cb0 + ncb, [=](const int cb) {
+      const auto cc = cb / nb, bb = cb % nb;
       auto ex = 0;
       for(auto a = 0; a < nb; ++a) { ex += M[(cc * nb + a) * nb + bb]; }
       ex -= static_cast<int>(s2.N(cb));
@@ -918,34 +912,17 @@ void
         --M[(cc * nb + imax) * nb + bb];
         sstd::atomic_add(&ds[d_clamped], 1.0);
       }
-    }
 
-    // strata bases: disjoint across bin pairs
-    auto sum = 0;
-    for(auto a = 0; a < nb; ++a) {
-      const auto g = (cc * nb + a) * nb + bb;
-      off2[g]      = sum;
-      sum += M[g];
-    }
-    M2[cb] = sum;
-
-    auto rng = runko::Rng { keyA, static_cast<std::uint64_t>(ncb + cb) };
-    sh2[cb]  = static_cast<std::int32_t>(
-      rng.uniform() * static_cast<double>(sstd::max(s2.N(cb), I { 1 })));
-  });
-
-  // incident rows: partner stratum offsets, the incident shift
-  thrust::for_each(w.on_this(), cb0, cb0 + ncb, [=](const int ca) {
-    auto rng = runko::Rng { keyA, static_cast<std::uint64_t>(2 * ncb + ca) };
-    for(auto bb = 0; bb < nb; ++bb) {
-      const auto g = ca * nb + bb;
-      kk[g] = static_cast<std::int32_t>(
-        rng.uniform() * static_cast<double>(sstd::max(M[g], 1)));
-    }
-
-    sh1[ca] = static_cast<std::int32_t>(
-      rng.uniform() * static_cast<double>(sstd::max(s1.N(ca), I { 1 })));
-  });
+      // strata bases: disjoint across bin pairs
+      auto sum = 0;
+      for(auto a = 0; a < nb; ++a) {
+        const auto g = (cc * nb + a) * nb + bb;
+        off2[g]      = sum;
+        sum += M[g];
+      }
+      M2[cb] = sum;
+    });
+  }
 
   // first lane of every bin pair; the last entry, the lane total, is read on the host.
   // The lanes run row by row, so a lane's rank in its row is its incident stratum.
@@ -987,27 +964,31 @@ void
     [=](const I lane) {
       auto rng      = runko::Rng { keyB, lane };
       const auto g  = segment_of(Mstart, npair, lane);
-      const auto e  = static_cast<std::uint64_t>(lane - Mstart[g]);
       const auto cc = g / (nb * nb), a = (g / nb) % nb,
                  bb  = g % nb;  // cell, incident bin, partner bin
       const auto cb1 = cc * nb + a, cb2 = cc * nb + bb;
-      const auto Mg = static_cast<std::uint64_t>(M[g]);
       const auto n1 = s1.N(cb1), n2 = s2.N(cb2);
 
-      // incident: a slot drawn in stratum p1 of the row's M1, shifted cyclically
+      // Every range is shifted cyclically by a uniform draw of its own, the same for
+      // all lanes of the pass: whatever its stratum, a lane then lands on every slot
+      // of the range with the same probability, independently on the two sides.
+      const auto shift = [=](const int side, const int cb, const I n) {
+        auto r = runko::Rng { keyA, static_cast<std::uint64_t>((1 + side) * ncb + cb) };
+        return static_cast<I>(r.integer(static_cast<std::uint64_t>(n)));
+      };
+
+      // incident: a slot drawn in stratum p1 of the row's M1
       const auto row = Mstart[cb1 * nb];
       const auto p1  = static_cast<std::uint64_t>(lane - row);
       const auto M1  = static_cast<std::uint64_t>(Mstart[(cb1 + 1) * nb] - row);
-      const auto vv1 = (static_cast<I>(sh1[cb1]) + stratum(p1, M1, n1, rng)) % n1;
+      const auto vv1 = (shift(1, cb1, n1) + stratum(p1, M1, n1, rng)) % n1;
 
       I vv2;
       if constexpr(Ch::kind == Kind::convert) {
-        // a consumed partner: distinct strata, offset by kk to decorrelate from p1
-        const auto p2 = static_cast<std::uint64_t>(off2[g]) +
-                        (e + static_cast<std::uint64_t>(kk[g])) % Mg;
-        vv2           = (static_cast<I>(sh2[cb2]) +
-                         stratum(p2, static_cast<std::uint64_t>(M2[cb2]), n2, rng)) %
-                        n2;
+        // a consumed partner: a slot drawn in stratum p2 of the column's M2
+        const auto p2 = static_cast<std::uint64_t>(off2[g] + (lane - Mstart[g]));
+        const auto M2c = static_cast<std::uint64_t>(M2[cb2]);
+        vv2            = (shift(0, cb2, n2) + stratum(p2, M2c, n2, rng)) % n2;
       } else {
         // the partner only accumulates what the events give it, so several lanes may
         // share it: drawn uniformly with replacement
