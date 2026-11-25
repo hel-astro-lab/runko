@@ -16,6 +16,7 @@
 #include "runko/tools/math.h"
 
 #include <cstddef>
+#include <cstdint>
 #include <stdexcept>
 
 namespace qed {
@@ -37,6 +38,43 @@ inline constexpr auto N_CHANNELS = static_cast<std::size_t>(Channel::count);
 
 [[nodiscard]] const char* channel_name(Channel c);
 [[nodiscard]] bool is_twobody(Channel c);
+
+/// Kernel ids of the random streams, the last argument of rng_key(seed, step, sub, id):
+/// every use of random numbers in the module has one of its own.
+namespace stream {
+
+/// Photon sub-range bit of every slot at a layout (sub = species).
+inline constexpr std::uint64_t layout = 0;
+
+/// Two-body channel l (sub = sub-step): k = 0 the counts per bin pair and the shifts
+/// of the ranges, 1 the thinning, 2 the reactions.
+[[nodiscard]]
+constexpr std::uint64_t
+  twobody(const Channel l, const int k)
+{ return static_cast<std::uint64_t>(1 + 4 * static_cast<int>(l) + k); }
+
+/// One-body channel l: k = 0 fires, 1 draws the products and their copies.
+[[nodiscard]]
+constexpr std::uint64_t
+  onebody(const Channel l, const int k)
+{ return static_cast<std::uint64_t>(100 + 2 * static_cast<int>(l) + k); }
+
+// sources and sinks: the count and the draws of an injection, the heating kicks
+// (sub = species), the escape
+inline constexpr std::uint64_t pairs_count = 300, pairs = 301;
+inline constexpr std::uint64_t photons_count = 302, photons = 303;
+inline constexpr std::uint64_t heating = 304, escape = 305;
+
+/// Seed of the systematic-rounding remainders of a role of channel l (step 0).
+[[nodiscard]]
+constexpr std::uint64_t
+  carry(const int l, const int role)
+{ return static_cast<std::uint64_t>(400 + 3 * l + role); }
+
+inline constexpr std::uint64_t channel_order = 500;  // order of the channels in a step
+inline constexpr std::uint64_t positions     = 501;  // set_particles (sub = species)
+
+}  // namespace stream
 
 /// The keys one side of a channel spans in every (cell, bin) group: nranges
 /// consecutive keys from stride * group + first.

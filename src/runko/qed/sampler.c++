@@ -76,24 +76,14 @@ Sampler::Sampler(
   dbudget_.assign(2, 0.0);
 }
 
-// Random streams are rng_key(seed, step, sub, kernel), a distinct kernel id per use:
-//   0                 layout: photon sub-range bit per slot (sub = species)
-//   1+4l, 2+4l, 3+4l  two-body l: cell kernels, thinning, react (sub = sub-step)
-//   100+2l, 101+2l    one-body l: firing, products
-//   300 .. 305        sources and sinks (304: sub = species)
-//   400 + 3l + role   seeds of the systematic-rounding carries of channel l (step 0)
-//   500               order of the channels in a step
-//   501               positions of qed::set_particles (sub = species)
-
 thrust::device_vector<double>&
   Sampler::carry(const int l, const int role, const int ncell)
 {
-  const auto site = 3 * static_cast<std::size_t>(l) + static_cast<std::size_t>(role);
-  auto& car       = round_.carry[site];
+  auto& car = round_.carry[3 * static_cast<std::size_t>(l) + static_cast<std::size_t>(role)];
 
   if(car.size() != static_cast<std::size_t>(ncell)) {
     auto h   = thrust::host_vector<double>(static_cast<std::size_t>(ncell));
-    auto rng = runko::Rng { runko::rng_key(par.seed, 0, 0, 400 + site), 0 };
+    auto rng = runko::Rng { runko::rng_key(par.seed, 0, 0, stream::carry(l, role)), 0 };
     for(auto& x: h) { x = rng.uniform(); }
     car = h;
   }
@@ -180,7 +170,7 @@ void
 
   for(auto s = 0uz; s < 3uz; ++s) {
     t.pop[s]
-      ->layout(*t.con[s], lp, t.mins, t.maxs, runko::rng_key(par.seed, istep_, s, 0));
+      ->layout(*t.con[s], lp, t.mins, t.maxs, runko::rng_key(par.seed, istep_, s, stream::layout));
   }
 }
 
@@ -226,7 +216,7 @@ void
   }
 
   // Fisher-Yates shuffle
-  auto rng = runko::Rng { runko::rng_key(par.seed, istep_, 0, 500), 0 };
+  auto rng = runko::Rng { runko::rng_key(par.seed, istep_, 0, stream::channel_order), 0 };
   for(auto i = order.size(); i > 1; --i) {
     const auto j = static_cast<std::size_t>(rng.integer(i));
     std::swap(order[i - 1], order[j]);

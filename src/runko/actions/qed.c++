@@ -463,7 +463,7 @@ void
                             st.sampler.par.seed,
                             st.sampler.step(),
                             static_cast<std::uint64_t>(s),
-                            501),
+                            stream::positions),
                           0 };
 
   auto states   = std::vector<runko::ParticleState<double>>(u.size());

@@ -68,7 +68,7 @@ void
 
   const auto wl    = box.w_lep;
   const auto npair = box.dE(ell) / (2.0 * gm * wl);
-  auto rng0        = runko::Rng { runko::rng_key(par.seed, istep_, 0, 300), 0 };
+  auto rng0        = runko::Rng { runko::rng_key(par.seed, istep_, 0, stream::pairs_count), 0 };
   const auto n     = static_cast<std::size_t>(std::floor(npair + rng0.uniform()));
   if(n == 0) { return; }
 
@@ -77,7 +77,7 @@ void
   thrust::fill(dbudget_.begin(), dbudget_.end(), 0.0);
 
   const auto db   = thrust::raw_pointer_cast(dbudget_.data());
-  const auto key  = runko::rng_key(par.seed, istep_, 0, 301);
+  const auto key  = runko::rng_key(par.seed, istep_, 0, stream::pairs);
   const auto mins = t.mins, maxs = t.maxs;
   const auto lay = c.v[1].lay;
   const auto w   = tyvi::mdgrid_work {};
@@ -138,7 +138,7 @@ void
   // stochastically
   const auto xmean = (planck ? 2.701 : 3.0) * theta;
   const auto nph   = box.dE(ell) / (xmean * wph);
-  auto rng0        = runko::Rng { runko::rng_key(par.seed, istep_, 0, 302), 0 };
+  auto rng0        = runko::Rng { runko::rng_key(par.seed, istep_, 0, stream::photons_count), 0 };
   const auto n     = static_cast<std::size_t>(std::floor(nph + rng0.uniform()));
   if(n == 0) { return; }
 
@@ -147,7 +147,7 @@ void
   thrust::fill(dbudget_.begin(), dbudget_.end(), 0.0);
 
   const auto db   = thrust::raw_pointer_cast(dbudget_.data());
-  const auto key  = runko::rng_key(par.seed, istep_, 0, 303);
+  const auto key  = runko::rng_key(par.seed, istep_, 0, stream::photons);
   const auto mins = t.mins, maxs = t.maxs;
   const auto lay = c.v[0].lay;
   const auto w   = tyvi::mdgrid_work {};
@@ -238,7 +238,7 @@ void
   for(auto s = 1uz; s <= 2uz; ++s) {
     const auto v   = c.v[s];
     const auto n   = t.con[s]->size();
-    const auto key = runko::rng_key(par.seed, istep_, s, 304);
+    const auto key = runko::rng_key(par.seed, istep_, s, stream::heating);
     const auto i0  = thrust::counting_iterator<I>(0);
 
     thrust::for_each(
@@ -293,7 +293,7 @@ void
 
   const auto v   = c.v[0];
   const auto n   = t.con[0]->size();
-  const auto key = runko::rng_key(par.seed, istep_, 0, 305);
+  const auto key = runko::rng_key(par.seed, istep_, 0, stream::escape);
   const auto llo = std::log(ESC_LO), dl = (std::log(ESC_HI) - std::log(ESC_LO)) / NESC;
   const auto w  = tyvi::mdgrid_work {};
   const auto i0 = thrust::counting_iterator<I>(0);

@@ -185,6 +185,7 @@ class TwoBody {
   Sampler& sam_;
   Ctx& c_;
   const Ch ch_;
+  const Channel which_;
   const int l_;
 
   const int nb_;            // energy bins per cell
@@ -206,6 +207,7 @@ public:
     sam_ { sam },
     c_ { c },
     ch_ { ch },
+    which_ { which },
     l_ { static_cast<int>(which) },
     nb_ { c.nb },
     ncell_ { c.ncell },
@@ -403,14 +405,14 @@ private:
 
     // random streams of this (channel, sub-step): A the counts (lane = incident group)
     // and the shifts (lanes past them), B the thinning, C the reactions
-    const auto key = [&](const int kernel) {
+    const auto key = [&](const int k) {
       return runko::rng_key(
         sam_.par.seed,
         sam_.istep_,
         static_cast<std::uint64_t>(r),
-        static_cast<std::uint64_t>(kernel + 4 * l_));
+        stream::twobody(which_, k));
     };
-    const auto keyA = key(1), keyB = key(2), keyC = key(3);
+    const auto keyA = key(0), keyB = key(1), keyC = key(2);
 
     const auto Mtot = this->strata(w, keyA, nsub);
     st_.M += static_cast<double>(Mtot);

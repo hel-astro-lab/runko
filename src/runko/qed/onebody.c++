@@ -57,9 +57,6 @@ struct [[nodiscard]] AtParent {
 
 }  // namespace
 
-// Random streams of a one-body channel l: A (100 + 2l) fires, C (101 + 2l) draws the
-// products and their copies; the lane is the slot.
-
 // ---------------------------------------------------------------- synchrotron emission
 void
   Sampler::synchrotron(Ctx& c, const Channel which)
@@ -75,8 +72,9 @@ void
 
   stats.ch[l].M += static_cast<double>(n);
 
-  const auto keyA  = runko::rng_key(par.seed, istep_, 0, 100 + 2 * l);
-  const auto keyC  = runko::rng_key(par.seed, istep_, 0, 101 + 2 * l);
+  // random streams, the lane being the slot: A fires, C draws the photon and its copies
+  const auto keyA  = runko::rng_key(par.seed, istep_, 0, stream::onebody(which, 0));
+  const auto keyC  = runko::rng_key(par.seed, istep_, 0, stream::onebody(which, 1));
   const auto ds    = ptr(dstat_) + l * d_count;
   const auto stage = AtParent { v, this->stager(n) };  // one photon per lepton
 
@@ -175,8 +173,9 @@ void
   auto& st = stats.ch[l];
   st.M += static_cast<double>(n);
 
-  const auto keyA  = runko::rng_key(par.seed, istep_, 0, 100 + 2 * l);
-  const auto keyC  = runko::rng_key(par.seed, istep_, 0, 101 + 2 * l);
+  // random streams, the lane being the slot: A fires, C draws the pair
+  const auto keyA  = runko::rng_key(par.seed, istep_, 0, stream::onebody(Channel::bw, 0));
+  const auto keyC  = runko::rng_key(par.seed, istep_, 0, stream::onebody(Channel::bw, 1));
   const auto stage = AtParent { v, this->stager(2 * n) };  // a pair per photon
 
   const auto fv = c.t->field;
