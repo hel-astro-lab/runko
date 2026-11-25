@@ -88,7 +88,7 @@ key                          meaning                                            
 ``qed_n_cap``                largest copy number of one reaction                         32
 ``qed_acc_syn``              coefficient of the emission accumulation, 0 disables        3.0
 ``qed_kappa_acc``            merged exchange `\le \kappa(\gamma-1)`, 0 disables           0.1
-``qed_nsub_max``             sub-steps of an additive channel before its strata overlap  8
+``qed_nsub_max``             sub-steps of an additive channel before rows are clamped    8
 ``qed_seed``                 seed of the counter-based random streams                    1
 ===========================  ==========================================================  =========
 
@@ -178,7 +178,8 @@ and density slices, ``plot_qed_spectra.py`` the weighted spectra over time.
 Tests
 -----
 
-``tests/cpp/test_qed*.c++`` pin the physics functions and check the samplers; ``tests/py/test_qed_*``
+``tests/cpp/test_qed*.c++`` pin the physics functions, check their samplers and the weight rules
+of ``qed/weights.h`` (what an event moves and how often it fires); ``tests/py/test_qed_*``
 are the analytic tests of the sampler: the closed-box equilibrium, Wien relaxation and Kompaneets
 moments, inverse-Compton cooling, annihilation rates and lines, the photon–photon rate equation,
 first-step exactness against the pair sum, self-absorption, synchrotron and Breit–Wheeler rates
