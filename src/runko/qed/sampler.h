@@ -216,8 +216,11 @@ private:
   /// Two-body channel: sides, envelope, sub-steps of strata, thinning and reactions.
   void twobody(Ctx& c, Channel which);
 
-  /// One-body channel: one lane per slot.
-  void onebody(Ctx& c, Channel which);
+  /// Synchrotron emission of the electrons or the positrons: one lane per slot.
+  void synchrotron(Ctx& c, Channel which);
+
+  /// Magnetic pair production of the photons: one lane per slot, then per conversion.
+  void breit_wheeler(Ctx& c);
 
   /// Room for n staged records, none staged yet.
   [[nodiscard]] Stager stager(std::size_t n);

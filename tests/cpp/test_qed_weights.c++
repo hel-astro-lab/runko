@@ -77,6 +77,51 @@ const suite<"qed weight bookkeeping"> _ = [] {
       }
     }
   };
+
+  "a resolved emission averages lam and its parent pays for the photon"_test = [] {
+    auto rng = runko::Rng { runko::rng_key(3, 0, 0, 0), 0 };
+    constexpr auto b = 1e-3, N1 = 1.0, w = 0.7, draws = 400000.0;
+
+    for(const auto gam: { 5.0, 50.0, 5e3 }) {
+      for(const auto lam: { 0.01, 0.5, 1.0 }) {
+        constexpr auto xm = 1e-2;
+        auto emissions    = 0.0;
+
+        for(auto k = 0; k < static_cast<int>(draws); ++k) {
+          const auto p = qed::emission_plan(gam, lam, xm, b, N1, 3.0, 0.1, rng.uniform());
+          expect(p.resolved and p.f >= 1.0 and p.g_cooled == gam);
+          if(not p.fire) { continue; }
+          emissions += p.f;
+
+          // an unclipped recoil is the energy of the LP
+          const auto x  = xm * (0.5 + rng.uniform());
+          const auto em = qed::emitted(p, w, gam, xm, x);
+          expect(close(w * (gam - em.g1), em.wem * x, 1e-9));
+        }
+
+        const auto f = qed::facc_syn(gam, xm, 3.0, 0.1);
+        expect(close(emissions / draws, lam, 4.0 * std::sqrt(f / (lam * draws))));
+      }
+    }
+  };
+
+  "an unresolved emission cools the parent and emits the loss on average"_test = [] {
+    constexpr auto b = 1e-3, N1 = 1e-4, w = 0.7, xm = 2e-2;
+
+    for(const auto gam: { 30.0, 3e3 }) {
+      const auto p = qed::emission_plan(gam, 14.0, xm, b, N1, 3.0, 0.1, 0.999);
+      expect(not p.resolved and p.fire and p.f == 1.0);
+      expect(p.g_cooled >= 1.0 and p.g_cooled < gam);
+
+      // whatever energy is drawn, the parent is at the cooled energy and the weight of
+      // the LP times the mean photon is the loss
+      for(const auto x: { 0.1 * xm, xm, 7.0 * xm }) {
+        const auto em = qed::emitted(p, w, gam, xm, x);
+        expect(em.g1 == p.g_cooled);
+        expect(close(em.wem * xm, w * (gam - p.g_cooled), 1e-12));
+      }
+    }
+  };
 };
 
 }  // namespace

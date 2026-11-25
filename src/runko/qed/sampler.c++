@@ -236,8 +236,10 @@ void
     const auto which = static_cast<Channel>(l);
     if(is_twobody(which)) {
       twobody(c, which);
+    } else if(which == Channel::bw) {
+      breit_wheeler(c);
     } else {
-      onebody(c, which);
+      synchrotron(c, which);
     }
   }
 

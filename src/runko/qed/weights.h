@@ -107,4 +107,65 @@ constexpr double
   return gam / (1.0 + (2.0 / 3.0) * gam * b * b * g * Phi / N1);
 }
 
+/// What a lepton of energy gam does in a step in which it emits lam photons of mean
+/// energy xm, before any photon is drawn.
+struct [[nodiscard]] EmissionPlan {
+  bool resolved;    // below one emission per step
+  bool fire;        // an LP is emitted this step
+  double f;         // emissions merged into the LP; 1 if unresolved
+  double g_cooled;  // parent energy after the continuous cooling; gam if resolved
+};
+
+/// Resolved (lam <= 1): one LP stands for f emissions and fires with the probability
+/// lam / f <= 1, so that the emissions of a step average lam; z is the uniform that
+/// decides. Unresolved: the parent cools along gamma_cooled whatever is emitted, and
+/// one LP stands for all the emissions of the step.
+[[nodiscard]]
+constexpr EmissionPlan
+  emission_plan(
+    const double gam,
+    const double lam,
+    const double xm,
+    const double b,
+    const double N1,
+    const double acc_syn,
+    const double kappa,
+    const double z)
+{
+  const auto resolved = lam <= 1.0;
+  const auto f        = resolved ? facc_syn(gam, xm, acc_syn, kappa) : 1.0;
+  return EmissionPlan { .resolved = resolved,
+                        .fire     = resolved ? z < lam / f : true,
+                        .f        = f,
+                        .g_cooled =
+                          resolved ? gam : sstd::max(gamma_cooled(gam, lam, xm, b, N1), 1.0) };
+}
+
+/// The emitted LP and its parent once the photon energy x is drawn.
+struct [[nodiscard]] Emitted {
+  double g1;   // parent energy after the step
+  double wem;  // weight of the photon LP
+};
+
+/// A resolved parent of weight w recoils by what its LP carries, f x; an unresolved
+/// one has cooled, and its LP stands for loss / xm emissions, so that the emitted
+/// energy is the loss on average. A recoil is clipped at the mass shell and the
+/// emitted weight shrinks with it.
+[[nodiscard]]
+constexpr Emitted
+  emitted(
+    const EmissionPlan& p,
+    const double w,
+    const double gam,
+    const double xm,
+    const double x)
+{
+  const auto dgu  = gam - p.g_cooled;  // energy the continuous cooling took
+  const auto mult = p.resolved ? 1.0 : dgu / sstd::max(xm, 1e-300);
+  const auto dg   = p.resolved ? p.f * x : dgu;
+  const auto dgc  = sstd::min(dg, gam - 1.0);
+  const auto wem  = w * p.f * mult * (dg > 0.0 ? dgc / sstd::max(dg, 1e-300) : 1.0);
+  return Emitted { .g1 = p.resolved ? sstd::max(gam - dgc, 1.0) : p.g_cooled, .wem = wem };
+}
+
 }  // namespace qed
