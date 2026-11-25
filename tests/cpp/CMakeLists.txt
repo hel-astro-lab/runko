@@ -5,6 +5,7 @@ set(TESTS_TO_RUN
     unit_testing
     parse_atom_args
     qed_random
+    qed_weights
     qed2
     qed1
     pic_particle

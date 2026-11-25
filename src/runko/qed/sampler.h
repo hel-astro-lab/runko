@@ -17,6 +17,7 @@
 #include "runko/qed/field.h"
 #include "runko/qed/interactions/qed1_syn.h"
 #include "runko/qed/layout.h"
+#include "runko/qed/weights.h"
 #include "thrust/device_vector.h"
 #include "thrust/host_vector.h"
 
@@ -95,41 +96,6 @@ struct [[nodiscard]] Stats {
   double heldprod { 0 };                    // tail ones whose slack held an arrival
   std::array<double, 3> slots {}, live {};  // per species
 };
-
-// ---------------------------------------------------------------- one-body bookkeeping
-
-/// Accumulation factor of a resolved emission of mean photon energy xm:
-/// acc_syn max(1, xm^-2), capped at kappa (gamma - 1)/xm, at least 1.
-[[nodiscard]]
-constexpr double
-  facc_syn(const double gam, double xm, const double acc_syn, const double kappa)
-{
-  if(acc_syn <= 0.0) { return 1.0; }
-  xm = sstd::max(xm, 1e-300);
-  return sstd::max(
-    sstd::min(acc_syn * sstd::max(1.0, 1.0 / (xm * xm)), kappa * (gam - 1.0) / xm),
-    1.0);
-}
-
-/// Parent energy after one step of synchrotron cooling above the floor:
-/// dgamma/dt = -(2/3)(alpha c/lamC) chi^2 g Phi, in closed form for chi ~ gamma.
-/// Phi is the power fraction above the floor, from its rate lam and mean energy xm.
-[[nodiscard]]
-constexpr double
-  gamma_cooled(
-    const double gam,
-    const double lam,
-    const double xm,
-    const double b,
-    const double N1)
-{
-  const auto chi  = gam * b;
-  const auto g    = syn::g(chi);
-  const auto full = (2.0 / 3.0) * chi * chi * g / N1;
-  const auto Phi  = full > 0.0 ? lam * xm / sstd::max(full, 1e-300) : 0.0;
-  return gam / (1.0 + (2.0 / 3.0) * gam * b * b * g * Phi / N1);
-}
-
 
 /// A product of a channel pass, staged before placement.
 struct [[nodiscard]] Staged {

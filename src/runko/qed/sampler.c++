@@ -262,32 +262,6 @@ constexpr int
   return lo;
 }
 
-/// Photon resolution function: LPs per unit weight go as (x/x_ref)^a.
-[[nodiscard]]
-constexpr double
-  f_res(const double e, const double a, const double x_ref)
-{ return sstd::pow(e / x_ref, a); }
-
-/// Realize the copy number n of a product of weight s as n_r copies of w_each. n >= 1
-/// splits into floor(n) or floor(n) + 1 copies of s/n_r; n < 1 keeps one copy of s/n
-/// with probability n (Russian roulette). Both keep <n_r> = min(n, n_cap).
-struct Copies {
-  int n_r;
-  double w_each;
-};
-
-[[nodiscard]]
-constexpr Copies
-  copies(double n, const double s, runko::Rng& rng, const int n_cap)
-{
-  n = sstd::min(n, static_cast<double>(n_cap));
-
-  const auto n_r = static_cast<int>(sstd::floor(n + rng.uniform()));
-  const auto den =
-    n >= 1.0 ? static_cast<double>(sstd::max(n_r, 1)) : sstd::max(n, 1e-300);
-  return Copies { n_r, s / den };
-}
-
 /// Staged record of one product at a given position and cell.
 [[nodiscard]]
 constexpr Staged

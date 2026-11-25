@@ -12,7 +12,9 @@
 // S / w_i; the partner takes S / w_j exchanges, a probability while below one and a
 // multiplicity above.
 
+#include "runko/qed/interactions/qed1_syn.h"
 #include "runko/tools/math.h"
+#include "runko/tools/random.h"
 
 namespace qed {
 
@@ -41,5 +43,68 @@ constexpr double
 constexpr double
   pair_weight(const double wi, const double wj, const double fk)
 { return sstd::max(wj, wi / fk); }
+
+
+// ---- products: resolution and copies
+
+/// Photon resolution function: LPs per unit weight go as (x/x_ref)^a.
+[[nodiscard]]
+constexpr double
+  f_res(const double e, const double a, const double x_ref)
+{ return sstd::pow(e / x_ref, a); }
+
+/// Realize the copy number n of a product of weight s as n_r copies of w_each. n >= 1
+/// splits into floor(n) or floor(n) + 1 copies of s/n_r; n < 1 keeps one copy of s/n
+/// with probability n (Russian roulette). Both keep <n_r> = min(n, n_cap).
+struct Copies {
+  int n_r;
+  double w_each;
+};
+
+[[nodiscard]]
+constexpr Copies
+  copies(double n, const double s, runko::Rng& rng, const int n_cap)
+{
+  n = sstd::min(n, static_cast<double>(n_cap));
+
+  const auto n_r = static_cast<int>(sstd::floor(n + rng.uniform()));
+  const auto den =
+    n >= 1.0 ? static_cast<double>(sstd::max(n_r, 1)) : sstd::max(n, 1e-300);
+  return Copies { n_r, s / den };
+}
+
+// ---- one-body emission
+
+/// Accumulation factor of a resolved emission of mean photon energy xm:
+/// acc_syn max(1, xm^-2), capped at kappa (gamma - 1)/xm, at least 1.
+[[nodiscard]]
+constexpr double
+  facc_syn(const double gam, double xm, const double acc_syn, const double kappa)
+{
+  if(acc_syn <= 0.0) { return 1.0; }
+  xm = sstd::max(xm, 1e-300);
+  return sstd::max(
+    sstd::min(acc_syn * sstd::max(1.0, 1.0 / (xm * xm)), kappa * (gam - 1.0) / xm),
+    1.0);
+}
+
+/// Parent energy after one step of synchrotron cooling above the floor:
+/// dgamma/dt = -(2/3)(alpha c/lamC) chi^2 g Phi, in closed form for chi ~ gamma.
+/// Phi is the power fraction above the floor, from its rate lam and mean energy xm.
+[[nodiscard]]
+constexpr double
+  gamma_cooled(
+    const double gam,
+    const double lam,
+    const double xm,
+    const double b,
+    const double N1)
+{
+  const auto chi  = gam * b;
+  const auto g    = syn::g(chi);
+  const auto full = (2.0 / 3.0) * chi * chi * g / N1;
+  const auto Phi  = full > 0.0 ? lam * xm / sstd::max(full, 1e-300) : 0.0;
+  return gam / (1.0 + (2.0 / 3.0) * gam * b * b * g * Phi / N1);
+}
 
 }  // namespace qed
